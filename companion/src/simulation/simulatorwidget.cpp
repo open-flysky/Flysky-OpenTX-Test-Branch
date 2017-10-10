@@ -70,6 +70,7 @@ SimulatorWidget::SimulatorWidget(QWidget * parent, SimulatorInterface * simulato
 
   switch(m_board) {
     case Board::BOARD_TARANIS_X7 :
+    case Board::BOARD_TARANIS_X7S :
       radioUiWidget = new SimulatedUIWidgetX7(simulator, this);
       break;
     case Board::BOARD_TARANIS_X9D  :

@@ -69,6 +69,7 @@ const int Boards::getEEpromSize(Board::Type board)
     case BOARD_AR9X:
       return EESIZE_9XRPRO;
     case BOARD_TARANIS_X7:
+    case BOARD_TARANIS_X7S:
     case BOARD_TARANIS_X9D:
     case BOARD_TARANIS_X9DP:
     case BOARD_TARANIS_X9E:
@@ -96,6 +97,8 @@ const int Boards::getFlashSize(Type board)
     case BOARD_9XRPRO:
     case BOARD_AR9X:
       return FSIZE_9XRPRO;
+    case BOARD_TARANIS_X7:
+    case BOARD_TARANIS_X7S:
     case BOARD_TARANIS_X9D:
     case BOARD_TARANIS_X9DP:
     case BOARD_TARANIS_X9E:

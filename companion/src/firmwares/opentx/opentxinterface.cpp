@@ -79,6 +79,8 @@ const char * OpenTxEepromInterface::getName()
       return "OpenTX for FrSky Taranis X9E";
     case BOARD_TARANIS_X7:
       return "OpenTX for FrSky Taranis X7";
+    case BOARD_TARANIS_X7S:
+      return "OpenTX for FrSky Taranis X7S";
     case BOARD_SKY9X:
       return "OpenTX for Sky9x board / 9X";
     case BOARD_9XRPRO:
@@ -1222,6 +1224,14 @@ void registerOpenTxFirmwares()
 
   /* FrSky X7 board */
   firmware = new OpenTxFirmware("opentx-x7", QObject::tr("FrSky Taranis X7"), BOARD_TARANIS_X7);
+  // No mixersmon for now
+  addOpenTxFrskyOptions(firmware);
+  firmware->addOption("internalppm", QObject::tr("Support for PPM internal module hack"));
+  firmware->addOption("sqt5font", QObject::tr("Use alternative SQT5 font"));
+  registerOpenTxFirmware(firmware);
+  
+  /* FrSky X7S board */
+  firmware = new OpenTxFirmware("opentx-x7s", QObject::tr("FrSky Taranis X7S"), BOARD_TARANIS_X7S);
   // No mixersmon for now
   addOpenTxFrskyOptions(firmware);
   firmware->addOption("internalppm", QObject::tr("Support for PPM internal module hack"));

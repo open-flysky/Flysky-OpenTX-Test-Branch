@@ -39,6 +39,7 @@ namespace Board {
     BOARD_9XRPRO,
     BOARD_AR9X,
     BOARD_TARANIS_X7,
+    BOARD_TARANIS_X7S,
     BOARD_TARANIS_X9D,
     BOARD_TARANIS_X9DP,
     BOARD_TARANIS_X9E,
@@ -173,7 +174,7 @@ class Boards
 #define IS_2560(board)                 (board==Board::BOARD_GRUVIN9X || board==Board::BOARD_MEGA2560)
 #define IS_SKY9X(board)                (board==Board::BOARD_SKY9X || board==Board::BOARD_9XRPRO || board==Board::BOARD_AR9X)
 #define IS_9XRPRO(board)               (board==Board::BOARD_9XRPRO)
-#define IS_TARANIS_X7(board)           (board==Board::BOARD_TARANIS_X7)
+#define IS_TARANIS_X7(board)           (board==Board::BOARD_TARANIS_X7 || board==Board::BOARD_TARANIS_X7S)
 #define IS_TARANIS_X9(board)           (board==Board::BOARD_TARANIS_X9D || board==Board::BOARD_TARANIS_X9DP || board==Board::BOARD_TARANIS_X9E)
 #define IS_TARANIS_X9D(board)          (board==Board::BOARD_TARANIS_X9D || board==Board::BOARD_TARANIS_X9DP)
 #define IS_TARANIS_PLUS(board)         (board==Board::BOARD_TARANIS_X9DP || board==Board::BOARD_TARANIS_X9E)

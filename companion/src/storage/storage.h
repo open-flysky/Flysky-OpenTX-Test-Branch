@@ -74,6 +74,7 @@ class StorageFormat
         case Board::BOARD_X10:
           return 0x3478746F;
         case Board::BOARD_TARANIS_X7:
+        case Board::BOARD_TARANIS_X7S:
           return 0x3678746F;
         case Board::BOARD_TARANIS_X9E:
           return 0x3578746F;
