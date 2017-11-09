@@ -103,7 +103,7 @@ class DarkblueTheme: public Theme
       loadMenuIcon(ICON_MODEL_TELEMETRY, "mask_model_telemetry.png");
       loadMenuIcon(ICON_STATS, "mask_menu_stats.png");
       loadMenuIcon(ICON_STATS_THROTTLE_GRAPH, "mask_stats_throttle_graph.png");
-      loadMenuIcon(ICON_STATS_TIMERS, "mask_stats_timers.png");
+      //loadMenuIcon(ICON_STATS_TIMERS, "mask_stats_timers.png");
       loadMenuIcon(ICON_STATS_ANALOGS, "mask_stats_analogs.png");
       loadMenuIcon(ICON_STATS_DEBUG, "mask_stats_debug.png");
       loadMenuIcon(ICON_THEME, "mask_menu_theme.png");
