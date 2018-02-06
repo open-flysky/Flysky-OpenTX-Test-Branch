@@ -27,7 +27,22 @@
 
 #define MENUS_SCROLLBAR_WIDTH          0
 
+// TODO: enum? bitfield?
+#define NAVI_STYLE_ROTARY              1
+#define NAVI_STYLE_4WAY                2
+#define NAVI_STYLE_TOUCH               4
+
 #if defined(PCBX7)
+  #define NAVIGATION_STYLE             NAVI_STYLE_ROTARY
+#elif IS_TOUCH_ENABLED()
+  #define NAVIGATION_STYLE             NAVI_STYLE_TOUCH
+#else
+  #define NAVIGATION_STYLE             NAVI_STYLE_4WAY
+#endif
+
+#define NAVI_STYLE_ROT_OR_TOUCH()      (NAVIGATION_STYLE == NAVI_STYLE_ROTARY || NAVIGATION_STYLE == NAVI_STYLE_TOUCH)
+
+#if NAVI_STYLE_ROT_OR_TOUCH()
   #define HEADER_LINE                  0
   #define HEADER_LINE_COLUMNS
 #else
@@ -211,12 +226,13 @@ int8_t checkIncDecGen(event_t event, int8_t i_val, int8_t i_min, int8_t i_max);
 #define CHECK_INCDEC_GENVAR(event, var, min, max) \
   var = checkIncDecGen(event, var, min, max)
 
-#if defined(PCBTARANIS)
+#if defined(STM32)
 #define CURSOR_ON_LINE()               (menuHorizontalPosition < 0)
 #else
 #define CURSOR_ON_LINE()               (0)
 #endif
 
+void checkMenuTab(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t menuTabSize);
 void check(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t menuTabSize, const pm_uint8_t *horTab, uint8_t horTabMax, vertpos_t maxrow);
 void check_simple(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t menuTabSize, vertpos_t maxrow);
 void check_submenu_simple(event_t event, uint8_t maxrow);
@@ -230,7 +246,7 @@ void title(const pm_char * s);
   #define MENU_TAB(...) static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__
 #endif
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
 #define MENU_CHECK(tab, menu, lines_count) \
   check(event, menu, tab, DIM(tab), mstate_tab, DIM(mstate_tab)-1, lines_count)
 #else
@@ -243,7 +259,7 @@ void title(const pm_char * s);
   MENU_CHECK(tab, menu, lines_count); \
   TITLE(title)
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
 #define SIMPLE_MENU_NOTITLE(tab, menu, lines_count) \
   check_simple(event, menu, tab, DIM(tab), lines_count);
 #define SUBMENU_NOTITLE(lines_count, ...) { \
@@ -379,36 +395,18 @@ void drawStatusLine();
 #define CURSOR_MOVED_LEFT(event)       (IS_ROTARY_LEFT(event) || EVT_KEY_MASK(event) == KEY_LEFT)
 #define CURSOR_MOVED_RIGHT(event)      (IS_ROTARY_RIGHT(event) || EVT_KEY_MASK(event) == KEY_RIGHT)
 
-#if defined(ROTARY_ENCODERS)
-#define CASE_EVT_ROTARY_BREAK          case EVT_ROTARY_BREAK:
-#define CASE_EVT_ROTARY_LONG           case EVT_ROTARY_LONG:
-#else
-#define CASE_EVT_ROTARY_BREAK
-#define CASE_EVT_ROTARY_LONG
-#endif
+void repeatLastCursorMove(event_t event);
 
 #if defined(ROTARY_ENCODER_NAVIGATION)
-  #define IS_ROTARY_LEFT(evt)          (evt == EVT_ROTARY_LEFT)
-  #define IS_ROTARY_RIGHT(evt)         (evt == EVT_ROTARY_RIGHT)
-  #define IS_ROTARY_BREAK(evt)         (evt == EVT_ROTARY_BREAK)
-  #define IS_ROTARY_LONG(evt)          (evt == EVT_ROTARY_LONG)
-  #define IS_ROTARY_EVENT(evt)         (EVT_KEY_MASK(evt) >= 0x0e)
-  void repeatLastCursorMove(event_t event);
   #define REPEAT_LAST_CURSOR_MOVE()    { if (EVT_KEY_MASK(event) >= 0x0e) putEvent(event); else repeatLastCursorMove(event); }
   #define MOVE_CURSOR_FROM_HERE()      if (menuHorizontalPosition > 0) REPEAT_LAST_CURSOR_MOVE()
 #else
-  #define IS_ROTARY_LEFT(evt)          (0)
-  #define IS_ROTARY_RIGHT(evt)         (0)
-  #define IS_ROTARY_BREAK(evt)         (0)
-  #define IS_ROTARY_LONG(evt)          (0)
-  #define IS_ROTARY_EVENT(evt)         (0)
-  void repeatLastCursorMove(event_t event);
   #define REPEAT_LAST_CURSOR_MOVE()    repeatLastCursorMove(event)
   #define MOVE_CURSOR_FROM_HERE()      REPEAT_LAST_CURSOR_MOVE()
 #endif
 
 // TODO enum
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
 #define EDIT_MODE_INIT                 0
 #else
 #define EDIT_MODE_INIT                 -1

@@ -265,13 +265,15 @@ void menuModelFlightModesAll(event_t event)
 
   switch (event) {
     CASE_EVT_ROTARY_BREAK
-    case EVT_KEY_FIRST(KEY_ENTER):
+#if !defined(ROTARY_ENCODER_NAVIGATION)
+    case EVT_KEY_BREAK(KEY_ENTER):
+#endif
       if (sub == MAX_FLIGHT_MODES) {
         s_editMode = 0;
         trimsCheckTimer = 200; // 2 seconds
       }
       // no break
-#if !defined(PCBX7)
+#if !NAVI_STYLE_ROT_OR_TOUCH()
     case EVT_KEY_FIRST(KEY_RIGHT):
 #endif
       if (sub >= 0 && sub < MAX_FLIGHT_MODES) {

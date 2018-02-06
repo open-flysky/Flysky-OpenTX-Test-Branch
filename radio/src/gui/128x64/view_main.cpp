@@ -242,22 +242,20 @@ void displayVoltageOrAlarm()
 #if defined(PCBX7)
 #define EVT_KEY_CONTEXT_MENU           EVT_KEY_LONG(KEY_ENTER)
 #define EVT_KEY_NEXT_VIEW              EVT_KEY_BREAK(KEY_PAGE)
-#define EVT_KEY_NEXT_PAGE              EVT_ROTARY_RIGHT
-#define EVT_KEY_PREVIOUS_PAGE          EVT_ROTARY_LEFT
 #define EVT_KEY_MODEL_MENU             EVT_KEY_BREAK(KEY_MENU)
 #define EVT_KEY_GENERAL_MENU           EVT_KEY_LONG(KEY_MENU)
 #define EVT_KEY_TELEMETRY              EVT_KEY_LONG(KEY_PAGE)
 #else
 #define EVT_KEY_CONTEXT_MENU           EVT_KEY_BREAK(KEY_MENU)
-#define EVT_KEY_PREVIOUS_VIEW          EVT_KEY_BREAK(KEY_UP)
-#define EVT_KEY_NEXT_VIEW              EVT_KEY_BREAK(KEY_DOWN)
-#define EVT_KEY_NEXT_PAGE              EVT_KEY_BREAK(KEY_RIGHT)
-#define EVT_KEY_PREVIOUS_PAGE          EVT_KEY_BREAK(KEY_LEFT)
+#define EVT_KEY_PREVIOUS_VIEW          EVT_KEY_LINE_UP
+#define EVT_KEY_NEXT_VIEW              EVT_KEY_LINE_DOWN
 #define EVT_KEY_MODEL_MENU             EVT_KEY_LONG(KEY_RIGHT)
 #define EVT_KEY_GENERAL_MENU           EVT_KEY_LONG(KEY_LEFT)
-#define EVT_KEY_LAST_MENU              EVT_KEY_LONG(KEY_MENU)
 #define EVT_KEY_TELEMETRY              EVT_KEY_LONG(KEY_DOWN)
 #define EVT_KEY_STATISTICS             EVT_KEY_LONG(KEY_UP)
+#if NAVIGATION_STYLE != NAVI_STYLE_TOUCH
+  #define EVT_KEY_LAST_MENU            EVT_KEY_LONG(KEY_MENU)
+#endif
 #endif
 
 #if defined(NAVIGATION_MENUS)
@@ -330,8 +328,13 @@ void menuMainView(event_t event)
     break;
     */
 
+#if defined(ROTARY_ENCODER_NAVIGATION)
+    CASE_EVT_ROTARY_LEFT
+    CASE_EVT_ROTARY_RIGHT
+#else
     case EVT_KEY_NEXT_PAGE:
     case EVT_KEY_PREVIOUS_PAGE:
+#endif
       if (view_base <= VIEW_INPUTS) {
 #if defined(CPUARM)
         if (view_base == VIEW_INPUTS)
@@ -350,30 +353,27 @@ void menuMainView(event_t event)
     case EVT_KEY_CONTEXT_MENU:
       killEvents(event);
 
-#if defined(CPUARM)
+  #if defined(CPUARM)
       if (modelHasNotes()) {
         POPUP_MENU_ADD_ITEM(STR_VIEW_NOTES);
       }
-#endif
-
-#if defined(CPUARM)
       POPUP_MENU_ADD_ITEM(STR_RESET_SUBMENU);
-#else
+  #else
       POPUP_MENU_ADD_ITEM(STR_RESET_TIMER1);
       POPUP_MENU_ADD_ITEM(STR_RESET_TIMER2);
-#if defined(TELEMETRY_FRSKY)
+    #if defined(TELEMETRY_FRSKY)
       POPUP_MENU_ADD_ITEM(STR_RESET_TELEMETRY);
-#endif
+    #endif
       POPUP_MENU_ADD_ITEM(STR_RESET_FLIGHT);
-#endif
+    #endif
 
       POPUP_MENU_ADD_ITEM(STR_STATISTICS);
-#if defined(CPUARM)
+  #if defined(CPUARM)
       POPUP_MENU_ADD_ITEM(STR_ABOUT_US);
-#endif
+  #endif
       POPUP_MENU_START(onMainViewMenu);
       break;
-#endif
+#endif  // defined(NAVIGATION_MENUS)
 
 #if defined(EVT_KEY_LAST_MENU) && MENUS_LOCK != 2 /*no menus*/
     case EVT_KEY_LAST_MENU:
@@ -391,7 +391,9 @@ void menuMainView(event_t event)
 #endif
 
 #if defined(EVT_KEY_GENERAL_MENU) && MENUS_LOCK != 2 /*no menus*/
+#if !defined(PCBX7)  // conflicts with EVT_KEY_CONTEXT_MENU
     CASE_EVT_ROTARY_LONG
+#endif
     case EVT_KEY_GENERAL_MENU:
       pushMenu(menuRadioSetup);
       killEvents(event);
@@ -656,8 +658,6 @@ void menuMainView(event_t event)
 #undef EVT_KEY_CONTEXT_MENU
 #undef EVT_KEY_PREVIOUS_VIEW
 #undef EVT_KEY_NEXT_VIEW
-#undef EVT_KEY_NEXT_PAGE
-#undef EVT_KEY_PREVIOUS_PAGE
 #undef EVT_KEY_MODEL_MENU
 #undef EVT_KEY_GENERAL_MENU
 #undef EVT_KEY_LAST_MENU

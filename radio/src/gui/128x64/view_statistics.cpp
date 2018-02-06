@@ -30,14 +30,14 @@ void menuStatisticsView(event_t event)
   TITLE(STR_MENUSTAT);
 
   switch (event) {
-    case EVT_KEY_FIRST(KEY_UP):
+    case EVT_KEY_BREAK(KEY_UP):
 #if defined(PCBX7)
     case EVT_KEY_BREAK(KEY_PAGE):
 #endif
       chainMenu(menuStatisticsDebug);
       break;
 
-    case EVT_KEY_FIRST(KEY_DOWN):
+    case EVT_KEY_BREAK(KEY_DOWN):
 #if defined(STM32)
 #if defined(PCBX7)
     case EVT_KEY_LONG(KEY_PAGE):
@@ -159,7 +159,7 @@ void menuStatisticsDebug(event_t event)
       break;
 
 
-    case EVT_KEY_FIRST(KEY_UP):
+    case EVT_KEY_BREAK(KEY_UP):
 #if defined(STM32)
 #if defined(PCBX7)
     case EVT_KEY_BREAK(KEY_PAGE):
@@ -168,7 +168,7 @@ void menuStatisticsDebug(event_t event)
       return;
 #endif  // STM32
 
-    case EVT_KEY_FIRST(KEY_DOWN):
+    case EVT_KEY_BREAK(KEY_DOWN):
 #if defined(PCBX7)
     case EVT_KEY_LONG(KEY_PAGE):
 #endif
@@ -290,14 +290,14 @@ void menuStatisticsDebug2(event_t event)
       telemetryErrors  = 0;
       break;
 
-    case EVT_KEY_FIRST(KEY_UP):
+    case EVT_KEY_BREAK(KEY_UP):
 #if defined(PCBX7)
     case EVT_KEY_BREAK(KEY_PAGE):
 #endif
       chainMenu(menuStatisticsView);
       return;
 
-    case EVT_KEY_FIRST(KEY_DOWN):
+    case EVT_KEY_BREAK(KEY_DOWN):
 #if defined(PCBX7)
     case EVT_KEY_LONG(KEY_PAGE):
 #endif

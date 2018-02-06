@@ -2,7 +2,7 @@
  * Copyright (C) OpenTX
  *
  * Based on code named
- *   th9x - http://code.google.com/p/th9x 
+ *   th9x - http://code.google.com/p/th9x
  *   er9x - http://code.google.com/p/er9x
  *   gruvin9x - http://code.google.com/p/gruvin9x
  *
@@ -46,8 +46,8 @@ enum AboutScreens {
 #define EVT_KEY_PREVIOUS_VIEW          EVT_KEY_LONG(KEY_PAGE)
 #define EVT_KEY_NEXT_VIEW              EVT_KEY_BREAK(KEY_PAGE)
 #else
-#define EVT_KEY_PREVIOUS_VIEW          EVT_KEY_FIRST(KEY_UP)
-#define EVT_KEY_NEXT_VIEW              EVT_KEY_FIRST(KEY_DOWN)
+#define EVT_KEY_PREVIOUS_VIEW          EVT_KEY_BREAK(KEY_UP)
+#define EVT_KEY_NEXT_VIEW              EVT_KEY_BREAK(KEY_DOWN)
 #endif
 
 void menuAboutView(event_t event)

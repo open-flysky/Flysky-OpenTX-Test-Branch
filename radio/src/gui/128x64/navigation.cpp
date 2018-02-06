@@ -54,7 +54,7 @@ INIT_STOPS(stops100, 3, -100, 0, 100)
 INIT_STOPS(stops1000, 3, -1000, 0, 1000)
 INIT_STOPS(stopsSwitch, 15, SWSRC_FIRST, CATEGORY_END(-SWSRC_FIRST_LOGICAL_SWITCH), CATEGORY_END(-SWSRC_FIRST_TRIM), CATEGORY_END(-SWSRC_LAST_SWITCH+1), 0, CATEGORY_END(SWSRC_LAST_SWITCH), CATEGORY_END(SWSRC_FIRST_TRIM-1), CATEGORY_END(SWSRC_FIRST_LOGICAL_SWITCH-1), SWSRC_LAST)
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
 int checkIncDecSelection = 0;
 
 void onSourceLongEnterPress(const char * result)
@@ -154,23 +154,33 @@ int checkIncDec(event_t event, int val, int i_min, int i_max, unsigned int i_fla
   }
 #endif
 
-  if (s_editMode>0 && event==EVT_ROTARY_RIGHT) {
+  if (s_editMode>0 && IS_NEXT_EVENT(event)) {
+#if defined(ROTARY_ENCODER_NAVIGATION)
     newval += min<int>(rotencSpeed, i_max-val);
+#else
+    ++newval;
+#endif
     while (isValueAvailable && !isValueAvailable(newval) && newval<=i_max) {
-      newval++;
+      ++newval;
     }
     if (newval > i_max) {
       newval = val;
+      killEvents(event);
       AUDIO_KEY_ERROR();
     }
   }
-  else if (s_editMode>0 && event==EVT_ROTARY_LEFT) {
+  else if (s_editMode>0 && IS_PREVIOUS_EVENT(event)) {
+#if defined(ROTARY_ENCODER_NAVIGATION)
     newval -= min<int>(rotencSpeed, val-i_min);
+#else
+    --newval;
+#endif
     while (isValueAvailable && !isValueAvailable(newval) && newval>=i_min) {
-      newval--;
+      --newval;
     }
     if (newval < i_min) {
       newval = val;
+      killEvents(event);
       AUDIO_KEY_ERROR();
     }
   }
@@ -289,7 +299,7 @@ int checkIncDec(event_t event, int val, int i_min, int i_max, unsigned int i_fla
   }
   return newval;
 }
-#else
+#else  // ARM 9X
 int checkIncDec(event_t event, int val, int i_min, int i_max, unsigned int i_flags, IsValueAvailable isValueAvailable, const CheckIncDecStops &stops)
 {
   int newval = val;
@@ -409,8 +419,8 @@ int checkIncDec(event_t event, int val, int i_min, int i_max, unsigned int i_fla
   }
   return newval;
 }
-#endif
-#else
+#endif  // end if ARM 9X type
+#else  // AVR
 int16_t checkIncDec(event_t event, int16_t val, int16_t i_min, int16_t i_max, uint8_t i_flags)
 {
   int16_t newval = val;
@@ -543,7 +553,7 @@ int8_t checkIncDecGen(event_t event, int8_t i_val, int8_t i_min, int8_t i_max)
 tmr10ms_t menuEntryTime;
 #endif
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
 #define MAXCOL_RAW(row)                (horTab ? pgm_read_byte(horTab+min(row, (vertpos_t)horTabMax)) : (const uint8_t)0)
 #define MAXCOL(row)                    (MAXCOL_RAW(row) >= HIDDEN_ROW ? MAXCOL_RAW(row) : (const uint8_t)(MAXCOL_RAW(row) & (~NAVIGATION_LINE_BY_LINE)))
 #define COLATTR(row)                   (MAXCOL_RAW(row) == (uint8_t)-1 ? (const uint8_t)0 : (const uint8_t)(MAXCOL_RAW(row) & NAVIGATION_LINE_BY_LINE))
@@ -556,6 +566,7 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
   horzpos_t l_posHorz = menuHorizontalPosition;
 
   uint8_t maxcol = MAXCOL(l_posVert);
+
 
   if (menuTab) {
     int cc = curr;
@@ -576,7 +587,8 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
         break;
 #endif
 
-      case EVT_KEY_LONG(KEY_PAGE):
+      case EVT_KEY_PREVIOUS_PAGE:
+        //case EVT_KEY_LONG(KEY_PAGE):
         if (curr > 0)
           cc = curr - 1;
         else
@@ -584,11 +596,13 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
         killEvents(event);
         break;
 
-      case EVT_KEY_BREAK(KEY_PAGE):
+      case EVT_KEY_NEXT_PAGE:
+        //case EVT_KEY_BREAK(KEY_PAGE):
         if (curr < (menuTabSize-1))
           cc = curr + 1;
         else
           cc = 0;
+        killEvents(event);
         break;
     }
 
@@ -597,7 +611,7 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
     }
 
     // TODO if (!(flags&CHECK_FLAG_NO_SCREEN_INDEX)) {
-      drawScreenIndex(curr, menuTabSize, 0);
+    drawScreenIndex(curr, menuTabSize, 0);
     // }
 
     // TODO lcdDrawFilledRect(0, 0, LCD_W, MENU_HEADER_HEIGHT, SOLID, FILL_WHITE|GREY_DEFAULT);
@@ -613,14 +627,21 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
       l_posHorz = POS_HORZ_INIT(l_posVert);
       break;
 
+#if defined(ROTARY_ENCODER_NAVIGATION)
     case EVT_ENTRY_UP:
       menuEntryTime = get_tmr10ms();
       s_editMode = 0;
       l_posHorz = POS_HORZ_INIT(l_posVert);
       break;
 
+    // nobreak
     case EVT_ROTARY_BREAK:
-      if (s_editMode > 1) break;
+#else
+    // nobreak
+    case EVT_KEY_BREAK(KEY_ENTER):
+#endif
+      if (s_editMode > 1)
+        break;
       if (menuHorizontalPosition < 0 && maxcol > 0 && READ_ONLY_UNLOCKED()) {
         l_posHorz = 0;
         AUDIO_KEY_PRESS();
@@ -661,11 +682,10 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
       }
       break;
 
-    case EVT_ROTARY_RIGHT:
-    case EVT_KEY_FIRST(KEY_RIGHT):
+    case EVT_KEY_LINE_DOWN:
       AUDIO_KEY_PRESS();
       // no break
-    case EVT_KEY_REPT(KEY_RIGHT):
+    CASE_EVT_LINE_DOWN_RPT
       if (s_editMode > 0) break; // TODO it was !=
       if ((COLATTR(l_posVert) & NAVIGATION_LINE_BY_LINE)) {
         if (l_posHorz >= 0) {
@@ -692,11 +712,10 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
       l_posHorz = POS_HORZ_INIT(l_posVert);
       break;
 
-    case EVT_ROTARY_LEFT:
-    case EVT_KEY_FIRST(KEY_LEFT):
+    case EVT_KEY_LINE_UP:
       AUDIO_KEY_PRESS();
       // no break
-    case EVT_KEY_REPT(KEY_LEFT):
+    CASE_EVT_LINE_UP_RPT
       if (s_editMode > 0) break; // TODO it was !=
       if ((COLATTR(l_posVert) & NAVIGATION_LINE_BY_LINE)) {
         if (l_posHorz >= 0) {
@@ -790,7 +809,7 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t
   menuVerticalPosition = l_posVert;
   menuHorizontalPosition = l_posHorz;
 }
-#else
+#else  // NAVI_STYLE_ROT_OR_TOUCH()
 #define MAXCOL(row)                    (horTab ? pgm_read_byte(horTab+min(row, (vertpos_t)horTabMax)) : (const uint8_t)0)
 #define POS_HORZ_INIT(posVert)         0
 
@@ -1008,7 +1027,6 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t 
       break;
 #endif
 
-#if !defined(PCBX7)
     case EVT_KEY_REPT(KEY_DOWN):
       if (!IS_ROTARY_RIGHT(event) && l_posVert==maxrow) break;
       // no break
@@ -1025,7 +1043,6 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t 
 
       l_posHorz = min<horzpos_t>(l_posHorz, MAXCOL(l_posVert));
       break;
-#endif
 
     case EVT_KEY_REPT(KEY_LEFT):  //dec
       if (l_posHorz==0) break;
@@ -1053,7 +1070,6 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t 
       break;
 #endif
 
-#if !defined(PCBX7)
     case EVT_KEY_REPT(KEY_UP):
       if (!IS_ROTARY_LEFT(event) && l_posVert==0) break;
       // no break
@@ -1070,7 +1086,6 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t 
 
       l_posHorz = min((uint8_t)l_posHorz, MAXCOL(l_posVert));
       break;
-#endif
   }
 
   uint8_t maxLines = menuTab ? LCD_LINES-1 : LCD_LINES-2;
@@ -1149,7 +1164,7 @@ void check(event_t event, uint8_t curr, const MenuHandlerFunc *menuTab, uint8_t 
   }
 #endif
 }
-#endif
+#endif  // NAVI_STYLE_ROT_OR_TOUCH()
 
 void check_simple(event_t event, uint8_t curr, const MenuHandlerFunc * menuTab, uint8_t menuTabSize, vertpos_t maxrow)
 {

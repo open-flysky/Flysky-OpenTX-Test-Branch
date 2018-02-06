@@ -70,7 +70,7 @@ void onCustomFunctionsFileSelectionMenu(const char * result)
 }
 #endif // CPUARM && SDCARD
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
 
 void onAdjustGvarSourceLongEnterPress(const char * result)
 {
@@ -151,7 +151,7 @@ void menuSpecialFunctions(event_t event, CustomFunctionData * functions, CustomF
   uint8_t eeFlags = EE_MODEL;
 #endif
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
   if (menuHorizontalPosition<0 && event==EVT_KEY_LONG(KEY_ENTER) && !READ_ONLY()) {
     killEvents(event);
     CustomFunctionData *cfn = &functions[sub];
@@ -466,7 +466,7 @@ void menuSpecialFunctions(event_t event, CustomFunctionData * functions, CustomF
           else if (attr) {
             REPEAT_LAST_CURSOR_MOVE();
           }
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
           if (active || event==EVT_KEY_LONG(KEY_ENTER)) {
             CFN_PARAM(cfn) = CHECK_INCDEC_PARAM(event, val_displayed, val_min, val_max);
             if (func == FUNC_ADJUST_GVAR && attr && event==EVT_KEY_LONG(KEY_ENTER)) {
@@ -523,7 +523,7 @@ void menuSpecialFunctions(event_t event, CustomFunctionData * functions, CustomF
           break;
       }
     }
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
     if (sub==k && menuHorizontalPosition<0 && CFN_SWITCH(cfn)) {
       lcdInvertLine(i+1);
     }
@@ -533,7 +533,7 @@ void menuSpecialFunctions(event_t event, CustomFunctionData * functions, CustomF
 
 void menuModelSpecialFunctions(event_t event)
 {
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
   const CustomFunctionData * cfn = &g_model.customFn[menuVerticalPosition];
   if (!CFN_SWITCH(cfn) && menuHorizontalPosition < 0 && event==EVT_KEY_BREAK(KEY_ENTER)) {
     menuHorizontalPosition = 0;
@@ -543,7 +543,7 @@ void menuModelSpecialFunctions(event_t event)
 
   menuSpecialFunctions(event, g_model.customFn, &modelFunctionsContext);
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
   if (!CFN_SWITCH(cfn) && menuHorizontalPosition == 0 && s_editMode <= 0) {
     menuHorizontalPosition = -1;
   }

@@ -546,7 +546,9 @@ void menuModelSetup(event_t event)
           if (!READ_ONLY()) {
             switch (event) {
               CASE_EVT_ROTARY_BREAK
+#if !defined(ROTARY_ENCODER_NAVIGATION)
               case EVT_KEY_BREAK(KEY_ENTER):
+#endif
 #if defined(CPUM64)
                 g_model.switchWarningEnable ^= (1 << menuHorizontalPosition);
                 storageDirty(EE_MODEL);

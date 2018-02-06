@@ -21,6 +21,8 @@
 #ifndef _KEYS_H_
 #define _KEYS_H_
 
+#include "board.h"
+
 #define EVT_KEY_MASK(e)                ((e) & 0x1f)
 
 #if defined(PCBHORUS)
@@ -52,30 +54,74 @@
 #define IS_KEY_REPT(evt)               (((evt) & _MSK_KEY_FLAGS) == _MSK_KEY_REPT)
 #define IS_KEY_BREAK(evt)              (((evt) & _MSK_KEY_FLAGS) == _MSK_KEY_BREAK)
 
-#if (defined(PCBHORUS) || defined(PCBTARANIS)) && defined(ROTARY_ENCODER_NAVIGATION)
-  typedef uint16_t event_t;
-  #define EVT_ROTARY_BREAK             EVT_KEY_BREAK(KEY_ENTER)
-  #define EVT_ROTARY_LONG              EVT_KEY_LONG(KEY_ENTER)
-  #define EVT_ROTARY_LEFT              0xDF00
-  #define EVT_ROTARY_RIGHT             0xDE00
-  #define IS_NEXT_EVENT(event)         (event==EVT_ROTARY_RIGHT)
-  #define IS_PREVIOUS_EVENT(event)     (event==EVT_ROTARY_LEFT)
-#elif defined(ROTARY_ENCODER_NAVIGATION)
-  typedef uint8_t event_t;
-  #define EVT_ROTARY_BREAK             0xcf
-  #define EVT_ROTARY_LONG              0xce
-  #define EVT_ROTARY_LEFT              0xdf
-  #define EVT_ROTARY_RIGHT             0xde
-  #define IS_NEXT_EVENT(event)         (event==EVT_ROTARY_RIGHT || event==EVT_KEY_FIRST(KEY_DOWN) || event==EVT_KEY_REPT(KEY_DOWN))
-  #define IS_PREVIOUS_EVENT(event)     (event==EVT_ROTARY_LEFT || event==EVT_KEY_FIRST(KEY_UP) || event==EVT_KEY_REPT(KEY_UP))
+#if defined(STM32)
+typedef uint16_t event_t;
 #else
-  typedef uint8_t event_t;
-  #define IS_NEXT_EVENT(event)         (event==EVT_KEY_FIRST(KEY_DOWN) || event==EVT_KEY_REPT(KEY_DOWN))
-  #define IS_PREVIOUS_EVENT(event)     (event==EVT_KEY_FIRST(KEY_UP) || event==EVT_KEY_REPT(KEY_UP))
+typedef uint8_t event_t;
+#endif
+
+#if defined(ROTARY_ENCODER_NAVIGATION)
+  #if (defined(PCBHORUS) || defined(PCBTARANIS))
+    #define EVT_ROTARY_BREAK           EVT_KEY_BREAK(KEY_ENTER)
+    #define EVT_ROTARY_LONG            EVT_KEY_LONG(KEY_ENTER)
+    #define EVT_ROTARY_LEFT            (0xDF00)
+    #define EVT_ROTARY_RIGHT           (0xDE00)
+    #define EVT_KEY_LINE_UP            EVT_ROTARY_LEFT
+    #define EVT_KEY_LINE_DOWN          EVT_ROTARY_RIGHT
+  #else
+    #define EVT_ROTARY_BREAK           (0xcf)
+    #define EVT_ROTARY_LONG            (0xce)
+    #define EVT_ROTARY_LEFT            (0xdf)
+    #define EVT_ROTARY_RIGHT           (0xde)
+    #define EVT_KEY_LINE_UP            EVT_ROTARY_LEFT
+    #define EVT_KEY_LINE_DOWN          EVT_ROTARY_RIGHT
+  #endif  // (defined(PCBHORUS) || defined(PCBTARANIS))
+  #define IS_NEXT_EVENT(event)         (event == EVT_KEY_LINE_DOWN)
+  #define IS_PREVIOUS_EVENT(event)     (event == EVT_KEY_LINE_UP)
+  #define IS_ROTARY_LEFT(evt)          (evt == EVT_ROTARY_LEFT)
+  #define IS_ROTARY_RIGHT(evt)         (evt == EVT_ROTARY_RIGHT)
+  #define IS_ROTARY_BREAK(evt)         (evt == EVT_ROTARY_BREAK)
+  #define IS_ROTARY_LONG(evt)          (evt == EVT_ROTARY_LONG)
+  #define IS_ROTARY_EVENT(evt)         (EVT_KEY_MASK(evt) >= 0x0e)
+  #define CASE_EVT_ROTARY_BREAK        case EVT_ROTARY_BREAK:
+  #define CASE_EVT_ROTARY_LONG         case EVT_ROTARY_LONG:
+  #define CASE_EVT_ROTARY_LEFT         case EVT_ROTARY_LEFT:
+  #define CASE_EVT_ROTARY_RIGHT        case EVT_ROTARY_RIGHT:
+  #define CASE_EVT_LINE_UP_RPT
+  #define CASE_EVT_LINE_DOWN_RPT
+#else  // no rot. enc.
+  #define EVT_KEY_LINE_UP              EVT_KEY_BREAK(KEY_UP)
+  #define EVT_KEY_LINE_UP_RPT          EVT_KEY_REPT(KEY_UP)
+  #define EVT_KEY_LINE_DOWN            EVT_KEY_BREAK(KEY_DOWN)
+  #define EVT_KEY_LINE_DOWN_RPT        EVT_KEY_REPT(KEY_DOWN)
+  #define IS_NEXT_EVENT(event)         (event == EVT_KEY_LINE_DOWN || event == EVT_KEY_LINE_DOWN_RPT)
+  #define IS_PREVIOUS_EVENT(event)     (event == EVT_KEY_LINE_UP   || event == EVT_KEY_LINE_UP_RPT)
+  #define IS_ROTARY_LEFT(evt)          (0)
+  #define IS_ROTARY_RIGHT(evt)         (0)
+  #define IS_ROTARY_BREAK(evt)         (0)
+  #define IS_ROTARY_LONG(evt)          (0)
+  #define IS_ROTARY_EVENT(evt)         (0)
+  #define CASE_EVT_ROTARY_BREAK
+  #define CASE_EVT_ROTARY_LONG
+  #define CASE_EVT_ROTARY_LEFT
+  #define CASE_EVT_ROTARY_RIGHT
+  #define CASE_EVT_LINE_UP_RPT         case EVT_KEY_LINE_UP_RPT:
+  #define CASE_EVT_LINE_DOWN_RPT       case EVT_KEY_LINE_DOWN_RPT:
+#endif  // defined(ROTARY_ENCODER_NAVIGATION)
+
+#if defined(PCBHORUS)
+  #define EVT_KEY_NEXT_PAGE        EVT_KEY_BREAK(KEY_PGDN)
+  #define EVT_KEY_PREVIOUS_PAGE    EVT_KEY_BREAK(KEY_PGUP)
+#elif defined(PCBTARANIS)
+  #define EVT_KEY_NEXT_PAGE        EVT_KEY_BREAK(KEY_PAGE)
+  #define EVT_KEY_PREVIOUS_PAGE    EVT_KEY_LONG(KEY_PAGE)
+#else
+  #define EVT_KEY_NEXT_PAGE        EVT_KEY_BREAK(KEY_RIGHT)
+  #define EVT_KEY_PREVIOUS_PAGE    EVT_KEY_BREAK(KEY_LEFT)
 #endif
 
 #if defined(COLORLCD)
-  #define EVT_REFRESH                  0xDD00
+  #define EVT_REFRESH                  (0xDD00)
 #endif
 
 class Key

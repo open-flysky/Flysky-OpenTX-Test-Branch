@@ -57,7 +57,7 @@ void menuRadioDiagAnalogs(event_t event)
   }
 
   // RAS
-#if defined(PCBTARANIS)
+#if defined(STM32)
   if (IS_MODULE_XJT(EXTERNAL_MODULE) && !IS_INTERNAL_MODULE_ON()) {
     coord_t y = MENU_HEADER_HEIGHT + 1 + (NUM_STICKS+NUM_POTS+NUM_SLIDERS+1)/2 * FH + 1 * FH + 2;
     lcdDrawText(1, y, "RAS:");

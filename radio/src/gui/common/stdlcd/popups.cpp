@@ -110,10 +110,11 @@ const char * runPopupMenu(event_t event)
       }
       break;
 
-#if defined(CASE_EVT_ROTARY_BREAK)
+#if defined(ROTARY_ENCODER_NAVIGATION) && defined(CASE_EVT_ROTARY_BREAK)
     CASE_EVT_ROTARY_BREAK
-#endif
+#else
     case EVT_KEY_BREAK(KEY_ENTER):
+#endif
 #if defined(CPUARM)
       result = popupMenuItems[s_menu_item + (popupMenuOffsetType == MENU_OFFSET_INTERNAL ? popupMenuOffset : 0)];
 #else
@@ -121,7 +122,7 @@ const char * runPopupMenu(event_t event)
 #endif
       // no break
 
-#if defined(CASE_EVT_ROTARY_LONG)
+#if defined(ROTARY_ENCODER_NAVIGATION) && defined(CASE_EVT_ROTARY_LONG)
     CASE_EVT_ROTARY_LONG
       killEvents(event);
       // no break

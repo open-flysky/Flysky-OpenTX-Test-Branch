@@ -273,29 +273,28 @@ void menuModelSelect(event_t event)
     case EVT_ROTARY_LEFT:
     case EVT_ROTARY_RIGHT:
 #endif
-    case EVT_KEY_FIRST(KEY_LEFT):
-    case EVT_KEY_FIRST(KEY_RIGHT):
+    case EVT_KEY_BREAK(KEY_LEFT):
+    case EVT_KEY_BREAK(KEY_RIGHT):
 #if defined(ROTARY_ENCODER_NAVIGATION)
       if ((!IS_ROTARY_RIGHT(event) && !IS_ROTARY_LEFT(event)) || s_editMode < 0) {
 #endif
-      if (sub == g_eeGeneral.currModel) {
-        chainMenu((IS_ROTARY_RIGHT(event) || event == EVT_KEY_FIRST(KEY_RIGHT)) ? menuModelSetup : menuTabModel[DIM(menuTabModel)-1]);
-      }
-      else {
-        AUDIO_WARNING2();
-      }
-      break;
+        if (sub == g_eeGeneral.currModel) {
+          chainMenu((IS_ROTARY_RIGHT(event) || EVT_KEY_MASK(event) == KEY_RIGHT) ? menuModelSetup : menuTabModel[DIM(menuTabModel)-1]);
+        }
+        else {
+          AUDIO_WARNING2();
+        }
+        break;
 #if defined(ROTARY_ENCODER_NAVIGATION)
       }
+#endif
       // no break
-#endif
-#endif
+#endif  // PCBX7
 
-#if defined(PCBX7)
+#if defined(ROTARY_ENCODER_NAVIGATION)
     case EVT_ROTARY_LEFT:
     case EVT_ROTARY_RIGHT:
 #endif
-#if !defined(PCBI8)
     case EVT_KEY_FIRST(KEY_UP):
     case EVT_KEY_REPT(KEY_UP):
     case EVT_KEY_FIRST(KEY_DOWN):
@@ -321,7 +320,6 @@ void menuModelSelect(event_t event)
         s_copyTgtOfs = next_ofs;
       }
       break;
-#endif
   }
 
 #if defined(EEPROM_RLC) && defined(CPUARM)
@@ -334,7 +332,7 @@ void menuModelSelect(event_t event)
   lcdDrawNumber(17*FW, 0, reusableBuffer.modelsel.eepromfree, RIGHT);
 #endif
 
-#if defined(PCBX7)
+#if NAVI_STYLE_ROT_OR_TOUCH()
   drawScreenIndex(MENU_MODEL_SELECT, DIM(menuTabModel), 0);
 #elif defined(ROTARY_ENCODER_NAVIGATION)
   drawScreenIndex(MENU_MODEL_SELECT, DIM(menuTabModel), (sub == g_eeGeneral.currModel) ? ((IS_ROTARY_ENCODER_NAVIGATION_ENABLE() && s_editMode < 0) ? INVERS|BLINK : INVERS) : 0);
