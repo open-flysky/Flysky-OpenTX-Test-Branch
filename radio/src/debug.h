@@ -46,7 +46,7 @@ uint8_t auxSerialTracesEnabled();
 #elif defined(DEBUG) && defined(CLI)
   #define debugPrintf(...) do { if (cliTracesEnabled) serialPrintf(__VA_ARGS__); } while(0)
 #elif defined(DEBUG) && defined(CPUARM) && defined(AUX_SERIAL)
-  #define debugPrintf(...) do { serialPrintf(__VA_ARGS__); } while(0)
+  #define debugPrintf(...) do { serialPrintf(__VA_ARGS__); delay_ms(20); } while(0)
 #else
   #define debugPrintf(...)
 #endif

@@ -26,15 +26,19 @@
 
 void drawSplash()
 {
+    TRACE("drawSplash");
     static bool     loadImgFromSD  = true;
     static BitmapBuffer* splashImg = NULL;
 
     if (loadImgFromSD && splashImg == NULL) {
         bool sd_mounted = sdMounted();
+        TRACE("drawSplash - sdInit");
         if (!sd_mounted) sdInit();
+        TRACE("drawSplash - sdInit done");
         splashImg = BitmapBuffer::load(BITMAPS_PATH "/" SPLASH_FILE);
+        TRACE("drawSplash - splashImg = 0x%X", splashImg);
         loadImgFromSD = false;
-        if (!sd_mounted) sdDone();
+        //if (!sd_mounted) sdDone();
     }
 
     lcd->clear();
@@ -58,5 +62,6 @@ void drawSplash()
 #endif
 
   lcdRefresh();
+  TRACE("drawSplash done");
 }
 #endif

@@ -828,13 +828,15 @@ const stbi_io_callbacks stbCallbacks = {
 
 BitmapBuffer * BitmapBuffer::load_stb(const char * filename)
 {
+  TRACE("BitmapBuffer::load_stb");
   FRESULT result = f_open(&imgFile, filename, FA_OPEN_EXISTING | FA_READ);
   if (result != FR_OK) {
     return NULL;
   }
-
+  TRACE("BitmapBuffer::load_stb - result=%d",result);
   int w, h, n;
   unsigned char * img = stbi_load_from_callbacks(&stbCallbacks, &imgFile, &w, &h, &n, 4);
+  TRACE("BitmapBuffer::load_stb - img=0x%X, w=%d, h=%d, n=%d", img, w, h, n);
   f_close(&imgFile);
 
   if (!img) {
@@ -848,7 +850,7 @@ BitmapBuffer * BitmapBuffer::load_stb(const char * filename)
     stbi_image_free(img);
     return NULL;
   }
-
+  TRACE("BitmapBuffer::load_stb - remap");
 #if 0
   DMABitmapConvert(bmp->data, img, w, h, n == 4 ? DMA2D_ARGB4444 : DMA2D_RGB565);
 #else
@@ -875,5 +877,6 @@ BitmapBuffer * BitmapBuffer::load_stb(const char * filename)
 #endif
 
   stbi_image_free(img);
+  TRACE("BitmapBuffer::load_stb done");
   return bmp;
 }
