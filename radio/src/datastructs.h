@@ -483,7 +483,7 @@ PACK(struct FrSkyLineData {
   source_t sources[NUM_LINE_ITEMS];
 });
 
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
 PACK(struct TelemetryScriptData {
   char    file[LEN_SCRIPT_FILENAME];
   int16_t inputs[MAX_TELEM_SCRIPT_INPUTS];
@@ -493,7 +493,7 @@ PACK(struct TelemetryScriptData {
 union FrSkyScreenData {
   FrSkyBarData  bars[4];
   FrSkyLineData lines[4];
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
   TelemetryScriptData script;
 #endif
 };
@@ -723,7 +723,7 @@ typedef uint32_t swarnstate_t;
 typedef uint64_t swconfig_t;
 typedef uint64_t swarnstate_t;
 typedef uint32_t swarnenable_t;
-#elif defined(PCBTARANIS) || defined(PCBI8)
+#elif defined(PCBTARANIS)
 typedef uint16_t swconfig_t;
 typedef uint16_t swarnstate_t;
 typedef uint8_t swarnenable_t;
@@ -771,7 +771,7 @@ PACK(struct CustomScreenData {
   NOBACKUP(CustomScreenData screenData[MAX_CUSTOM_SCREENS]); \
   NOBACKUP(Topbar::PersistentData topbarData); \
   NOBACKUP(uint8_t view);
-#elif defined(PCBTARANIS) || defined(PCBI8)
+#elif defined(PCBTARANIS)
 #define CUSTOM_SCREENS_DATA \
   NOBACKUP(uint8_t view);
 #else
@@ -783,7 +783,7 @@ PACK(struct CustomScreenData {
   #define MODELDATA_EXTRA   NOBACKUP(uint8_t spare:3); NOBACKUP(uint8_t trainerMode:3); NOBACKUP(uint8_t potsWarnMode:2); ModuleData moduleData[NUM_MODULES+1]; NOBACKUP(ScriptData scriptsData[MAX_SCRIPTS]); NOBACKUP(char inputNames[MAX_INPUTS][LEN_INPUT_NAME]); NOBACKUP(uint8_t potsWarnEnabled); NOBACKUP(int8_t potsWarnPosition[NUM_POTS+NUM_SLIDERS]);
 #elif defined(PCBX10)
   #define MODELDATA_EXTRA   NOBACKUP(uint8_t spare:3); NOBACKUP(uint8_t trainerMode:3); NOBACKUP(uint8_t potsWarnMode:2); ModuleData moduleData[NUM_MODULES+1]; NOBACKUP(ScriptData scriptsData[MAX_SCRIPTS]); NOBACKUP(char inputNames[MAX_INPUTS][LEN_INPUT_NAME]); NOBACKUP(uint8_t potsWarnEnabled); NOBACKUP(int8_t potsWarnPosition[NUM_POTS+NUM_SLIDERS]); NOBACKUP(uint8_t potsWarnSpares[NUM_DUMMY_ANAS]);
-#elif defined(PCBTARANIS) || defined(PCBI8)
+#elif defined(PCBTARANIS)
   #define MODELDATA_EXTRA   uint8_t spare:3; uint8_t trainerMode:3; uint8_t potsWarnMode:2; ModuleData moduleData[NUM_MODULES+1]; ScriptData scriptsData[MAX_SCRIPTS]; char inputNames[MAX_INPUTS][LEN_INPUT_NAME]; uint8_t potsWarnEnabled; int8_t potsWarnPosition[NUM_POTS+NUM_SLIDERS];
 #elif defined(PCBSKY9X)
   #define MODELDATA_EXTRA   uint8_t spare:6; uint8_t potsWarnMode:2; ModuleData moduleData[NUM_MODULES+1]; char inputNames[MAX_INPUTS][LEN_INPUT_NAME]; uint8_t potsWarnEnabled; int8_t potsWarnPosition[NUM_POTS+NUM_SLIDERS]; uint8_t rxBattAlarms[2];
@@ -916,7 +916,7 @@ PACK(struct TrainerData {
     NOBACKUP(uint8_t spare:1); \
     NOBACKUP(uint8_t blOffBright:7); \
     NOBACKUP(char bluetoothName[LEN_BLUETOOTH_NAME]);
-#elif defined(PCBTARANIS) || defined(PCBI8) || defined(PCBNV14)
+#elif defined(PCBTARANIS) || defined(PCBNV14)
   #if defined(BLUETOOTH)
     #define BLUETOOTH_FIELDS \
       uint8_t spare; \
@@ -1102,7 +1102,7 @@ static inline void check_struct()
   CHKSIZE(CurveData, 4);
   CHKSIZE(CustomScreenData, 610);
   CHKSIZE(Topbar::PersistentData, 216);
-#elif defined(PCBI8) || defined(PCBNV14)
+#elif defined(PCBNV14)
   // TODO
 #elif defined(PCBSKY9X)
   CHKSIZE(MixData, 20);
@@ -1185,7 +1185,7 @@ static inline void check_struct()
 #elif defined(PCBX7)
   CHKSIZE(RadioData, 850);
   CHKSIZE(ModelData, 6025);
-#elif defined(PCBI8)
+#elif defined(PCBNV14)
 // TODO
 #elif defined(PCBX9E)
   CHKSIZE(RadioData, 952);

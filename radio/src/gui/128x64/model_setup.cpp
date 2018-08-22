@@ -53,7 +53,7 @@ enum MenuModelSetupItems {
   CASE_CPUARM(ITEM_MODEL_CHECKLIST_DISPLAY)
   ITEM_MODEL_THROTTLE_WARNING,
   ITEM_MODEL_SWITCHES_WARNING,
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
   ITEM_MODEL_POTS_WARNING,
 #endif
   ITEM_MODEL_BEEP_CENTER,
@@ -268,7 +268,7 @@ void menuModelSetup(event_t event)
   TIMERS_ROWS,
   0, 1, 0, 0, 0, 0, 0,
   CASE_CPUARM(LABEL(PreflightCheck)) CASE_CPUARM(0) 0, NUM_SWITCHES-1,
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
   NUM_POTS,
 #endif
   NUM_STICKS+NUM_POTS+NUM_SLIDERS+NUM_ROTARY_ENCODERS-1, 0,
@@ -551,7 +551,7 @@ void menuModelSetup(event_t event)
                 g_model.switchWarningEnable ^= (1 << menuHorizontalPosition);
                 storageDirty(EE_MODEL);
 #else
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
                 if (menuHorizontalPosition < NUM_SWITCHES) {
                   g_model.switchWarningEnable ^= (1 << (menuHorizontalPosition-1));
 #else
@@ -591,7 +591,7 @@ void menuModelSetup(event_t event)
           }
         }
         LcdFlags line = attr;
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
         int current = 0;
         for (int i=0; i<NUM_SWITCHES-1; i++) {
           if (SWITCH_WARNING_ALLOWED(i)) {
@@ -637,7 +637,7 @@ void menuModelSetup(event_t event)
 #endif
         break;
       }
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
       case ITEM_MODEL_POTS_WARNING:
         lcdDrawTextAlignedLeft(y, STR_POTWARNING);
         lcdDrawTextAtIndex(MODEL_SETUP_2ND_COLUMN, y, PSTR("\004""OFF\0""Man\0""Auto"), g_model.potsWarnMode, (menuHorizontalPosition == 0) ? attr : 0);

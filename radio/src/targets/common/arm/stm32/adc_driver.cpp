@@ -47,8 +47,6 @@
   const int8_t ana_direction[NUM_ANALOGS] = {1,-1,1,-1,  1,1,-1,  1,1,  1};
 #elif defined(PCBX7)
   const int8_t ana_direction[NUM_ANALOGS] = {-1,1,-1,1,  1,1,  1};
-#elif defined(PCBI8)
-  const int8_t ana_direction[NUM_ANALOGS] = {/*sticks*/1,1,1,1, /*pots*/1,1, /*switches*/1,1,1,1,1,1, /*batt*/1,1};
 #elif defined(PCBXLITE)
   const int8_t ana_direction[NUM_ANALOGS] = {1,-1,-1,1,  -1,1,  1};
 #elif defined(REV4a)
@@ -134,9 +132,6 @@ void adcInit()
   // TODO why do we invert POT1 and POT2 here?
   ADC_MAIN->SQR2 = (ADC_CHANNEL_BATT<<0); // conversions 7 and more
   ADC_MAIN->SQR3 = (ADC_CHANNEL_STICK_LH<<0) + (ADC_CHANNEL_STICK_LV<<5) + (ADC_CHANNEL_STICK_RV<<10) + (ADC_CHANNEL_STICK_RH<<15) + (ADC_CHANNEL_POT1<<25) + (ADC_CHANNEL_POT2<<20); // conversions 1 to 6
-#elif defined(PCBI8)
-  ADC_MAIN->SQR2 = (ADC_CHANNEL_SWE<<0) + (ADC_CHANNEL_SWF<<5) + (ADC_CHANNEL_LIBATT<<10) + (ADC_CHANNEL_DRYBATT<<15); // conversions 7 and more
-  ADC_MAIN->SQR3 = (ADC_CHANNEL_POT1<<0) + (ADC_CHANNEL_POT2<<5) + (ADC_CHANNEL_SWA<<10) + (ADC_CHANNEL_SWB<<15) + (ADC_CHANNEL_SWC<<20) + (ADC_CHANNEL_SWD<<25); // conversions 1 to 6
 #elif defined(PCBNV14)
   ADC_MAIN->SQR1 |= (ADC_CHANNEL_BATT <<0 );
   ADC_MAIN->SQR2 = (ADC_CHANNEL_SWA << 0) + (ADC_CHANNEL_SWC << 5) + (ADC_CHANNEL_SWE << 10) + (ADC_CHANNEL_SWF << 15) + (ADC_CHANNEL_SWG << 20) + (ADC_CHANNEL_SWH << 25); // conversions 7 and more

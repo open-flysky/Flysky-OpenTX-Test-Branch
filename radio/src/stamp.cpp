@@ -35,7 +35,7 @@
   const char date_stamp[] = DATE;
   const char time_stamp[] = TIME;
   const char eeprom_stamp[] = EEPROM_STR;
-#elif defined(PCBTARANIS) || defined(PCBI8)
+#elif defined(PCBTARANIS)
   const pm_char vers_stamp[] PROGMEM = "opentx-" FLAVOUR "\036VERS\037\033: " VERSION " (" GIT_STR ")" "\036DATE\037\033: " DATE " " TIME "\036EEPR\037\033: " EEPROM_STR;
 #else
   const pm_char vers_stamp[] PROGMEM = "opentx-" FLAVOUR "\036VERS\037\033: " VERSION "\036DATE\037\033: " DATE "\036TIME\037\033: " TIME "\036EEPR\037\033: " EEPROM_STR;

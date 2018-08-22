@@ -2578,7 +2578,7 @@ void opentxInit(OPENTX_INIT_ARGS)
     backlightOn();
   }
 
-#if NUM_PWMANALOGS > 0 && !defined(PCBI8)
+#if NUM_PWMANALOGS > 0
   pwmCheck();
 #endif
 

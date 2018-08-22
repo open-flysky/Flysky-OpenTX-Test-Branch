@@ -454,9 +454,6 @@
 #elif defined(PCBTARANIS)
   #define LEN_VKEYS                    "\005"
   #define TR_VKEYS                      "Menu\0""Exit\0""Enter""Page\0""Plus\0""Minus"
-#elif defined(PCBI8)
-  #define LEN_VKEYS                    "\005"
-  #define TR_VKEYS                     "K1\0  ""K2\0  ""Down\0""Up\0  ""Right""Left\0"
 #else
   #define LEN_VKEYS                    "\005"
   #define TR_VKEYS                     "Menu\0""Exit\0""Down\0""Up\0  ""Right""Left\0"
@@ -504,9 +501,6 @@
 #elif defined(PCBTARANIS)
   #define TR_POTS_VSRCRAW              "\310S1\0""\310S2\0""\310S3\0""\311LS\0""\311RS\0"
   #define TR_SW_VSRCRAW                "\312SA\0""\312SB\0""\312SC\0""\312SD\0""\312SE\0""\312SF\0""\312SG\0""\312SH\0"
-#elif defined(PCBI8)
-  #define TR_POTS_VSRCRAW              "\310S1\0""\310S2\0"
-  #define TR_SW_VSRCRAW                "\312SA\0""\312SB\0""\312SC\0""\312SD\0""\312SE\0""\312SF\0"
 #elif defined(PCBNV14)
   #define TR_POTS_VSRCRAW              "\310S1\0""\310S2\0"
   #define TR_SW_VSRCRAW                "\312SA\0""\312SB\0""\312SC\0""\312SD\0""\312SE\0""\312SF\0""\312SG\0""\312SH\0"
@@ -551,7 +545,7 @@
 
 #define TR_ON_ONE_SWITCHES             "ON\0""One"
 
-#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBI8) || defined(PCBNV14)
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
   // only special switches here
   #define TR_VSWITCHES                 "---" TR_TRIMS_SWITCHES TR_ON_ONE_SWITCHES
 #elif defined(PCBSKY9X)
@@ -634,16 +628,12 @@
 
 #if defined(PCBTARANIS) || defined(PCBHORUS)
   #define TR_ENTER                     "[ENTER]"
-#elif defined(PCBI8)
-  #define TR_ENTER                     "[K1:OK]"
 #else
   #define TR_ENTER                     "[MENU]"
 #endif
 
 #if defined(PCBHORUS)
   #define TR_EXIT                      "[RTN]"
-#elif defined(PCBI8)
-  #define TR_EXIT                      "[K2:EXIT]"
 #else
   #define TR_EXIT                      "[EXIT]"
 #endif
@@ -1143,9 +1133,6 @@
 #if defined(COLORLCD)
 #define TR_EEBACKUP                    "EEPROM backup"
 #define TR_FACTORYRESET                "Factory reset"
-#elif defined(PCBI8)
-#define TR_EEBACKUP                    TR("\001[K1 Long]: Backup", "\012[K1 Long]: EEPROM backup")
-#define TR_FACTORYRESET                TR("\001[DOWN Long]: Fact. reset", "\012[DOWN Long]: Factory reset")
 #else
 #define TR_EEBACKUP                    TR("\001[ENTER Long]: Backup", "\012[ENTER Long]: EEPROM backup")
 #define TR_FACTORYRESET                TR("\001[MENU Long]: Fact. reset", "\012[MENU Long]: Factory reset")

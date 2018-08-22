@@ -172,7 +172,7 @@ enum MenuModelTelemetryFrskyItems {
 #endif
 
 
-#if defined (PCBTARANIS) || defined(PCBI8)
+#if defined (PCBTARANIS)
   #define TELEMETRY_TYPE_SHOW_TELEMETRY  (! IS_INTERNAL_MODULE_ENABLED() && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_PPM) ? (uint8_t)0 : HIDDEN_ROW
 #elif defined (CPUARM)
   #define TELEMETRY_TYPE_SHOW_TELEMETRY  (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_PPM) ? (uint8_t)0 : HIDDEN_ROW
@@ -504,7 +504,7 @@ void menuModelTelemetryFrsky(event_t event)
   switch (event) {
     case EVT_KEY_BREAK(KEY_DOWN):
     case EVT_KEY_BREAK(KEY_UP):
-#if !defined(PCBX7) && !defined(PCBI8)
+#if !defined(PCBX7)
     case EVT_KEY_BREAK(KEY_LEFT):
     case EVT_KEY_BREAK(KEY_RIGHT):
 #endif

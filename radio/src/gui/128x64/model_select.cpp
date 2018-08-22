@@ -295,7 +295,6 @@ void menuModelSelect(event_t event)
     case EVT_ROTARY_LEFT:
     case EVT_ROTARY_RIGHT:
 #endif
-#if !defined(PCBI8)
     case EVT_KEY_FIRST(KEY_UP):
     case EVT_KEY_REPT(KEY_UP):
     case EVT_KEY_FIRST(KEY_DOWN):
@@ -321,7 +320,6 @@ void menuModelSelect(event_t event)
         s_copyTgtOfs = next_ofs;
       }
       break;
-#endif
   }
 
 #if defined(EEPROM_RLC) && defined(CPUARM)

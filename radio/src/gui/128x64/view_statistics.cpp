@@ -51,7 +51,7 @@ void menuStatisticsView(event_t event)
 
 #if defined(CPUARM)
     case EVT_KEY_LONG(KEY_MENU):      // historical
-#if !defined(PCBSKY9X) && !defined(PCBI8)
+#if !defined(PCBSKY9X)
     case EVT_KEY_LONG(KEY_ENTER):
 #endif
       g_eeGeneral.globalTimer = 0;

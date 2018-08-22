@@ -392,7 +392,7 @@ void adcPrepareBandgap()
 {
 }
 
-#if defined(PCBTARANIS) || defined(PCBI8)
+#if defined(PCBTARANIS)
 void lcdOff()
 {
 }

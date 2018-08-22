@@ -166,7 +166,7 @@ enum CurveType {
   #define MAX_CURVE_POINTS             (112-MAX_CURVES)
 #endif
 
-#if defined(PCBTARANIS) || defined(PCBSKY9X) || defined(PCBHORUS)|| defined(PCBI8) || defined(PCBNV14)
+#if defined(PCBTARANIS) || defined(PCBSKY9X) || defined(PCBHORUS) || defined(PCBNV14)
   #define NUM_MODULES                  2
 #else
   #define NUM_MODULES                  1
@@ -237,7 +237,7 @@ enum BeeperMode {
   e_mode_all
 };
 
-#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBI8) || defined(PCBNV14)
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
   enum ModuleIndex {
     INTERNAL_MODULE,
     EXTERNAL_MODULE,
@@ -273,7 +273,7 @@ enum BeeperMode {
   #define TRAINER_MODE_MAX()             HAS_WIRELESS_TRAINER_HARDWARE() ? TRAINER_MODE_MASTER_BATTERY_COMPARTMENT : TRAINER_MODE_MASTER_CPPM_EXTERNAL_MODULE
 #endif
 
-#if defined(PCBTARANIS) || defined(PCBHORUS)  || defined(PCBI8) || defined(PCBNV14)
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
 #define IS_INTERNAL_MODULE_ENABLED() (g_model.moduleData[INTERNAL_MODULE].type != MODULE_TYPE_NONE)
 #elif defined(PCBSKY9X)
   #define IS_INTERNAL_MODULE_ENABLED() (false)
@@ -821,7 +821,7 @@ enum MixSources {
   MIXSRC_SC,                        LUA_EXPORT("sc", "Switch C")
   MIXSRC_SD,                        LUA_EXPORT("sd", "Switch D")
   MIXSRC_LAST_SWITCH = MIXSRC_SD,
-#elif defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBI8) || defined(PCBNV14)
+#elif defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
   MIXSRC_SA = MIXSRC_FIRST_SWITCH,  LUA_EXPORT("sa", "Switch A")
   MIXSRC_SB,                        LUA_EXPORT("sb", "Switch B")
   MIXSRC_SC,                        LUA_EXPORT("sc", "Switch C")
