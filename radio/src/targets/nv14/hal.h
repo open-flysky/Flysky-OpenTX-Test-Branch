@@ -241,8 +241,10 @@
 #define BACKLIGHT_TIMER_FREQ            (PERI1_FREQUENCY * TIMER_MULT_APB1)
 
 // SD card
-#define SD_RCC_AHB1Periph               (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_DMA2)
+#define SD_RCC_AHB1Periph               (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOH | RCC_AHB1Periph_DMA2)
 #define SD_RCC_APB1Periph               0
+#define SD_PRESENT_GPIO                 GPIOH
+#define SD_PRESENT_GPIO_PIN             GPIO_Pin_10  // PH.10
 #define SD_SDIO_DMA_STREAM              DMA2_Stream3
 #define SD_SDIO_DMA_CHANNEL             DMA_Channel_4
 #define SD_SDIO_DMA_FLAG_FEIF           DMA_FLAG_FEIF3

@@ -59,6 +59,11 @@ void pwrInit()
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
   GPIO_InitStructure.GPIO_Pin = PWR_SWITCH_GPIO_PIN;
   GPIO_Init(PWR_GPIO, &GPIO_InitStructure);
+  
+  // Init SD-DETECT PIN
+  GPIO_ResetBits(SD_PRESENT_GPIO, SD_PRESENT_GPIO_PIN);
+  GPIO_InitStructure.GPIO_Pin = SD_PRESENT_GPIO_PIN;
+  GPIO_Init(SD_PRESENT_GPIO, &GPIO_InitStructure);
 
   // TODO move this elsewhere! (plus SD DETECT on other boards)
   // Init TRAINER DETECT PIN
