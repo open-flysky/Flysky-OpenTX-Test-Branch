@@ -36,6 +36,10 @@ class BaseNumberEdit : public Window {
     {
     }
 
+    void setLcdFlags(LcdFlags value){
+    	flags = value;
+    }
+
     void setMin(int32_t value)
     {
       vmin = value;
