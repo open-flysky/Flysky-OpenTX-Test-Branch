@@ -67,7 +67,7 @@
   #define NOBACKUP(...)                __VA_ARGS__
 #endif
 
-#if defined(PCBTARANIS) || defined(PCBHORUS)
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
 typedef uint16_t source_t;
 #else
 typedef uint8_t source_t;

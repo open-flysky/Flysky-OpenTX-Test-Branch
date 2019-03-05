@@ -83,7 +83,7 @@ void CurveEdit::onFocusLost()
 
 void CurveEdit::next()
 {
-  if (++current == points.size()) {
+  if (++current > points.size()) {
     current = 0;
   }
   update();
@@ -91,8 +91,8 @@ void CurveEdit::next()
 
 void CurveEdit::previous()
 {
-  if (current-- == 0) {
-    current = points.size() - 1;
+  if (--current< 0) {
+    current = points.size();
   }
   update();
 }

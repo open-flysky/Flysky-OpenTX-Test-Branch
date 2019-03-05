@@ -498,7 +498,10 @@ getvalue_t getValue(mixsrc_t i)
 #endif
   else return 0;
 }
-
+#define N_OFFSET           ((float)(-30.0))
+#define P_OFFSET           ((float)(30.0))
+#define P_PROPORTION       ((float)(3.0/10.0))    //must be<1
+#define N_PROPORTION       ((float)(3.0/10.0))    //must be<1
 void evalInputs(uint8_t mode)
 {
   BeepANACenter anaCenter = 0;
@@ -533,7 +536,32 @@ void evalInputs(uint8_t mode)
 
     if (v < -RESX) v = -RESX;
     if (v >  RESX) v =  RESX;
-
+    if(v>P_OFFSET)
+    {
+        // v = k * v + b;
+        // k = (P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024)
+        // b = 1024*(1-((P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024))
+        v = v*(1024.0-P_OFFSET * P_PROPORTION)/(1024.0-P_OFFSET)+1024*(1-((1024.0-(P_OFFSET * P_PROPORTION))/(1024.0-P_OFFSET)));
+    }
+    else if((v<=P_OFFSET) && (v > 0))
+    {
+        // v = k1 * v;
+        // k1 = P_PROPORTION
+        v = P_PROPORTION *v;
+    }
+    else if((v>=N_OFFSET) && (v < 0))
+    {
+        // v = k2 * v;
+        // k2 = N_PROPORTION
+        v = N_PROPORTION *v;
+    }
+    else if(v<N_OFFSET)
+    {
+        // v = k3 * v + b1;
+        //k3  = (1024.0-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET)
+        //b1 = 1024*(1-((1024-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET )))
+        v = v*(1024.0-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET)+1024*(1-((1024-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET )));
+    }
     if (g_model.throttleReversed && ch==THR_STICK) {
       v = -v;
     }
