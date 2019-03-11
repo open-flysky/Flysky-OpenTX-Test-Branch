@@ -119,8 +119,7 @@ void delay_self(int count)
        for (; count > 0; count--);
    }
 }
-
-
+extern void ChargeDisplay( void );
 void boardInit()
 {
 #if defined(SEMIHOSTING)
@@ -187,23 +186,31 @@ uint32_t pwr_press_time = 0;
 
   init2MhzTimer();
   init1msTimer();
-
+  //backlightInit();
+  //lcdInit();
   //power up delay
-  while (1) {
-    if (pwrPressed()) {
-      if (pwr_press_time == 0) {
-        pwr_press_time = get_tmr10ms();
+  while (1)
+  {
+    if (pwrPressed())
+    {
+      if (pwr_press_time == 0)
+      {
+         pwr_press_time = get_tmr10ms();
       }
-      else {
+      else
+      {
         if ((get_tmr10ms() - pwr_press_time) > POWER_ON_DELAY)
         {
-          pwrOn();
-          break;
+            pwrOn();
+            break;
         }
       }
     }
-    else {
-      pwr_press_time = 0;
+    else
+    {
+        pwr_press_time = 0;
+        //ChargeDisplay();
+        //backlightEnable(10);
     }
   }
 #endif

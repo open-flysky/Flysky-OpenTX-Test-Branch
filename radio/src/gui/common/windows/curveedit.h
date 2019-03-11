@@ -42,7 +42,7 @@ class CurveEdit: public Curve {
 
   protected:
     uint8_t index;
-    uint8_t current;
+    int8_t current;
     void next();
     void previous();
     void up();

@@ -170,6 +170,11 @@ uint8_t *  USBD_USR_DeviceDescriptor( uint8_t speed , uint16_t *length)
 
   *length = sizeof(USBD_DeviceDesc);
   memcpy(USBD_StrDesc, USBD_DeviceDesc, *length);
+  if(getSelectedUsbMode() == USB_SERIAL_MODE)
+  {
+      USBD_StrDesc[4] = DEVICE_CLASS_CDC;
+      USBD_StrDesc[5] = DEVICE_SUBCLASS_CDC;
+  }
   return USBD_StrDesc;
 }
 
