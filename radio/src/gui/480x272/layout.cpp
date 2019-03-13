@@ -65,6 +65,13 @@ void loadCustomScreens()
   if (customScreens[0] == NULL && getRegisteredLayouts().size()) {
     customScreens[0] = getRegisteredLayouts().front()->create(&g_model.screenData[0].layoutData);
   }
+#if defined(WIDGETS_MISSING)
+  if(strlen(g_model.screenData[0].layoutData.zones[0].widgetName) == 0) {
+   //widgets setup not supprterd force default
+    extern const WidgetFactory * defaultWidget;
+    customScreens[0]->createWidget(0, defaultWidget);
+  }
 
+#endif	
   topbar->load();
 }

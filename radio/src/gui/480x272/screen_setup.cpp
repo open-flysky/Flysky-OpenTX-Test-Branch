@@ -67,8 +67,14 @@ void ScreenSetupPage::build(Window * window)
     auto it = getRegisteredLayouts().begin();
     std::advance(it, newValue);
     auto factory = *it;
-    customScreens[index] = factory->create(&g_model.screenData[index].layoutData);
     strncpy(g_model.screenData[index].layoutName, factory->getName(), LAYOUT_NAME_LEN);
+	customScreens[index] = factory->create(&g_model.screenData[index].layoutData);
+#if defined(WIDGETS_MISSING)
+	//widgets setup not supprterd force default
+    extern const WidgetFactory * defaultWidget;
+    customScreens[index]->createWidget(0, defaultWidget);
+#endif	
+	
     SET_DIRTY();
     rebuild(window);
     layoutChoice->setFocus();
@@ -80,7 +86,7 @@ void ScreenSetupPage::build(Window * window)
     (*it)->drawThumb(dc, 2, 2, LINE_COLOR);
   });
   grid.nextLine(35);
-
+#if !defined(WIDGETS_MISSING)
   // Setup widgets button
   new TextButton(window, grid.getFieldSlot(), STR_SETUP_WIDGETS,
                  [=]() -> uint8_t {
@@ -88,7 +94,7 @@ void ScreenSetupPage::build(Window * window)
                    return 0;
                  });
   grid.nextLine();
-
+#endif
   // Layout options
   const ZoneOption * options = layout->getFactory()->getOptions();
   int optionsCount = getOptionsCount(options);

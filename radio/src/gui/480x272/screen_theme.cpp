@@ -62,7 +62,7 @@ Window * createOptionEdit(Window * parent, const rect_t &rect, const ZoneOption 
                           [=](std::string newValue) {
                             strncpy(value->stringValue, newValue.c_str(), sizeof(value->stringValue));
                             SET_DIRTY();
-                          });
+                          }, false);
   }
   else if (option->type == ZoneOption::TextSize) {
     return new Choice(parent, rect, "\010StandardTiny\0   Small\0  Mid\0    Double", 0, 4, GET_SET_DEFAULT(value->unsignedValue));

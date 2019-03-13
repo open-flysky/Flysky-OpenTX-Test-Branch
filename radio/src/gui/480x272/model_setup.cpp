@@ -516,14 +516,14 @@ void ModelSetupPage::build(Window * window)
 
   // Bitmap
   new StaticText(window, grid.getLabelSlot(), STR_BITMAP);
-  new FileChoice(window, grid.getFieldSlot(), BITMAPS_PATH, BITMAPS_EXT, sizeof(g_model.header.bitmap) - LEN_BITMAPS_EXT,
+  new FileChoice(window, grid.getFieldSlot(), BITMAPS_PATH, BITMAPS_EXT, sizeof(g_model.header.bitmap),
                  [=]() {
                    return std::string(g_model.header.bitmap, ZLEN(g_model.header.bitmap));
                  },
                  [=](std::string newValue) {
                    strncpy(g_model.header.bitmap, newValue.c_str(), sizeof(g_model.header.bitmap));
                    SET_DIRTY();
-                 });
+                 }, false);
   grid.nextLine();
 
   for (uint8_t i = 0; i < TIMERS; i++) {
