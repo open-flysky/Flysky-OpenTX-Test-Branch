@@ -520,7 +520,7 @@ void BitmapBuffer::drawSizedText(coord_t x, coord_t y, const char * s, uint8_t l
         y += height;
     }
     else if (c == 1) {
-      INCREMENT_POS(1);
+      INCREMENT_POS(8);
     }
     else {
       INCREMENT_POS(2*(c-1));

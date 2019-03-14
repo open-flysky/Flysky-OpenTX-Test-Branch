@@ -1279,7 +1279,7 @@
 #elif defined(PCBFLYSKY)
   #define TR_ABOUT_HARDWARE_1          "FlySky"
   #define TR_ABOUT_HARDWARE_2          TR("Hardware design/producer", "Hardware designer/producer")
-  #define TR_ABOUT_HARDWARE_3          ""
+  #define TR_ABOUT_HARDWARE_3          "Firmware contributor"
 #else
   #define TR_ABOUT_HARDWARE_1          "Brent Nelson"
   #define TR_ABOUT_HARDWARE_2          "Sky9x designer/producer"
