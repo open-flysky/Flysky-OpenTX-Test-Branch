@@ -26,7 +26,7 @@
 
 class FileChoice: public Window {
   public:
-    FileChoice(Window * parent, const rect_t & rect, std::string folder, const char * extension, int maxlen, std::function<std::string()> getValue, std::function<void(std::string)> setValue);
+    FileChoice(Window * parent, const rect_t & rect, std::string folder, const char * extension, int maxlen, std::function<std::string()> getValue, std::function<void(std::string)> setValue, bool skipExtension);
 
 #if defined(DEBUG_WINDOWS)
     std::string getName() override
@@ -45,6 +45,7 @@ class FileChoice: public Window {
     int maxlen;
     std::function<std::string()> getValue;
     std::function<void(std::string)> setValue;
+	bool skipExtension;
 };
 
 #endif // _FILECHOICE_H_

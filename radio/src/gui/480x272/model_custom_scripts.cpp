@@ -108,7 +108,7 @@ class CostomScriptsEditWindow: public Page {
                           LUA_LOAD_MODEL_SCRIPT(cs);
                           refreshDelay = 4;
                        }
-                     });
+                     }, true);
       grid.nextLine();
 
       new StaticText(window, grid.getLabelSlot(), TR_NAME);

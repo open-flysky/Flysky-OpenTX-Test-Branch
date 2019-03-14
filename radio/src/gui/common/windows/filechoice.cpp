@@ -29,13 +29,14 @@ const uint8_t LBM_FOLDER[] = {
 
 extern bool compare_nocase (const std::string& first, const std::string& second);
 
-FileChoice::FileChoice(Window * parent, const rect_t & rect, std::string folder, const char * extension, int maxlen, std::function<std::string()> getValue, std::function<void(std::string)> setValue):
+FileChoice::FileChoice(Window * parent, const rect_t & rect, std::string folder, const char * extension, int maxlen, std::function<std::string()> getValue, std::function<void(std::string)> setValue, bool skipExtension):
   Window(parent, rect),
   folder(std::move(folder)),
   extension(extension),
   maxlen(maxlen),
   getValue(std::move(getValue)),
-  setValue(std::move(setValue))
+  setValue(std::move(setValue)),
+  skipExtension(skipExtension)
 {
 }
 
@@ -75,12 +76,11 @@ bool FileChoice::onTouchEnd(coord_t, coord_t)
         continue; // skip hidden files
       if (fno.fattrib & AM_SYS)
         continue; // skip system files
-
       fnExt = getFileExtension(fno.fname, 0, 0, &fnLen, &extLen);
-      fnLen -= extLen;
-
+	  if(skipExtension) fnLen -= extLen;
       if (!fnLen || fnLen > maxlen)
         continue; // wrong size
+       
       if (extension && !isExtensionMatching(fnExt, extension))
         continue; // wrong extension
 
