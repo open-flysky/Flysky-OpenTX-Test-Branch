@@ -64,9 +64,6 @@ void pwrInit()
   // Init TRAINER DETECT PIN
   // GPIO_InitStructure.GPIO_Pin = TRAINER_DETECT_GPIO_PIN;
   // GPIO_Init(TRAINER_DETECT_GPIO, &GPIO_InitStructure);
-#if !defined (FLYSKY_STARTUP_DELAY)
-  pwrOn();
-#endif
 }
 
 void pwrOn()

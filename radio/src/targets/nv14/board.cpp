@@ -67,7 +67,7 @@ void interrupt1ms()
   static uint8_t pre_scale;       // Used to get 10 Hz counter
 
   ++pre_scale;
-  
+
 #if defined(DEBUG) && !defined(SIMU)
   debugCounter1ms++;
 #endif
@@ -119,7 +119,8 @@ void delay_self(int count)
        for (; count > 0; count--);
    }
 }
-extern void ChargeDisplay( void );
+
+
 void boardInit()
 {
 #if defined(SEMIHOSTING)
@@ -179,73 +180,43 @@ void boardInit()
   TRACE("RCC->CSR = %08x", RCC->CSR);
 
   pwrInit();
-  keysInit();
-
-#if !defined(SIMU) && defined (FLYSKY_STARTUP_DELAY)
-uint32_t pwr_press_time = 0;
-
+  battery_charge_init();
   init2MhzTimer();
   init1msTimer();
-  //backlightInit();
-  //lcdInit();
-  //power up delay
-  while (1)
+
+  uint32_t pwr_press_time = 0;
+  while (powerupState == BOARD_POWER_OFF)
   {
     if (pwrPressed())
     {
-      if (pwr_press_time == 0)
-      {
-         pwr_press_time = get_tmr10ms();
-      }
-      else
-      {
-        if ((get_tmr10ms() - pwr_press_time) > POWER_ON_DELAY)
-        {
-            pwrOn();
-            break;
-        }
-      }
+      if (pwr_press_time == 0)  pwr_press_time = get_tmr10ms();
+      if ((get_tmr10ms() - pwr_press_time) > POWER_ON_DELAY) pwrOn();
     }
-    else
-    {
-        pwr_press_time = 0;
-        //ChargeDisplay();
-        //backlightEnable(10);
-    }
+    else pwr_press_time = 0;
+    handle_battery_charge();
   }
-#endif
+  keysInit();
   audioInit();
-  // we need to initialize g_FATFS_Obj here, because it is in .ram section (because of DMA access) 
+  // we need to initialize g_FATFS_Obj here, because it is in .ram section (because of DMA access)
   // and this section is un-initialized
   memset(&g_FATFS_Obj, 0, sizeof(g_FATFS_Obj));
-
-  battery_charge_init();
   monitorInit();
   adcInit();
-
   backlightInit();
   lcdInit();
 #if defined(FLYSKY_HALL_STICKS)
   hall_stick_init(FLYSKY_HALL_BAUDRATE);
 #endif
-
-#if !defined (FLYSKY_STARTUP_DELAY)
-  init2MhzTimer();
-  init1msTimer();
-#endif
   usbInit();
   hapticInit();
   TouchInit();
-
   powerupState = BOARD_STARTED;
-
-
 #if defined(DEBUG)
   DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP|DBGMCU_TIM1_STOP|DBGMCU_TIM2_STOP|DBGMCU_TIM3_STOP|DBGMCU_TIM4_STOP|DBGMCU_TIM5_STOP|DBGMCU_TIM6_STOP|DBGMCU_TIM7_STOP|DBGMCU_TIM8_STOP|DBGMCU_TIM9_STOP|DBGMCU_TIM10_STOP|DBGMCU_TIM11_STOP|DBGMCU_TIM12_STOP|DBGMCU_TIM13_STOP|DBGMCU_TIM14_STOP, ENABLE);
 #endif
-
 #endif
 }
+
 
 void boardOff()
 {
@@ -294,4 +265,3 @@ void checkTrainerSettings()
     }
   }
 }
-

@@ -758,6 +758,8 @@
 #define TR_ALARMS_LABEL                "Alarms"
 #define TR_BATTERY_RANGE               TR("Battery range", "Battery meter range")
 #define TR_BATTERYWARNING              INDENT "Battery low"
+#define TR_BATTERYCHARGING			   "Charging..."
+#define TR_BATTERYFULL				   "Battery full"
 #define TR_INACTIVITYALARM             INDENT "Inactivity"
 #define TR_MEMORYWARNING               INDENT "Memory low"
 #define TR_ALARMWARNING                INDENT "Sound off"

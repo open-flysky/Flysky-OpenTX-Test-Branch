@@ -2813,25 +2813,6 @@ uint8_t UsbModeSelect( uint32_t index )
     return UsbModeTmp;
 }
 
-void ChargeDisplay( void )
-{
-
-    static char Count = 0;
-    const  char *Str = "Charging...";
-    if(!Count)
-    {
-        Count = 1;
-        lcd->setOffset(0, 0);
-        lcd->clearClippingRect();
-        lcdDrawBlackOverlay();
-        lcd->drawFilledRect(10, 30, 30, 30, SOLID, TITLE_BGCOLOR);
-        lcd->drawSizedText(80, 205, Str, 11, MENU_TITLE_COLOR);
-        // force a refresh if the user stops the animation 13632925402
-        mainWindow.invalidate();
-    }
-
-}
-
 #if defined(PWR_BUTTON_PRESS)
 uint32_t pwr_press_time = 0;
 
