@@ -83,7 +83,7 @@ void interrupt1ms()
   if (pre_scale == 10) {
     pre_scale = 0;
 #if !defined(SIMU)
-    if (powerupState == BOARD_STARTED) {
+    if (boardState == BOARD_STARTED) {
         TouchDriver();
     #if defined (FLYSKY_HALL_STICKS)
         hall_stick_loop();
@@ -185,7 +185,7 @@ void boardInit()
   init1msTimer();
 
   uint32_t pwr_press_time = 0;
-  while (powerupState == BOARD_POWER_OFF)
+  while (boardState == BOARD_POWER_OFF)
   {
     if (pwrPressed())
     {
@@ -195,6 +195,7 @@ void boardInit()
     else pwr_press_time = 0;
     handle_battery_charge();
   }
+
   keysInit();
   audioInit();
   // we need to initialize g_FATFS_Obj here, because it is in .ram section (because of DMA access)
@@ -210,7 +211,7 @@ void boardInit()
   usbInit();
   hapticInit();
   TouchInit();
-  powerupState = BOARD_STARTED;
+  boardState = BOARD_STARTED;
 #if defined(DEBUG)
   DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP|DBGMCU_TIM1_STOP|DBGMCU_TIM2_STOP|DBGMCU_TIM3_STOP|DBGMCU_TIM4_STOP|DBGMCU_TIM5_STOP|DBGMCU_TIM6_STOP|DBGMCU_TIM7_STOP|DBGMCU_TIM8_STOP|DBGMCU_TIM9_STOP|DBGMCU_TIM10_STOP|DBGMCU_TIM11_STOP|DBGMCU_TIM12_STOP|DBGMCU_TIM13_STOP|DBGMCU_TIM14_STOP, ENABLE);
 #endif

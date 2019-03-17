@@ -299,9 +299,10 @@ enum EnumSwitchesPositions
 
 enum EnumPowerupState
 {
-  BOARD_POWER_OFF,
-  BOARD_POWER_ON,
-  BOARD_STARTED,
+  BOARD_POWER_OFF = 0xCAFEDEAD,
+  BOARD_POWER_ON = 0xDEADBEEF,
+  BOARD_STARTED = 0xBAADF00D,
+  BOARD_REBOOT = 0xC00010FF,
 };
 
 
@@ -322,15 +323,9 @@ uint32_t readTrims(void);
 // WDT driver
 #define WDTO_500MS                      500
 extern uint32_t powerupReason;
-#if defined (PCBFLYSKY)
-extern uint32_t powerupState;
-extern uint32_t shutdownflag;
-#endif
+extern uint32_t boardState;
 
-#define SHUTDOWN_REQUEST                0xDEADBEEF
-#define NO_SHUTDOWN_REQUEST             ~SHUTDOWN_REQUEST
 #define DIRTY_SHUTDOWN                  0xCAFEDEAD
-#define NORMAL_POWER_OFF                ~DIRTY_SHUTDOWN
 
 #define wdt_disable()
 void watchdogInit(unsigned int duration);
@@ -437,7 +432,7 @@ uint32_t pwrPressedDuration(void);
 #if defined(SIMU) || defined(NO_UNEXPECTED_SHUTDOWN)
   #define UNEXPECTED_SHUTDOWN()         (false)
 #else
-  #define UNEXPECTED_SHUTDOWN()        ((shutdownflag != 0x12345678 )&&((powerupReason == DIRTY_SHUTDOWN) || WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()))
+  #define UNEXPECTED_SHUTDOWN()        (powerupReason == DIRTY_SHUTDOWN)
 #endif
 
 // LCD driver

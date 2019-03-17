@@ -21,13 +21,8 @@
 #include "pwr.h"
 #include "board.h"
 
-uint32_t shutdownRequest;          // Stores intentional shutdown to avoid reboot loop
-uint32_t shutdownReason;           // Used for detecting unexpected reboots regardless of reason
 uint32_t powerupReason __NOINIT;   // Stores power up reason beyond initialization for emergency mode activation
-#if defined (PCBFLYSKY)
-uint32_t powerupState = 0;
-uint32_t shutdownflag __NOINIT;
-#endif
+uint32_t boardState __NOINIT;
 
 void pwrInit()
 {
@@ -83,19 +78,14 @@ void pwrOn()
 
   GPIO_SetBits(PWR_GPIO, PWR_ON_GPIO_PIN);
 
-  shutdownRequest = NO_SHUTDOWN_REQUEST;
-  shutdownReason = DIRTY_SHUTDOWN;
-  powerupState = BOARD_POWER_ON;
+  boardState = BOARD_POWER_ON;
 }
 
 void pwrOff()
 {
   // Shutdown the Haptic
   hapticDone();
-
-  shutdownRequest = SHUTDOWN_REQUEST;
-  shutdownReason = NORMAL_POWER_OFF;
-  powerupState = BOARD_POWER_OFF;
+  boardState = BOARD_POWER_OFF;
   GPIO_ResetBits(PWR_GPIO, PWR_ON_GPIO_PIN);
 }
 
@@ -113,29 +103,12 @@ void pwrResetHandler()
   __ASM volatile ("nop");
   __ASM volatile ("nop");
 
-  // We get here whether we are powering up normally, we had an unexpected reboot or we have just powered down normally.
-  // We want:
-  // - In the 2nd case, to power ON as soon as possible if an unexpected reboot happened
-  //   (we get there running on remaining capacitor charge, soft power having been cut by the RESET).
-  // - In the 3rd case, NOT power on as that would prevent from turning the system off.
-  // - The 1st case does not need to be handled here, but will be as a result of the handling for the 3rd case, see below.
-  //
-  // shutdownRequest is used to handle the 3rd case. If we really powered down on purpose this will still be set to SHUTDOWN_REQUEST
-  // as we left it in pwrOff(). If however we had an unexpected reboot, it would be set to NO_SHUTDOWN_REQUEST as we set it in pwrOn().
-  // Any other value (e.g. resulting from data corruption) would also keep power on for safety, so this variable can NOT be used
-  // to detect an unexpected reboot (on a normal power on the contents of the variable are random).
-  //
-  // shutdownReason is used to differentiate between an unexpected reboot and a normal power on. We set it to DIRTY_SHUTDOWN in pwrOn()
-  // in anticipation of a potential reboot. Should there be one the value should be preserved and signal below that we rebooted unexpectedly.
-  // If it is NOT set to DIRTY_SHUTDOWN we likely had a normal boot and its contents are random. Due to the need to initialize it to detect a
-  // potential failure ASAP we cannot use it to determine in the firmware why we got there, it has to be buffered.
-  //
-  // powerupReason is there to cater for that, and is what is used in the firmware to decide whether we have to enter emergency mode.
-  // This variable needs to be in a RAM section that is not initialized or zeroed, since once we exit this pwrResetHandler() function the
-  // C runtime would otherwise overwrite it during program init.
-  // Only for X12, X10 power circuit causes inability to shut down on some samples.
-
-   if (WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()) {
+  if (boardState != BOARD_POWER_OFF) {
+    powerupReason = boardState != BOARD_REBOOT && WAS_RESET_BY_WATCHDOG_OR_SOFTWARE() ? DIRTY_SHUTDOWN : ~DIRTY_SHUTDOWN;
+    RCC->CSR |= RCC_CSR_RMVF; //clear all flags
     pwrOn();
+  }
+  else {
+	  powerupReason = ~DIRTY_SHUTDOWN;
   }
 }

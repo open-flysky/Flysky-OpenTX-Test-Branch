@@ -272,9 +272,6 @@ TASK_FUNCTION(menusTask)
   drawSleepBitmap();
   opentxClose();
   CoTickDelay(100);
-#if !defined(SIMU)
-  shutdownflag = 0x12345678;
-#endif
   boardOff(); // Only turn power off if necessary
  #if defined(PCBFLYSKY) && !defined (SIMU)
   haptic.event( AU_ERROR );

@@ -67,16 +67,21 @@ swsrc_t editSwitch(coord_t x, coord_t y, swsrc_t value, LcdFlags attr, event_t e
 
 void drawFatalErrorScreen(const char * message)
 {
-  lcdClear();
-  lcdDrawText(LCD_W/2, LCD_H/2-20, message, DBLSIZE|CENTERED|TEXT_BGCOLOR);
-  lcdRefresh();
+  static uint32_t updateTime = 0;
+  if(updateTime == 0 || ((get_tmr10ms() - updateTime) >= 10)) {
+    updateTime = get_tmr10ms();
+    BACKLIGHT_ENABLE();
+    lcdNextLayer();
+    lcd->clear();
+    lcd->drawSizedText(LCD_W/2, LCD_H/2-20, message, strlen(message), DBLSIZE|CENTERED|TEXT_BGCOLOR);
+    lcdRefresh();
+  }
 }
 
 void runFatalErrorScreen(const char * message)
 {
   while (1) {
     drawFatalErrorScreen(message);
-    backlightEnable(100);
     uint8_t refresh = false;
     while (1) {
       uint32_t pwr_check = pwrCheck();
