@@ -64,20 +64,13 @@ void pwrInit()
   // Init TRAINER DETECT PIN
   // GPIO_InitStructure.GPIO_Pin = TRAINER_DETECT_GPIO_PIN;
   // GPIO_Init(TRAINER_DETECT_GPIO, &GPIO_InitStructure);
+
+  boardState = BOARD_POWER_OFF;
 }
 
 void pwrOn()
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
-  GPIO_InitStructure.GPIO_Pin = PWR_ON_GPIO_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_Init(PWR_GPIO, &GPIO_InitStructure);
-
   GPIO_SetBits(PWR_GPIO, PWR_ON_GPIO_PIN);
-
   boardState = BOARD_POWER_ON;
 }
 
@@ -106,7 +99,6 @@ void pwrResetHandler()
   if (boardState != BOARD_POWER_OFF) {
     powerupReason = boardState != BOARD_REBOOT && WAS_RESET_BY_WATCHDOG_OR_SOFTWARE() ? DIRTY_SHUTDOWN : ~DIRTY_SHUTDOWN;
     RCC->CSR |= RCC_CSR_RMVF; //clear all flags
-    pwrOn();
   }
   else {
 	  powerupReason = ~DIRTY_SHUTDOWN;

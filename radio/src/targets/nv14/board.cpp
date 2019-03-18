@@ -185,6 +185,8 @@ void boardInit()
   init1msTimer();
 
   uint32_t pwr_press_time = 0;
+  if(UNEXPECTED_SHUTDOWN()) pwrOn();
+
   while (boardState == BOARD_POWER_OFF)
   {
     if (pwrPressed())

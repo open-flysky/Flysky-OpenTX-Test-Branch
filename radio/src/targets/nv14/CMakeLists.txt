@@ -59,7 +59,6 @@ add_definitions(-DWIDGETS_MISSING)
 
 add_definitions(-DFLYSKY_HALL_STICKS_REVERSE)
 #add_definitions(-DFLYSKY_AUTO_POWER_DOWN)
-add_definitions(-DFLYSKY_STARTUP_DELAY)
 
 
 
