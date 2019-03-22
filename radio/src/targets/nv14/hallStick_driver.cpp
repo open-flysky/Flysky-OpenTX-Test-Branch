@@ -228,7 +228,7 @@ void reset_hall_stick( void )
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xD1;
     HallCmd[2] = 0x01;
     HallCmd[3] = 0x01;
@@ -245,7 +245,7 @@ void get_hall_config( void )
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xD1;
     HallCmd[2] = 0x01;
     HallCmd[3] = 0x00;
@@ -262,7 +262,7 @@ void get_hall_firmware_info()
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xA2;
     HallCmd[2] = 0x00;
 
@@ -278,7 +278,7 @@ void hallStickUpdatefwEnd( void )
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xA2;
     HallCmd[2] = 0x01;
     HallCmd[3] = 0x07;
@@ -589,6 +589,7 @@ void hall_stick_loop(void)
             case TRANSFER_DIR_HALLSTICK:
                 HallProtocolCount++;
                 uint8_t *pt = (uint8_t*)&HallProtocol;
+                //HallProtocol.head = HALL_PROTOLO_HEAD;
                 //TRACE("HALL: %02X %02X %02X ...%04X", pt[0], pt[1], pt[2], HallProtocol.checkSum);
                 pt[HallProtocol.length + 3] = HallProtocol.checkSum & 0xFF;
                 pt[HallProtocol.length + 4] = HallProtocol.checkSum >> 8;

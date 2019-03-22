@@ -473,6 +473,7 @@ void usbSetFrameTransmit(uint8_t packetID, uint8_t *dataBuf, uint32_t nBytes)
 {
     // send to host via usb
     uint8_t *pt = (uint8_t*)&rfProtocolRx;
+   // rfProtocolRx.head = HALL_PROTOLO_HEAD;
     rfProtocolRx.hallID.hall_Id.packetID = packetID;//0x08;
     rfProtocolRx.hallID.hall_Id.senderID = 0x03;
     rfProtocolRx.hallID.hall_Id.receiverID = 0x02;
@@ -1002,6 +1003,7 @@ void checkFlySkyFeedback(uint8_t port)
             rfRxCount++;
             rfProtocolRx.msg_OK = 0;
             uint8_t *pt = (uint8_t*)&rfProtocolRx;
+            //rfProtocolRx.head = HALL_PROTOLO_HEAD;
             pt[rfProtocolRx.length + 3] = rfProtocolRx.checkSum & 0xFF;
             pt[rfProtocolRx.length + 4] = rfProtocolRx.checkSum >> 8;
 
@@ -1184,7 +1186,7 @@ void setupPulsesFlySky(uint8_t port)
 void usbDownloadTransmit(uint8_t *buffer, uint32_t size)
 {
     if (USB_SERIAL_MODE != getSelectedUsbMode()) return;
-
+    buffer[0] = HALL_PROTOLO_HEAD;
     for (int idx = 0; idx < size; idx++)
     {
         usbSerialPutc(buffer[idx]);

@@ -536,12 +536,16 @@ void evalInputs(uint8_t mode)
 
     if (v < -RESX) v = -RESX;
     if (v >  RESX) v =  RESX;
+ #if 1
     if(v>P_OFFSET)
     {
         // v = k * v + b;
         // k = (P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024)
         // b = 1024*(1-((P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024))
-        v = v*(1024.0-P_OFFSET * P_PROPORTION)/(1024.0-P_OFFSET)+1024*(1-((1024.0-(P_OFFSET * P_PROPORTION))/(1024.0-P_OFFSET)));
+        const static float multi_p = P_OFFSET * P_PROPORTION;//9
+        const static float sub_p = 1024.0-P_OFFSET;//1994
+        v = v*(1024.0-multi_p)/(sub_p)+1024*(1-((1024.0-multi_p)/(sub_p)));
+
     }
     else if((v<=P_OFFSET) && (v > 0))
     {
@@ -560,8 +564,11 @@ void evalInputs(uint8_t mode)
         // v = k3 * v + b1;
         //k3  = (1024.0-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET)
         //b1 = 1024*(1-((1024-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET )))
-        v = v*(1024.0-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET)+1024*(1-((1024-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET )));
+        const static float multi_n = N_OFFSET * N_PROPORTION;// -9
+        const static float sub_n = 1024.0+N_OFFSET;// 1994
+        v = v*(1024.0+multi_n)/(sub_n)+1024*(1-((1024.0+multi_n)/(sub_n)));
     }
+#endif
     if (g_model.throttleReversed && ch==THR_STICK) {
       v = -v;
     }
