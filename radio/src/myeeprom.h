@@ -437,7 +437,7 @@ enum SwashType {
 #endif
 
 #if defined(CPUARM) && !defined(PCBSKY9X)
-#define TIMER_COUNTDOWN_START(x)       (g_model.timers[x].countdownStart > 0 ? 5 : 10 - g_model.timers[x].countdownStart * 10)
+#define TIMER_COUNTDOWN_START(x)       ((g_model.timers[x].countdownStart+2) > 0 ? (g_model.timers[x].countdownStart+2) * 10 : 5)
 #else
 #define TIMER_COUNTDOWN_START(x)       10
 #endif

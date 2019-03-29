@@ -380,7 +380,7 @@ exit: parse_ps_state = 0;
     return ;
 }
 
-
+#define ERROR_OFFSET      10
 void convert_hall_to_adcVaule( void )
 {
     uint16_t value;
@@ -389,7 +389,7 @@ void convert_hall_to_adcVaule( void )
     {
         if (Channel.channel[i] < StickCallbration[i].mid)
         {
-            value = StickCallbration[i].mid - StickCallbration[i].min;
+            value = StickCallbration[i].mid - (StickCallbration[i].min+ERROR_OFFSET);
             value = ( MIDDLE_ADC_CHANNLE_VALUE * (StickCallbration[i].mid - Channel.channel[i] ) ) / ( value );
 
             if (value >= MIDDLE_ADC_CHANNLE_VALUE ) {
@@ -400,7 +400,7 @@ void convert_hall_to_adcVaule( void )
         }
         else
         {
-            value = StickCallbration[i].max - StickCallbration[i].mid;
+            value = (StickCallbration[i].max - ERROR_OFFSET) - StickCallbration[i].mid;
 
             value = ( MIDDLE_ADC_CHANNLE_VALUE * (Channel.channel[i] - StickCallbration[i].mid ) ) / (value );
 
