@@ -29,7 +29,6 @@ class NumberEdit;
 class ScreenSetupPage: public PageTab {
   public:
     ScreenSetupPage(uint8_t index);
-
     void build(Window * window) override;
 
   protected:

@@ -410,7 +410,7 @@ uint16_t getBatteryVoltage();   // returns current battery voltage in 10mV steps
 
 #define BATTERY_WARN                  37 // 3.7V
 #define BATTERY_MIN                   36 // 3.6V
-#define BATTERY_MAX                   41 // 4.1V
+#define BATTERY_MAX                   42 // 4.1V
 
 #if defined(__cplusplus) && !defined(SIMU)
 extern "C" {

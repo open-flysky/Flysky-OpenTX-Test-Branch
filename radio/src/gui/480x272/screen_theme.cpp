@@ -43,6 +43,24 @@ ScreenThemePage::ScreenThemePage() :
 {
 }
 
+
+static ZoneOptionValue ThemeValue[2];
+ScreenThemePage::~ScreenThemePage()
+{
+    const ZoneOption * options = theme->getOptions();
+    int optionsCount = getOptionsCount(options);
+    for (int index = 0; index < optionsCount; index++)
+    {
+       const ZoneOption * option = &options[index];
+       ZoneOptionValue * value = theme->getOptionValue(index);
+       if(ThemeValue[index].unsignedValue != value->unsignedValue)
+       {
+           theme->updatecolor();
+           break;
+       }
+    }
+}
+
 Window * createOptionEdit(Window * parent, const rect_t &rect, const ZoneOption * option, ZoneOptionValue * value)
 {
   if (option->type == ZoneOption::Bool) {
@@ -78,6 +96,7 @@ Window * createOptionEdit(Window * parent, const rect_t &rect, const ZoneOption 
     return new SourceChoice(parent, rect, 1, MIXSRC_LAST_TELEM, GET_SET_DEFAULT(value->unsignedValue));
   }
   else if (option->type == ZoneOption::Color) {
+      lcdSetColor(value->unsignedValue);
     return new ColorEdit(parent, rect, GET_SET_DEFAULT(value->unsignedValue));
   }
 
@@ -109,13 +128,12 @@ void ScreenThemePage::build(Window * window)
   for (int index = 0; index < optionsCount; index++) {
     const ZoneOption * option = &options[index];
     ZoneOptionValue * value = theme->getOptionValue(index);
-
+    ThemeValue[index] = g_eeGeneral.themeData.options[index];
     new StaticText(window, grid.getLabelSlot(), option->name);
     createOptionEdit(window, grid.getFieldSlot(), option, value);
-    // TODO handler => theme->update();
+    //theme->update();
     grid.nextLine();
   }
-
   // Topbar customization
   new TextButton(window, grid.getLineSlot(), STR_TOP_BAR,
                  []() -> uint8_t {
@@ -123,8 +141,6 @@ void ScreenThemePage::build(Window * window)
                    return 0;
                  });
   grid.nextLine();
-
-
 
   window->setInnerHeight(grid.getWindowHeight());
 }

@@ -69,8 +69,26 @@ void drawTopBar()
     lcdDrawSolidFilledRect(LCD_W-90 + i * 6, 38 - height, 4, height, TELEMETRY_RSSI() >= rssiBarsValue[i] ? MENU_TITLE_COLOR : MENU_TITLE_DISABLE_COLOR);
   }
 
+ const uint8_t *VolumeTable[] = {
+                             LBM_TOPMENU_VOLUME_0,
+                             LBM_TOPMENU_VOLUME_1,
+                             LBM_TOPMENU_VOLUME_2,
+                             LBM_TOPMENU_VOLUME_3,
+                             LBM_TOPMENU_VOLUME_4
+                            };
   /* Audio volume */
   lcdDrawBitmapPattern(LCD_W-130, 4, LBM_TOPMENU_VOLUME_SCALE, MENU_TITLE_DISABLE_COLOR);
+#if 1
+  if( e_mode_quiet == g_eeGeneral.beepMode )
+  {
+      lcdDrawBitmapPattern(LCD_W-130, 4, VolumeTable[0], MENU_TITLE_COLOR);
+  }
+  else
+  {
+      lcdDrawBitmapPattern(LCD_W-130, 4, VolumeTable[min((requiredSpeakerVolume+5)/6,4)], MENU_TITLE_COLOR);
+  }
+
+#else
   if (requiredSpeakerVolume == 0 || g_eeGeneral.beepMode == e_mode_quiet)
     lcdDrawBitmapPattern(LCD_W-130, 4, LBM_TOPMENU_VOLUME_0, MENU_TITLE_COLOR);
   else if (requiredSpeakerVolume < 7)
@@ -81,7 +99,7 @@ void drawTopBar()
     lcdDrawBitmapPattern(LCD_W-130, 4, LBM_TOPMENU_VOLUME_3, MENU_TITLE_COLOR);
   else
     lcdDrawBitmapPattern(LCD_W-130, 4, LBM_TOPMENU_VOLUME_4, MENU_TITLE_COLOR);
-
+#endif
   /* Tx battery */
 #if defined (PCBNV14)
   uint8_t bars = limit<int8_t>(0, 6 * (g_vbat100mV - g_eeGeneral.vBatMin - 90) / (30 + g_eeGeneral.vBatMax - g_eeGeneral.vBatMin), 5);

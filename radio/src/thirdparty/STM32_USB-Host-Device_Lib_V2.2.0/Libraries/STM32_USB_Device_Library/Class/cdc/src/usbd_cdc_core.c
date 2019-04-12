@@ -633,7 +633,8 @@ uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
     }
     else 
     {
-      if (APP_Rx_length > CDC_DATA_IN_PACKET_SIZE){
+      if (APP_Rx_length > CDC_DATA_IN_PACKET_SIZE)
+      {
         USB_Tx_ptr = APP_Rx_ptr_out;
         USB_Tx_length = CDC_DATA_IN_PACKET_SIZE;
         

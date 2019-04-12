@@ -48,35 +48,53 @@ uint16_t get_battery_charge_state()
    static U32 finishedTime = 0;
    static U32 chargingTime = 0;
    static U32 noneTime = 0;
+   U16 DelayTime = 0;
+   if( BOARD_POWER_OFF == boardState )
+   {
+       DelayTime = 150;
+   }
+   else
+   {
+       DelayTime = 3;
+   }
+
   if (!READ_CHARGE_FINISHED_STATE())
   {
       finishedTime++;
+      if(finishedTime > 1000)
+          finishedTime = 1000;
+      if(chargingTime)
+          chargingTime--;
   }
   else if (!READ_CHARGING_STATE())
   {
       chargingTime++;
+      if(chargingTime > 1000)
+          chargingTime = 1000;
+      if(finishedTime)
+          finishedTime--;
   }
   else
   {
       noneTime++;
       //if(noneTime>2)
-      {   if(100<finishedTime)
-            finishedTime -= 100;
+      {   if(finishedTime>200)
+            finishedTime -= 50;
           else
             finishedTime = 0;
-          if(100<chargingTime)
-            chargingTime -= 100;
+          if(chargingTime>200)
+            chargingTime -= 50;
           else
             chargingTime = 0;
       }
   }
-  if(finishedTime>300)
+  if(finishedTime>DelayTime)
   {
-      noneTime = 0;
+     noneTime = 0;
      chargingTime = 0;
      return CHARGE_FINISHED;
   }
-  if(chargingTime>300)
+  if(chargingTime>DelayTime)
   {
       noneTime = 0;
      finishedTime = 0;
@@ -92,6 +110,14 @@ void drawChargingInfo(uint16_t chargeState){
     LcdFlags color = 0;
     if(CHARGE_STARTED == chargeState)
     {
+        if(progress >= 100)
+        {
+            progress = 0;
+        }
+        else
+        {
+            progress+=25;
+        }
         text = STR_BATTERYCHARGING;
         h = ((BATTERY_H_INNER * progress) / 100);
         color = ROUND|BATTERY_CHARGE_COLOR;
@@ -115,14 +141,6 @@ void drawChargingInfo(uint16_t chargeState){
 
     lcd->drawFilledRect((LCD_W - BATTERY_W_INNER)/2, BATTERY_TOP_INNER + BATTERY_H_INNER - h , BATTERY_W_INNER, h, SOLID, color);
 	lcd->drawFilledRect((LCD_W - BATTERY_CONNECTOR_W)/2, BATTERY_TOP-BATTERY_CONNECTOR_H , BATTERY_CONNECTOR_W, BATTERY_CONNECTOR_H, SOLID, TEXT_BGCOLOR);
-    if(progress >= 100)
-    {
-        progress = 0;
-    }
-    else
-    {
-        progress+=25;
-    }
 }
 
 //this method should be called by timer interrupt or by GPIO interrupt
@@ -138,13 +156,7 @@ void handle_battery_charge()
   {
     checkTime = get_tmr10ms();
     chargeState = get_battery_charge_state();
-    GPIO_ToggleBits(HAPTIC_GPIO, HAPTIC_GPIO_PIN);
   }
-  else
-  {
-      //GPIO_ResetBits(HAPTIC_GPIO, HAPTIC_GPIO_PIN);
-  }
-
   if(updateTime == 0 || ((get_tmr10ms() - updateTime) >= 50))
   {
       updateTime = get_tmr10ms();     
