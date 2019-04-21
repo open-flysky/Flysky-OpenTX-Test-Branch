@@ -95,7 +95,7 @@ void ScreenSetupPage::build(Window * window)
     std::advance(it, newValue);
     auto factory = *it;
     strncpy(g_model.screenData[index].layoutName, factory->getName(), LAYOUT_NAME_LEN);
-	customScreens[index] = factory->create(&g_model.screenData[index].layoutData);
+    customScreens[index] = factory->create(&g_model.screenData[index].layoutData);
     SET_DIRTY();
     rebuild(window);
     layoutChoice->setFocus();

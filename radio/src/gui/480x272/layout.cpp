@@ -56,21 +56,12 @@ void loadCustomScreens()
 {
   for (unsigned int i=0; i<MAX_CUSTOM_SCREENS; i++) {
     delete customScreens[i];
-    //skip empty layouts
-    if(g_model.screenData[i].layoutName[0] == 0) continue;
     customScreens[i] = loadLayout(g_model.screenData[i].layoutName, &g_model.screenData[i].layoutData);
   }
 
   if (customScreens[0] == NULL && getRegisteredLayouts().size()) {
     customScreens[0] = getRegisteredLayouts().front()->create(&g_model.screenData[0].layoutData);
   }
-#if defined(WIDGETS_MISSING)
-  if(strlen(g_model.screenData[0].layoutData.zones[0].widgetName) == 0) {
-   //widgets setup not supported force default
-    extern const WidgetFactory * defaultWidget;
-    customScreens[0]->createWidget(0, defaultWidget);
-  }
-#endif	
   topbar->load();
 }
 
