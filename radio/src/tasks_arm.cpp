@@ -268,19 +268,10 @@ TASK_FUNCTION(menusTask)
 #if defined(PCBHORUS)
   ledOff();
 #endif
-
   drawSleepBitmap();
   opentxClose();
   CoTickDelay(100);
   boardOff(); // Only turn power off if necessary
- #if defined(PCBFLYSKY) && !defined (SIMU)
-  haptic.event( AU_ERROR );
-  delay_ms(50);
-  while(1)
-  {
-    NVIC_SystemReset();
-  }
-#endif
   TASK_RETURN();
 }
 

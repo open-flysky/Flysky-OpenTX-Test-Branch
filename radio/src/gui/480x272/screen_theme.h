@@ -26,7 +26,7 @@
 class ScreenThemePage: public PageTab {
   public:
     ScreenThemePage();
-
+    ~ScreenThemePage() override;
     void build(Window * window) override;
 };
 

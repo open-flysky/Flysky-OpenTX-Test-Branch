@@ -120,7 +120,6 @@ void delay_self(int count)
    }
 }
 
-
 void boardInit()
 {
 #if defined(SEMIHOSTING)
@@ -183,19 +182,28 @@ void boardInit()
   battery_charge_init();
   init2MhzTimer();
   init1msTimer();
-
   uint32_t pwr_press_time = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
-
+  backlightInit();
+  lcdInit();
   while (boardState == BOARD_POWER_OFF)
   {
     if (pwrPressed())
     {
-      if (pwr_press_time == 0)  pwr_press_time = get_tmr10ms();
-      if ((get_tmr10ms() - pwr_press_time) > POWER_ON_DELAY) pwrOn();
+      if (pwr_press_time == 0)
+      {
+         pwr_press_time = get_tmr10ms();
+      }
+      if ((get_tmr10ms() - pwr_press_time) > POWER_ON_DELAY)
+      {
+          pwrOn();
+      }
     }
-    else pwr_press_time = 0;
-    handle_battery_charge();
+    else
+    {
+       pwr_press_time = 0;
+       handle_battery_charge();
+    }   
   }
 
   keysInit();
@@ -231,6 +239,14 @@ void boardOff()
   lcd->drawFilledRect(0, 0, LCD_WIDTH, LCD_HEIGHT, SOLID, HEADER_BGCOLOR);
   SysTick->CTRL = 0; // turn off systick
   pwrOff();
+#if defined(PCBFLYSKY) && !defined (SIMU)
+  haptic.event( AU_ERROR );
+  delay_ms(50);
+  while(1)
+  {
+    NVIC_SystemReset();
+  }
+#endif
 }
 
 uint8_t currentTrainerMode = 0xff;

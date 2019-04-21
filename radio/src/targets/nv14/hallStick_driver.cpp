@@ -228,7 +228,7 @@ void reset_hall_stick( void )
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xD1;
     HallCmd[2] = 0x01;
     HallCmd[3] = 0x01;
@@ -245,7 +245,7 @@ void get_hall_config( void )
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xD1;
     HallCmd[2] = 0x01;
     HallCmd[3] = 0x00;
@@ -262,7 +262,7 @@ void get_hall_firmware_info()
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xA2;
     HallCmd[2] = 0x00;
 
@@ -278,7 +278,7 @@ void hallStickUpdatefwEnd( void )
 {
     unsigned short crc16 = 0xffff;
 
-    HallCmd[0] = 0x55;
+    HallCmd[0] = HALL_PROTOLO_HEAD;
     HallCmd[1] = 0xA2;
     HallCmd[2] = 0x01;
     HallCmd[3] = 0x07;
@@ -380,7 +380,7 @@ exit: parse_ps_state = 0;
     return ;
 }
 
-
+#define ERROR_OFFSET      10
 void convert_hall_to_adcVaule( void )
 {
     uint16_t value;
@@ -389,7 +389,7 @@ void convert_hall_to_adcVaule( void )
     {
         if (Channel.channel[i] < StickCallbration[i].mid)
         {
-            value = StickCallbration[i].mid - StickCallbration[i].min;
+            value = StickCallbration[i].mid - (StickCallbration[i].min+ERROR_OFFSET);
             value = ( MIDDLE_ADC_CHANNLE_VALUE * (StickCallbration[i].mid - Channel.channel[i] ) ) / ( value );
 
             if (value >= MIDDLE_ADC_CHANNLE_VALUE ) {
@@ -400,7 +400,7 @@ void convert_hall_to_adcVaule( void )
         }
         else
         {
-            value = StickCallbration[i].max - StickCallbration[i].mid;
+            value = (StickCallbration[i].max - ERROR_OFFSET) - StickCallbration[i].mid;
 
             value = ( MIDDLE_ADC_CHANNLE_VALUE * (Channel.channel[i] - StickCallbration[i].mid ) ) / (value );
 
@@ -589,6 +589,7 @@ void hall_stick_loop(void)
             case TRANSFER_DIR_HALLSTICK:
                 HallProtocolCount++;
                 uint8_t *pt = (uint8_t*)&HallProtocol;
+                //HallProtocol.head = HALL_PROTOLO_HEAD;
                 //TRACE("HALL: %02X %02X %02X ...%04X", pt[0], pt[1], pt[2], HallProtocol.checkSum);
                 pt[HallProtocol.length + 3] = HallProtocol.checkSum & 0xFF;
                 pt[HallProtocol.length + 4] = HallProtocol.checkSum >> 8;

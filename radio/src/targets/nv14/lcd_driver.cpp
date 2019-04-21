@@ -685,8 +685,8 @@ void LCD_ILI9486_Init( void )
   lcdWriteData( 0x27 );
   lcdWriteData( 0x80 );
   lcdWriteCommand( 0xb6 );
-  lcdWriteData( 0x22 );
-  lcdWriteData( 0x02 );
+  lcdWriteData( 0xb2 );
+  lcdWriteData( 0x42 );
   lcdWriteData( 0x3b );
   lcdWriteCommand( 0xb1 );
   lcdWriteData( 0xb0 );

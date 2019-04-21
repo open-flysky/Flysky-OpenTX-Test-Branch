@@ -510,6 +510,7 @@ extern const pm_char STR_BATTERY_RANGE[];
 #endif
 extern const pm_char STR_BATTERYCHARGING[];
 extern const pm_char STR_BATTERYFULL[];
+extern const pm_char STR_BATTERYNONE[];
 extern const pm_char STR_BATTERYWARNING[];
 extern const pm_char STR_INACTIVITYALARM[];
 extern const pm_char STR_MEMORYWARNING[];

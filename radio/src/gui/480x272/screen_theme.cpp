@@ -29,6 +29,24 @@ ScreenThemePage::ScreenThemePage() :
 {
 }
 
+
+static ZoneOptionValue ThemeValue[2];
+ScreenThemePage::~ScreenThemePage()
+{
+    const ZoneOption * options = theme->getOptions();
+    int optionsCount = getOptionsCount(options);
+    for (int index = 0; index < optionsCount; index++)
+    {
+       const ZoneOption * option = &options[index];
+       ZoneOptionValue * value = theme->getOptionValue(index);
+       if(ThemeValue[index].unsignedValue != value->unsignedValue)
+       {
+           theme->updatecolor();
+           break;
+       }
+    }
+}
+
 Window * createOptionEdit(Window * parent, const rect_t &rect, const ZoneOption * option, ZoneOptionValue * value)
 {
   switch(option->type){
@@ -81,12 +99,12 @@ void ScreenThemePage::build(Window * window)
   for (int index = 0; index < optionsCount; index++) {
     const ZoneOption * option = &options[index];
     ZoneOptionValue * value = theme->getOptionValue(index);
+    ThemeValue[index] = g_eeGeneral.themeData.options[index];
     new StaticText(window, grid.getLabelSlot(), option->name);
     Window* result = createOptionEdit(window, grid.getFieldSlot(), option, value);
-    // TODO handler => theme->update();
+    //theme->update();
     grid.nextLine();
   }
-
   // Topbar customization
   new TextButton(window, grid.getLineSlot(), STR_TOP_BAR, []() -> uint8_t {
                    new WidgetsSetupPage(static_cast<WidgetsContainerInterface*>(topbar), 0, MENU_TITLE_COLOR, 2, 1);
