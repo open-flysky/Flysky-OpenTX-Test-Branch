@@ -45,10 +45,10 @@ void battery_charge_init()
 
 uint16_t get_battery_charge_state()
 {
-   static U32 finishedTime = 0;
-   static U32 chargingTime = 0;
-   static U32 noneTime = 0;
-   U16 DelayTime = 0;
+   static unsigned int finishedTime = 0;
+   static unsigned int chargingTime = 0;
+   static unsigned int noneTime = 0;
+   unsigned short DelayTime = 0;
    if( BOARD_POWER_OFF == boardState )
    {
        DelayTime = 150;
