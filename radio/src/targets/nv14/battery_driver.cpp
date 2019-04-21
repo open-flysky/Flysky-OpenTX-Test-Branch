@@ -45,6 +45,7 @@ void battery_charge_init()
 
 uint16_t get_battery_charge_state()
 {
+#if !defined(SIMU)
    static unsigned int finishedTime = 0;
    static unsigned int chargingTime = 0;
    static unsigned int noneTime = 0;
@@ -100,6 +101,7 @@ uint16_t get_battery_charge_state()
      finishedTime = 0;
      return CHARGE_STARTED;
   }
+#endif
   return CHARGE_NONE;
 }
 
