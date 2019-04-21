@@ -25,7 +25,11 @@ const uint8_t LBM_LAYOUT_2x1[] = {
 };
 
 const ZoneOption OPTIONS_LAYOUT_2x1[] = {
-  { "Top bar", ZoneOption::Bool },
+  { Layout::TopBar, ZoneOption::Bool },
+  { Layout::Navigation, ZoneOption::Bool },
+  { Layout::FlightMode, ZoneOption::Bool },
+  { Layout::Sliders, ZoneOption::Bool },
+  { Layout::Trims, ZoneOption::Bool },
   { NULL, ZoneOption::Bool }
 };
 
@@ -33,49 +37,18 @@ class Layout2x1: public Layout
 {
   public:
     Layout2x1(const LayoutFactory * factory, Layout::PersistentData * persistentData):
-      Layout(factory, persistentData)
+      Layout(factory, persistentData, 2)
     {
     }
 
-    virtual void create()
+    Zone getZone(unsigned int index) const override
     {
-      Layout::create();
-      persistentData->options[0].boolValue = true;
-    }
-
-    virtual unsigned int getZonesCount() const
-    {
-      return 4;
-    }
-
-    virtual Zone getZone(unsigned int index) const
-    {
-      Zone zone;
-      zone.w = (LCD_W-3*10) / 2;
-      zone.x = (index & 1) ? 20 + zone.w : 10;
-      if (persistentData->options[0].boolValue) {
-        zone.h = (LCD_H-MENU_HEADER_HEIGHT-2*10);
-        zone.y = MENU_HEADER_HEIGHT + 10;
-      }
-      else {
-        zone.h = (LCD_H-2*10);
-        zone.y = 10;
-      }
+      Zone zone = Layout::getZone(index);
+      zone.w -= margin(); //additional margin
+      zone.w /= 2; //half of space
+      if(index == 1) zone.x += zone.w + margin(); //right column
       return zone;
     }
-
-    virtual void refresh();
 };
-
-void Layout2x1::refresh()
-{
-  theme->drawBackground();
-
-  if (persistentData->options[0].boolValue) {
-    drawTopBar();
-  }
-
-  Layout::refresh();
-}
 
 BaseLayoutFactory<Layout2x1> Layout2x1("Layout2x1", LBM_LAYOUT_2x1, OPTIONS_LAYOUT_2x1);

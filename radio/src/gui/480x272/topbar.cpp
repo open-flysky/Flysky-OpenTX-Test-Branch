@@ -22,13 +22,14 @@
 
 unsigned int Topbar::getZonesCount() const
 {
-  return MAX_TOPBAR_ZONES;
+  int items = (LCD_W - TOPBAR_MENU_LEFT) / (TOPBAR_ZONE_WIDTH + 2*TOPBAR_ZONE_MARGIN);
+  return std::min(items, MAX_TOPBAR_ZONES);
 }
 
 Zone Topbar::getZone(unsigned int index) const
 {
   Zone zone;
-  zone.x = 49 + (TOPBAR_ZONE_WIDTH + 2*TOPBAR_ZONE_MARGIN) * index;
+  zone.x = TOPBAR_MENU_LEFT + (TOPBAR_ZONE_WIDTH + 2*TOPBAR_ZONE_MARGIN) * index;
   zone.y = TOPBAR_ZONE_MARGIN;
   zone.w = TOPBAR_ZONE_WIDTH;
   zone.h = MENU_HEADER_HEIGHT - 2*TOPBAR_ZONE_MARGIN;

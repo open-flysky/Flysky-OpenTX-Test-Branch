@@ -56,10 +56,9 @@ void loadCustomScreens()
 {
   for (unsigned int i=0; i<MAX_CUSTOM_SCREENS; i++) {
     delete customScreens[i];
-    char name[sizeof(g_model.screenData[i].layoutName)+1];
-    memset(name, 0, sizeof(name));
-    strncpy(name, g_model.screenData[i].layoutName, sizeof(g_model.screenData[i].layoutName));
-    customScreens[i] = loadLayout(name, &g_model.screenData[i].layoutData);
+    //skip empty layouts
+    if(g_model.screenData[i].layoutName[0] == 0) continue;
+    customScreens[i] = loadLayout(g_model.screenData[i].layoutName, &g_model.screenData[i].layoutData);
   }
 
   if (customScreens[0] == NULL && getRegisteredLayouts().size()) {
@@ -67,11 +66,104 @@ void loadCustomScreens()
   }
 #if defined(WIDGETS_MISSING)
   if(strlen(g_model.screenData[0].layoutData.zones[0].widgetName) == 0) {
-   //widgets setup not supprterd force default
+   //widgets setup not supported force default
     extern const WidgetFactory * defaultWidget;
     customScreens[0]->createWidget(0, defaultWidget);
   }
-
 #endif	
   topbar->load();
+}
+
+
+bool Layout::isOptionSet(const char* name) const
+{
+  ZoneOptionValue* value = getZoneOptionValue(name);
+  return value && value->boolValue;
+}
+ZoneOptionValue* Layout::getZoneOptionValue(const char* name) const
+{
+  const ZoneOption * options = factory->getOptions();
+  int index = 0;
+  while (options[index].name)
+  {
+    if (strcmp(options[index].name, name) == 0)
+    {
+      return &persistentData->options[index];
+    }
+    index++;
+  }
+  return nullptr;
+}
+
+void Layout::create()
+{
+  WidgetsContainer::create();
+  const ZoneOption * options = factory->getOptions();
+  int index = 0;
+  while (options[index].name)
+  {
+    if (options[index].type == ZoneOption::Bool)
+    {
+      persistentData->options[index].boolValue = true;
+    }
+    index++;
+  }
+}
+
+Zone Layout::getZone(unsigned int index) const
+{
+  uint16_t doubleMargin =  2*margin();
+  uint16_t w = (uint16_t)LCD_W;
+  w -= doubleMargin;
+  uint16_t h = (uint16_t)LCD_H;
+  h -= doubleMargin;
+  Zone zone = { margin(), margin(), w, h };
+
+  zone.y += topBarHeight();
+  zone.h -= topBarHeight();
+
+  zone.y += navigationHeight();
+  zone.h -= navigationHeight();
+
+  zone.y += flightModeHeight();
+  zone.h -= flightModeHeight();
+
+  zone.x += trimHeight();
+  zone.w -= trimHeight() * 2;
+  zone.h -= trimHeight();
+
+  zone.x += sliderHeight();
+  zone.w -= sliderHeight() * 2;
+  zone.h -= sliderHeight();
+
+  return zone;
+}
+
+void Layout::drawFlightMode(coord_t y) {
+  char* name = g_model.flightModeData[mixerCurrentFlightMode].name;
+  coord_t textW = getTextWidth(name,  sizeof(name), ZCHAR | SMLSIZE);
+  lcdDrawSizedText((LCD_W - textW) / 2,  y,  name,  sizeof(name), ZCHAR | SMLSIZE);
+}
+
+void Layout::refresh()
+{
+  theme->drawBackground();
+  int32_t y = 0;
+  if (topBarHeight()) drawTopBar();
+  y += topBarHeight();
+  y += navigationHeight();
+  if (flightModeHeight()) drawFlightMode(y);
+  y += flightModeHeight();
+  if(trimHeight()) drawTrims(mixerCurrentFlightMode);
+  if(sliderHeight()) drawMainPots();
+  WidgetsContainer::refresh();
+}
+
+uint16_t Layout::topBarHeight() const
+{
+  return isOptionSet(TopBar) ? MENU_HEADER_HEIGHT : 0;
+}
+uint16_t Layout::navigationHeight() const
+{
+  return isOptionSet(Navigation) ? NAV_BUTTONS_HEIGHT + (NAV_BUTTONS_MARGIN_TOP - MENU_HEADER_HEIGHT) : 0;
 }

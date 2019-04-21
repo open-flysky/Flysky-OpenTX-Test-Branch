@@ -25,6 +25,7 @@
 #include "widgets_container.h"
 #include "lcd.h"
 
+
 #define MAX_LAYOUT_ZONES               10
 #define MAX_LAYOUT_OPTIONS             10
 
@@ -35,10 +36,20 @@ class Layout: public WidgetsContainer<MAX_LAYOUT_ZONES, MAX_LAYOUT_OPTIONS>
   friend class LayoutFactory;
 
   public:
-    Layout(const LayoutFactory * factory, PersistentData * persistentData):
+    Layout(const LayoutFactory * factory, PersistentData * persistentData, unsigned int zonesCount = 1):
       WidgetsContainer<MAX_LAYOUT_ZONES, MAX_LAYOUT_OPTIONS>(persistentData),
-      factory(factory)
+      factory(factory),
+      zonesCount(zonesCount)
     {
+    }
+
+    void create() override;
+    void refresh() override;
+    Zone getZone(unsigned int index) const override;
+
+    unsigned int getZonesCount() const override
+    {
+      return zonesCount;
     }
 
     inline const LayoutFactory * getFactory() const
@@ -50,9 +61,49 @@ class Layout: public WidgetsContainer<MAX_LAYOUT_ZONES, MAX_LAYOUT_OPTIONS>
     {
     }
 
+    uint16_t topBarHeight() const;
+
+    uint16_t navigationHeight() const;
+
+    static constexpr const char* TopBar = "Top bar";
+    static constexpr const char* FlightMode = "Flight mode";
+    static constexpr const char* Sliders = "Sliders";
+    static constexpr const char* Trims = "Trims";
+    static constexpr const char* Navigation = "Navigation";
+    static constexpr const char* Panel1BG = "Panel1 background";
+    static constexpr const char* Panel2BG = "Panel2 background";
+    static constexpr const char* Panel1BGC = "Panel1 color";
+    static constexpr const char* Panel2BGC = "Panel2 color";
+
   protected:
+    uint16_t margin() const
+    {
+      return 10;
+    }
+
+    uint16_t flightModeHeight() const
+    {
+      return isOptionSet(FlightMode) ? 10 : 0;
+    }
+
+    uint16_t trimHeight() const
+    {
+      return isOptionSet(Trims) ? 16 : 0;
+    }
+
+    uint16_t sliderHeight() const
+    {
+      return isOptionSet(Sliders) ? 16 : 0;
+    }
+
+
+    void drawFlightMode(coord_t y);
+    bool isOptionSet(const char* name) const;
+    ZoneOptionValue* getZoneOptionValue(const char* name) const;
     const LayoutFactory * factory;
+    unsigned int zonesCount;
 };
+
 
 void registerLayout(const LayoutFactory * factory);
 

@@ -25,14 +25,15 @@ const uint8_t LBM_LAYOUT_2x4[] = {
 };
 
 const ZoneOption OPTIONS_LAYOUT_2x4[] = {
-  { "Top bar", ZoneOption::Bool },
-  { "Flight mode", ZoneOption::Bool },
-  { "Sliders", ZoneOption::Bool },
-  { "Trims", ZoneOption::Bool },
-  { "Panel1 background", ZoneOption::Bool },
-  { "  Color", ZoneOption::Color },
-  { "Panel2 background", ZoneOption::Bool },
-  { "  Color", ZoneOption::Color },
+  { Layout::TopBar, ZoneOption::Bool },
+  { Layout::Navigation, ZoneOption::Bool },
+  { Layout::FlightMode, ZoneOption::Bool },
+  { Layout::Sliders, ZoneOption::Bool },
+  { Layout::Trims, ZoneOption::Bool },
+  { Layout::Panel1BG, ZoneOption::Bool },
+  { Layout::Panel1BGC, ZoneOption::Color },
+  { Layout::Panel2BG, ZoneOption::Bool },
+  { Layout::Panel2BGC, ZoneOption::Color },
   { NULL, ZoneOption::Bool }
 };
 
@@ -40,80 +41,58 @@ class Layout2x4: public Layout
 {
   public:
     Layout2x4(const LayoutFactory * factory, Layout::PersistentData * persistentData):
-      Layout(factory, persistentData)
+      Layout(factory, persistentData, 8)
     {
     }
 
-    virtual void create()
+    void create() override
     {
       Layout::create();
-      persistentData->options[0].boolValue = true;
-      persistentData->options[1].boolValue = true;
-      persistentData->options[2].boolValue = true;
-      persistentData->options[3].boolValue = true;
-      persistentData->options[4].boolValue = true;
-      persistentData->options[5].unsignedValue = RGB(77, 112, 203);
-      persistentData->options[6].boolValue = false;
-      persistentData->options[7].unsignedValue = RGB(77, 112, 203);
-    }
+      getZoneOptionValue(Panel1BGC)->unsignedValue = RGB(77, 112, 203);
+      getZoneOptionValue(Panel2BGC)->unsignedValue = RGB(77, 112, 203);
+      getZoneOptionValue(Panel2BG)->boolValue = false;
 
-    virtual unsigned int getZonesCount() const
-    {
-      return 8;
     }
 
     virtual Zone getZone(unsigned int index) const
     {
-      Zone zone;
-      zone.x = (index >= 4) ? 260 : 60;
-      zone.y = 56 + (index % 4) * 42;
-      zone.w = 160;
-      zone.h = 32;
+      Zone zone = Layout::getZone(index);
+      zone.w -= margin(); //additional margin
+      zone.w /= 2; //half of space
+      zone.h -= margin()*3; //additional margin
+      zone.h /= 4; //quarter of space
+
+      if (index % 2 == 1) zone.x += zone.w + margin(); //right column
+      zone.y += (index / 2) * (zone.h + margin()); //row
       return zone;
     }
 
-    virtual void refresh();
+    void refresh() override;
 };
 
 void Layout2x4::refresh()
 {
   theme->drawBackground();
-
-  if (persistentData->options[0].boolValue) {
-    drawTopBar();
-  }
-
-  if (persistentData->options[1].boolValue) {
-    // Flight mode
-    lcdDrawSizedText(LCD_W / 2 - getTextWidth(g_model.flightModeData[mixerCurrentFlightMode].name,
-                                              sizeof(g_model.flightModeData[mixerCurrentFlightMode].name),
-                                              ZCHAR | SMLSIZE) / 2,
-                     237,
-                     g_model.flightModeData[mixerCurrentFlightMode].name,
-                     sizeof(g_model.flightModeData[mixerCurrentFlightMode].name), ZCHAR | SMLSIZE);
-  }
-
-  if (persistentData->options[2].boolValue) {
-    // Pots and rear sliders positions
-    drawMainPots();
-  }
-
-  if (persistentData->options[3].boolValue) {
-    // Trims
-    drawTrims(mixerCurrentFlightMode);
-  }
-
-  if (persistentData->options[4].boolValue) {
-    lcdSetColor(persistentData->options[5].unsignedValue);
-    lcdDrawSolidFilledRect(50, 50, 180, 170, CUSTOM_COLOR);
-  }
-
-  if (persistentData->options[6].boolValue) {
-    lcdSetColor(persistentData->options[7].unsignedValue);
-    lcdDrawSolidFilledRect(250, 50, 180, 170, CUSTOM_COLOR);
-  }
-
+  int32_t y = 0;
+  if (topBarHeight()) drawTopBar();
+  y += topBarHeight();
+  if (flightModeHeight()) drawFlightMode(y);
+  y += flightModeHeight();
+  if(trimHeight()) drawTrims(mixerCurrentFlightMode);
+  if(sliderHeight()) drawMainPots();
   Layout::refresh();
+  Zone fullScreen = Layout::getZone(0);
+  fullScreen.w /=2;
+  if (isOptionSet(Panel1BG)) {
+    lcdSetColor(getZoneOptionValue(Panel1BGC)->unsignedValue);
+    lcdDrawSolidFilledRect(fullScreen.x, fullScreen.y, fullScreen.w, fullScreen.h, CUSTOM_COLOR);
+  }
+
+  if (isOptionSet(Panel2BG)) {
+    fullScreen.x += fullScreen.w;
+    lcdSetColor(getZoneOptionValue(Panel2BGC)->unsignedValue);
+    lcdDrawSolidFilledRect(fullScreen.x, fullScreen.y, fullScreen.w, fullScreen.h, CUSTOM_COLOR);
+  }
 }
 
 BaseLayoutFactory<Layout2x4> layout2x4("Layout2x4", LBM_LAYOUT_2x4, OPTIONS_LAYOUT_2x4);

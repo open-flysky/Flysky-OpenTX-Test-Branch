@@ -26,8 +26,11 @@
 #include "view_channels.h"
 #include "view_statistics.h"
 #include "view_about.h"
+#include "screen_theme.h"
 #include "opentx.h"
 #include "libwindows.h"
+#include "alpha_button_on.lbm"
+#include "alpha_button_off.lbm"
 
 #define TRIM_WIDTH                     121
 #define TRIM_LH_X                      10
@@ -116,129 +119,154 @@ void onMainViewMenu(const char *result)
   }*/
 }
 
-int getMainViewsCount()
+ViewMain::ViewMain():
+  Window(&mainWindow, { 0, 0, LCD_W, LCD_H }),
+  buttonHeight(NAV_BUTTONS_HEIGHT),
+  buttonLeftModel(50 - buttonHeight/2),
+  buttonLeftRadio(LCD_W / 2 - buttonHeight/2),
+  buttonLeftTheme(LCD_W - 50 - buttonHeight/2)
 {
-  for (int index=1; index<MAX_CUSTOM_SCREENS; index++) {
-    if (!customScreens[index]) {
-      return index;
-    }
-  }
-  return MAX_CUSTOM_SCREENS;
-}
-
-ViewMain::ViewMain(bool icons):
-  Window(&mainWindow, { 0, 0, LCD_W, LCD_H })
-{
-  if (icons) {
-
-    new FabIconButton(this, 50, 100, ICON_MODEL,
-                      [=]() -> uint8_t {
-                        new ModelMenu();
-                        return 0;
-                      });
-
-    new FabIconButton(this, LCD_W / 2, 100, ICON_RADIO,
-                      [=]() -> uint8_t {
-                        new RadioMenu();
-                        return 0;
-                      });
-
-    new FabIconButton(this, LCD_W - 50, 100, ICON_THEME,
-                      [=]() -> uint8_t {
-                        new ScreensMenu();
-                        return 0;
-                      });
-  }
+	slideDirection = SlideDirection::None;
 }
 
 ViewMain::~ViewMain()
 {
   deleteChildren();
 }
+bool ViewMain::onTouchStart(coord_t x, coord_t y)
+{
+	//reset slide direction
+	slideDirection = SlideDirection::None;
+	return Window::onTouchStart(x,y);
+}
+bool ViewMain::onTouchSlide(coord_t x, coord_t y, coord_t startX, coord_t startY, coord_t slideX, coord_t slideY)
+{
+  if(Window::onTouchSlide(x, y, startX, startY, slideX, slideY)) return true;
+  //if slide was already detected ignore it
+  if(slideDirection == SlideDirection::None) {
+	  if (startX < x && (x - startX > LCD_W / 4)){
+		  slideDirection = SlideDirection::Right;
+		  g_model.view = prevView();
+		  invalidate();
+		  return true;
+	  }
+	  else if(startX > x && (startX - x > LCD_W / 4)){
+		  slideDirection = SlideDirection::Left;
+		  g_model.view = nextView();
+		  invalidate();
+		  return true;
+	  }
+  }
+  return false;
+}
+void ViewMain::showMenu()
+{
+  Menu * menu = new Menu ();
+  menu->addLine (STR_MODEL_SELECT, [=]() { new ModelselectMenu(); });
+  if (modelHasNotes ()) menu->addLine (STR_VIEW_NOTES, [=]() { /* TODO*/ });
+  menu->addLine (STR_MONITOR_SCREENS, [=]() { new ChannelsMonitorMenu(); });
+  menu->addLine (STR_RESET_SUBMENU, [=]() {
+      Menu * menu2 = new Menu();
+      menu2->addLine(STR_RESET_FLIGHT, [=]() { flightReset(); });
+      menu2->addLine(STR_RESET_TIMER1, [=]() { timerReset(0); });
+      menu2->addLine(STR_RESET_TIMER2, [=]() { timerReset(1); });
+      menu2->addLine(STR_RESET_TIMER3, [=]() { timerReset(2); });
+      menu2->addLine(STR_RESET_TELEMETRY, [=]() { telemetryReset(); });
+  });
+  menu->addLine (STR_STATISTICS, [=]() { new StatisticsMenu(); });
+  menu->addLine (STR_ABOUT_US, [=]() { new AboutMenu(); });
+}
 
 bool ViewMain::onTouchEnd(coord_t x, coord_t y)
 {
-  if (Window::onTouchEnd(x, y))
-    return true;
-
-  if (x < 60 && y < 60) {
-    AUDIO_KEY_PRESS();
-    Menu * menu = new Menu();
-    menu->addLine(STR_MODEL_SELECT, [=]() {
-      new ModelselectMenu();
-    });
-    if (modelHasNotes()) {
-      menu->addLine(STR_VIEW_NOTES, [=]() {
-        // TODO
-      });
+  if (Window::onTouchEnd(x, y)) return true;
+  if(isNavigationVisible()) {
+    coord_t buttonTop = isTopBarVisible() ? NAV_BUTTONS_MARGIN_TOP : NAV_BUTTONS_MARGIN;
+	  if (y >= buttonTop && y <= buttonTop + buttonHeight) {
+        if(x >= buttonLeftModel && x <= buttonLeftModel + buttonHeight){
+	      	new ModelMenu();
+	      	return true;
+        }
+        if(x >= buttonLeftRadio && x <= buttonLeftRadio + buttonHeight){
+	      	new RadioMenu();
+	      	return true;
+        }
+        if(x >= buttonLeftTheme && x <= buttonLeftTheme + buttonHeight){
+	      	new ScreensMenu();
+	      	return true;
+        }
     }
-    menu->addLine(STR_MONITOR_SCREENS, [=]() {
-      new ChannelsMonitorMenu();
-    });
-    menu->addLine(STR_RESET_SUBMENU, [=]() {
-      Menu * menu = new Menu();
-      menu->addLine(STR_RESET_FLIGHT, [=]() {
-        flightReset();
-      });
-      menu->addLine(STR_RESET_TIMER1, [=]() {
-        timerReset(0);
-      });
-      menu->addLine(STR_RESET_TIMER2, [=]() {
-        timerReset(1);
-      });
-      menu->addLine(STR_RESET_TIMER3, [=]() {
-        timerReset(2);
-      });
-      menu->addLine(STR_RESET_TELEMETRY, [=]() {
-        telemetryReset();
-      });
-    });
-    menu->addLine(STR_STATISTICS, [=]() {
-      new StatisticsMenu();
-    });
-    menu->addLine(STR_ABOUT_US, [=]() {
-      new AboutMenu();
-    });
+  }
+
+  if (isTopBarVisible() && (x < TOPBAR_BUTTON_WIDTH && y < MENU_HEADER_HEIGHT)) {
+    AUDIO_KEY_PRESS();
+    showMenu();
     return true;
   }
 
   return false;
 }
 
+
 void ViewMain::checkEvents()
 {
   // temporary for refreshing the trims
   invalidate();
 }
+uint8_t ViewMain::currentView() {
+  if (!customScreens[g_model.view]) {
+	  return 0;
+  }
+  return g_model.view;
+}
+uint8_t ViewMain::nextView()
+{
+  for (uint8_t index = currentView() + 1; index < sizeof(customScreens)/sizeof(customScreens[0]); index++) {
+    if (customScreens[index]) return index;
+  }
+  return g_model.view;
+}
+uint8_t ViewMain::prevView()
+{
+  if(g_model.view!=0) {
+    for (uint8_t index = currentView() -1; index > 0; index--) {
+      if (customScreens[index]) return index;
+	}
+  }
+  return 0;
+}
+
+bool ViewMain::isTopBarVisible() {
+	Layout* layout = customScreens[currentView()];
+	return layout->topBarHeight() > 0;
+}
+bool ViewMain::isNavigationVisible() {
+  Layout* layout = customScreens[currentView()];
+  return layout->navigationHeight() > 0;
+}
+
+void ViewMain::drawButton(BitmapBuffer * dc, coord_t x, uint8_t icon) {
+  coord_t y = isTopBarVisible() ? NAV_BUTTONS_MARGIN_TOP : NAV_BUTTONS_MARGIN;
+	dc->drawBitmap(x, y, &ALPHA_BUTTON_OFF);
+	const BitmapBuffer * mask = theme->getIconMask(icon);
+	dc->drawMask(x+((buttonHeight-mask->getWidth())/2), y+((buttonHeight-mask->getHeight())/2), mask, TEXT_BGCOLOR);
+}
 
 void ViewMain::paint(BitmapBuffer * dc)
 {
-  //theme->drawBackground();
-
-  if (g_model.view >= getMainViewsCount()) {
-    g_model.view = 0;
-  }
-
+  uint8_t view = currentView();
   for (uint8_t i=0; i<MAX_CUSTOM_SCREENS; i++) {
     if (customScreens[i]) {
-      if (i == g_model.view) {
-        customScreens[i]->refresh(); }
+      if (i == view) {
+        customScreens[i]->refresh();
+      }
       else
         customScreens[i]->background();
     }
   }
-}
-
-#if 0
-bool menuMainViewChannelsMonitor(event_t event)
-{
-  switch (event) {
-    case EVT_KEY_BREAK(KEY_EXIT):
-      chainMenu(menuMainView);
-      event = 0;
-      return false;
+  if(isNavigationVisible() || view == 0){
+    drawButton(dc, buttonLeftModel, ICON_MODEL);
+    drawButton(dc, buttonLeftRadio, ICON_RADIO);
+    drawButton(dc, buttonLeftTheme, ICON_THEME);
   }
-
-  return menuChannelsView(event);
 }
-#endif

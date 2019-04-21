@@ -28,12 +28,14 @@ class NumberEdit;
 
 class ScreenSetupPage: public PageTab {
   public:
-    ScreenSetupPage(uint8_t index);
+    ScreenSetupPage(uint8_t index, bool inited = true);
 
     void build(Window * window) override;
 
   protected:
+    void recreateWidgets();
     uint8_t index;
+    bool inited;
     NumberEdit * layoutChoice = nullptr;
     void rebuild(Window * window);
 };

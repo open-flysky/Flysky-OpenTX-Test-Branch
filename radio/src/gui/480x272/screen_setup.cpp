@@ -25,12 +25,12 @@
 
 #define SET_DIRTY() storageDirty(EE_MODEL)
 
-int getOptionsCount(const ZoneOption * options); // TODO move this
 Window * createOptionEdit(Window * parent, const rect_t &rect, const ZoneOption * option, ZoneOptionValue * value);
 
-ScreenSetupPage::ScreenSetupPage(uint8_t index) :
+ScreenSetupPage::ScreenSetupPage(uint8_t index, bool inited) :
   PageTab("Main view " + std::to_string(index + 1), ICON_THEME_VIEW1 + index),
-  index(index)
+  index(index),
+  inited(inited)
 {
 }
 
@@ -39,14 +39,41 @@ void ScreenSetupPage::rebuild(Window * window)
   window->clear();
   build(window);
 }
-
+void ScreenSetupPage::recreateWidgets() {
+  Layout * layout = customScreens[index];
+  for(unsigned int zone = 0; zone < layout->getZonesCount(); zone++) {
+    Widget* widget = layout->getWidget(zone);
+    if(widget) {
+      Widget::PersistentData* data = new Widget::PersistentData();
+      ZoneOptionValue* oldVal = widget->getOptionValue(0);
+      for (unsigned int i = 0; i < sizeof(data->options)/sizeof(data->options[0]); i++) {
+        memcpy((void*)&data->options[i], (const void*)&oldVal[i], sizeof(ZoneOptionValue));
+      }
+      Widget* widgetNew = widget->getFactory()->create(layout->getZone(zone), data, false);
+      layout->setWidget(zone, widgetNew);
+      delete widget;
+    }
+  }
+}
 void ScreenSetupPage::build(Window * window)
 {
   Layout * layout = customScreens[index];
   GridLayout grid;
-  grid.setLabelWidth(100);
+  grid.setLabelWidth(LCD_W/2);
   grid.spacer(8);
 
+  if(!inited) {
+      new TextButton(window, grid.getLineSlot(), STR_ADDMAINVIEW, [=]() -> uint8_t {
+    	  inited = true;
+    	  if (getRegisteredLayouts().size()) {
+    	      customScreens[index] = getRegisteredLayouts().front()->create(&g_model.screenData[index].layoutData);
+    	  }
+    	  SET_DIRTY();
+    	  rebuild(window);
+    	  return 0;
+      });
+      return;
+  }
   // Layout choice
   auto layouts = getRegisteredLayouts();
   new StaticText(window, grid.getLabelSlot(), STR_LAYOUT);
@@ -69,12 +96,6 @@ void ScreenSetupPage::build(Window * window)
     auto factory = *it;
     strncpy(g_model.screenData[index].layoutName, factory->getName(), LAYOUT_NAME_LEN);
 	customScreens[index] = factory->create(&g_model.screenData[index].layoutData);
-#if defined(WIDGETS_MISSING)
-	//widgets setup not supprterd force default
-    extern const WidgetFactory * defaultWidget;
-    customScreens[index]->createWidget(0, defaultWidget);
-#endif	
-	
     SET_DIRTY();
     rebuild(window);
     layoutChoice->setFocus();
@@ -86,15 +107,9 @@ void ScreenSetupPage::build(Window * window)
     (*it)->drawThumb(dc, 2, 2, LINE_COLOR);
   });
   grid.nextLine(35);
-#if !defined(WIDGETS_MISSING)
   // Setup widgets button
-  new TextButton(window, grid.getFieldSlot(), STR_SETUP_WIDGETS,
-                 [=]() -> uint8_t {
-                   // TODO new WidgetsSetupPage(index); (no way to get out of it right now!)
-                   return 0;
-                 });
+  new TextButton(window, grid.getFieldSlot(), STR_SETUP_WIDGETS, [=]() -> uint8_t { new WidgetsSetupPage(static_cast<WidgetsContainerInterface*>(customScreens[index]), index); return 0; });
   grid.nextLine();
-#endif
   // Layout options
   const ZoneOption * options = layout->getFactory()->getOptions();
   int optionsCount = getOptionsCount(options);
@@ -103,26 +118,34 @@ void ScreenSetupPage::build(Window * window)
     const ZoneOption * option = &options[i];
     ZoneOptionValue * value = layout->getOptionValue(i);
     new StaticText(window, grid.getLabelSlot(), option->name);
-    createOptionEdit(window, grid.getFieldSlot(), option, value);
-    // TODO handler => theme->update();
+    if (option->type == ZoneOption::Bool)
+    {
+      new CheckBox(window, grid.getFieldSlot(), [=] { return value->boolValue; },
+          [=](uint8_t newValue) {
+              if(strcmp(option->name, Layout::Navigation) == 0 && index == 0) {
+                //never allow disabling navigation on main screen
+                newValue = 1;
+              }
+              value->boolValue = newValue;
+              recreateWidgets();
+              SET_DIRTY();
+      });
+    }
+    else createOptionEdit(window, grid.getFieldSlot(), option, value);
     grid.nextLine();
   }
 
   // Delete screen button
   if (index > 0) {
-    new TextButton(window, grid.getLineSlot(), STR_REMOVE_SCREEN,
-                   [=]() -> uint8_t {
-                     delete layout;
-                     if (index != MAX_CUSTOM_SCREENS - 1) {
-                       memmove(&g_model.screenData[index], &g_model.screenData[index + 1], sizeof(CustomScreenData) * (MAX_CUSTOM_SCREENS - index - 1));
-                       memmove(&customScreens[index], &customScreens[index + 1], sizeof(Layout *) * (MAX_CUSTOM_SCREENS - index - 1));
-                     }
-                     memset(&g_model.screenData[MAX_CUSTOM_SCREENS - 1], 0, sizeof(CustomScreenData));
-                     customScreens[MAX_CUSTOM_SCREENS - 1] = NULL;
-                     loadCustomScreens();
-                     destroy();
-                     return 0;
-                   });
+    new TextButton(window, grid.getLineSlot(), STR_REMOVE_SCREEN, [=]() -> uint8_t {
+	  delete layout;
+	  memset(&g_model.screenData[MAX_CUSTOM_SCREENS - 1], 0, sizeof(CustomScreenData));
+	  customScreens[index] = NULL;
+	  inited = false;
+	  SET_DIRTY();
+	  rebuild(window);
+	  return 0;
+    });
     grid.nextLine();
   }
 

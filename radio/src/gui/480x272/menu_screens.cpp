@@ -45,9 +45,11 @@ ScreensMenu::ScreensMenu():
   TabsGroup()
 {
   addTab(new ScreenThemePage());
+  int pages = 0;
   for (int index=0; index<MAX_CUSTOM_SCREENS; index++) {
     auto customScreen = customScreens[index];
     if (customScreen) {
+      pages++;
       auto page = new ScreenSetupPage(index);
       page->setOnPageDestroyedHandler([=]() {
         removeTab(1 + index);
@@ -55,8 +57,7 @@ ScreensMenu::ScreensMenu():
       addTab(page);
     }
     else {
-      // addTab(new ScreenAddPage(index));
-      break;
+      addTab(new ScreenSetupPage(index, false));
     }
   }
 }

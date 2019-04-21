@@ -17,28 +17,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+#include "zone.h"
 
-#ifndef _TOPBAR_H_
-#define _TOPBAR_H_
-
-#include "widgets_container.h"
-
-#define MAX_TOPBAR_ZONES               4
-#define MAX_TOPBAR_OPTIONS             1 // just because of VC++ which doesn't like 0-size arrays :(
-#define TOPBAR_ZONE_WIDTH              60
-#define TOPBAR_ZONE_MARGIN             2
-
-class Topbar: public WidgetsContainer<MAX_TOPBAR_ZONES, MAX_TOPBAR_OPTIONS>
+int getOptionsCount(const ZoneOption * options)
 {
-  public:
-    explicit Topbar(PersistentData * persistentData):
-      WidgetsContainer<MAX_TOPBAR_ZONES, MAX_TOPBAR_OPTIONS>(persistentData)
-    {
+  if (!options) {
+    return 0;
+  }
+  else {
+    int count = 0;
+    for (const ZoneOption * option = options; option->name; option++) {
+      count++;
     }
-
-    unsigned int getZonesCount() const override;
-
-    Zone getZone(unsigned int index) const override;
-};
-
-#endif // _TOPBAR_H_
+    return count;
+  }
+}

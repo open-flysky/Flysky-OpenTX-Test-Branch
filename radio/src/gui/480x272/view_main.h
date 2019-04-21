@@ -22,18 +22,35 @@
 #define _VIEW_MAIN_H_
 
 #include "window.h"
-
+enum class SlideDirection {
+	Left = -1,
+	None = 0,
+	Right = 1
+};
 class ViewMain: public Window {
   public:
-    ViewMain(bool icons=true);
-
+    ViewMain();
     ~ViewMain() override;
-
     bool onTouchEnd(coord_t x, coord_t y) override;
-
+    bool onTouchSlide(coord_t x, coord_t y, coord_t startX, coord_t startY, coord_t slideX, coord_t slideY) override;
+    bool onTouchStart(coord_t x, coord_t y) override;
     void paint(BitmapBuffer * dc) override;
 
     void checkEvents() override;
+  protected:
+    uint8_t nextView();
+    uint8_t prevView();
+    virtual uint8_t currentView();
+    bool isTopBarVisible();
+    bool isNavigationVisible();
+    void drawButton(BitmapBuffer * dc, coord_t x, uint8_t icon);
+    void showMenu();
+
+    const int buttonHeight;
+    const int buttonLeftModel;
+    const int buttonLeftRadio;
+    const int buttonLeftTheme;
+    SlideDirection slideDirection;
 };
 
 #endif // _VIEW_MAIN_H_

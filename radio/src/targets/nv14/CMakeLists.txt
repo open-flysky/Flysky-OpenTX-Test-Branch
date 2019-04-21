@@ -92,6 +92,7 @@ set(GUI_SRC
   topbar.cpp
   layout.cpp
   widget.cpp
+  zone.cpp
   ${THEMES_SRC}
   ${LAYOUTS_SRC}
   ${WIDGETS_SRC}

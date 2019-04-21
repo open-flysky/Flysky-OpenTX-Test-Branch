@@ -71,4 +71,5 @@ struct ZoneOption
   ZoneOptionValue max;
 };
 
+int getOptionsCount(const ZoneOption * options);
 #endif

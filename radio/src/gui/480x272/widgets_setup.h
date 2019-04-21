@@ -22,10 +22,24 @@
 #define _WIDGETS_SETUP_H_
 
 #include "view_main.h"
+#include "widgets_container.h"
+#include "opentx.h"
+#include "libwindows.h"
+#include "view_main.h"
+#include "tabsgroup.h"
+
+class WidgetConfigPage: public PageTab {
+  public:
+    WidgetConfigPage(Widget* widget);
+    void build(Window * window) override;
+  protected:
+    void addOption(Window * window, GridLayout& grid, const ZoneOption& option, ZoneOptionValue* value);
+    Widget* widget;
+};
 
 class WidgetsSetupPage: public ViewMain {
   public:
-    WidgetsSetupPage(uint8_t index);
+    WidgetsSetupPage(WidgetsContainerInterface* container, uint8_t index, LcdFlags color = TEXT_INVERTED_BGCOLOR, int padding = 4, int thickness = 2);
 
 #if defined(DEBUG_WINDOWS)
     std::string getName() override
@@ -33,10 +47,15 @@ class WidgetsSetupPage: public ViewMain {
       return "WidgetsSetupPage";
     }
 #endif
+    uint8_t currentView() override;
+    void setWidget(unsigned int zone, Widget* widget);
+    void displayWidgetConfig(Widget* widget);
+    void showWidgetMenu(unsigned int zone);
+    void showSelectWidgetMenu(unsigned int zone);
 
     bool onTouchStart(coord_t x, coord_t y) override
     {
-      Window::onTouchStart(x, y);
+      ViewMain::onTouchStart(x, y);
       return true;
     }
 
@@ -47,7 +66,11 @@ class WidgetsSetupPage: public ViewMain {
     void paint(BitmapBuffer * dc) override;
 
   protected:
+    WidgetsContainerInterface* container;
     uint8_t index;
+    LcdFlags color;
+    int padding;
+    int thickness;
 };
 
 #endif // _WIDGETS_SETUP_H_

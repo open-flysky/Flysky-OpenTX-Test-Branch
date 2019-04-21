@@ -25,80 +25,34 @@ const uint8_t LBM_LAYOUT_2P1[] = {
 };
 
 const ZoneOption OPTIONS_LAYOUT_2P1[] = {
-  { "Top bar", ZoneOption::Bool },
-  { "Flight mode", ZoneOption::Bool },
-  { "Sliders", ZoneOption::Bool },
-  { "Trims", ZoneOption::Bool },
+  { Layout::TopBar, ZoneOption::Bool },
+  { Layout::Navigation, ZoneOption::Bool },
+  { Layout::FlightMode, ZoneOption::Bool },
+  { Layout::Sliders, ZoneOption::Bool },
+  { Layout::Trims, ZoneOption::Bool },
   { NULL, ZoneOption::Bool }
-};
-
-const Zone ZONES_LAYOUT_2P1[3] = {
-  { 15, 160, LCD_W-30, 152 },
-  { 15, 320, LCD_W-30, 152 },
 };
 
 class Layout2P1: public Layout
 {
   public:
     Layout2P1(const LayoutFactory * factory, Layout::PersistentData * persistentData):
-      Layout(factory, persistentData)
+      Layout(factory, persistentData, 3)
     {
     }
-
-    virtual void create()
+    Zone getZone(unsigned int index) const override
     {
-      Layout::create();
-      persistentData->options[0].boolValue = true;
-      persistentData->options[1].boolValue = true;
-      persistentData->options[2].boolValue = true;
-      persistentData->options[3].boolValue = true;
+      Zone zone = Layout::getZone(index);
+      zone.w -= margin(); //additional margin
+      zone.w /= 2; //half of space
+      if(index == 0) zone.x += zone.w + margin(); //right column
+      else {
+        zone.h = zone.h/2 - margin()/2; // half of height on left
+        if (index == 2) zone.y += zone.h + margin(); //offset top on left
+      }
+      return zone;
     }
-
-    virtual unsigned int getZonesCount() const
-    {
-      return DIM(ZONES_LAYOUT_2P1);
-    }
-
-    virtual Zone getZone(unsigned int index) const
-    {
-      return ZONES_LAYOUT_2P1[index];
-    }
-
-    virtual void refresh();
 };
-
-void Layout2P1::refresh()
-{
-  theme->drawBackground();
-
-  if (persistentData->options[0].boolValue) {
-    drawTopBar();
-  }
-
-  if (persistentData->options[1].boolValue) {
-    // Flight mode
-#if 0
-    lcdDrawSizedText(LCD_W / 2 - getTextWidth(g_model.flightModeData[mixerCurrentFlightMode].name,
-                                              sizeof(g_model.flightModeData[mixerCurrentFlightMode].name),
-                                              ZCHAR | SMLSIZE) / 2,
-                     237,
-                     g_model.flightModeData[mixerCurrentFlightMode].name,
-                     sizeof(g_model.flightModeData[mixerCurrentFlightMode].name), ZCHAR | SMLSIZE);
-#endif
-  }
-
-  if (persistentData->options[2].boolValue) {
-    // Pots and rear sliders positions
-    drawMainPots();
-  }
-
-  if (persistentData->options[3].boolValue) {
-    // Trims
-    drawTrims(mixerCurrentFlightMode);
-  }
-
-  Layout::refresh();
-}
 
 BaseLayoutFactory<Layout2P1> layout2P1("Layout2P1", LBM_LAYOUT_2P1, OPTIONS_LAYOUT_2P1);
 const LayoutFactory * defaultLayout = &layout2P1;
