@@ -25,10 +25,8 @@
 
 #define SET_DIRTY() storageDirty(EE_MODEL)
 
-Window * createOptionEdit(Window * parent, const rect_t &rect, const ZoneOption * option, ZoneOptionValue * value);
-
 ScreenSetupPage::ScreenSetupPage(uint8_t index, bool inited) :
-  PageTab("Main view " + std::to_string(index + 1), ICON_THEME_VIEW1 + index),
+  ZoneOptionPage("Main view " + std::to_string(index + 1), ICON_THEME_VIEW1 + index),
   index(index),
   inited(inited)
 {
@@ -55,6 +53,18 @@ void ScreenSetupPage::recreateWidgets() {
     }
   }
 }
+bool ScreenSetupPage::isChangeAllowed(const ZoneOption* option)
+{
+  //prevent disabling navigation on first page
+  return !(strcmp(option->name, Layout::Navigation) == 0 && index == 0);
+}
+
+void ScreenSetupPage::onZoneOptionChanged(const ZoneOption* option) {
+  //adjust size of widgets after changes in layout
+  recreateWidgets();
+  ZoneOptionPage::onZoneOptionChanged(option);
+}
+
 void ScreenSetupPage::build(Window * window)
 {
   Layout * layout = customScreens[index];
@@ -108,31 +118,13 @@ void ScreenSetupPage::build(Window * window)
   });
   grid.nextLine(35);
   // Setup widgets button
-  new TextButton(window, grid.getFieldSlot(), STR_SETUP_WIDGETS, [=]() -> uint8_t { new WidgetsSetupPage(static_cast<WidgetsContainerInterface*>(customScreens[index]), index); return 0; });
+  new TextButton(window, grid.getFieldSlot(), STR_SETUP_WIDGETS, [=]() -> uint8_t { new WidgetsSetupView(static_cast<WidgetsContainerInterface*>(customScreens[index]), index); return 0; });
   grid.nextLine();
   // Layout options
   const ZoneOption * options = layout->getFactory()->getOptions();
-  int optionsCount = getOptionsCount(options);
-
-  for (int i=0; i<optionsCount; i++) {
-    const ZoneOption * option = &options[i];
-    ZoneOptionValue * value = layout->getOptionValue(i);
-    new StaticText(window, grid.getLabelSlot(), option->name);
-    if (option->type == ZoneOption::Bool)
-    {
-      new CheckBox(window, grid.getFieldSlot(), [=] { return value->boolValue; },
-          [=](uint8_t newValue) {
-              if(strcmp(option->name, Layout::Navigation) == 0 && index == 0) {
-                //never allow disabling navigation on main screen
-                newValue = 1;
-              }
-              value->boolValue = newValue;
-              recreateWidgets();
-              SET_DIRTY();
-      });
-    }
-    else createOptionEdit(window, grid.getFieldSlot(), option, value);
-    grid.nextLine();
+  for (int option=0; ; option++) {
+    if(!options || !options[option].name) break;
+    addOption(window, grid, options[option], layout->getOptionValue(option));
   }
 
   // Delete screen button

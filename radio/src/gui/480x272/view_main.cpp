@@ -249,7 +249,7 @@ void ViewMain::drawButton(BitmapBuffer * dc, coord_t x, uint8_t icon) {
   coord_t y = isTopBarVisible() ? NAV_BUTTONS_MARGIN_TOP : NAV_BUTTONS_MARGIN;
 	dc->drawBitmap(x, y, &ALPHA_BUTTON_OFF);
 	const BitmapBuffer * mask = theme->getIconMask(icon);
-	dc->drawMask(x+((buttonHeight-mask->getWidth())/2), y+((buttonHeight-mask->getHeight())/2), mask, TEXT_BGCOLOR);
+	if(mask) dc->drawMask(x+((buttonHeight-mask->getWidth())/2), y+((buttonHeight-mask->getHeight())/2), mask, TEXT_BGCOLOR);
 }
 
 void ViewMain::paint(BitmapBuffer * dc)
