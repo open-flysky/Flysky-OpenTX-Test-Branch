@@ -25,11 +25,20 @@ ZoneOptionPage(STR_WIDGET_SETTINGS, ICON_THEME_SETUP),
 widget(widget)
 {
 }
-
+void WidgetConfigPage::onZoneOptionChanged(const ZoneOption* option) {
+  widget->update();
+  storageDirty(EE_MODEL);
+}
 void WidgetConfigPage::build(Window * window) {
   GridLayout grid;
   grid.spacer(8);
   grid.setLabelWidth(LCD_W/2);
+  const char* error = widget->getErrorMessage();
+  if(error) {
+    new StaticText(window, grid.getLineSlot(), std::string(error), WARNING_COLOR | CENTERED);
+    return;
+  }
+
   const ZoneOption * options = widget->getOptions();
   for (int option=0; ; option++) {
     if(!options || !options[option].name) break;
@@ -49,10 +58,19 @@ WidgetsSetupView::WidgetsSetupView(WidgetsContainerInterface* container, uint8_t
 {
 }
 
-void WidgetsSetupView::setWidget(unsigned int zone, Widget* widget){
+void WidgetsSetupView::createWidget(unsigned int zone, const char* name){
   Widget* old = container->getWidget(zone);
   if(old) delete old;
-  container->setWidget(zone, widget);
+  const WidgetFactory * factory = NULL;
+  if(name) {
+    for (auto it = getRegisteredWidgets().cbegin(); it != getRegisteredWidgets().cend(); ++it) {
+       if(strcmp(name, (*it)->getName()) == 0){
+         factory = (*it);
+         break;
+       }
+    }
+  }
+  container->createWidget(zone, factory);
   storageDirty(EE_MODEL);
 }
 void WidgetsSetupView::displayWidgetConfig(Widget* widget)
@@ -66,15 +84,15 @@ void WidgetsSetupView::displayWidgetConfig(Widget* widget)
 void WidgetsSetupView::showSelectWidgetMenu(unsigned int zone)
 {
   Menu* menu = new Menu ();
-  menu->addLine (TR_NONE, [=]() { setWidget(zone, NULL); });
+  menu->addLine (TR_NONE, [=]() { createWidget(zone, NULL); });
   for (auto it = getRegisteredWidgets().cbegin(); it != getRegisteredWidgets().cend(); ++it) {
-    menu->addLine ((*it)->getName(), [=]() {
-      Widget* widget = loadWidget((*it)->getName(), container->getZone(zone), new Widget::PersistentData());
-      setWidget(zone, widget);
+    const char * name = (*it)->getName();
+    menu->addLine (name, [=]() {
+      createWidget(zone, name);
+      Widget* widget = container->getWidget(zone);
       displayWidgetConfig(widget);
     });
   }
-
 }
 void WidgetsSetupView::showWidgetMenu(unsigned int zone)
 {
@@ -83,7 +101,7 @@ void WidgetsSetupView::showWidgetMenu(unsigned int zone)
     Menu * menu = new Menu ();
     menu->addLine (STR_SELECT_WIDGET, [=]() { showSelectWidgetMenu(zone); });
     if (widget->getFactory()->getOptions()) menu->addLine (STR_WIDGET_SETTINGS, [=]() { displayWidgetConfig (widget); });
-    menu->addLine (STR_REMOVE_WIDGET, [=]() { setWidget(zone, NULL); });
+    menu->addLine (STR_REMOVE_WIDGET, [=]() { createWidget(zone, NULL); });
   }
   else showSelectWidgetMenu(zone);
 }

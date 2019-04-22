@@ -35,7 +35,7 @@ bool ZoneOptionPage::isChangeAllowed(const ZoneOption* option) {
 
 void ZoneOptionPage::onZoneOptionChanged(const ZoneOption* option)
 {
-  storageDirty(EE_GENERAL);
+
 }
 
 void ZoneOptionPage::addOption(Window * window, GridLayout& grid, const ZoneOption& option, ZoneOptionValue * value) {
@@ -118,10 +118,9 @@ Window * ZoneOptionPage::createOptionEdit(Window * parent, const rect_t &rect, c
 
 void ScreenThemePage::onZoneOptionChanged(const ZoneOption* option)
 {
-  TRACE("ZoneOptionPage::onZoneOptionChanged %s ", option->name);
   if(option->type == ZoneOption::Color) theme->updatecolor();
   theme->update();
-  ZoneOptionPage::onZoneOptionChanged(option);
+  storageDirty(EE_GENERAL);
 }
 
 void ScreenThemePage::build(Window * window)

@@ -34,6 +34,7 @@ class WidgetConfigPage: public ZoneOptionPage {
     WidgetConfigPage(Widget* widget);
     void build(Window * window) override;
   protected:
+    void onZoneOptionChanged(const ZoneOption* option) override;
     Widget* widget;
 };
 
@@ -48,7 +49,7 @@ class WidgetsSetupView: public ViewMain {
     }
 #endif
     uint8_t currentView() override;
-    void setWidget(unsigned int zone, Widget* widget);
+    void createWidget(unsigned int zone, const char* name);
     void displayWidgetConfig(Widget* widget);
     void showWidgetMenu(unsigned int zone);
     void showSelectWidgetMenu(unsigned int zone);

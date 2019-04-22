@@ -23,7 +23,6 @@
 #include "opentx.h"
 #include "libwindows.h"
 
-#define SET_DIRTY() storageDirty(EE_MODEL)
 
 ScreenSetupPage::ScreenSetupPage(uint8_t index, bool inited) :
   ZoneOptionPage("Main view " + std::to_string(index + 1), ICON_THEME_VIEW1 + index),
@@ -62,7 +61,8 @@ bool ScreenSetupPage::isChangeAllowed(const ZoneOption* option)
 void ScreenSetupPage::onZoneOptionChanged(const ZoneOption* option) {
   //adjust size of widgets after changes in layout
   recreateWidgets();
-  ZoneOptionPage::onZoneOptionChanged(option);
+  customScreens[index]->update();
+  storageDirty(EE_MODEL);
 }
 
 void ScreenSetupPage::build(Window * window)
@@ -78,7 +78,7 @@ void ScreenSetupPage::build(Window * window)
     	  if (getRegisteredLayouts().size()) {
     	      customScreens[index] = getRegisteredLayouts().front()->create(&g_model.screenData[index].layoutData);
     	  }
-    	  SET_DIRTY();
+    	  storageDirty(EE_MODEL);
     	  rebuild(window);
     	  return 0;
       });
@@ -106,7 +106,7 @@ void ScreenSetupPage::build(Window * window)
     auto factory = *it;
     strncpy(g_model.screenData[index].layoutName, factory->getName(), LAYOUT_NAME_LEN);
     customScreens[index] = factory->create(&g_model.screenData[index].layoutData);
-    SET_DIRTY();
+    storageDirty(EE_MODEL);
     rebuild(window);
     layoutChoice->setFocus();
     NumberKeyboard::instance()->setField(layoutChoice);
@@ -118,6 +118,7 @@ void ScreenSetupPage::build(Window * window)
   });
   grid.nextLine(35);
   // Setup widgets button
+
   new TextButton(window, grid.getFieldSlot(), STR_SETUP_WIDGETS, [=]() -> uint8_t { new WidgetsSetupView(static_cast<WidgetsContainerInterface*>(customScreens[index]), index); return 0; });
   grid.nextLine();
   // Layout options
@@ -134,7 +135,7 @@ void ScreenSetupPage::build(Window * window)
 	  memset(&g_model.screenData[MAX_CUSTOM_SCREENS - 1], 0, sizeof(CustomScreenData));
 	  customScreens[index] = NULL;
 	  inited = false;
-	  SET_DIRTY();
+	  storageDirty(EE_MODEL);
 	  rebuild(window);
 	  return 0;
     });
