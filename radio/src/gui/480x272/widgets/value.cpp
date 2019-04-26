@@ -78,10 +78,10 @@ void ValueWidget::refresh()
     yLabel = y+2;
     if (field >= MIXSRC_FIRST_TELEM) {
       if (isGPSSensor(1+(field-MIXSRC_FIRST_TELEM)/3)) {
-        attrValue = LEFT | MIDSIZE | EXPANDED;
+        attrValue = LEFT | SMLSIZE | EXPANDED;
       }
       else {
-        attrValue = LEFT | DBLSIZE;
+        attrValue = LEFT | MIDSIZE;
       }
     }
 #if defined(INTERNAL_GPS)
