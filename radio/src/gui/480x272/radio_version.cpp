@@ -136,13 +136,13 @@ void RadioVersionPage::build(Window * window)
       new QR_CodeMenu(QR_CODE_USER_MANUAL);
       return 1;
   });
-
-  new TextButton(window, {LCD_W/2-125, window->height() - 50, 250, 30}, STR_FACTORYRESET, [=]() -> int8_t {
-    // TODO not implemented on X12 / X10 today!
-    // POPUP_CONFIRMATION(STR_CONFIRMRESET);
-    // showMessageBox(STR_STORAGE_FORMAT);
-    storageEraseAll(false);
-    NVIC_SystemReset();
+  new TextButton(window, {LCD_W/2-125, window->height() - 100, 250, 30}, STR_FACTORYRESET, [=]() -> int8_t {
+    auto dialog = new Dialog(WARNING_TYPE_INPUT, STR_CONFIRMRESET, STR_STORAGE_FORMAT, [=]() {
+      storageEraseAll(false);
+      NVIC_SystemReset();
+      return 0;
+    });
+	dialog->runForever();
     return 0;
   });
 }
