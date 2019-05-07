@@ -44,10 +44,10 @@ struct FlyskyNv14Sensor {
 
 
 union nv14SensorData {
-	uint8_t UINT8;
-	uint16_t UINT16;
-	int16_t INT16;
-	uint32_t UINT32;
+  uint8_t UINT8;
+  uint16_t UINT16;
+  int16_t INT16;
+  uint32_t UINT32;
 };
 
 
@@ -56,7 +56,7 @@ const FlyskyNv14Sensor Nv14Sensor[]=
 {
     {FLYSKY_FIXED_RX_VOLTAGE,  0, ZSTR_BATT,        UNIT_VOLTS,         2, 0, 2, false},
     {FLYSKY_SENSOR_RX_SIGNAL,  0, ZSTR_SIG,         UNIT_RAW,           0, 0, 2, false},
-    {FLYSKY_SENSOR_RX_RSSI,    0, ZSTR_RSSI,        UNIT_DB,           	0, 0, 2, true,},
+    {FLYSKY_SENSOR_RX_RSSI,    0, ZSTR_RSSI,        UNIT_DB,            0, 0, 2, true,},
     {FLYSKY_SENSOR_RX_NOISE,   0, ZSTR_NOISE,       UNIT_DB,            0, 0, 2, true},
     {FLYSKY_SENSOR_RX_SNR,     0, ZSTR_RX_SNR,      UNIT_DB,            0, 0, 2, false},
     {FLYSKY_SENSOR_RX_SNR,     1, ZSTR_RX_QUALITY,  UNIT_PERCENT,       0, 0, 2, false},
@@ -76,19 +76,65 @@ const FlyskyNv14Sensor Nv14Sensor[]=
 
 FlyskyNv14Sensor defaultNv14Sensor = {0, 0, "UNKNOWN", UNIT_RAW, 0, 0, 2, false};
 
-
-const uint8_t snrToSig[] = {
-    4, 15, 24, 33, 40, 47, 53, 58, 63, 67, 71, 74, 77, 80, 82, 84, 86, 88, 89,
-	90, 92, 93, 94, 94, 95, 96, 96, 97, 98, 98, 98, 99, 99, 99, 99, 100, 100, 100
+const signed short tAltitude[225]=
+{
+    20558, 20357, 20158, 19962, 19768, 19576, 19387, 19200, 19015,  18831, 18650, 18471, 18294, 18119, 17946, 17774,
+    17604, 17436, 17269, 17105, 16941, 16780, 16619, 16461, 16304,  16148, 15993, 15841, 15689, 15539, 15390, 15242,
+    15096, 14950, 14806, 14664, 14522, 14381, 14242, 14104, 13966,  13830, 13695, 13561, 13428, 13296, 13165, 13035,
+    12906, 12777, 12650, 12524, 12398, 12273, 12150, 12027, 11904,  11783, 11663, 11543, 11424, 11306, 11189, 11072,
+    10956, 10841, 10726, 10613, 10500, 10387, 10276, 10165, 10054,   9945,  9836,  9727,  9620,  9512,  9406,  9300,
+    9195,  9090,  8986,  8882,  8779,  8677,   8575,  8474,  8373,   8273,  8173,  8074,  7975,  7877,  7779,  7682,
+    7585,  7489,  7394,  7298,  7204,  7109,   7015,  6922,  6829,   6737,  6645,  6553,  6462,  6371,  6281,  6191,
+    6102,  6012,  5924,  5836,  5748,  5660,   5573,  5487,  5400,   5314,  5229,  5144,  5059,  4974,  4890,  4807,
+    4723,  4640,  4557,  4475,  4393,  4312,   4230,  4149,  4069,   3988,  3908,  3829,  3749,  3670,  3591,  3513,
+    3435,  3357,  3280,  3202,  3125,  3049,   2972,  2896,  2821,   2745,  2670,  2595,  2520,  2446,  2372,  2298,
+    2224,  2151,  2078,  2005,  1933,   1861,  1789,  1717,  1645,   1574,  1503,  1432,  1362,  1292,  1222,  1152,
+    1082,  1013,   944,   875,   806,   738,    670,   602,   534,    467,   399,   332,   265,   199,   132,    66,
+     0,     -66,  -131,  -197,  -262,  -327,   -392,  -456,  -521,   -585,  -649,  -713,  -776,  -840,  -903,  -966,
+    -1029,-1091, -1154, -1216, -1278, -1340,  -1402, -1463,  -1525, -1586, -1647, -1708, -1769, -1829, -1889, -1950,
+    -2010
 };
+signed short CalculateAltitude( unsigned int Pressure, unsigned int SeaLevelPressure )
+{
+  unsigned int Index;
+  signed int Altitude1;
+  signed int Altitude2;
+  unsigned int Decimal;
+  unsigned long Ratio;
+
+  Ratio = ( ( ( unsigned long long ) Pressure << 16 ) + ( SeaLevelPressure / 2 ) ) / SeaLevelPressure;
+  if( Ratio < ( ( 1 << 16 ) * 250 / 1000 ) )// 0.250 inclusive
+  {
+      Ratio = ( 1 << 16 ) * 250 / 1000;
+  }
+  else if( Ratio > ( 1 << 16 ) * 1125 / 1000 - 1 ) // 1.125 non-inclusive
+  {
+      Ratio = ( 1 << 16 ) * 1125 / 1000 - 1;
+  }
+
+  Ratio -= ( 1 << 16 ) * 250 / 1000; // from 0.000 (inclusive) to 0.875 (non-inclusive)
+  Index = Ratio >> 8;
+  Decimal = Ratio & ( ( 1 << 8 ) - 1 );
+  Altitude1 = tAltitude[Index];
+  Altitude2 = Altitude1 - tAltitude[Index + 1];
+  Altitude1 = Altitude1 - ( Altitude2 * Decimal + ( 1 << 7 ) ) / ( 1 << 8 );
+  if( Altitude1 >= 0 )
+  {
+      return( ( Altitude1 + 1 ) / 2 );
+  }
+  else
+  {
+      return( ( Altitude1 - 1 ) / 2 );
+  }
+}
 
 const FlyskyNv14Sensor* getFlyskyNv14Sensor(uint16_t id, uint8_t subId)
 {
-	for(unsigned index = 0; index < *(&Nv14Sensor + 1) - Nv14Sensor; index++ ){
-		if (Nv14Sensor[index].id == id && Nv14Sensor[index].subId == subId) {
-			return &Nv14Sensor[index];
-		}
-	}
+  for(unsigned index = 0; index < *(&Nv14Sensor + 1) - Nv14Sensor; index++ ){
+    if (Nv14Sensor[index].id == id && Nv14Sensor[index].subId == subId) {
+      return &Nv14Sensor[index];
+    }
+  }
     return &defaultNv14Sensor;
 }
 
@@ -103,69 +149,6 @@ void flySkyNv14SetDefault(int index, uint8_t id, uint8_t subId, uint8_t instance
     storageDirty(EE_MODEL);
 }
 
-uint16_t tempToK(int16_t temperture){
-	return (uint16_t)(temperture) + 2731;
-}
-
-int32_t log2fix(uint32_t x){
-	int32_t b = 1U << (FIXED_PRECISION - 1);
-	int32_t y = 0;
-	while (x < 1U << FIXED_PRECISION) {
-		x <<= 1;
-		y -= 1U << FIXED_PRECISION;
-	}
-
-	while (x >= 2U << FIXED_PRECISION) {
-		x >>= 1;
-		y += 1U << FIXED_PRECISION;
-	}
-
-	uint64_t z = x;
-	for (size_t i = 0; i < FIXED_PRECISION; i++) {
-		z = z*z >> FIXED_PRECISION;
-		if (z >= 2U << FIXED_PRECISION) {
-			z >>= 1;
-			y += b;
-		}
-		b >>= 1;
-	}
-	return y;
-}
-
-
-int getALT(uint32_t pressurePa, uint16_t temperture){
-	if(pressurePa == 0) return 0;
-	static int32_t initPressure;
-	static int32_t initTemperature;
-
-    uint16_t temperatureK = tempToK(temperture);
-
-    if (initPressure <= 0) {
-    	initPressure = pressurePa;
-    	initTemperature = temperatureK;
-    }
-    int temperature = (initTemperature + temperatureK) >> 1; //div 2
-    bool tempNegative = temperature < 0;
-    if (tempNegative)  temperature = temperature *-1;
-    uint64_t helper = R_DIV_G_MUL_10_Q15;
-    helper = helper *(uint64_t)temperature;
-    helper = helper >> FIXED_PRECISION;
-	uint32_t po_to_p = (uint32_t)(initPressure << (FIXED_PRECISION-1));
-	po_to_p = po_to_p / pressurePa;
-	//shift missing bit
-	po_to_p = po_to_p << 1;
-	if(po_to_p == 0) return 0;
-	uint64_t t =  log2fix(po_to_p) * INV_LOG2_E_Q1DOT31;
-	int32_t ln = t >> 31;
-    bool neg = ln < 0;
-    if (neg) ln = ln * -1;
-    helper = helper * (uint64_t)ln;
-    helper = helper >> FIXED_PRECISION;
-    int result = (int)helper;
-    if (neg ^ tempNegative) result = result * -1;
-    return result;
-}
-
 
 
 int32_t GetSensorValueFlySkyNv14(const FlyskyNv14Sensor* sensor, const uint8_t * data){
@@ -175,14 +158,21 @@ int32_t GetSensorValueFlySkyNv14(const FlyskyNv14Sensor* sensor, const uint8_t *
   else if(sensor->bytes == 2) value = sensor->issigned ? sensorData->INT16 : sensorData->UINT16;
   else if(sensor->bytes == 4) value = sensorData->UINT32;
 
-  //special sensors
-  if(sensor->id == FLYSKY_SENSOR_RX_SNR && sensor->subId != 0) {
-    if(value < MIN_SNR) value = 0;
-    if(value > MAX_SNR) value = 100;
-    else value = snrToSig[value-MIN_SNR];
+  
+  if(sensor->id == FLYSKY_SENSOR_RX_SIGNAL) {
+     value *= 10;
+  }
+  if(sensor->id == FLYSKY_SENSOR_EXT_VOLTAGE) {
+     value /= 10;
+  }
+  if(sensor->id == FLYSKY_SENSOR_RX_RSSI) {
+    if(value < -200) value = -200;
+    value += 200;
+    value /= 2;
   }
   if(sensor->id == FLYSKY_SENSOR_PRESURRE && sensor->subId != 0){
-    value = getALT(value, 250);
+    value = CalculateAltitude(value, 101325);
+    value = (value+500)/1000;
   }
   return value;
 }
