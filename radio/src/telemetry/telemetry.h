@@ -84,6 +84,17 @@ extern uint8_t telemetryState;
 extern uint8_t telemetryRxBuffer[TELEMETRY_RX_PACKET_SIZE];
 extern uint8_t telemetryRxBufferCount;
 
+#if defined(SIMU)
+    #define bswapu16 __builtin_bswap16
+    #define bswaps16 __builtin_bswap16
+    #define bswapu32 __builtin_bswap32
+#else
+    #define bswapu16 __REV16
+    #define bswaps16 __REVSH
+    #define bswapu32 __REV
+#endif
+
+
 #if defined(CPUARM)
 #define TELEMETRY_AVERAGE_COUNT        3
 
@@ -196,7 +207,7 @@ inline void telemetryOutputSetTrigger(uint8_t byte)
   outputTelemetryBufferTrigger = byte;
 }
 
-#if defined(LUA)
+#if defined(LUA) || defined(CROSSFIRE_NATIVE)
 #define LUA_TELEMETRY_INPUT_FIFO_SIZE  256
 extern Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE> * luaInputTelemetryFifo;
 #endif

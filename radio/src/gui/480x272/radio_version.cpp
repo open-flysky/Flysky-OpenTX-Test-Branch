@@ -68,7 +68,7 @@ class QR_CodeBody : public Window {
 class QR_CodePage : public PageTab {
   public:
     QR_CodePage(uint8_t QR_Index) :
-      PageTab(QR_Index == QR_CODE_QUICK_START ? "Quick start guide":"User manual", ICON_RADIO_VERSION),
+      PageTab(QR_Index == QR_CODE_QUICK_START ? STR_QUICK_START_GUIDE:STR_USER_MANUAL, ICON_RADIO_VERSION),
       QR_Index(QR_Index)
     {
     }

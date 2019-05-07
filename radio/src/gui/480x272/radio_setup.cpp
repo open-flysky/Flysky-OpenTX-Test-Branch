@@ -81,7 +81,7 @@ class DateTimeWindow : public Window {
                        SET_LOAD_DATETIME(&t);
                      });
       month->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
-        drawNumber(dc, 2, 2, value, flags | LEADING0, 2);
+        drawNumber(dc, 2, Y_ENLARGEABLE, value, flags | LEADING0, 2);
       });
 
       /* TODO dynamic max instead of 31 ...
@@ -103,7 +103,7 @@ class DateTimeWindow : public Window {
                        SET_LOAD_DATETIME(&t);
                      });
       day->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
-        drawNumber(dc, 2, 2, value, flags | LEADING0, 2);
+        drawNumber(dc, 2, Y_ENLARGEABLE, value, flags | LEADING0, 2);
       });
       grid.nextLine();
 
@@ -123,7 +123,7 @@ class DateTimeWindow : public Window {
                        SET_LOAD_DATETIME(&t);
                      });
       hour->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
-        drawNumber(dc, 2, 2, value, flags | LEADING0, 2);
+        drawNumber(dc, 2, Y_ENLARGEABLE, value, flags | LEADING0, 2);
       });
 
       auto minutes = new NumberEdit(this, grid.getFieldSlot(3, 1), 0, 59,
@@ -139,7 +139,7 @@ class DateTimeWindow : public Window {
                        SET_LOAD_DATETIME(&t);
                      });
       minutes->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
-        drawNumber(dc, 2, 2, value, flags | LEADING0, 2);
+        drawNumber(dc, 2, Y_ENLARGEABLE, value, flags | LEADING0, 2);
       });
 
       auto seconds = new NumberEdit(this, grid.getFieldSlot(3, 2), 0, 59,
@@ -155,7 +155,7 @@ class DateTimeWindow : public Window {
                        SET_LOAD_DATETIME(&t);
                      });
       seconds->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
-        drawNumber(dc, 2, 2, value, flags | LEADING0, 2);
+        drawNumber(dc, 2, Y_ENLARGEABLE, value, flags | LEADING0, 2);
       });
       grid.nextLine();
       getParent()->moveWindowsTop(top(), adjustHeight());
@@ -197,58 +197,15 @@ void RadioSetupPage::build(Window * window)
   });
   grid.nextLine();
 
-#if 0
-    case ITEM_SETUP_TIME:
-      {
-        lcdDrawText(MENUS_MARGIN_LEFT, y, STR_TIME);
-        LcdFlags flags = 0;
-        if (attr && menuHorizontalPosition < 0) {
-          flags |= INVERS;
-        }
-        for (uint8_t j=0; j<3; j++) {
-          uint8_t rowattr = (menuHorizontalPosition==j ? attr : 0);
-          switch (j) {
-            case 0:
-              if (rowattr && s_editMode>0) t.tm_hour = checkIncDec(event, t.tm_hour, 0, 23, 0);
-              lcdDrawNumber(RADIO_SETUP_2ND_COLUMN, y, t.tm_hour, flags|rowattr|LEADING0, 2);
-              lcdDrawText(lcdNextPos+3, y, ":", flags);
-              break;
-            case 1:
-              if (rowattr && s_editMode>0) t.tm_min = checkIncDec(event, t.tm_min, 0, 59, 0);
-              lcdDrawNumber(lcdNextPos+3, y, t.tm_min, flags|rowattr|LEADING0, 2);
-              lcdDrawText(lcdNextPos+3, y, ":", flags);
-              break;
-            case 2:
-              if (rowattr && s_editMode>0) t.tm_sec = checkIncDec(event, t.tm_sec, 0, 59, 0);
-              lcdDrawNumber(lcdNextPos+3, y, t.tm_sec, flags|rowattr|LEADING0, 2);
-              break;
-          }
-        }
-        if (attr && checkIncDec_Ret)
-          g_rtcTime = gmktime(&t); // update local timestamp and get wday calculated
-        break;
-      }
-
-      case ITEM_SETUP_BATT_RANGE:
-      {
-        lcdDrawText(MENUS_MARGIN_LEFT, y, STR_BATTERY_RANGE);
-        LcdFlags flags = 0;
-        if (attr && menuHorizontalPosition < 0) {
-          flags |= INVERS;
-        }
-        lcdDrawNumber(RADIO_SETUP_2ND_COLUMN, y, 90+g_eeGeneral.vBatMin, flags|(menuHorizontalPosition==0 ? attr : 0)|PREC1|LEFT);
-        lcdDrawText(lcdNextPos+3, y, "-", flags);
-        lcdDrawNumber(lcdNextPos+3, y, 120+g_eeGeneral.vBatMax, flags|(menuHorizontalPosition>0 ? attr : 0)|PREC1|LEFT);
-        lcdDrawText(lcdNextPos+1, y, "V", flags);
-        if (attr && s_editMode>0) {
-          if (menuHorizontalPosition==0)
-            CHECK_INCDEC_GENVAR(event, g_eeGeneral.vBatMin, -50, g_eeGeneral.vBatMax+29); // min=4.0V
-          else
-            CHECK_INCDEC_GENVAR(event, g_eeGeneral.vBatMax, g_eeGeneral.vBatMin-29, +40); // max=16.0V
-        }
-        break;
-      }
-#endif
+  new StaticText(window, grid.getLabelSlot(), "Touch enlarge");
+  new CheckBox(window, grid.getFieldSlot(),
+               GET_DEFAULT(g_eeGeneral.displayLargeLines),
+               [=](int32_t newValue) {
+                 g_eeGeneral.displayLargeLines= newValue;
+                 TextKeyboard::instance()->setSize();
+                 SET_DIRTY();
+               });
+  grid.nextLine();
 
   new Subtitle(window, grid.getLabelSlot(), STR_SOUND_LABEL);
   grid.nextLine();

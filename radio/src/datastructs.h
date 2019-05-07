@@ -61,6 +61,7 @@
   #define HORUS_FIELD(x)
 #endif
 
+// When using unions, wrap all but the largest member in NOBACKUP()
 #if defined(BACKUP)
   #define NOBACKUP(...)
 #else
@@ -450,7 +451,6 @@ PACK(struct ScriptData {
  * Frsky Telemetry structure
  */
 #if defined(CPUARM)
-#if 0
 PACK(struct RssiAlarmData {
   int8_t disabled:1;
   int8_t spare:1;
@@ -460,17 +460,6 @@ PACK(struct RssiAlarmData {
   inline int8_t getWarningRssi() {return 45 + warning;}
   inline int8_t getCriticalRssi() {return 42 + critical;}
  });
-#else
-PACK(struct RssiAlarmData {
-  int8_t disabled:1;
-  int8_t spare:7;
-  int8_t warning;
-  //int8_t spare2:2;
-  int8_t critical;
-  inline int8_t getWarningRssi() {return 45 + warning;}
-  inline int8_t getCriticalRssi() {return 42 + critical;}
- });
-#endif
 #else
 PACK(struct FrSkyRSSIAlarm {
   int8_t level:2;
@@ -652,12 +641,12 @@ PACK(struct ModuleData {
   uint8_t invertedSerial:1; // telemetry serial inverted from standard
   int16_t failsafeChannels[MAX_OUTPUT_CHANNELS];
   union {
-    struct {
+    NOBACKUP(struct {
       int8_t  delay:6;
       uint8_t pulsePol:1;
       uint8_t outputType:1;    // false = open drain, true = push pull
       int8_t  frameLength;
-    } ppm;
+    } ppm);
     NOBACKUP(struct {
       uint8_t rfProtocolExtra:2;
       uint8_t spare1:3;
@@ -667,11 +656,11 @@ PACK(struct ModuleData {
       int8_t optionValue;
     } multi);
 
-    NOBACKUP(struct {
+    struct {
       uint8_t rx_id[4];
       uint8_t mode;
       uint8_t rx_freq[2];
-    } romData);
+    } romData;
 
     NOBACKUP(struct {
       uint8_t power:2;                  // 0=10 mW, 1=100 mW, 2=500 mW, 3=1W
@@ -925,7 +914,7 @@ PACK(struct TrainerData {
     NOBACKUP(char switchNames[NUM_SWITCHES][LEN_SWITCH_NAME]); \
     NOBACKUP(char anaNames[NUM_STICKS+NUM_POTS+NUM_SLIDERS+NUM_DUMMY_ANAS][LEN_ANA_NAME]); \
     NOBACKUP(char currModelFilename[LEN_MODEL_FILENAME+1]); \
-    NOBACKUP(uint8_t spare:1); \
+    NOBACKUP(uint8_t displayLargeLines:1); \
     NOBACKUP(uint8_t blOffBright:7); \
     NOBACKUP(char bluetoothName[LEN_BLUETOOTH_NAME]);
 #elif defined(PCBTARANIS) || defined(PCBI8) || defined(PCBNV14)

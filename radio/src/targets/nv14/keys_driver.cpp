@@ -81,7 +81,7 @@ void readKeysAndTrims()
 #if !defined(BOOT)
 uint32_t switchState(uint8_t index)
 {
-  uint16_t value = getAnalogValue(SWITCH_FIRST + index / 3);
+  uint16_t value = getAnalogValue(SWA + index / 3);
   uint8_t position;
 
   if (value < 1024)

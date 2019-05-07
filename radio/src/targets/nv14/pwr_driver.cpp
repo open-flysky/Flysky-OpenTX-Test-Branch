@@ -74,6 +74,10 @@ void pwrOn()
   boardState = BOARD_POWER_ON;
 }
 
+void pwrSoftReboot(){
+  boardState = BOARD_REBOOT;
+  NVIC_SystemReset();
+}
 void pwrOff()
 {
   // Shutdown the Haptic
@@ -94,6 +98,6 @@ void pwrResetHandler()
     RCC->CSR |= RCC_CSR_RMVF; //clear all flags
   }
   else {
-	  powerupReason = ~DIRTY_SHUTDOWN;
+    powerupReason = ~DIRTY_SHUTDOWN;
   }
 }

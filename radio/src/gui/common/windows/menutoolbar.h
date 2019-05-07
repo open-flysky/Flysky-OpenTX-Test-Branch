@@ -109,12 +109,12 @@ class MenuToolbar: public Window {
       auto button = new MenuToolbarButton(this, {0, y, 50, 30}, picto);
       button->setPressHandler([=]() {
         if (button->hasFocus()) {
-//          choice->fillMenu(menu, [=](int16_t index) {
-//            return index >= filtermin && index <= filtermax;
-//          });
+          choice->fillMenu(menu, [=](int16_t index) {
+            return index >= filtermin && index <= filtermax;
+          });
         }
         else {
-//          choice->fillMenu(menu);
+          choice->fillMenu(menu);
         }
         return 1;
       });

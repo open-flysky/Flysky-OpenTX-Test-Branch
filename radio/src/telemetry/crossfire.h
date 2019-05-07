@@ -25,10 +25,13 @@
 #define BROADCAST_ADDRESS              0x00
 #define RADIO_ADDRESS                  0xEA
 #define MODULE_ADDRESS                 0xEE
+#define SYNC_BYTE                      0xC8
 
 // Frame id
 #define GPS_ID                         0x02
 #define BATTERY_ID                     0x08
+#define HEARTBEAT_ID                   0x0B
+#define VIDEO_TRANSMITTER_ID           0x0F
 #define LINK_ID                        0x14
 #define CHANNELS_ID                    0x16
 #define ATTITUDE_ID                    0x1E
@@ -36,10 +39,18 @@
 #define PING_DEVICES_ID                0x28
 #define DEVICE_INFO_ID                 0x29
 #define REQUEST_SETTINGS_ID            0x2A
+#define ENTRY_SETTINGS_ID              0x2B
+#define READ_SETTINGS_ID               0x2C
+#define WRITE_SETTINGS_ID              0x2D
+#define CROSSFIRE_COMMAND_ID           0x32
+
+
 
 void processCrossfireTelemetryData(uint8_t data);
 void crossfireSetDefault(int index, uint8_t id, uint8_t subId);
 bool isCrossfireOutputBufferAvailable();
+bool crossfireGet(uint8_t* buffer, uint8_t& dataSize);
+void crossfireSend(uint8_t* payload, size_t size);
 
 #if SPORT_MAX_BAUDRATE < 400000
 const uint32_t CROSSFIRE_BAUDRATES[] = {
@@ -56,6 +67,5 @@ const uint8_t CROSSFIRE_FRAME_PERIODS[] = {
 #define CROSSFIRE_BAUDRATE             400000
 #define CROSSFIRE_FRAME_PERIOD         4 // 4ms
 #endif
-
 
 #endif // _CROSSFIRE_H_

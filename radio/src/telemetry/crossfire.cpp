@@ -196,7 +196,7 @@ void processCrossfireTelemetryFrame()
       break;
     }
 
-#if defined(LUA)
+#if defined(LUA) || defined(CROSSFIRE_NATIVE)
     default:
       if (luaInputTelemetryFifo && luaInputTelemetryFifo->hasSpace(telemetryRxBufferCount-2) ) {
         for (uint8_t i=1; i<telemetryRxBufferCount-1; i++) {
@@ -262,4 +262,34 @@ void crossfireSetDefault(int index, uint8_t id, uint8_t subId)
   }
 
   storageDirty(EE_MODEL);
+}
+
+void crossfireSend(uint8_t* payload, size_t size)
+{
+  if(!isCrossfireOutputBufferAvailable()) return;
+  if (luaInputTelemetryFifo == NULL) luaInputTelemetryFifo = new Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE>();
+  else if(luaInputTelemetryFifo) luaInputTelemetryFifo->clear();
+  //telemetryOutputPushByte(MODULE_ADDRESS);//MODULE ADDRESS
+  telemetryOutputPushByte(SYNC_BYTE);//MODULE ADDRESS
+  telemetryOutputPushByte(1 + size);
+
+  for(size_t index = 0; index < size; index++){
+    telemetryOutputPushByte(payload[index]);
+  }
+  telemetryOutputPushByte(crc8(payload, size));
+  telemetryOutputSetTrigger(payload[0]);
+}
+
+bool crossfireGet(uint8_t* buffer, uint8_t& size)
+{
+  size = 0;
+  if (luaInputTelemetryFifo->probe(size) && luaInputTelemetryFifo->size() >= size)
+  {
+    luaInputTelemetryFifo->pop(size);
+    for(uint8_t i = 0; i < size-1; i++){
+      luaInputTelemetryFifo->pop(buffer[i]);
+    }
+    return true;
+  }
+  return false;
 }

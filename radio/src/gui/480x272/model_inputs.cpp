@@ -268,6 +268,8 @@ class InputEditWindow: public Page {
                        },
                        BF_SINGLE_BIT_GET(line->flightModes, i) ? 0 : BUTTON_CHECKED);
       }
+      grid.nextLine();
+      window->setInnerHeight(grid.getWindowHeight());
     }
 };
 

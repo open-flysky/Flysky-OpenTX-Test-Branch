@@ -169,7 +169,6 @@ typedef struct RX_INFO_S {
   fw_info_t fw_info;
 } rx_info_t;
 
-rx_sensor_t rx_sensor_info;
 static uint8_t tx_working_power = 90;
 static STRUCT_HALL rfProtocolRx = {0};
 static uint32_t rfRxCount = 0;
@@ -196,95 +195,6 @@ static rx_info_t rx_info = {
 
 /// APIs: ->SetXXXX ->OnXXXX ->GetXXXX
 /// For Rx Binding: void onFlySkyBindReceiver(uint8_t port);
-
-uint16_t getFlySkyReceiverSensorVoltage(uint8_t port, uint16_t * voltage)
-{
-  uint8_t * flysky_sensor = (uint8_t *) voltage;
-  uint8_t * ptr = rx_sensor_info.voltage;
-
-  if (flysky_sensor != NULL) {
-    flysky_sensor[0] = ptr[0];
-    flysky_sensor[1] = ptr[1];
-  }
-
-  return ptr[1] * 256 + ptr[0];
-}
-
-uint8_t getFlySkyReceiverSensorSignal(uint8_t port, uint8_t * signal)
-{
-  uint8_t * flysky_sensor = (uint8_t *) signal;
-
-  if (flysky_sensor != NULL) {
-    flysky_sensor[0] = rx_sensor_info.signal;
-  }
-
-  return rx_sensor_info.signal;
-}
-
-uint16_t getFlySkyReceiverSensorRSSI(uint8_t port, uint16_t * rssi)
-{
-  uint8_t * flysky_sensor = (uint8_t *) rssi;
-  uint8_t * ptr = rx_sensor_info.rssi;
-
-  if (flysky_sensor != NULL) {
-    flysky_sensor[0] = ptr[0];
-    flysky_sensor[1] = ptr[1];
-  }
-
-  return ptr[1] * 256 + ptr[0];
-}
-
-uint16_t getFlySkyReceiverSensorNoise(uint8_t port, uint16_t * noise)
-{
-  uint8_t * flysky_sensor = (uint8_t *) noise;
-  uint8_t * ptr = rx_sensor_info.noise;
-
-  if (flysky_sensor != NULL) {
-    flysky_sensor[0] = ptr[0];
-    flysky_sensor[1] = ptr[1];
-  }
-
-  return ptr[1] * 256 + ptr[0];
-}
-
-uint16_t getFlySkyReceiverSensorSNR(uint8_t port, uint16_t * snr)
-{
-  uint8_t * flysky_sensor = (uint8_t *) snr;
-  uint8_t * ptr = rx_sensor_info.snr;
-
-  if (flysky_sensor != NULL) {
-    flysky_sensor[0] = ptr[0];
-    flysky_sensor[1] = ptr[1];
-  }
-
-  return ptr[1] * 256 + ptr[0];
-}
-
-uint16_t getFlySkyReceiverSensorTemperature(uint8_t port, uint16_t * temp)
-{
-  uint8_t * flysky_sensor = (uint8_t *) temp;
-  uint8_t * ptr = rx_sensor_info.temp;
-
-  if (flysky_sensor != NULL) {
-    flysky_sensor[0] = ptr[0];
-    flysky_sensor[1] = ptr[1];
-  }
-
-  return ptr[1] * 256 + ptr[0];
-}
-
-uint16_t getFlySkyReceiverSensorExtVoltage(uint8_t port, uint16_t * voltage)
-{
-  uint8_t * flysky_sensor = (uint8_t *) voltage;
-  uint8_t * ptr = rx_sensor_info.ext_voltage;
-
-  if (flysky_sensor != NULL) {
-    flysky_sensor[0] = ptr[0];
-    flysky_sensor[1] = ptr[1];
-  }
-
-  return ptr[1] * 256 + ptr[0];
-}
 
 
 void getFlySkyReceiverFirmwareRevision(uint8_t port, uint32_t * revision)
@@ -892,44 +802,7 @@ void parseFlySkyFeedbackFrame(uint8_t port)
     }
 
     case COMMAND_ID_RX_SENSOR_DATA: {
-#if 1
-      flySkyNv14ProcessTelemetryPacket( ptr, first_para );
-#else
-      extern Fifo<uint8_t, TELEMETRY_FIFO_SIZE> telemetryNoDMAFifo;
-       uint8_t Sensor_id = *ptr;
-      telemetryNoDMAFifo.push(0xAA);
-      //telemetryNoDMAFifo.push(0x30); // TXID
-      //telemetryNoDMAFifo.push(0x31); // RXID
-      telemetryNoDMAFifo.push(first_para);// sensor id refer to FlySkySensorType_E
-      // rx_sensor_info.sensor_id = *ptr++; // TBC: in protocol doc, but no such byte in sample data
-      if (first_para == FLYSKY_SENSOR_RX_VOLTAGE) {
-        rx_sensor_info.voltage[0] = *ptr++;
-        rx_sensor_info.voltage[1] = *ptr++;
-        telemetryNoDMAFifo.push(rx_sensor_info.voltage[0]);
-        telemetryNoDMAFifo.push(rx_sensor_info.voltage[1]);
-      }
-
-      else if (first_para == FLYSKY_SENSOR_GPS) {
-        p_data = &rx_sensor_info.gps_info.position_fix;
-        for (int idx = 17; idx > 0; idx--) {
-          *p_data++ = *ptr++;
-        }
-      }
-
-      else if (first_para == FLYSKY_SENSOR_RX_SIGNAL) {
-        rx_sensor_info.signal = *ptr++;
-        telemetryNoDMAFifo.push(rx_sensor_info.signal);
-        telemetryNoDMAFifo.push(0x00);
-      }
-
-      else if (first_para > FLYSKY_SENSOR_RX_SIGNAL && first_para < FLYSKY_SENSOR_GPS) {
-        p_data = rx_sensor_info.rssi + (first_para - FLYSKY_SENSOR_RX_RSSI) * 2;
-        p_data[0] = *ptr++;
-        p_data[1] = *ptr++;
-        telemetryNoDMAFifo.push(p_data[0]);
-        telemetryNoDMAFifo.push(p_data[1]);
-      }
-#endif
+      flySkyNv14ProcessTelemetryPacket(ptr, first_para);
       if (moduleFlag[port] == MODULE_NORMAL_MODE && modulePulsesData[port].flysky.state >= FLYSKY_MODULE_STATE_IDLE) {
         modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_DEFAULT;
       }

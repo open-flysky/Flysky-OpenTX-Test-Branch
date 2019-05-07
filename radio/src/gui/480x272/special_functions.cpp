@@ -96,10 +96,14 @@ class SpecialFunctionEditWindow : public Page {
                                      GET_SET_DEFAULT(CFN_PARAM(cfn)));
             choice->setAvailableHandler(isSourceAvailableInResetSpecialFunction);
             choice->setTextHandler([=](int32_t value) {
-              if (value < FUNC_RESET_PARAM_FIRST_TELEM)
-                return TEXT_AT_INDEX(STR_VFSWRESET, value);
-              else
-                return std::string(g_model.telemetrySensors[value - FUNC_RESET_PARAM_FIRST_TELEM].label, TELEM_LABEL_LEN);
+              if (value < FUNC_RESET_PARAM_FIRST_TELEM){
+                  return std::string(STR_VFSWRESET+1+(value << 2), 4);
+              }
+              else{
+                  char tmp[TELEM_LABEL_LEN+1];
+                  zchar2str(tmp, g_model.telemetrySensors[value - FUNC_RESET_PARAM_FIRST_TELEM].label, TELEM_LABEL_LEN);
+                  return std::string(tmp);
+              }
             });
             grid.nextLine();
           }

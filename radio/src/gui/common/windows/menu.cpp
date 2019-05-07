@@ -59,11 +59,11 @@ void Menu::updatePosition()
   if (!toolbar) {
     // there is no navigation bar at the left, we may center the window on screen
     int count = min<int>(8, menuWindow.lines.size());
-    coord_t h = count * MenuWindow::lineHeight;
+    coord_t h = count * menuWindow.getLineHeight();
     menuWindow.setTop((LCD_H - h) / 2);
     menuWindow.setHeight(h);
   }
-  menuWindow.setInnerHeight(menuWindow.lines.size() * MenuWindow::lineHeight);
+  menuWindow.setInnerHeight(menuWindow.lines.size() * menuWindow.getLineHeight());
 }
 
 void Menu::addLine(const std::string & text, std::function<void()> onPress)
