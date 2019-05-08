@@ -547,12 +547,18 @@ void hallStick_GetTxDataFromUSB( void )
 void hall_stick_loop(void)
 {
     unsigned char ch;
+    static uint8_t count = 0;
     static unsigned int getCfgTime = get_tmr10ms();
     uint32_t printf_log_now = 0;
 
     hallStick_GetTxDataFromUSB();
 
-    hallstick_send_by_state();
+    if(count>10)
+    {
+        count = 0;
+        hallstick_send_by_state();
+    }
+    count++;
 
     while( HallGetByte(&ch) )
     {
@@ -600,9 +606,12 @@ void hall_stick_loop(void)
         }
     }
 
-    if ((get_tmr10ms() - getCfgTime) > 200)
+    if (((get_tmr10ms() - getCfgTime) > 200) && (HALLSTICK_SEND_STATE_IDLE == hallStickSendState))
     {
-        if ( (0 == StickCallbration[0].max) && (0 == StickCallbration[0].mid) && (0== StickCallbration[0].min) )
+        if (
+            ((0 == StickCallbration[0].max) && (0 == StickCallbration[0].mid) && (0== StickCallbration[0].min) )
+            ||( (-1 == StickCallbration[0].max) && (-1 == StickCallbration[0].mid) && (-1== StickCallbration[0].min))
+           )
         {
             get_hall_config();
             getCfgTime = get_tmr10ms();

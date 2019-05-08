@@ -136,6 +136,15 @@ void drawChargingInfo(uint16_t chargeState){
         h = BATTERY_H_INNER;
         color = ROUND|TEXT_COLOR;
     }
+    if((CHARGE_FINISHED == chargeState) && (get_tmr10ms()%200 < 100))
+    {
+        BACKLIGHT_DISABLE();
+        //lcd->clear();
+        //lcd->drawSizedText(LCD_W/2, LCD_H-50, text, strlen(text), CENTERED|TEXT_BGCOLOR);
+    }
+    else
+    {
+        BACKLIGHT_ENABLE();
 	lcd->drawSizedText(LCD_W/2, LCD_H-50, text, strlen(text), CENTERED|TEXT_BGCOLOR);
 
 	lcd->drawFilledRect((LCD_W - BATTERY_W)/2, BATTERY_TOP, BATTERY_W, BATTERY_H, SOLID, ROUND|TEXT_BGCOLOR);
@@ -143,6 +152,7 @@ void drawChargingInfo(uint16_t chargeState){
 
     lcd->drawFilledRect((LCD_W - BATTERY_W_INNER)/2, BATTERY_TOP_INNER + BATTERY_H_INNER - h , BATTERY_W_INNER, h, SOLID, color);
 	lcd->drawFilledRect((LCD_W - BATTERY_CONNECTOR_W)/2, BATTERY_TOP-BATTERY_CONNECTOR_H , BATTERY_CONNECTOR_W, BATTERY_CONNECTOR_H, SOLID, TEXT_BGCOLOR);
+    }
 }
 
 //this method should be called by timer interrupt or by GPIO interrupt
@@ -166,7 +176,7 @@ void handle_battery_charge()
       lcd->clear();
       drawChargingInfo(chargeState);
       lcdRefresh();
-      BACKLIGHT_ENABLE();
+
    }
 #endif
 }
