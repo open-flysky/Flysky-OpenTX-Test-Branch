@@ -46,7 +46,6 @@ ModelsCategory * currentCategory;
 int currentCategoryIndex;
 ModelCell * currentModel;
 
-#if 0
 void drawCategory(coord_t y, const char * name, bool selected)
 {
   if (selected) {
@@ -73,7 +72,6 @@ void drawModel(coord_t x, coord_t y, ModelCell * model, bool current, bool selec
     }
   }
 }
-#endif
 
 uint16_t categoriesVerticalOffset = 0;
 uint16_t categoriesVerticalPosition = 0;

@@ -212,7 +212,7 @@ void setupPulses(uint8_t port)
       if (telemetryProtocol == PROTOCOL_PULSES_CROSSFIRE && !init_needed) {
         uint8_t * crossfire = modulePulsesData[port].crossfire.pulses;
         uint8_t len;
-#if defined(LUA)
+#if defined(LUA) || defined(CROSSFIRE_NATIVE)
         if (outputTelemetryBufferTrigger != 0x00 && outputTelemetryBufferSize > 0) {
           memcpy(crossfire, outputTelemetryBuffer, outputTelemetryBufferSize);
           len = outputTelemetryBufferSize;

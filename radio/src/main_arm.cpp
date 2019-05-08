@@ -200,7 +200,6 @@ void guiMain(event_t evt)
 {
   bool refreshNeeded = false;
 #if defined(LUA)
-#if 0
   uint32_t t0 = get_tmr10ms();
   static uint32_t lastLuaTime = 0;
   uint16_t interval = (lastLuaTime == 0 ? 0 : (t0 - lastLuaTime));
@@ -208,30 +207,32 @@ void guiMain(event_t evt)
   if (interval > maxLuaInterval) {
     maxLuaInterval = interval;
   }
-#endif
 
-#if defined (PCBNV14)
-  luaTask(evt,  RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
-#else
-  luaTask(0,  RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
-#endif
+  // run Lua scripts that don't use LCD (to use CPU time while LCD DMA is running)
+  DEBUG_TIMER_START(debugTimerLuaBg);
+  luaTask(evt, RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
+  DEBUG_TIMER_STOP(debugTimerLuaBg);
+  // wait for LCD DMA to finish before continuing, because code from this point
+  // is allowed to change the contents of LCD buffer
+  //
+  // WARNING: make sure no code above this line does any change to the LCD display buffer!
+  //
+  //DEBUG_TIMER_START(debugTimerLcdRefreshWait);
+  //lcdRefreshWait();
+  //DEBUG_TIMER_STOP(debugTimerLcdRefreshWait);
 
   // draw LCD from menus or from Lua script
   // run Lua scripts that use LCD
-#if 1
   DEBUG_TIMER_START(debugTimerLuaFg);
   refreshNeeded = luaTask(evt, RUN_STNDAL_SCRIPT, true);
   if (!refreshNeeded) {
     refreshNeeded = luaTask(evt, RUN_TELEM_FG_SCRIPT, true);
   }
   DEBUG_TIMER_STOP(debugTimerLuaFg);
-#if 0
   t0 = get_tmr10ms() - t0;
   if (t0 > maxLuaDuration) {
     maxLuaDuration = t0;
   }
-#endif
-#endif
 
 #else
   lcdRefreshWait();   // WARNING: make sure no code above this line does any change to the LCD display buffer!
@@ -239,10 +240,15 @@ void guiMain(event_t evt)
 
 #if 0
   if (!refreshNeeded) {
+    DEBUG_TIMER_START(debugTimerMenus);
     mainWindow.run();
+    DEBUG_TIMER_STOP(debugTimerMenus);
   }
-  else {
+
+  if (refreshNeeded) {
+    DEBUG_TIMER_START(debugTimerLcdRefresh);
     lcdRefresh();
+    DEBUG_TIMER_STOP(debugTimerLcdRefresh);
   }
 #else
   mainWindow.run();
@@ -442,9 +448,9 @@ void perMain()
 #if defined(STM32)
   if (usbPlugged() && getSelectedUsbMode() == USB_MASS_STORAGE_MODE) {
     // disable access to menus
-    //lcdClear();
+    lcdClear();
     // menuMainView(0);
-    //lcdRefresh();
+    lcdRefresh();
     return;
   }
 #endif

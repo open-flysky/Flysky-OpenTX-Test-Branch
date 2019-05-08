@@ -55,17 +55,15 @@ add_definitions(-DSTM32F429_439xx -DSDRAM -DCOLORLCD)
 add_definitions(-DEEPROM_VARIANT=0 -DAUDIO -DVOICE -DRTCLOCK)
 add_definitions(-DGPS_USART_BAUDRATE=${INTERNAL_GPS_BAUDRATE})
 add_definitions(-DPWR_BUTTON_${PWR_BUTTON})
-
+add_definitions(-DCROSSFIRE_NATIVE)
 add_definitions(-DFLYSKY_HALL_STICKS_REVERSE)
 #add_definitions(-DFLYSKY_AUTO_POWER_DOWN)
-
-
-
 if(NOT UNEXPECTED_SHUTDOWN)
   add_definitions(-DNO_UNEXPECTED_SHUTDOWN)
 endif()
 
 include_directories(${RADIO_SRC_DIRECTORY}/fonts/480x272 gui/${GUI_DIR} gui/${GUI_DIR}/layouts)
+include_directories(${RADIO_SRC_DIRECTORY}/telemetry)
 
 file(GLOB THEMES_SRC RELATIVE ${RADIO_SRC_DIRECTORY}/gui/480x272 ${RADIO_SRC_DIRECTORY}/gui/480x272/themes/*.cpp)
 file(GLOB LAYOUTS_SRC RELATIVE ${RADIO_SRC_DIRECTORY}/gui/480x272 ${RADIO_SRC_DIRECTORY}/gui/480x272/layouts/*.cpp)
@@ -81,6 +79,7 @@ set(GUI_SRC
   model_inputs.cpp
   model_mixes.cpp
   model_curves.cpp
+  model_crossfire.cpp
   view_channels.cpp
   view_logical_switches.cpp
   view_about.cpp

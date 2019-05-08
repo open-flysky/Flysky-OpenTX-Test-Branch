@@ -31,7 +31,7 @@
 #define ALERT_ACTION_TOP          230
 #define ALERT_BUTTON_TOP          300
 
-Dialog::Dialog(uint8_t type, std::string title, std::string message, std::function<void(void)> onConfirm):
+Dialog::Dialog(uint8_t type, std::string title, std::string message, std::function<void(void)> onConfirm, std::function<void(void)> onCancel):
   Window(&mainWindow, {0, 0, LCD_W, LCD_H}, OPAQUE),
   type(type),
   title(std::move(title)),
@@ -39,10 +39,20 @@ Dialog::Dialog(uint8_t type, std::string title, std::string message, std::functi
 {
   new FabIconButton(this, LCD_W - 50, ALERT_BUTTON_TOP, ICON_NEXT,
                     [=]() -> uint8_t {
+                      deleteLater();
                       if (onConfirm)
                         onConfirm();
                       return 0;
                     });
+  if (type == WARNING_TYPE_INPUT){
+      new FabIconButton(this, 50, ALERT_BUTTON_TOP, ICON_BACK,
+                    [=]() -> uint8_t {
+                        deleteLater();
+                      if (onCancel)
+                           onCancel();
+                      return 0;
+                    });
+  }
   bringToTop();
 }
 
@@ -89,7 +99,6 @@ void Dialog::paint(BitmapBuffer * dc)
 bool Dialog::onTouchEnd(coord_t x, coord_t y)
 {
   Window::onTouchEnd(x, y);
-  deleteLater();
   return true;
 }
 

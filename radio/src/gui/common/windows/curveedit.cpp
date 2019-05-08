@@ -60,6 +60,7 @@ bool CurveEdit::onTouchEnd(coord_t x, coord_t y)
   if (keyboard->getField() != this) {
     keyboard->setField(this);
   }
+  bool pointSelected = false;
 
   CurveInfo & curve = g_model.curves[index];
   for (int i=0; i<5 + curve.points; i++) {
@@ -67,10 +68,26 @@ bool CurveEdit::onTouchEnd(coord_t x, coord_t y)
       point_t point = getPoint(index, i);
       if (abs(getPointX(point.x) - x) <= 10 && abs(getPointY(point.y) - y) <= 10) {
         current = i;
+        pointSelected = true;
         update();
         break;
       }
     }
+  }
+
+  if(!pointSelected){
+    int8_t & point = curveAddress(index)[current];
+    point = min<int8_t>(100, ++point);
+    storageDirty(EE_MODEL);
+    coord_t c = rect.h/2;
+    if(y>c){ //negative part
+      y -= c;
+      point = 0 - y;
+    }
+    else { //positive part
+      point = 100 - y;
+    }
+    invalidate();
   }
 
   return true;
@@ -91,9 +108,8 @@ void CurveEdit::next()
 
 void CurveEdit::previous()
 {
-  if (--current< 0) {
-    current = points.size();
-  }
+  if (current == 0) current = points.size();
+  else current--;
   update();
 }
 

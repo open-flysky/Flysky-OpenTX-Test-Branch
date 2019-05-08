@@ -195,7 +195,7 @@ void copyModuleData(A * dest, B * src)
   dest->subType = src->subType;
   dest->invertedSerial = src->invertedSerial;
   memcpy(dest->failsafeChannels, src->failsafeChannels, sizeof(dest->failsafeChannels));
-  copyModuleData_ppm(&dest->ppm, &src->ppm);
+  copyModuleData_romData(&dest->romData, &src->romData);
 }
 
 template <class A, class B>
@@ -338,11 +338,14 @@ void copyTelemetrySensor_custom(A * dest, B * src)
 }
 
 template <class A, class B>
-void copyModuleData_ppm(A * dest, B * src)
+void copyModuleData_romData(A * dest, B * src)
 {
-  dest->delay = src->delay;
-  dest->pulsePol = src->pulsePol;
-  dest->outputType = src->outputType;
-  dest->frameLength = src->frameLength;
+  for (int i=0; i<4; i++) {
+    dest->rx_id[i] = src->rx_id[i];
+  }
+  dest->mode = src->mode;
+  for (int i=0; i<2; i++) {
+    dest->rx_freq[i] = src->rx_freq[i];
+  }
 }
 

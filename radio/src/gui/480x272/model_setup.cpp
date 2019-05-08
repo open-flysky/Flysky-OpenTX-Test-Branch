@@ -21,6 +21,7 @@
 #include "model_setup.h"
 #include "opentx.h"
 #include "libwindows.h"
+#include "model_crossfire.h"
 
 #define SET_DIRTY()     storageDirty(EE_MODEL)
 #define STR_4BIND(v)    ((moduleFlag[moduleIndex] == MODULE_BIND) ? STR_MODULE_BINDING : (v))
@@ -444,6 +445,15 @@ class ModuleWindow : public Window {
                    SET_DEFAULT(g_model.moduleData[moduleIndex].pxx.power));
       }
 
+#if defined (CROSSFIRE_NATIVE)
+      if(isModuleCrossfire(moduleIndex)){
+          new TextButton(this, grid.getFieldSlot(), STR_CROSSFIRE_SETUP, [=]() -> uint8_t {
+              new CrossfireMenu();
+              return 1;
+          });
+      }
+#endif
+
       getParent()->moveWindowsTop(top(), adjustHeight());
     }
 };
@@ -501,7 +511,6 @@ void onBindMenu(const char * result)
 
   moduleFlag[moduleIdx] = MODULE_BIND;
 }
-static char ModeName[20];
 void ModelSetupPage::build(Window * window)
 {
   GridLayout grid;
@@ -509,8 +518,6 @@ void ModelSetupPage::build(Window * window)
 
   // Model name
   new StaticText(window, grid.getLabelSlot(), STR_MODELNAME);
-  memcpy((void *)ModeName, (const void *)g_model.header.name, sizeof(g_model.header.name));
-  ModeName[sizeof(g_model.header.name)+2] = sizeof(g_model.header.name);
   new TextEdit(window, grid.getFieldSlot(), g_model.header.name, sizeof(g_model.header.name));
   grid.nextLine();
 

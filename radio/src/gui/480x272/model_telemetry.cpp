@@ -71,6 +71,9 @@ class SensorButton : public Button {
       Button(parent, rect),
       index(index)
     {
+        if(g_model.telemetrySensors[index].unit == UNIT_GPS){
+            setHeight(2*getHeight());
+        }
     }
 
     static constexpr coord_t line1 = 1;
@@ -86,6 +89,7 @@ class SensorButton : public Button {
     void paint(BitmapBuffer * dc) override
     {
       TelemetryItem &telemetryItem = telemetryItems[index];
+      TelemetrySensor sensor = g_model.telemetrySensors[index];
 
       if (telemetryItem.isFresh()) {
         dc->drawSolidFilledRect(2, 2, rect.w - 4, rect.h - 4, WARNING_COLOR);
@@ -96,19 +100,20 @@ class SensorButton : public Button {
       lcdDrawSizedText(SENSOR_COL1, line1, g_model.telemetrySensors[index].label, TELEM_LABEL_LEN, ZCHAR);
 
       if (telemetryItem.isAvailable()) {
-        LcdFlags color = telemetryItem.isOld() ? ALARM_COLOR : TEXT_COLOR;
-        drawSensorCustomValue(SENSOR_COL2, line1, index, getValue(MIXSRC_FIRST_TELEM + 3 * index), LEFT | color);
+        LcdFlags flags = LEFT | (telemetryItem.isOld() ? ALARM_COLOR : TEXT_COLOR);
+        if(sensor.unit == UNIT_GPS) flags |= EXPANDED;
+        drawSensorCustomValue(SENSOR_COL2, line1, index, getValue(MIXSRC_FIRST_TELEM + 3 * index), flags);
       }
       else {
         lcdDrawText(SENSOR_COL2, line1, "---", CURVE_COLOR);
       }
 
-      TelemetrySensor * sensor = & g_model.telemetrySensors[index];
+
       if (IS_SPEKTRUM_PROTOCOL()) {
-        lcdDrawHexNumber(SENSOR_COL3, line1, sensor->id, LEFT);
+        lcdDrawHexNumber(SENSOR_COL3, line1, sensor.id, LEFT);
       }
-      else if (sensor->type == TELEM_TYPE_CUSTOM && !g_model.ignoreSensorIds) {
-        lcdDrawNumber(SENSOR_COL3, line1, sensor->instance, LEFT);
+      else if (sensor.type == TELEM_TYPE_CUSTOM && !g_model.ignoreSensorIds) {
+        lcdDrawNumber(SENSOR_COL3, line1, sensor.instance, LEFT);
       }
       drawSolidRect(dc, 0, 0, rect.w, rect.h, 2, hasFocus() ? SCROLLBOX_COLOR : CURVE_AXIS_COLOR);
     }
@@ -488,7 +493,7 @@ void ModelTelemetryPage::build(Window * window, int8_t focusSensorIndex)
       if (focusSensorIndex == idx) {
         button->setFocus();
       }
-      grid.nextLine();
+      grid.spacer(button->height()+2);
     }
   }
 

@@ -470,6 +470,6 @@ uint8_t outputTelemetryBuffer[TELEMETRY_OUTPUT_FIFO_SIZE] __DMA;
 uint8_t outputTelemetryBufferSize = 0;
 uint8_t outputTelemetryBufferTrigger = 0;
 
-#if defined(LUA)
+#if defined(LUA) || defined(CROSSFIRE_NATIVE)
 Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE> * luaInputTelemetryFifo = NULL;
 #endif
