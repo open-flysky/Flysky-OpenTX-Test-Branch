@@ -158,9 +158,6 @@ int32_t GetSensorValueFlySkyNv14(const FlyskyNv14Sensor* sensor, const uint8_t *
   else if(sensor->bytes == 2) value = sensor->issigned ? sensorData->INT16 : sensorData->UINT16;
   else if(sensor->bytes == 4) value = sensorData->UINT32;
 
-  if(sensor->id == FLYSKY_SENSOR_EXT_VOLTAGE) {
-     value /= 10;
-  }
   if(sensor->id == FLYSKY_SENSOR_RX_RSSI) {
     if(value < -200) value = -200;
     value += 200;
