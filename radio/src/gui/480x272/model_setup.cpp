@@ -736,6 +736,17 @@ void ModelSetupPage::build(Window * window)
     grid.addWindow(new ModuleWindow(window, {0, grid.getWindowHeight(), LCD_W, 0}, EXTERNAL_MODULE));
   }
 
+#if defined(TRAINERMODULE)
+  {
+    new StaticText(window, grid.getLabelSlot(), STR_TRAINER);
+    new Choice(window, grid.getFieldSlot(), STR_VTRAINERMODES, 0, 3, GET_DEFAULT(g_model.trainerMode),
+      [=](int32_t newValue) {
+        g_model.trainerMode = newValue;
+        SET_DIRTY();
+    });
+  }
+#endif
+
   grid.nextLine();
 
   window->setInnerHeight(grid.getWindowHeight());
