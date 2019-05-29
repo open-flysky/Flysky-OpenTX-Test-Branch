@@ -35,7 +35,7 @@ class TimerWidget: public Widget
 
 const ZoneOption TimerWidget::options[] = {
   { "Timer source", ZoneOption::Timer, OPTION_VALUE_UNSIGNED(0) },
-  { "Color", ZoneOption::Color, OPTION_VALUE_UNSIGNED(WHITE) },
+  { "Color", ZoneOption::Color, OPTION_VALUE_UNSIGNED(DEFAULT_WIDGET_TEXT_COLOR) },
   { "Warn Color", ZoneOption::Color, OPTION_VALUE_UNSIGNED(RED) },
   { NULL, ZoneOption::Bool }
 };
