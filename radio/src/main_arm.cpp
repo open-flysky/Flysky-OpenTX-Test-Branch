@@ -20,7 +20,6 @@
 
 #include "opentx.h"
 #include "mainwindow.h"
-#include <queue>
 
 uint8_t currentSpeakerVolume = 255;
 uint8_t requiredSpeakerVolume = 255;
@@ -189,14 +188,8 @@ void periodicTick()
   }
 }
 
-
 #if defined(GUI) && defined(COLORLCD)
-
-#if defined (PCBNV14)
-void guiMain(touch_event_type evt)
-#else
 void guiMain(event_t evt)
-#endif
 {
   bool refreshNeeded = false;
 #if defined(LUA)
@@ -207,23 +200,22 @@ void guiMain(event_t evt)
   if (interval > maxLuaInterval) {
     maxLuaInterval = interval;
   }
-
   // run Lua scripts that don't use LCD (to use CPU time while LCD DMA is running)
   DEBUG_TIMER_START(debugTimerLuaBg);
-  luaTask(evt, RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
+  luaTask(0, RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
   DEBUG_TIMER_STOP(debugTimerLuaBg);
   // wait for LCD DMA to finish before continuing, because code from this point
   // is allowed to change the contents of LCD buffer
   //
   // WARNING: make sure no code above this line does any change to the LCD display buffer!
   //
-  //DEBUG_TIMER_START(debugTimerLcdRefreshWait);
-  //lcdRefreshWait();
-  //DEBUG_TIMER_STOP(debugTimerLcdRefreshWait);
-
+  DEBUG_TIMER_START(debugTimerLcdRefreshWait);
+  lcdRefreshWait();
+  DEBUG_TIMER_STOP(debugTimerLcdRefreshWait);
   // draw LCD from menus or from Lua script
   // run Lua scripts that use LCD
   DEBUG_TIMER_START(debugTimerLuaFg);
+  if(evt != 0) TRACE("LUA EVENT %d", evt);
   refreshNeeded = luaTask(evt, RUN_STNDAL_SCRIPT, true);
   if (!refreshNeeded) {
     refreshNeeded = luaTask(evt, RUN_TELEM_FG_SCRIPT, true);
@@ -237,22 +229,10 @@ void guiMain(event_t evt)
 #else
   lcdRefreshWait();   // WARNING: make sure no code above this line does any change to the LCD display buffer!
 #endif
-
-#if 0
-  if (!refreshNeeded) {
-    DEBUG_TIMER_START(debugTimerMenus);
-    mainWindow.run();
-    DEBUG_TIMER_STOP(debugTimerMenus);
-  }
-
-  if (refreshNeeded) {
-    DEBUG_TIMER_START(debugTimerLcdRefresh);
-    lcdRefresh();
-    DEBUG_TIMER_STOP(debugTimerLcdRefresh);
-  }
-#else
-  mainWindow.run();
-#endif
+  // LUA is active
+  // prevent events from reaching the normal menus
+  // so Lua telemetry script can fully use them
+  mainWindow.run(refreshNeeded);
 }
 #elif defined(GUI)
 
@@ -362,8 +342,6 @@ void guiMain(event_t evt)
 }
 #endif
 
-extern std::queue<touch_event_type>TouchQueue;
-
 void perMain()
 {
   DEBUG_TIMER_START(debugTimerPerMain1);
@@ -385,34 +363,12 @@ void perMain()
     flightReset();
     mainRequestFlags &= ~(1 << REQUEST_FLIGHT_RESET);
   }
-#if defined (PCBNV14)
-  touch_event_type evt;
-  memset(&evt, 0, sizeof(evt));
 
-  if (!TouchQueue.empty())
-  {
-    evt = TouchQueue.front();
-    TouchQueue.pop();
-    //TRACE("evt type:%d\r\n", evt.touch_type);
-  }
-
-  if (evt.touch_type != TE_NONE) {
-    if (g_eeGeneral.backlightMode & e_backlight_mode_keys) {
-      // on touch turn the light on
-      backlightOn();
-    }
-  }
-#else
   event_t evt = getEvent(false);
-
-  if (evt) {
-    if (g_eeGeneral.backlightMode & e_backlight_mode_keys) {
-      // on keypress turn the light on
-      backlightOn();
-    }
+  if (evt && (g_eeGeneral.backlightMode & e_backlight_mode_keys)) {
+    // on keypress turn the light on
+    backlightOn();
   }
-#endif
-
   doLoopCommonActions();
 #if defined(NAVIGATION_STICKS)
   uint8_t sticks_evt = getSticksNavigationEvent();

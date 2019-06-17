@@ -198,43 +198,21 @@ void stop_trainer_ppm(void);
 void init_trainer_capture(void);
 void stop_trainer_capture(void);
 
-#if 0
-// Keys driver
-enum EnumKeys
-{
-  TRM_BASE,
-  TRM_LH_DWN = TRM_BASE,
-  TRM_LH_UP,
-  TRM_LV_DWN,
-  TRM_LV_UP,
-  TRM_RV_DWN,
-  TRM_RV_UP,
-  TRM_RH_DWN,
-  TRM_RH_UP,
-  TRM_LS_DWN,
-  TRM_LS_UP,
-  TRM_RS_DWN,
-  TRM_RS_UP,
-  TRM_LAST = TRM_RS_UP,
 
-  NUM_KEYS
-};
-#else
 // Keys driver
 enum EnumKeys
 {
+  KEY_ENTER,
+  KEY_EXIT,
   KEY_PGUP,
   KEY_PGDN,
-  KEY_ENTER,
-  KEY_MODEL,
-  KEY_UP = KEY_MODEL,
-  KEY_EXIT,
-  KEY_DOWN = KEY_EXIT,
+  KEY_UP,
+  KEY_DOWN,
+  KEY_RIGHT,
+  KEY_LEFT,
   KEY_TELEM,
-  KEY_RIGHT = KEY_TELEM,
   KEY_RADIO,
-  KEY_LEFT = KEY_RADIO,
-
+  KEY_MODEL,
   TRM_BASE,
   TRM_LH_DWN = TRM_BASE,
   TRM_LH_UP,
@@ -246,13 +224,21 @@ enum EnumKeys
   TRM_RH_UP,
   TRM_LS_DWN,
   TRM_LS_UP,
-  TRM_RS_DWN,
-  TRM_RS_UP,
-  TRM_LAST = TRM_RS_UP,
-
+  TRM_LEFT_CLICK,
+  TRM_RIGHT_CLICK,
+  TRM_LAST = TRM_RIGHT_CLICK,
   NUM_KEYS
 };
-#endif
+
+enum ENUM_LUA_TOUCH_EVENT
+{
+  TOUCH_DOWN,
+  TOUCH_UP,
+  TOUCH_SLIDE_UP,
+  TOUCH_SLIDE_DOWN,
+  TOUCH_SLIDE_LEFT,
+  TOUCH_SLIDE_RIGHT
+};
 
 enum EnumSwitches
 {

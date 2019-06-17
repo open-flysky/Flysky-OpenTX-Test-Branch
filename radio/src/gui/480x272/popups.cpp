@@ -19,6 +19,7 @@
  */
 
 #include "opentx.h"
+#include "dialog.h"
 
 const char *warningText = NULL;
 const char *warningInfoText;
@@ -37,6 +38,15 @@ uint16_t    popupMenuOffset = 0;
 uint8_t     popupMenuOffsetType = MENU_OFFSET_INTERNAL;
 void        (*popupMenuHandler)(const char * result);
 
+#define ALERT_FRAME_TOP           70
+#define ALERT_FRAME_PADDING       10
+#define ALERT_BITMAP_PADDING      15
+#define ALERT_TITLE_LEFT          135
+#define ALERT_TITLE_LINE_HEIGHT   30
+#define ALERT_MESSAGE_TOP         210
+#define ALERT_ACTION_TOP          230
+#define ALERT_BUTTON_TOP          300
+
 void runPopupWarningBox()
 {
 }
@@ -47,6 +57,18 @@ void drawMessageBox()
 
 void drawAlertBox(const char * title, const char * text, const char * action)
 {
+  theme->drawBackground();
+  lcd->drawBitmap(ALERT_BITMAP_PADDING, ALERT_FRAME_TOP + ALERT_BITMAP_PADDING, theme->asterisk);
+
+  #if defined(TRANSLATIONS_FR) || defined(TRANSLATIONS_IT) || defined(TRANSLATIONS_CZ)
+  lcd->drawText(ALERT_TITLE_LEFT, ALERT_FRAME_TOP + ALERT_FRAME_PADDING, STR_WARNING, ALARM_COLOR|DBLSIZE);
+  lcd->drawText(ALERT_TITLE_LEFT, ALERT_FRAME_TOP + ALERT_FRAME_PADDING + ALERT_TITLE_LINE_HEIGHT, title, ALARM_COLOR|DBLSIZE);
+  #else
+  if(title != nullptr) lcd->drawText(ALERT_TITLE_LEFT, ALERT_FRAME_TOP + ALERT_FRAME_PADDING, title, ALARM_COLOR|DBLSIZE);
+  lcd->drawText(ALERT_TITLE_LEFT, ALERT_FRAME_TOP + ALERT_FRAME_PADDING + ALERT_TITLE_LINE_HEIGHT, STR_WARNING, ALARM_COLOR|DBLSIZE);
+  #endif
+
+  if(text != nullptr) lcd->drawText(ALERT_FRAME_PADDING+5, ALERT_MESSAGE_TOP, text, MIDSIZE);
 }
 
 void showAlertBox(const char * title, const char * text, const char * action, uint8_t sound)

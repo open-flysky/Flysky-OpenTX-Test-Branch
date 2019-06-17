@@ -51,11 +51,19 @@ class MainWindow: public Window {
 
     bool refresh();
 
-    void run();
+    void run(bool luaActive=false);
+
+    void resetDisplayRect();
 
   protected:
+
+    void checkEvents(bool luaActive);
+
     void emptyTrash();
+
     rect_t invalidatedRect;
+    bool legacyUImode;
+    bool lastLuaState;
 };
 
 extern MainWindow mainWindow;

@@ -20,9 +20,4 @@
 
 #include "tabsgroup.h"
 
-class ScreenLua: public TabsGroup {
-  public:
-    ScreenLua(uint8_t param);
-    ~ScreenLua();
-};
 

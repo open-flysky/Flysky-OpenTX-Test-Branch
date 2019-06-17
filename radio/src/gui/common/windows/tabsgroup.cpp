@@ -139,20 +139,17 @@ void TabsGroup::checkEvents()
   if (currentTab)
     currentTab->checkEvents();
 }
-extern int Lua_screen_created;
+
 void TabsGroup::paint(BitmapBuffer * dc)
 {
-  if (!Lua_screen_created)
-  {
-    dc->clear(TEXT_BGCOLOR);
-  }
+  dc->clear(TEXT_BGCOLOR);
 }
 
 bool TabsGroup::onTouchEnd(coord_t x, coord_t y)
 {
   if (Window::onTouchEnd(x, y))
     return true;
-  //AUDIO_KEY_PRESS();
+
   TextKeyboard::instance()->disable(true);
   NumberKeyboard::instance()->disable(true);
   CurveKeyboard::instance()->disable(true);

@@ -31,8 +31,8 @@ extern "C" {
   #include <lundump.h>
 }
 
-#define PERMANENT_SCRIPTS_MAX_INSTRUCTIONS (10000/100)
-#define MANUAL_SCRIPTS_MAX_INSTRUCTIONS    (20000/100)
+#define PERMANENT_SCRIPTS_MAX_INSTRUCTIONS (20000/100)
+#define MANUAL_SCRIPTS_MAX_INSTRUCTIONS    (40000/100)
 #define LUA_WARNING_INFO_LEN               64
 
 lua_State *lsScripts = NULL;
@@ -811,106 +811,7 @@ void luaExec(const char * filename)
     }
   }
 }
-#if defined (PCBNV14)
-void luaDoOneRunStandalone(touch_event_type evt)
-{
-  static uint8_t luaDisplayStatistics = false;
-  uint8_t pushParamCnt = 0;
 
-  if (standaloneScript.state == SCRIPT_OK && standaloneScript.run) {
-    luaSetInstructionsLimit(lsScripts, MANUAL_SCRIPTS_MAX_INSTRUCTIONS);
-    lua_rawgeti(lsScripts, LUA_REGISTRYINDEX, standaloneScript.run);
-
-#if 1
-    if (evt.touch_type == TE_DOWN || evt.touch_type == TE_UP)
-    {
-      lua_pushunsigned(lsScripts, EVT_TOUCH(evt.touch_type));
-      lua_pushunsigned(lsScripts, evt.touch_x);
-      lua_pushunsigned(lsScripts, evt.touch_y);
-
-      if (evt.touch_type == TE_DOWN)
-        TRACE("down:%d %d\r\n", evt.touch_x, evt.touch_y);
-      else
-        TRACE("up:%d %d\r\n", evt.touch_x, evt.touch_y);
-      pushParamCnt = 3;
-    }
-    else if (evt.touch_type == TE_SLIDE)
-    {
-      lua_pushunsigned(lsScripts, EVT_TOUCH(evt.touch_type));
-      lua_pushunsigned(lsScripts, evt.slide_start_x);
-      lua_pushunsigned(lsScripts, evt.slide_start_y);
-      lua_pushunsigned(lsScripts, evt.slide_end_x);
-      lua_pushunsigned(lsScripts, evt.slide_end_y);
-      TRACE("slide:%d %d %d %d\r\n", evt.slide_start_x, evt.slide_start_y,\
-                    evt.slide_end_x, evt.slide_end_y);
-      pushParamCnt = 5;
-    }
-    else
-    {
-      lua_pushunsigned(lsScripts, EVT_TOUCH(evt.touch_type));
-      pushParamCnt = 1;
-    }
-#endif
-
-    if (lua_pcall(lsScripts, pushParamCnt, 1, 0) == 0) {
-      if (!lua_isnumber(lsScripts, -1)) {
-        if (instructionsPercent > 100) {
-          TRACE("Script killed");
-          standaloneScript.state = SCRIPT_KILLED;
-          luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
-        }
-        else if (lua_isstring(lsScripts, -1)) {
-          char nextScript[_MAX_LFN+1];
-          strncpy(nextScript, lua_tostring(lsScripts, -1), _MAX_LFN);
-          nextScript[_MAX_LFN] = '\0';
-          luaExec(nextScript);
-        }
-        else {
-          TRACE("Script run function returned unexpected value");
-          standaloneScript.state = SCRIPT_SYNTAX_ERROR;
-          luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
-        }
-      }
-      else {
-        int scriptResult = lua_tointeger(lsScripts, -1);
-        lua_pop(lsScripts, 1);  /* pop returned value */
-        if (scriptResult != 0) {
-          TRACE("Script finished with status %d", scriptResult);
-          standaloneScript.state = SCRIPT_NOFILE;
-          luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
-          return;
-        }
-        else if (luaDisplayStatistics) {
-#if defined(COLORLCD)
-#else
-          lcdDrawSolidHorizontalLine(0, 7*FH-1, lcdLastRightPos+6, ERASE);
-          lcdDrawText(0, 7*FH, "GV Use: ");
-          lcdDrawNumber(lcdLastRightPos, 7*FH, luaGetMemUsed(lsScripts), LEFT);
-          lcdDrawChar(lcdLastRightPos, 7*FH, 'b');
-          lcdDrawSolidHorizontalLine(0, 7*FH-2, lcdLastRightPos+6, FORCE);
-          lcdDrawVerticalLine(lcdLastRightPos+6, 7*FH-2, FH+2, SOLID, FORCE);
-#endif
-        }
-      }
-    }
-    else {
-      TRACE("Script error: %s", lua_tostring(lsScripts, -1));
-      standaloneScript.state = (instructionsPercent > 100 ? SCRIPT_KILLED : SCRIPT_SYNTAX_ERROR);
-      luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
-    }
-
-    if (standaloneScript.state != SCRIPT_OK) {
-      luaError(lsScripts, standaloneScript.state);
-      luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
-    }
-  }
-  else {
-    TRACE("Script run method missing");
-    standaloneScript.state = SCRIPT_SYNTAX_ERROR;
-    luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
-  }
-}
-#else
 void luaDoOneRunStandalone(event_t evt)
 {
   static uint8_t luaDisplayStatistics = false;
@@ -970,14 +871,13 @@ void luaDoOneRunStandalone(event_t evt)
       luaError(lsScripts, standaloneScript.state);
       luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
     }
-/*
-    if (evt == EVT_KEY_LONG(KEY_EXIT)) {
+
+/*    if (evt == EVT_KEY_LONG(KEY_EXIT)) {
       TRACE("Script force exit");
       killEvents(evt);
       standaloneScript.state = SCRIPT_NOFILE;
       luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
     }
-
 #if !defined(PCBHORUS) && !defined(PCBXLITE)
   // TODO find another key and add a #define
     else if (evt == EVT_KEY_LONG(KEY_MENU)) {
@@ -985,7 +885,7 @@ void luaDoOneRunStandalone(event_t evt)
       luaDisplayStatistics = !luaDisplayStatistics;
     }
 #endif
-*/
+ */
   }
   else {
     TRACE("Script run method missing");
@@ -993,13 +893,8 @@ void luaDoOneRunStandalone(event_t evt)
     luaState = INTERPRETER_RELOAD_PERMANENT_SCRIPTS;
   }
 }
-#endif
 
-#if defined (PCBNV14)
-bool luaDoOneRunPermanentScript(touch_event_type evt, int i, uint32_t scriptType)
-#else
 bool luaDoOneRunPermanentScript(event_t evt, int i, uint32_t scriptType)
-#endif
 {
   ScriptInternalData & sid = scriptInternalData[i];
   if (sid.state != SCRIPT_OK) return false;
@@ -1098,11 +993,7 @@ bool luaDoOneRunPermanentScript(event_t evt, int i, uint32_t scriptType)
   return true;
 }
 
-#if defined (PCBNV14)
-bool luaTask(touch_event_type evt, uint8_t scriptType, bool allowLcdUsage)
-#else
 bool luaTask(event_t evt, uint8_t scriptType, bool allowLcdUsage)
-#endif
 {
   if (luaState == INTERPRETER_PANIC) return false;
   luaLcdAllowed = allowLcdUsage;
@@ -1126,9 +1017,6 @@ bool luaTask(event_t evt, uint8_t scriptType, bool allowLcdUsage)
     // run permanent scripts
     if (luaState & INTERPRETER_RELOAD_PERMANENT_SCRIPTS) {
       luaState = 0;
-#if defined (PCBNV14)
-
-#endif
       luaInit();
       if (luaState == INTERPRETER_PANIC) return false;
       luaLoadPermanentScripts();

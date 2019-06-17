@@ -126,11 +126,7 @@ extern ScriptInternalData standaloneScript;
 extern ScriptInternalData scriptInternalData[MAX_SCRIPTS];
 extern ScriptInputsOutputs scriptInputsOutputs[MAX_SCRIPTS];
 void luaClose(lua_State ** L);
-#if defined (PCBNV14)
-bool luaTask(touch_event_type evt, uint8_t scriptType, bool allowLcdUsage);
-#else
 bool luaTask(event_t evt, uint8_t scriptType, bool allowLcdUsage);
-#endif
 void checkLuaMemoryUsage();
 void luaExec(const char * filename);
 void luaDoGc(lua_State * L, bool full);

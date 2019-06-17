@@ -38,11 +38,56 @@ void MainWindow::emptyTrash()
   }
   trash.clear();
 }
-
-uint8_t Lua_touch_evt = 0;
-
 void MainWindow::checkEvents()
 {
+	this->checkEvents(false);
+}
+
+void MainWindow::checkEvents(bool luaActive) {
+  if (touchState.Event == TE_DOWN) {
+	if(!luaActive) onTouchStart(touchState.X, touchState.Y);
+    putEvent(EVT_TOUCH(TOUCH_DOWN));
+  }
+  else if (touchState.Event == TE_UP) {
+    touchState.Event = TE_NONE;
+    if(!luaActive) onTouchEnd(touchState.startX, touchState.startY);
+    putEvent(EVT_TOUCH(TOUCH_UP));
+  }
+  else if (touchState.Event == TE_SLIDE) {
+    coord_t x = touchState.X - touchState.lastX;
+    coord_t y = touchState.Y - touchState.lastY;
+
+    if (x > 5)
+    {
+      putEvent(EVT_TOUCH(TOUCH_SLIDE_RIGHT));
+    }
+    else if (x < -5)
+    {
+      putEvent(EVT_TOUCH(TOUCH_SLIDE_LEFT));
+    }
+
+    if (y > 5)
+    {
+      putEvent(EVT_TOUCH(TOUCH_SLIDE_DOWN));
+    }
+    else if (y < -5)
+    {
+      putEvent(EVT_TOUCH(TOUCH_SLIDE_UP));
+    }
+
+    if(!luaActive) onTouchSlide(touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
+    touchState.lastX = touchState.X;
+    touchState.lastY = touchState.Y;
+  }
+
+  if(!luaActive) Window::checkEvents();
+
+  emptyTrash();
+}
+/*
+void MainWindow::checkEvents()
+{
+  if(legacyUImode) return;
   touch_event_type touch_evt;
   static touch_event_type last_evt;
 
@@ -92,8 +137,6 @@ void MainWindow::checkEvents()
     {
       TouchQueue.push(touch_evt);
       last_evt = touch_evt;
-
-      Lua_touch_evt = 1;
       //TRACE("empty = %d, size = %d\r\n", TouchQueue.empty() ? 1:0, TouchQueue.size());
     }
   }
@@ -102,7 +145,7 @@ void MainWindow::checkEvents()
 
   emptyTrash();
 }
-
+*/
 void MainWindow::invalidate(const rect_t & rect)
 {
   if (invalidatedRect.w) {
@@ -141,10 +184,27 @@ bool MainWindow::refresh()
   }
 }
 
-void MainWindow::run()
+void MainWindow::resetDisplayRect(){
+  lcd->setOffset(0, 0);
+  lcd->clearClippingRect();
+  lcdNextLayer();
+  lcd->setOffset(0, 0);
+  lcd->clearClippingRect();
+  lcdNextLayer();
+}
+
+void MainWindow::run(bool luaActive)
 {
-  checkEvents();
-  if (refresh()) {
+  if(lastLuaState != luaActive) {
+    resetDisplayRect();
+    lastLuaState = luaActive;
+    if(!lastLuaState) {
+      invalidate();
+    }
+  }
+
+  checkEvents(luaActive);
+  if (luaActive || refresh()) {
     lcdRefresh();
   }
 }

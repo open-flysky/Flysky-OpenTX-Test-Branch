@@ -174,13 +174,12 @@ void scheduleNextMixerCalculation(uint8_t module, uint16_t delay)
 }
 
 #define MENU_TASK_PERIOD_TICKS      10    // 50ms
-#define MENU_LUA_PERIOD_TICKS  50//250
+#define MENU_LUA_PERIOD_TICKS  250
 
 #if defined(COLORLCD) && defined(CLI)
 bool perMainEnabled = true;
 #endif
 uint8_t UsbModes = USB_UNSELECTED_MODE;
-extern int Lua_screen_created;
 
 TASK_FUNCTION(menusTask)
 {
@@ -243,14 +242,7 @@ TASK_FUNCTION(menusTask)
     // deduct the thread run-time from the wait, if run-time was more than
     // desired period, then skip the wait all together
     if (runtime < MENU_TASK_PERIOD_TICKS) {
-      if (Lua_screen_created)
-      {
-        CoTickDelay(MENU_LUA_PERIOD_TICKS - runtime);
-      }
-      else
-      {
-        CoTickDelay(MENU_TASK_PERIOD_TICKS - runtime);
-      }
+      CoTickDelay(MENU_TASK_PERIOD_TICKS - runtime);
     }
 
     resetForcePowerOffRequest();

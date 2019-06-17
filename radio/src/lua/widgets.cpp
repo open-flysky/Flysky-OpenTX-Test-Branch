@@ -25,7 +25,7 @@
 #include "lua_api.h"
 
 #define WIDGET_SCRIPTS_MAX_INSTRUCTIONS    (10000/100)
-#define MANUAL_SCRIPTS_MAX_INSTRUCTIONS    (40000/100)
+#define MANUAL_SCRIPTS_MAX_INSTRUCTIONS    (20000/100)
 #define LUA_WARNING_INFO_LEN               64
 
 lua_State *lsWidgets = NULL;
