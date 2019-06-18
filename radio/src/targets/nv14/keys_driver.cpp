@@ -33,7 +33,7 @@ uint32_t readKeys()
        if (TRIMS_GPIO_REG_LVD & TRIMS_GPIO_PIN_LVD)
          result |= 1 << KEY_TELEM;
        if (TRIMS_GPIO_REG_LVU & TRIMS_GPIO_PIN_LVU)
-         result |= 1 << KEY_RADIO;
+         result |= 1 << KEY_MENU;
        if (TRIMS_GPIO_REG_RVD & TRIMS_GPIO_PIN_RVD)
          result |= 1 << KEY_DOWN;
        if (TRIMS_GPIO_REG_RVU & TRIMS_GPIO_PIN_RVU)
@@ -100,9 +100,6 @@ void readKeysAndTrims()
   uint8_t index = 0;
   uint32_t in = readKeys();
   uint32_t trims = readTrims();
-  if(in) TRACE("readKeys(): result=0x%06x", in);
-  if(trims) TRACE("readTrims(): result=0x%06x", trims);
-
   for (i = 0; i < TRM_BASE; i++) {
     keys[index++].input(in & (1 << i));
   }
