@@ -23,7 +23,7 @@
 
 #define EVT_KEY_MASK(e)                ((e) & 0x1f)
 
-#if defined(PCBHORUS)
+#if defined(PCBHORUS) || defined (PCBNV14)
 #define _MSK_KEY_BREAK                 0x0200
 #define _MSK_KEY_REPT                  0x0400
 #define _MSK_KEY_FIRST                 0x0600
@@ -31,10 +31,8 @@
 #define _MSK_KEY_FLAGS                 0x0e00
 #define EVT_ENTRY                      0x1000
 #define EVT_ENTRY_UP                   0x2000
-#else
-#if defined (PCBNV14)
 #define _MSK_TOUCH_EVENT               0x3000
-#endif
+#else
 #define _MSK_KEY_BREAK                 0x20
 #define _MSK_KEY_REPT                  0x40
 #define _MSK_KEY_FIRST                 0x60

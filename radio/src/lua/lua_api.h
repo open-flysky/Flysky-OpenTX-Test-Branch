@@ -159,10 +159,8 @@ extern uint8_t instructionsPercent;
   #define IS_MASKABLE(key) ((key) != KEY_EXIT && (key) != KEY_ENTER)
 #elif defined(PCBTARANIS)
   #define IS_MASKABLE(key) ((key) != KEY_EXIT && (key) != KEY_ENTER && ((luaState & INTERPRETER_RUNNING_STANDALONE_SCRIPT) || (key) != KEY_PAGE))
-#elif defined(PCBHORUS)
+#elif defined(PCBHORUS) || defined(PCBNV14)
   #define IS_MASKABLE(key) ((key) != KEY_EXIT && (key) != KEY_ENTER)
-#elif defined(PCBNV14)
-  #define IS_MASKABLE(key) (false)
 #endif
 struct LuaField {
   uint16_t id;
