@@ -25,7 +25,7 @@
 
 #if defined(COLORLCD)
   #define SWITCH_WARNING_LIST_X        WARNING_LINE_X
-  #define SWITCH_WARNING_LIST_Y        WARNING_LINE_Y+3*FH
+  #define SWITCH_WARNING_LIST_Y        WARNING_LINE_Y+4*FH
   #define SWITCH_WARNING_LIST_INTERVAL 35
 #elif LCD_W >= 212
   #define SWITCH_WARNING_LIST_X        60
@@ -757,9 +757,9 @@ void checkSwitches()
           if (state && state-1 != ((switches_states >> (i*2)) & 0x03)) {
             if (++numWarnings < 6) {
               // LcdFlags attr = ((states & mask) == (switches_states & mask)) ? TEXT_COLOR : ALARM_COLOR;
-              LcdFlags attr = ALARM_COLOR;
+              LcdFlags attr = ALARM_COLOR | DBLSIZE;
               drawSwitch(x, y, SWSRC_FIRST_SWITCH+i*3+state-1, attr);
-              x += SWITCH_WARNING_LIST_INTERVAL;
+              y += SWITCH_WARNING_LIST_INTERVAL;
             }
             else if (numWarnings == 6) {
               lcdDrawText(x, y, "...", ALARM_COLOR);
