@@ -379,7 +379,7 @@ void perMain()
 
 #if defined(RAMBACKUP)
   if (unexpectedShutdown) {
-    drawFatalErrorScreen(STR_EMERGENCY_MODE);
+    mainWindow.drawFatalError(STR_EMERGENCY_MODE);
     return;
   }
 #endif
@@ -396,7 +396,7 @@ void perMain()
 #if !defined(EEPROM)
   // In case the SD card is removed during the session
   if (!SD_CARD_PRESENT() && !unexpectedShutdown) {
-    drawFatalErrorScreen(STR_NO_SDCARD);
+    mainWindow.drawFatalError(STR_NO_SDCARD);
     return;
   }
 #endif

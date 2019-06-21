@@ -193,6 +193,17 @@ void MainWindow::resetDisplayRect(){
   lcdNextLayer();
 }
 
+void MainWindow::drawFatalError(const char * message)
+{
+	invalidate();
+    lcdNextLayer();
+    lcd->setOffset(0, 0);
+    lcd->clearClippingRect();
+    lcd->clear();
+    lcd->drawSizedText(LCD_W/2, LCD_H/2-20, message, strlen(message), DBLSIZE|CENTERED|TEXT_BGCOLOR);
+    lcdRefresh();
+}
+
 void MainWindow::run(bool luaActive)
 {
   if(lastLuaState != luaActive) {

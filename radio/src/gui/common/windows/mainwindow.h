@@ -55,6 +55,8 @@ class MainWindow: public Window {
 
     void resetDisplayRect();
 
+    void drawFatalError(const char* message);
+
   protected:
 
     void checkEvents(bool luaActive);

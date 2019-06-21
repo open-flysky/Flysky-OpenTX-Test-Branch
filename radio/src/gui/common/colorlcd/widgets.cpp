@@ -70,7 +70,6 @@ void drawFatalErrorScreen(const char * message)
   static uint32_t updateTime = 0;
   if(updateTime == 0 || ((get_tmr10ms() - updateTime) >= 10)) {
     updateTime = get_tmr10ms();
-    BACKLIGHT_ENABLE();
     lcdNextLayer();
     lcd->clear();
     lcd->drawSizedText(LCD_W/2, LCD_H/2-20, message, strlen(message), DBLSIZE|CENTERED|TEXT_BGCOLOR);
@@ -81,6 +80,7 @@ void drawFatalErrorScreen(const char * message)
 void runFatalErrorScreen(const char * message)
 {
   while (1) {
+    BACKLIGHT_ENABLE();
     drawFatalErrorScreen(message);
     uint8_t refresh = false;
     while (1) {
