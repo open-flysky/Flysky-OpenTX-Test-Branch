@@ -379,7 +379,11 @@ class ModuleWindow : public Window {
       // Bind and Range buttons
       if (isModuleNeedingBindRangeButtons(moduleIndex)) {
         bindButton = new TextButton(this, grid.getFieldSlot(2, 0), STR_4BIND(STR_MODULE_BIND));
+        //questionable check it
+        bindButton->setFocus();
         bindButton->setPressHandler([=]() -> uint8_t {
+          //questionable check it
+          bindButton->bringToTop();
           if (moduleFlag[moduleIndex] == MODULE_RANGECHECK) {
             rangeButton->check(false);
           }
@@ -392,11 +396,39 @@ class ModuleWindow : public Window {
           }
           else {
             bindButton->setText(STR_MODULE_BINDING);
-            moduleFlag[moduleIndex] = MODULE_BIND;
+            if (isModuleR9M(moduleIndex) || (isModuleXJT(moduleIndex) && g_model.moduleData[moduleIndex].rfProtocol == RF_PROTO_X16)) {
+                  Menu * menu = new Menu();
+                  //use global handler
+                  if (isModuleR9M_LBT(moduleIndex)) {
+                      menu->addLine(STR_BINDING_25MW_CH1_8_TELEM_OFF);
+                      if (!IS_TELEMETRY_INTERNAL_MODULE()) {
+                          menu->addLine(STR_BINDING_25MW_CH1_8_TELEM_ON);
+                      }
+                      menu->addLine(STR_BINDING_500MW_CH1_8_TELEM_OFF);
+                      menu->addLine(STR_BINDING_500MW_CH9_16_TELEM_OFF);
+                  }
+                  else {
+                      if (!(IS_TELEMETRY_INTERNAL_MODULE() && moduleIndex == EXTERNAL_MODULE)) {
+                          menu->addLine(STR_BINDING_1_8_TELEM_ON);
+                      }
+                      menu->addLine(STR_BINDING_1_8_TELEM_OFF);
+                      if (!(IS_TELEMETRY_INTERNAL_MODULE() && moduleIndex == EXTERNAL_MODULE)) {
+                          menu->addLine(STR_BINDING_9_16_TELEM_ON);
+                      }
+                      menu->addLine(STR_BINDING_9_16_TELEM_OFF);
+                  }
+                  return 1;
+            }
+            else {
+                  bindButton->setText(STR_MODULE_BINDING);
+                  moduleFlag[moduleIndex] = MODULE_BIND;
+            }
+            //verify
+            g_model.trainerMode = TRAINER_MODE_MASTER_TRAINER_JACK;
             if (isModuleFlysky(moduleIndex))
               onFlySkyBindReceiver(moduleIndex);
             return 1;
-          }
+            }
         });
         bindButton->setCheckHandler([=]() {
           if (moduleFlag[moduleIndex] != MODULE_BIND) {
@@ -404,7 +436,6 @@ class ModuleWindow : public Window {
             bindButton->check(false);
           }
         });
-
         rangeButton = new TextButton(this, grid.getFieldSlot(2, 1), STR_MODULE_RANGE);
         rangeButton->setPressHandler([=]() -> uint8_t {
           if (moduleFlag[moduleIndex] == MODULE_BIND) {
