@@ -37,17 +37,23 @@
 #define KSTATE_PAUSE                98
 #define KSTATE_KILLED               99
 
-
+event_lua_t empty_event = { };
 event_t s_evt;
+uint s_evtWParam;
+uint s_evtLParam;
+
 struct t_inactivity inactivity = {0};
 Key keys[NUM_KEYS];
 
 #if defined(CPUARM)
-event_t getEvent(bool trim)
+event_t getEvent(bool trim, event_lua_t& event)
 {
+  event.evt = 0;
+  event.wParam = 0;
+  event.lParam = 0;
 #if !defined(BOOT) && IS_TOUCH_ENABLED()
-  if (!trim && !KeyEventEmulator::keyEventsSuspended())
-    TouchManager::instance()->processQueue(&KeyEventEmulator::mapToKeyEvent);
+  //if (!trim && !KeyEventEmulator::keyEventsSuspended())
+    //TouchManager::instance()->processQueue(&KeyEventEmulator::mapToKeyEvent);
 #endif
 
   event_t evt = s_evt;
@@ -60,11 +66,20 @@ event_t getEvent(bool trim)
   }
   if (trim == trim_evt) {
     s_evt = 0;
+    event.evt = evt;
+    event.wParam = s_evtWParam;
+    event.lParam = s_evtLParam;
+    s_evtWParam = 0;
+    s_evtLParam = 0;
     return evt;
   }
   else {
     return 0;
   }
+}
+event_t getEvent(bool trim) {
+  event_lua_t eventStruct;
+  return getEvent(trim, eventStruct);
 }
 #else
 event_t getEvent()
@@ -74,6 +89,15 @@ event_t getEvent()
   return evt;
 }
 #endif
+void putEvent(event_t evt, uint32_t wParam, uint32_t lParam) {
+  s_evt = evt;
+  s_evtWParam = wParam;
+  s_evtLParam = lParam;
+
+}
+void putEvent(event_t evt) {
+  putEvent(evt, 0, 0);
+}
 
 void Key::input(bool val)
 {

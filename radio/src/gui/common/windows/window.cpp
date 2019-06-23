@@ -187,6 +187,29 @@ bool Window::isChildVisible(Window * window)
   }
   return false;
 }
+void Window::paintChild(BitmapBuffer * dc, Window * child, coord_t x, coord_t y, coord_t xmin, coord_t xmax, coord_t ymin, coord_t ymax) {
+  if (child->getParent() != this)
+    return;
+  coord_t child_xmin = x + child->rect.x;
+  if (child_xmin >= xmax)
+    return;
+  coord_t child_ymin = y + child->rect.y;
+  if (child_ymin >= ymax)
+    return;
+  coord_t child_xmax = child_xmin + child->rect.w;
+  if (child_xmax <= xmin)
+    return;
+  coord_t child_ymax = child_ymin + child->rect.h;
+  if (child_ymax <= ymin)
+    return;
+
+  dc->setOffset(x + child->rect.x - child->scrollPositionX, y + child->rect.y - child->scrollPositionY);
+  dc->setClippingRect(max(xmin, x + child->rect.left()),
+                      min(xmax, x + child->rect.right()),
+                      max(ymin, y + child->rect.top()),
+                      min(ymax, y + child->rect.bottom()));
+  child->fullPaint(dc);
+}
 
 void Window::paintChildren(BitmapBuffer * dc)
 {
@@ -206,26 +229,7 @@ void Window::paintChildren(BitmapBuffer * dc)
 
   for (; it != children.end(); it++) {
     auto child = *it;
-
-    coord_t child_xmin = x + child->rect.x;
-    if (child_xmin >= xmax)
-      continue;
-    coord_t child_ymin = y + child->rect.y;
-    if (child_ymin >= ymax)
-      continue;
-    coord_t child_xmax = child_xmin + child->rect.w;
-    if (child_xmax <= xmin)
-      continue;
-    coord_t child_ymax = child_ymin + child->rect.h;
-    if (child_ymax <= ymin)
-      continue;
-
-    dc->setOffset(x + child->rect.x - child->scrollPositionX, y + child->rect.y - child->scrollPositionY);
-    dc->setClippingRect(max(xmin, x + child->rect.left()),
-                        min(xmax, x + child->rect.right()),
-                        max(ymin, y + child->rect.top()),
-                        min(ymax, y + child->rect.bottom()));
-    child->fullPaint(dc);
+    paintChild(dc, child, x, y, xmin, xmax, ymin, ymax);
   }
 }
 
@@ -291,6 +295,32 @@ bool Window::onTouchSlide(coord_t x, coord_t y, coord_t startX, coord_t startY, 
 
   return false;
 }
+
+bool Window::onTouchStart(Window * child, coord_t x, coord_t y) {
+  if (pointInRect(x, y, child->rect)) {
+    if (child->onTouchStart(x - child->rect.x + child->scrollPositionX, y - child->rect.y + child->scrollPositionY)) {
+      return true;
+    }
+  }
+  return false;
+}
+bool Window::onTouchEnd(Window * child, coord_t x, coord_t y) {
+  if (pointInRect(x, y, child->rect)) {
+    if (child->onTouchEnd(x - child->rect.x + child->scrollPositionX, y - child->rect.y + child->scrollPositionY)) {
+      return true;
+    }
+  }
+  return false;
+}
+bool Window::onTouchSlide(Window * child, coord_t x, coord_t y, coord_t startX, coord_t startY, coord_t slideX, coord_t slideY) {
+  if (pointInRect(startX, startY, child->rect)) {
+    if (child->onTouchSlide(x - child->rect.x, y - child->rect.y, startX - child->rect.x, startY - child->rect.y, slideX, slideY)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 void Window::adjustInnerHeight()
 {

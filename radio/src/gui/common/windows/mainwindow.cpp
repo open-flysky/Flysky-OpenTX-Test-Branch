@@ -24,11 +24,14 @@
 #include "keys.h"
 #include <queue>
 #include "opentx.h"
+#include "keyboard_number.h"
+#include "keyboard_text.h"
 
 void DMACopy(void * src, void * dest, unsigned len);
 STRUCT_TOUCH touchState;
-MainWindow mainWindow;
+STRUCT_TOUCH lastTouch;
 
+MainWindow mainWindow;
 std::queue<touch_event_type>TouchQueue;
 
 void MainWindow::emptyTrash()
@@ -43,109 +46,81 @@ void MainWindow::checkEvents()
 	this->checkEvents(false);
 }
 
+static uint32_t getSlideEvent() {
+  coord_t x = touchState.X - touchState.startX;
+  coord_t y = touchState.Y - touchState.startY;
+  int slideSize = LCD_W / 4;
+  if (x > slideSize) return TOUCH_SLIDE_RIGHT;
+  else if (x < -slideSize) return TOUCH_SLIDE_LEFT;
+  else if (y > slideSize) return TOUCH_SLIDE_UP;
+  else if (y < -slideSize) return TOUCH_SLIDE_DOWN;
+  return 0;
+}
+
 void MainWindow::checkEvents(bool luaActive) {
-  if (touchState.Event == TE_DOWN) {
-	if(!luaActive) onTouchStart(touchState.X, touchState.Y);
-    putEvent(EVT_TOUCH(TOUCH_DOWN));
+  // Probably touch manager should be used
+  // For now we use this simplified mapping
+  // Checking if event is new is necessary
+
+  if(lastTouch.Event != touchState.Event ||
+      lastTouch.X != touchState.X || lastTouch.Y != touchState.Y ||
+      lastTouch.lastX != touchState.lastX || lastTouch.lastY != touchState.lastY) {
+
+    lastTouch.Event = touchState.Event;
+    lastTouch.X = touchState.X;
+    lastTouch.Y = touchState.Y;
+    lastTouch.lastX = touchState.lastX;
+    lastTouch.lastY = touchState.lastY;
+
+    bool handled = false;
+    uint32_t event = 0;
+    if (touchState.Event == TE_DOWN) {
+       TRACE("MainWindow::checkEvents TE_DOWN");
+       if(!luaActive) handled = onTouchStart(touchState.X, touchState.Y);
+       else if(attachedKeyboard != nullptr) handled = onTouchStart(attachedKeyboard, touchState.X, touchState.Y);
+       if(!handled) event = TOUCH_DOWN;
+    }
+    else if (touchState.Event == TE_UP) {
+      TRACE("MainWindow::checkEvents TE_UP");
+       touchState.Event = TE_NONE;
+       if(!luaActive) handled = onTouchEnd(touchState.startX, touchState.startY);
+       else if(attachedKeyboard != nullptr) handled = onTouchEnd(attachedKeyboard, touchState.startX, touchState.startY);
+       if(!handled){
+         //maybe it was long range slide
+         uint32_t slideEvent = getSlideEvent();
+         event = slideEvent != 0 ? slideEvent : TOUCH_UP;
+       }
+    }
+    else if (touchState.Event == TE_SLIDE) {
+       coord_t x = touchState.X - touchState.lastX;
+       coord_t y = touchState.Y - touchState.lastY;
+       int slideSize = 5;
+
+       x -= slideSize;
+       y -= slideSize;
+
+       if(!luaActive) {
+         handled = onTouchSlide(touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
+       }
+       else if(attachedKeyboard != nullptr) {
+         handled = onTouchSlide(attachedKeyboard, touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
+       }
+
+       if(!handled) event = getSlideEvent();
+
+       touchState.lastX = touchState.X;
+       touchState.lastY = touchState.Y;
+    }
+    if (event && !handled) putEvent(EVT_TOUCH(event), touchState.X, touchState.Y);
   }
-  else if (touchState.Event == TE_UP) {
-    touchState.Event = TE_NONE;
-    if(!luaActive) onTouchEnd(touchState.startX, touchState.startY);
-    putEvent(EVT_TOUCH(TOUCH_UP));
+
+
+  if(!luaActive){
+    Window::checkEvents();
   }
-  else if (touchState.Event == TE_SLIDE) {
-    coord_t x = touchState.X - touchState.lastX;
-    coord_t y = touchState.Y - touchState.lastY;
-
-    if (x > 5)
-    {
-      putEvent(EVT_TOUCH(TOUCH_SLIDE_RIGHT));
-    }
-    else if (x < -5)
-    {
-      putEvent(EVT_TOUCH(TOUCH_SLIDE_LEFT));
-    }
-
-    if (y > 5)
-    {
-      putEvent(EVT_TOUCH(TOUCH_SLIDE_DOWN));
-    }
-    else if (y < -5)
-    {
-      putEvent(EVT_TOUCH(TOUCH_SLIDE_UP));
-    }
-
-    if(!luaActive) onTouchSlide(touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
-    touchState.lastX = touchState.X;
-    touchState.lastY = touchState.Y;
-  }
-
-  if(!luaActive) Window::checkEvents();
-
   emptyTrash();
 }
-/*
-void MainWindow::checkEvents()
-{
-  if(legacyUImode) return;
-  touch_event_type touch_evt;
-  static touch_event_type last_evt;
 
-  memset(&touch_evt, 0, sizeof(touch_evt));
-  touch_evt.touch_type = TE_NONE;
-
-  if (touchState.Event == TE_DOWN) {
-    //onTouchStart(touchState.X + scrollPositionX, touchState.Y + scrollPositionY);
-    onTouchStart(touchState.X, touchState.Y);
-    //putEvent(EVT_TOUCH(TOUCH_DOWN));
-    touch_evt.touch_type = TE_DOWN;
-    touch_evt.touch_x = touchState.X;
-    touch_evt.touch_y = touchState.Y;
-
-  }
-  else if (touchState.Event == TE_UP) {
-    touchState.Event = TE_NONE;
-    //onTouchEnd(touchState.startX + scrollPositionX, touchState.startY + scrollPositionY);
-    onTouchEnd(touchState.startX, touchState.startY);
-
-    touch_evt.touch_type = TE_UP;
-    touch_evt.touch_x = touchState.startX;
-    touch_evt.touch_y = touchState.startY;
-  }
-  else if (touchState.Event == TE_SLIDE) {
-    coord_t x = touchState.X - touchState.lastX;
-    coord_t y = touchState.Y - touchState.lastY;
-
-    if (x != 0 && y != 0)
-    {
-      touch_evt.touch_type = TE_SLIDE;
-      touch_evt.slide_start_x = touchState.lastX;
-      touch_evt.slide_start_y = touchState.lastY;
-      touch_evt.slide_end_x = touchState.X;
-      touch_evt.slide_end_y = touchState.Y;
-    }
-
-    onTouchSlide(touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
-    touchState.lastX = touchState.X;
-    touchState.lastY = touchState.Y;
-  }
-
-
-  if (touch_evt.touch_type != TE_NONE  && TouchQueue.size() < MAX_TOUCH_EVENT_CNT)
-  {
-    if (0 != memcmp(&touch_evt, &last_evt, sizeof(touch_event_type)))
-    {
-      TouchQueue.push(touch_evt);
-      last_evt = touch_evt;
-      //TRACE("empty = %d, size = %d\r\n", TouchQueue.empty() ? 1:0, TouchQueue.size());
-    }
-  }
-
-  Window::checkEvents();
-
-  emptyTrash();
-}
-*/
 void MainWindow::invalidate(const rect_t & rect)
 {
   if (invalidatedRect.w) {
@@ -162,6 +137,22 @@ void MainWindow::invalidate(const rect_t & rect)
 
 bool MainWindow::refresh()
 {
+  return this->refresh(false);
+}
+
+bool MainWindow::refresh(bool luaActive)
+{
+  if(luaActive) {
+    if(attachedKeyboard != nullptr) {
+      coord_t x = lcd->getOffsetX();
+      coord_t y = lcd->getOffsetY();
+      coord_t xmin, xmax, ymin, ymax;
+      lcd->getClippingRect(xmin, xmax, ymin, ymax);
+      paintChild(lcd, attachedKeyboard, x, y, xmin, xmax, ymin, ymax);
+      setMaxClientRect(lcd);
+    }
+    return true;
+  }
   if (invalidatedRect.w) {
     if (invalidatedRect.x > 0 || invalidatedRect.y > 0 || invalidatedRect.w < LCD_W || invalidatedRect.h < LCD_H) {
       //TRACE("Refresh rect: left=%d top=%d width=%d height=%d", invalidatedRect.left(), invalidatedRect.top(), invalidatedRect.w, invalidatedRect.h);
@@ -193,9 +184,14 @@ void MainWindow::resetDisplayRect(){
   lcdNextLayer();
 }
 
+void MainWindow::setMaxClientRect(BitmapBuffer * dc) {
+  dc->setOffset(0, 0);
+  dc->clearClippingRect();
+}
+
 void MainWindow::drawFatalError(const char * message)
 {
-	invalidate();
+    invalidate();
     lcdNextLayer();
     lcd->setOffset(0, 0);
     lcd->clearClippingRect();
@@ -204,18 +200,37 @@ void MainWindow::drawFatalError(const char * message)
     lcdRefresh();
 }
 
+void MainWindow::showKeyboard(KeyboardType keybordType)
+{
+    switch(keybordType){
+        case KeyboardType::KeyboardNumIncDec:
+         NumberKeyboard::instance()->attachTo(this);
+          attachedKeyboard = NumberKeyboard::instance();
+            break;
+    case KeyboardType::KeyboardAlphabetic:
+      TextKeyboard::instance()->attachTo(this);
+      attachedKeyboard = TextKeyboard::instance();
+      break;
+        case KeyboardType::KeyboardNone:
+         if(attachedKeyboard != nullptr) detachChild(attachedKeyboard);
+      attachedKeyboard = nullptr;
+      invalidate();
+          break;
+    }
+}
+
 void MainWindow::run(bool luaActive)
 {
   if(lastLuaState != luaActive) {
     resetDisplayRect();
     lastLuaState = luaActive;
     if(!lastLuaState) {
+      showKeyboard(KeyboardType::KeyboardNone);
       invalidate();
     }
   }
-
   checkEvents(luaActive);
-  if (luaActive || refresh()) {
+  if (refresh(luaActive)) {
     lcdRefresh();
   }
 }

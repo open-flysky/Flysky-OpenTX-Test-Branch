@@ -42,7 +42,6 @@ extern RadioData g_eeGeneral;
 
 class Window {
   friend class GridLayout;
-
   public:
     Window(Window * parent, const rect_t & rect, uint8_t flags=0);
 
@@ -280,6 +279,7 @@ class Window {
 
     void detach();
 
+
     void addChild(Window * window)
     {
       children.push_back(window);
@@ -290,6 +290,12 @@ class Window {
       children.remove(window);
       invalidate();
     }
+    //Temp method to allow action on single child
+    void detachChild(Window * child) { child->detach(); }
+    void paintChild(BitmapBuffer * dc, Window * child, coord_t x, coord_t y, coord_t xmin, coord_t xmax, coord_t ymin, coord_t ymax);
+    bool onTouchStart(Window * child, coord_t x, coord_t y);
+    bool onTouchEnd(Window * child, coord_t x, coord_t y);
+    bool onTouchSlide(Window * child, coord_t x, coord_t y, coord_t startX, coord_t startY, coord_t slideX, coord_t slideY);
 
     virtual void invalidate(const rect_t & rect);
 };

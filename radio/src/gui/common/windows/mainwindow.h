@@ -24,6 +24,7 @@
 #define _MAINWINDOW_H_
 
 #include "window.h"
+enum KeyboardType {KeyboardNone = 0, KeyboardNumIncDec = 1, KeyboardNumeric = 2, KeyboardAlphabetic = 3 };
 
 class MainWindow: public Window {
   public:
@@ -57,12 +58,18 @@ class MainWindow: public Window {
 
     void drawFatalError(const char* message);
 
+    void showKeyboard(KeyboardType keybordType);
+
   protected:
 
     void checkEvents(bool luaActive);
+    bool refresh(bool luaActive);
 
     void emptyTrash();
 
+    void setMaxClientRect(BitmapBuffer * dc);
+
+    Window* attachedKeyboard = nullptr;
     rect_t invalidatedRect;
     bool legacyUImode;
     bool lastLuaState;

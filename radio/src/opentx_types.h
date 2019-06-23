@@ -46,7 +46,12 @@ typedef uint16_t event_t;
 #else
 typedef uint8_t event_t;
 #endif
-
+struct event_lua_t {
+  event_t evt;
+  uint32_t wParam;
+  uint32_t lParam;
+};
+typedef struct event_lua_t event_lua_t;
 
 typedef int32_t putstime_t;
 typedef int32_t coord_t;

@@ -24,6 +24,7 @@
 #include "stamp.h"
 #include "lua_api.h"
 #include "telemetry/frsky.h"
+#include "mainwindow.h"
 
 #if defined(PCBX12S)
   #include "lua/lua_exports_x12s.inc"   // this line must be after lua headers
@@ -1398,6 +1399,10 @@ const luaR_value_entry opentxConstants[] = {
   { "LIGHTGREY", (double)LIGHTGREY },
   { "RED", (double)RED },
   { "DARKRED", (double)DARKRED },
+  { "KEYBOARD_NONE", (uint)KeyboardType::KeyboardNone },
+  { "KEYBOARD_NUM_INC_DEC", (uint)KeyboardType::KeyboardNumIncDec },
+  { "KEYBOARD_NUM", (uint)KeyboardType::KeyboardNumeric },
+  { "KEYBOARD_ALPHABETIC", (uint)KeyboardType::KeyboardAlphabetic },
 #else
   { "FIXEDWIDTH", FIXEDWIDTH },
 #endif
@@ -1470,11 +1475,14 @@ const luaR_value_entry opentxConstants[] = {
 
   { "EVT_RTN_FIRST",  EVT_KEY_FIRST(KEY_EXIT) },
   { "EVT_EXIT_BREAK",  EVT_KEY_BREAK(KEY_EXIT) },
+
   { "EVT_ROT_BREAK", EVT_KEY_BREAK(KEY_ENTER) },
   { "EVT_ROT_LONG", EVT_KEY_LONG(KEY_ENTER) },
-
-  { "EVT_ROT_LEFT", EVT_KEY_FIRST(KEY_LEFT) },
-  { "EVT_ROT_RIGHT", EVT_KEY_FIRST(KEY_RIGHT) },
+  { "EVT_ENTER_BREAK", EVT_KEY_BREAK(KEY_ENTER) },
+  { "EVT_ENTER_LONG", EVT_KEY_LONG(KEY_ENTER) },
+  //direction must be inverted
+  { "EVT_ROT_LEFT", EVT_KEY_FIRST(KEY_RIGHT) },
+  { "EVT_ROT_RIGHT", EVT_KEY_FIRST(KEY_LEFT) },
 
   { "EVT_PLUS_FIRST", EVT_KEY_FIRST(KEY_UP) },
   { "EVT_PLUS_BREAK", EVT_KEY_BREAK(KEY_UP) },
@@ -1485,6 +1493,23 @@ const luaR_value_entry opentxConstants[] = {
   { "EVT_MINUS_LONG", EVT_KEY_LONG(KEY_DOWN) },
   { "EVT_MINUS_REPT", EVT_KEY_REPT(KEY_DOWN) },
 
+  { "EVT_SLIDE_LEFT", EVT_TOUCH(TOUCH_SLIDE_LEFT) },
+  { "EVT_SLIDE_RIGHT", EVT_TOUCH(TOUCH_SLIDE_RIGHT) },
+
+  { "EVT_SLIDE_LEFT", EVT_TOUCH(TOUCH_SLIDE_LEFT) },
+  { "EVT_SLIDE_RIGHT", EVT_TOUCH(TOUCH_SLIDE_RIGHT) },
+
+  { "EVT_TOUCH_UP", EVT_TOUCH(TOUCH_UP) },
+  { "EVT_TOUCH_DOWN", EVT_TOUCH(TOUCH_DOWN) },
+
+  //VIRTUAL_KEYBORD
+  { "EVT_VK_MIN", EVT_VK(VKEY_MIN) },
+  { "EVT_VK_MAX", EVT_VK(VKEY_MAX) },
+  { "EVT_VK_INC", EVT_VK(VKEY_INC) },
+  { "EVT_VK_DEC", EVT_VK(VKEY_DEC) },
+  { "EVT_VK_INC_LARGE", EVT_VK(VKEY_INC_LARGE) },
+  { "EVT_VK_DEC_LARGE", EVT_VK(VKEY_DEC_LARGE) },
+  { "EVT_VK_DEFAULT", EVT_VK(VKEY_DEFAULT) },
 #endif
 #if defined(ROTARY_ENCODER_NAVIGATION)
   { "EVT_ROT_BREAK", EVT_KEY_BREAK(KEY_ENTER) },
@@ -1500,7 +1525,7 @@ const luaR_value_entry opentxConstants[] = {
   { "PLAY_BACKGROUND", PLAY_BACKGROUND },
   { "TIMEHOUR", TIMEHOUR },
 
-#if defined(PCBHORUS)
+#if defined(PCBHORUS) || defined(PCBNV14)
   // Adding the unit consts for the set Telemetry function adds about 1k of flash usage
   {"UNIT_RAW", UNIT_RAW },
   {"UNIT_VOLTS", UNIT_VOLTS },

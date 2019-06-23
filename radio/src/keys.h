@@ -31,7 +31,8 @@
 #define _MSK_KEY_FLAGS                 0x0e00
 #define EVT_ENTRY                      0x1000
 #define EVT_ENTRY_UP                   0x2000
-#define _MSK_TOUCH_EVENT               0x3000
+#define _MSK_TOUCH_EVENT               0x4000
+#define _MSK_VK_EVENT                  0x8000
 #else
 #define _MSK_KEY_BREAK                 0x20
 #define _MSK_KEY_REPT                  0x40
@@ -55,6 +56,7 @@
 
 #if defined (PCBNV14)
 #define EVT_TOUCH(evt)                 ((evt)|_MSK_TOUCH_EVENT)
+#define EVT_VK(evt)                    ((evt)|_MSK_VK_EVENT)
 #endif
 
 #if (defined(PCBHORUS) || defined(PCBTARANIS)) && defined(ROTARY_ENCODER_NAVIGATION)
@@ -96,15 +98,17 @@ class Key
 
 extern Key keys[NUM_KEYS];
 extern event_t s_evt;
+extern event_lua_t empty_event;
 
-#define putEvent(evt) s_evt = evt
-
+void putEvent(event_t evt);
+void putEvent(event_t evt, uint32_t wParam, uint32_t lParam);
 void pauseEvents(event_t event);
 void killEvents(event_t event);
 
 #if defined(CPUARM)
   bool clearKeyEvents();
   event_t getEvent(bool trim=false);
+  event_t getEvent(bool trim, event_lua_t& event);
 #else
   void clearKeyEvents();
   event_t getEvent();

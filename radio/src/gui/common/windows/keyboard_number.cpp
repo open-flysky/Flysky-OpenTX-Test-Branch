@@ -22,6 +22,7 @@
 #include "button.h"
 #include "basenumberedit.h"
 #include "lcd.h"
+#include "keys.h"
 
 constexpr coord_t KEYBOARD_HEIGHT = 90;
 
@@ -35,6 +36,7 @@ NumberKeyboard::NumberKeyboard():
                    if (field) {
                      field->setValue(field->getValue() - 10 * field->getStep());
                    }
+                   else putEvent(EVT_VK(VKEY_DEC_LARGE));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 
@@ -43,6 +45,7 @@ NumberKeyboard::NumberKeyboard():
                    if (field) {
                      field->setValue(field->getValue() - field->getStep());
                    }
+                   else putEvent(EVT_VK(VKEY_DEC));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 
@@ -51,6 +54,7 @@ NumberKeyboard::NumberKeyboard():
                    if (field) {
                      field->setValue(field->getValue() + field->getStep());
                    }
+                   else putEvent(EVT_VK(VKEY_INC));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 
@@ -59,6 +63,7 @@ NumberKeyboard::NumberKeyboard():
                    if (field) {
                      field->setValue(field->getValue() + 10 * field->getStep());
                    }
+                   else putEvent(EVT_VK(VKEY_INC_LARGE));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 
@@ -67,6 +72,7 @@ NumberKeyboard::NumberKeyboard():
                    if (field) {
                      field->setValue(field->getMin());
                    }
+                   else putEvent(EVT_VK(VKEY_MIN));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 
@@ -75,6 +81,7 @@ NumberKeyboard::NumberKeyboard():
                    if (field) {
                      field->setValue(field->getMax());
                    }
+                   else putEvent(EVT_VK(VKEY_MAX));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 
@@ -83,6 +90,7 @@ NumberKeyboard::NumberKeyboard():
                    if (field) {
                      field->setValue(field->getDefault());
                    }
+                   else putEvent(EVT_VK(VKEY_DEFAULT));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 }

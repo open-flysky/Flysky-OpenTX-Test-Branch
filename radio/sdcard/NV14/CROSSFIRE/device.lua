@@ -26,21 +26,8 @@ local fieldId = 1
 local fieldChunk = 0
 local fieldData = {}
 local fields = {}
-
-local upImg = Bitmap.open("mask_up.png")
-local downImg = Bitmap.open("mask_down.png")
-
-local curTouch = {
-    touchX,
-    touchY
-}
-
-local curSlide = {
-    startX,
-    startY,
-    endX,
-    endY
-}
+local lineCount = 20
+local lineHeight = 22
 
 local function getField(line)
   local counter = 1
@@ -116,8 +103,8 @@ local function selectField(step)
     field = getField(newLineIndex)
   until newLineIndex == lineIndex or (field and field.type ~= 11 and field.name)
   lineIndex = newLineIndex
-  if lineIndex > 11 + pageOffset then 	-- NOTE: increased from 7 to 11 to allow 11 lines in Horus display
-    pageOffset = lineIndex - 11 		-- NOTE: increased from 7 to 11 to allow 11 lines in Horus display
+  if lineIndex > lineCount + pageOffset then 	-- NOTE: increased from 7 to 20 to allow 20 lines in Horus display
+    pageOffset = lineIndex - lineCount		-- NOTE: increased from 7 to 20 to allow 20 lines in Horus display
   elseif lineIndex <= pageOffset then
     pageOffset = lineIndex - 1
   end
@@ -437,59 +424,37 @@ local function refreshNext()
   end
 end
 
-
---0 - 320
---124 - 134
-local function getLine(touchY)
-  local line = 0;
-  line = math.ceil(((touchY - 134) / 20) + 0.3)
-
-  if (line < 1 or line > 11) then
-    return 0
-  end
-
-  return line
-end
-
-local function onTouchValid(startX, startY, endX, endY)
-
-  if (startX < curTouch.touchX and curTouch.touchX < endX) and (startY < curTouch.touchY and curTouch.touchY < endY) then
-    return 1
-  end
-
-  return 0
-end
-
-
-local editIndex = 0
 -- Main
-local function runDevicePage(...)
-  local args = {...}
-  local event = args[1]
-
-  if event == EVT_TOUCH_UP  then
-    curTouch.touchX = args[2]
-    curTouch.touchY = args[3] 
-   
-    
-    if onTouchValid(129, 440, 195, 485) == 1 then
-      if edit then
-        incrField(-1)
-      else
-        selectField(1)
-      end 
-    elseif onTouchValid(129, 77, 195, 119) == 1 then
-      if edit then
-        incrField(1)
-      else
-        selectField(-1)
-      end 
+local function runDevicePage(event, wParam, lParam)
+  if event == EVT_EXIT_BREAK or event == EVT_SLIDE_LEFT then  -- exit script
+    if edit == true then
+      edit = false
+      local field = getField(lineIndex)
+      fieldTimeout = getTime() + 200 -- 2s
+      fieldId, fieldChunk = field.id, 0
+      fieldData = {}
+      functions[field.type+1].save(field)
+    else
+      return "crossfire.lua"
     end
-
-    editIndex = getLine(curTouch.touchY) + pageOffset
+  elseif event == EVT_TOUCH_UP and wParam ~= nil and lParam ~= nill then
+    lParam = lParam - 10
+    if lParam > 0 then
+      lParam = math.floor(lParam / lineHeight)
+      if lParam <= #fields - pageOffset then
+        if edit == true then
+		  edit = false
+          local field = getField(lineIndex)
+          fieldTimeout = getTime() + 200 -- 2s
+          fieldId, fieldChunk = field.id, 0
+          fieldData = {}
+          functions[field.type+1].save(field)
+        end
+        selectField(pageOffset + lParam - lineIndex)
+      end
+    end
   end
-
-  if event == EVT_TOUCH_UP and editIndex == lineIndex then        -- toggle editing/selecting current field
+  if event == EVT_ROT_BREAK or event == EVT_TOUCH_UP then        -- toggle editing/selecting current field
     local field = getField(lineIndex)
     if field.name then
       if field.type == 10 then
@@ -503,28 +468,59 @@ local function runDevicePage(...)
         edit = not edit
       end
       if edit == false then
+        lcd.showKeyboard(KEYBOARD_NONE)
         fieldTimeout = getTime() + 200 -- 2s
         fieldId, fieldChunk = field.id, 0
         fieldData = {}
         functions[field.type+1].save(field)
+      else
+        if field.type == 10 then
+          lcd.showKeyboard(KEYBOARD_ALPHABETIC)
+        elseif field.type < 10 then 
+          lcd.showKeyboard(KEYBOARD_NUM_INC_DEC)
+        end
       end
+    end
+  elseif edit then
+    local field = getField(lineIndex)
+    if event == EVT_ROT_LEFT or event == EVT_VK_INC then
+      incrField(1)
+    elseif event == EVT_ROT_RIGHT or event == EVT_VK_DEC then
+      incrField(-1)
+    elseif event == EVT_VK_INC_LARGE then
+      incrField(5)
+    elseif event == EVT_VK_DEC_LARGE then
+      incrField(-5)
+    elseif event == EVT_VK_MIN and field.min ~= nil then
+      field.value = field.min;
+    elseif event == EVT_VK_MAX and field.max ~= nil  then
+      field.value = field.max;
+    elseif event == EVT_VK_DEFAULT and field.default ~= nil  then
+      field.value = field.default;
+    end
+  else
+    if event == EVT_ROT_RIGHT then
+      selectField(1)
+    elseif event == EVT_ROT_LEFT then
+      selectField(-1)
     end
   end
 
+  lcd.clear()
+  lcd.drawFilledRectangle(0, 0, LCD_W, 30, TITLE_BGCOLOR)
   lcd.drawText(1, 5,deviceName, MENU_TITLE_COLOR)
 
-
-  for y = 1, 11 do
+  for y = 1, lineCount do
     local field = getField(pageOffset+y)
     if not field then
       break
     elseif field.name == nil then
-      lcd.drawText(1, y*22+10, "")
+      lcd.drawText(1, y*lineHeight+10, "...")
     else
       local attr = lineIndex == (pageOffset+y) and ((edit == true and BLINK or 0) + INVERS) or 0
-      lcd.drawText(1, y*22+10, field.name)
+      lcd.drawText(1, y*lineHeight+10, field.name)
       if functions[field.type+1] then
-        functions[field.type+1].display(field, y*22+10, attr)
+        functions[field.type+1].display(field, y*lineHeight+10, attr)
       end
     end
   end
@@ -532,19 +528,12 @@ local function runDevicePage(...)
   return 0
 end
 
-
-
-local function runPopupPage(...)
+local function runPopupPage(event)
   local result
-  local args = {...}
-  local event = args[1]
-
   if fieldPopup.status == 3 then
-    --result = popupConfirmation(fieldPopup.info, event)
-    result = "OK"
+    result = popupConfirmation(fieldPopup.info, event)
   else
-    --result = popupWarning(fieldPopup.info, event)
-    result = "OK"
+    result = popupWarning(fieldPopup.info, event)
   end
   if result == "OK" then
     crossfireTelemetryPush(0x2D, { deviceId, 0xEA, fieldPopup.id, 4 })
@@ -554,31 +543,23 @@ local function runPopupPage(...)
   return 0
 end
 
-
-
 -- Init
 local function init()
   lineIndex, edit = 0, false
-  lcd.clear()
 end
 
 -- Main
-local function run(...)
-  if ... == nil then
+local function run(event, wParam, lParam)
+  if event == nil then
     error("Cannot be run as a model script!")
     return 2
   end
 
-  lcd.runMainWindow()
-  
-  lcd.drawBitmap(upImg, 145, 0)
-  lcd.drawBitmap(downImg, 145, 360)
-
   local result
   if fieldPopup ~= nil then
-    result = runPopupPage(...)
+    result = runPopupPage(event, wParam, lParam)
   else
-    result = runDevicePage(...)
+    result = runDevicePage(event, wParam, lParam)
   end
 
   refreshNext()

@@ -189,7 +189,7 @@ void periodicTick()
 }
 
 #if defined(GUI) && defined(COLORLCD)
-void guiMain(event_t evt)
+void guiMain(event_lua_t evt)
 {
   bool refreshNeeded = false;
 #if defined(LUA)
@@ -202,7 +202,7 @@ void guiMain(event_t evt)
   }
   // run Lua scripts that don't use LCD (to use CPU time while LCD DMA is running)
   DEBUG_TIMER_START(debugTimerLuaBg);
-  luaTask(0, RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
+  luaTask(empty_event, RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
   DEBUG_TIMER_STOP(debugTimerLuaBg);
   // wait for LCD DMA to finish before continuing, because code from this point
   // is allowed to change the contents of LCD buffer
@@ -215,7 +215,7 @@ void guiMain(event_t evt)
   // draw LCD from menus or from Lua script
   // run Lua scripts that use LCD
   DEBUG_TIMER_START(debugTimerLuaFg);
-  if(evt != 0) TRACE("LUA EVENT %d", evt);
+  if(evt.evt != 0) TRACE("LUA EVENT %d %d %d", evt.evt, evt.wParam, evt.lParam);
   refreshNeeded = luaTask(evt, RUN_STNDAL_SCRIPT, true);
   if (!refreshNeeded) {
     refreshNeeded = luaTask(evt, RUN_TELEM_FG_SCRIPT, true);
@@ -275,7 +275,7 @@ void handleGui(event_t event) {
 
 bool inPopupMenu = false;
 
-void guiMain(event_t evt)
+void guiMain(event_lua_t evt)
 {
 #if defined(LUA)
   // TODO better lua stopwatch
@@ -288,7 +288,7 @@ void guiMain(event_t evt)
   }
 
   // run Lua scripts that don't use LCD (to use CPU time while LCD DMA is running)
-  luaTask(0, RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
+  luaTask(empty_event, RUN_MIX_SCRIPT | RUN_FUNC_SCRIPT | RUN_TELEM_BG_SCRIPT, false);
 
   t0 = get_tmr10ms() - t0;
   if (t0 > maxLuaDuration) {
@@ -363,8 +363,8 @@ void perMain()
     flightReset();
     mainRequestFlags &= ~(1 << REQUEST_FLIGHT_RESET);
   }
-
-  event_t evt = getEvent(false);
+  event_lua_t evtStruct;
+  uint32_t evt = getEvent(false, evtStruct);
   if (evt && (g_eeGeneral.backlightMode & e_backlight_mode_keys)) {
     // on keypress turn the light on
     backlightOn();
@@ -373,7 +373,9 @@ void perMain()
 #if defined(NAVIGATION_STICKS)
   uint8_t sticks_evt = getSticksNavigationEvent();
   if (sticks_evt) {
-    evt = sticks_evt;
+    evtStruct.evt = sticks_evt;
+    evtStruct.wParam = 0;
+    evtStruct.lParam = 0;
   }
 #endif
 
@@ -421,7 +423,7 @@ void perMain()
 
 #if defined(GUI)
   DEBUG_TIMER_START(debugTimerGuiMain);
-  guiMain(evt);
+  guiMain(evtStruct);
   DEBUG_TIMER_STOP(debugTimerGuiMain);
 #endif
 

@@ -812,15 +812,17 @@ void luaExec(const char * filename)
   }
 }
 
-void luaDoOneRunStandalone(event_t evt)
+void luaDoOneRunStandalone(event_lua_t evt)
 {
   static uint8_t luaDisplayStatistics = false;
 
   if (standaloneScript.state == SCRIPT_OK && standaloneScript.run) {
     luaSetInstructionsLimit(lsScripts, MANUAL_SCRIPTS_MAX_INSTRUCTIONS);
     lua_rawgeti(lsScripts, LUA_REGISTRYINDEX, standaloneScript.run);
-    lua_pushunsigned(lsScripts, evt);
-    if (lua_pcall(lsScripts, 1, 1, 0) == 0) {
+    lua_pushunsigned(lsScripts, evt.evt);
+    lua_pushunsigned(lsScripts, evt.wParam);
+    lua_pushunsigned(lsScripts, evt.lParam);
+    if (lua_pcall(lsScripts, 3, 1, 0) == 0) {
       if (!lua_isnumber(lsScripts, -1)) {
         if (instructionsPercent > 100) {
           TRACE("Script killed");
@@ -894,7 +896,7 @@ void luaDoOneRunStandalone(event_t evt)
   }
 }
 
-bool luaDoOneRunPermanentScript(event_t evt, int i, uint32_t scriptType)
+bool luaDoOneRunPermanentScript(event_lua_t evt, int i, uint32_t scriptType)
 {
   ScriptInternalData & sid = scriptInternalData[i];
   if (sid.state != SCRIPT_OK) return false;
@@ -944,8 +946,10 @@ bool luaDoOneRunPermanentScript(event_t evt, int i, uint32_t scriptType)
 #endif
     if ((scriptType & RUN_TELEM_FG_SCRIPT) && (menuHandlers[0]==menuViewTelemetryFrsky && sid.reference==SCRIPT_TELEMETRY_FIRST+s_frsky_view)) {
       lua_rawgeti(lsScripts, LUA_REGISTRYINDEX, sid.run);
-      lua_pushunsigned(lsScripts, evt);
-      inputsCount = 1;
+      lua_pushunsigned(lsScripts, evt.evt);
+      lua_pushunsigned(lsScripts, evt.wParam);
+      lua_pushunsigned(lsScripts, evt.lParam);
+      inputsCount = 3;
     }
     else if ((scriptType & RUN_TELEM_BG_SCRIPT) && (sid.background)) {
       lua_rawgeti(lsScripts, LUA_REGISTRYINDEX, sid.background);
@@ -993,7 +997,7 @@ bool luaDoOneRunPermanentScript(event_t evt, int i, uint32_t scriptType)
   return true;
 }
 
-bool luaTask(event_t evt, uint8_t scriptType, bool allowLcdUsage)
+bool luaTask(event_lua_t evt, uint8_t scriptType, bool allowLcdUsage)
 {
   if (luaState == INTERPRETER_PANIC) return false;
   luaLcdAllowed = allowLcdUsage;

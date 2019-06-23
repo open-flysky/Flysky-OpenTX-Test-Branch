@@ -1661,6 +1661,4 @@ extern JitterMeter<uint16_t> avgJitter[NUM_ANALOGS];
 #include "bluetooth.h"
 #endif
 
-//extern TouchState touchState;
-
 #endif // _OPENTX_H_

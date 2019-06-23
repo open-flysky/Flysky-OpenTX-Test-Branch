@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include "opentx.h"
 #include "lua_api.h"
+#include "mainwindow.h"
 
 /*luadoc
 @function lcd.refresh()
@@ -827,6 +828,13 @@ static int luaLcdSetColor(lua_State *L)
   lcdColorTable[index] = color;
   return 0;
 }
+static int luaShowKeyboard(lua_State *L)
+{
+  if (!luaLcdAllowed) return 0;
+  KeyboardType kType = static_cast<KeyboardType>(luaL_optunsigned(L, 1, KeyboardType::KeyboardNone));
+  mainWindow.showKeyboard(kType);
+  return 1;
+}
 
 /*luadoc
 @function lcd.RGB(r, g, b)
@@ -874,6 +882,7 @@ const luaL_Reg lcdLib[] = {
   { "drawBitmap", luaLcdDrawBitmap },
   { "setColor", luaLcdSetColor },
   { "RGB", luaRGB },
+  { "showKeyboard", luaShowKeyboard },
 #else
   { "getLastPos", luaLcdGetLastPos },
   { "getLastRightPos", luaLcdGetLastPos },

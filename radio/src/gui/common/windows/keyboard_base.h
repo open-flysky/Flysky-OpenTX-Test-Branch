@@ -54,6 +54,10 @@ class Keyboard: public Window {
         field = nullptr;
       }
     }
+    void attachTo(Window * target)
+    {
+      attach(target);
+    }
 
     T * getField() const
     {

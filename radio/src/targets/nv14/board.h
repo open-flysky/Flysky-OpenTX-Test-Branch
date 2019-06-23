@@ -198,7 +198,6 @@ void stop_trainer_ppm(void);
 void init_trainer_capture(void);
 void stop_trainer_capture(void);
 
-
 // Keys driver
 enum EnumKeys
 {
@@ -230,14 +229,23 @@ enum EnumKeys
   NUM_KEYS
 };
 
-enum ENUM_LUA_TOUCH_EVENT
-{
-  TOUCH_DOWN,
+enum VirtualKeys {
+  VKEY_MIN,
+  VKEY_MAX,
+  VKEY_INC,
+  VKEY_DEC,
+  VKEY_INC_LARGE,
+  VKEY_DEC_LARGE,
+  VKEY_DEFAULT,
+};
+
+enum LUATouchEvent {
+  TOUCH_DOWN = 1,
   TOUCH_UP,
   TOUCH_SLIDE_UP,
   TOUCH_SLIDE_DOWN,
   TOUCH_SLIDE_LEFT,
-  TOUCH_SLIDE_RIGHT
+  TOUCH_SLIDE_RIGHT,
 };
 
 enum EnumSwitches
