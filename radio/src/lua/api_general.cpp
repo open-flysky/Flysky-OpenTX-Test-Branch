@@ -964,19 +964,19 @@ static int luaPopupInput(lua_State * L)
   warningInputValueMin = luaL_checkinteger(L, 4);
   warningInputValueMax = luaL_checkinteger(L, 5);
   warningText = luaL_checkstring(L, 1);
-  // warningType = WARNING_TYPE_INPUT;
+  warningType = WARN_TYPE_INPUT;
   runPopupWarning(event);
   if (warningResult) {
     warningResult = 0;
     lua_pushstring(L, "OK");
   }
-  else if (!warningText) {
+  else if (warningText == nullptr) {
     lua_pushstring(L, "CANCEL");
   }
   else {
     lua_pushinteger(L, warningInputValue);
   }
-  warningText = NULL;
+  warningText = nullptr;
   return 1;
 }
 
@@ -1000,13 +1000,13 @@ static int luaPopupWarning(lua_State * L)
 {
   event_t event = luaL_checkinteger(L, 2);
   warningText = luaL_checkstring(L, 1);
-  // TODO warningType = WARNING_TYPE_ASTERISK;
+  warningType = WARN_TYPE_ASTERISK;
   runPopupWarning(event);
-  if (!warningText) {
+  if (warningText == nullptr) {
     lua_pushstring(L, "CANCEL");
   }
   else {
-    warningText = NULL;
+    warningText = nullptr;
     lua_pushnil(L);
   }
   return 1;
@@ -1032,13 +1032,14 @@ static int luaPopupConfirmation(lua_State * L)
 {
   event_t event = luaL_checkinteger(L, 2);
   warningText = luaL_checkstring(L, 1);
-  // warningType = WARNING_TYPE_CONFIRM;
+  warningType = WARN_TYPE_CONFIRM;
   runPopupWarning(event);
-  if (!warningText) {
+
+  if (warningText == nullptr) {
     lua_pushstring(L, warningResult ? "OK" : "CANCEL");
   }
   else {
-    warningText = NULL;
+    warningText = nullptr;
     lua_pushnil(L);
   }
   return 1;

@@ -75,16 +75,14 @@ void MainWindow::checkEvents(bool luaActive) {
     bool handled = false;
     uint32_t event = 0;
     if (touchState.Event == TE_DOWN) {
-       TRACE("MainWindow::checkEvents TE_DOWN");
        if(!luaActive) handled = onTouchStart(touchState.X, touchState.Y);
-       else if(attachedKeyboard != nullptr) handled = onTouchStart(attachedKeyboard, touchState.X, touchState.Y);
+       else if(topMostWindow != nullptr) handled = onTouchStart(topMostWindow, touchState.X, touchState.Y);
        if(!handled) event = TOUCH_DOWN;
     }
     else if (touchState.Event == TE_UP) {
-      TRACE("MainWindow::checkEvents TE_UP");
        touchState.Event = TE_NONE;
        if(!luaActive) handled = onTouchEnd(touchState.startX, touchState.startY);
-       else if(attachedKeyboard != nullptr) handled = onTouchEnd(attachedKeyboard, touchState.startX, touchState.startY);
+       else if(topMostWindow != nullptr) handled = onTouchEnd(topMostWindow, touchState.startX, touchState.startY);
        if(!handled){
          //maybe it was long range slide
          uint32_t slideEvent = getSlideEvent();
@@ -102,8 +100,8 @@ void MainWindow::checkEvents(bool luaActive) {
        if(!luaActive) {
          handled = onTouchSlide(touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
        }
-       else if(attachedKeyboard != nullptr) {
-         handled = onTouchSlide(attachedKeyboard, touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
+       else if(topMostWindow != nullptr) {
+         handled = onTouchSlide(topMostWindow, touchState.X, touchState.Y, touchState.startX, touchState.startY, x, y);
        }
 
        if(!handled) event = getSlideEvent();
@@ -142,13 +140,13 @@ bool MainWindow::refresh()
 
 bool MainWindow::refresh(bool luaActive)
 {
-  if(luaActive) {
-    if(attachedKeyboard != nullptr) {
+  if(luaActive || topMostWindow != nullptr) {
+    if(topMostWindow != nullptr) {
       coord_t x = lcd->getOffsetX();
       coord_t y = lcd->getOffsetY();
       coord_t xmin, xmax, ymin, ymax;
       lcd->getClippingRect(xmin, xmax, ymin, ymax);
-      paintChild(lcd, attachedKeyboard, x, y, xmin, xmax, ymin, ymax);
+      paintChild(lcd, topMostWindow, x, y, xmin, xmax, ymin, ymax);
       setMaxClientRect(lcd);
     }
     return true;
@@ -199,23 +197,32 @@ void MainWindow::drawFatalError(const char * message)
     lcd->drawSizedText(LCD_W/2, LCD_H/2-20, message, strlen(message), DBLSIZE|CENTERED|TEXT_BGCOLOR);
     lcdRefresh();
 }
+Window* MainWindow::getTopMostWindow()
+{
+  return topMostWindow;
+}
 
+void MainWindow::setTopMostWindow(Window* window)
+{
+  topMostWindow = window;
+  invalidate();
+}
 void MainWindow::showKeyboard(KeyboardType keybordType)
 {
     switch(keybordType){
-        case KeyboardType::KeyboardNumIncDec:
-         NumberKeyboard::instance()->attachTo(this);
-          attachedKeyboard = NumberKeyboard::instance();
-            break;
-    case KeyboardType::KeyboardAlphabetic:
-      TextKeyboard::instance()->attachTo(this);
-      attachedKeyboard = TextKeyboard::instance();
-      break;
-        case KeyboardType::KeyboardNone:
-         if(attachedKeyboard != nullptr) detachChild(attachedKeyboard);
-      attachedKeyboard = nullptr;
-      invalidate();
-          break;
+      case KeyboardType::KeyboardNumIncDec:
+        NumberKeyboard::instance()->attachTo(this);
+        topMostWindow = NumberKeyboard::instance();
+        break;
+      case KeyboardType::KeyboardAlphabetic:
+        TextKeyboard::instance()->attachTo(this);
+        topMostWindow = TextKeyboard::instance();
+        break;
+      case KeyboardType::KeyboardNone:
+        if(topMostWindow != nullptr) detachChild(topMostWindow);
+        topMostWindow = nullptr;
+        invalidate();
+        break;
     }
 }
 

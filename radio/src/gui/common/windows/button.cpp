@@ -34,6 +34,10 @@ bool Button::onTouchEnd(coord_t x, coord_t y)
       setFocus();
     }
     AUDIO_KEY_PRESS();
+    if(dialogResult != 0){
+      putEvent(dialogResult);
+      //parent->deleteLater(true);
+    }
   }
   return true;
 }

@@ -34,6 +34,7 @@ enum ButtonFlags {
 
 class Button : public Window {
   public:
+
     Button(Window * parent, const rect_t & rect, std::function<uint8_t(void)> onPress=nullptr, uint8_t flags=0):
       Window(parent, rect),
       onPress(onPress),
@@ -100,17 +101,21 @@ class Button : public Window {
     std::function<uint8_t(void)> onPress;
     std::function<void(void)> onCheck;
     uint8_t flags;
+    event_t dialogResult;
 };
 
 class TextButton : public Button {
   public:
+    TextButton(Window * parent, const rect_t & rect, std::string text, event_t dialogResult) :
+      TextButton(parent, rect, text) {
+        this->dialogResult = dialogResult;
+    }
     TextButton(Window * parent, const rect_t & rect, std::string text, std::function<uint8_t(void)> onPress=nullptr, uint8_t flags=BUTTON_BACKGROUND):
       Button(parent, rect, onPress, flags),
       text(std::move(text))
     {
       windowFlags = OPAQUE;
     }
-
 #if defined(DEBUG_WINDOWS)
     std::string getName() override
     {
@@ -125,6 +130,7 @@ class TextButton : public Button {
         invalidate();
       }
     }
+
 
     void paint(BitmapBuffer * dc) override;
 

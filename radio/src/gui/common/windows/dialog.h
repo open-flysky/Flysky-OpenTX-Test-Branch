@@ -31,9 +31,20 @@ enum DialogType {
   WARNING_TYPE_INFO
 };
 
+#define DialogResultMask  0x100
+
+enum DialogResult {
+  Abort = 0x2   | DialogResultMask,
+  Cancel = 0x4  | DialogResultMask,
+  No = 0x10     | DialogResultMask,
+  Yes = 0x20    | DialogResultMask,
+  OK = 0x40     | DialogResultMask,
+};
+
+
 class Dialog : public Window {
   public:
-    Dialog(uint8_t type, std::string title, std::string message="", std::function<void(void)> onConfirm=nullptr, std::function<void(void)> onCancel=nullptr);
+    Dialog(uint8_t type, std::string title, std::string message="", std::function<void(void)> onConfirm=nullptr, std::function<void(void)> onCancel=nullptr, bool cancellable = false);
 
     ~Dialog() override;
 
@@ -65,6 +76,33 @@ class Dialog : public Window {
     std::string message;
     bool running = false;
     std::function<bool(void)> closeCondition;
+};
+
+class MessageBox : public Window {
+public:
+  MessageBox(DialogType type, DialogResult buttons, std::string title, std::string message="");
+
+  ~MessageBox() override;
+
+#if defined(DEBUG_WINDOWS)
+  std::string getName() override
+  {
+    return "MessageBox";
+  }
+#endif
+
+  void paint(BitmapBuffer * dc) override;
+
+  void deleteLater();
+
+  void setMessage(std::string message) {
+    this->message = message;
+  }
+protected:
+  uint8_t type;
+  std::string title;
+  std::string message;
+  const BitmapBuffer* icon;
 };
 
 #endif // _CONFIRMATION_H_

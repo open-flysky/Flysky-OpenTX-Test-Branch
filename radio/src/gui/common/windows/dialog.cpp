@@ -21,6 +21,7 @@
 #include "dialog.h"
 #include "mainwindow.h"
 #include "opentx.h"
+#include "gridlayout.h"
 
 #define ALERT_FRAME_TOP           70
 #define ALERT_FRAME_PADDING       10
@@ -31,28 +32,32 @@
 #define ALERT_ACTION_TOP          230
 #define ALERT_BUTTON_TOP          300
 
-Dialog::Dialog(uint8_t type, std::string title, std::string message, std::function<void(void)> onConfirm, std::function<void(void)> onCancel):
+#define DIALOG_BUTTON_WIDTH 70
+#define DIALOG_BUTTON_MARGIN 5
+
+Dialog::Dialog(uint8_t type, std::string title, std::string message, std::function<void(void)> onConfirm, std::function<void(void)> onCancel, bool cancellable):
   Window(&mainWindow, {0, 0, LCD_W, LCD_H}, OPAQUE),
   type(type),
   title(std::move(title)),
   message(std::move(message))
 {
-  new FabIconButton(this, LCD_W - 50, ALERT_BUTTON_TOP, ICON_NEXT,
-                    [=]() -> uint8_t {
-                      deleteLater();
-                      if (onConfirm)
-                        onConfirm();
-                      return 0;
-                    });
-  if (type == WARNING_TYPE_INPUT){
-      new FabIconButton(this, 50, ALERT_BUTTON_TOP, ICON_BACK,
-                    [=]() -> uint8_t {
-                        deleteLater();
-                      if (onCancel)
-                           onCancel();
-                      return 0;
-                    });
+  new FabIconButton(this, LCD_W - 50, ALERT_BUTTON_TOP, ICON_NEXT, [=]() -> uint8_t
+      {
+        deleteLater();
+        if (onConfirm) onConfirm();
+        putEvent(EVT_VK(DialogResult::OK));
+        return 0;
+      });
+  if (cancellable){
+    new FabIconButton(this, 50, ALERT_BUTTON_TOP, ICON_BACK, [=]() -> uint8_t
+        {
+          deleteLater();
+          if (onCancel) onCancel();
+          putEvent(EVT_VK(DialogResult::Cancel));
+          return 0;
+        });
   }
+  mainWindow.setTopMostWindow(this);
   bringToTop();
 }
 
@@ -111,6 +116,7 @@ void Dialog::checkEvents()
 
 void Dialog::deleteLater()
 {
+  mainWindow.setTopMostWindow(nullptr);
   if (running)
     running = false;
   else
@@ -140,6 +146,72 @@ void Dialog::runForever()
 
   Window::deleteLater();
 }
+
+MessageBox::MessageBox(DialogType type, DialogResult buttons, std::string title, std::string message) :
+    Window(&mainWindow, {25, LCD_H / 2 - 100 , LCD_W - 50, 200 }, OPAQUE),
+      type(type),
+      title(std::move(title)),
+      message(std::move(message))
+{
+
+  int top = height() - (lineHeight + DIALOG_BUTTON_MARGIN);
+  int right = width();
+
+  if(type == DialogType::WARNING_TYPE_INPUT) {
+    //TextEdit(this, {right - 100, top - (textBoxHeight + textBotMargin), textBoxWidth *2, textBoxHeight});
+  }
+
+  TextButton* button = nullptr;
+  buttons = (DialogResult)(buttons & ~DialogResultMask);
+  if(buttons & DialogResult::Cancel) {
+    right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
+    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "Cancel", EVT_VK(DialogResult::Cancel));
+  }
+  if(buttons & DialogResult::OK) {
+    right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
+    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "OK", EVT_VK(DialogResult::OK));
+  }
+  if(buttons & DialogResult::Yes) {
+    right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
+    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "Yes", EVT_VK(DialogResult::Yes));
+  }
+  if(buttons & DialogResult::No) {
+    right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
+    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "No", EVT_VK(DialogResult::No));
+  }
+  if(buttons & DialogResult::Abort) {
+    right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
+    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "Abort", EVT_VK(DialogResult::Abort));
+  }
+
+
+  if (type == WARNING_TYPE_ALERT || type == WARNING_TYPE_ASTERISK) icon = theme->asterisk;
+  else if (type == WARNING_TYPE_INFO) icon = theme->busy;
+  else icon = theme->question;
+  mainWindow.setTopMostWindow(this);
+  bringToTop();
+}
+
+MessageBox::~MessageBox()
+{
+  deleteChildren();
+}
+#define MESSAGE_BOX_HEADER 30
+void MessageBox::paint(BitmapBuffer * dc) {
+  dc->drawSolidFilledRect(0, 0, width(), MESSAGE_BOX_HEADER, HEADER_BGCOLOR);
+  dc->drawSolidFilledRect(0, MESSAGE_BOX_HEADER, width(), height() - MESSAGE_BOX_HEADER, TEXT_BGCOLOR);
+  dc->drawRect(0, 0, width(), height(), 1, SOLID, TEXT_COLOR);
+  dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon);
+  if (!title.empty()) dc->drawText(ALERT_BITMAP_PADDING, 0, title.c_str(), ALARM_COLOR|MIDSIZE);
+  if (!message.empty()) dc->drawText(ALERT_BITMAP_PADDING + icon->getWidth(), MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, message.c_str(), STDSIZE);
+};
+
+void MessageBox::deleteLater()
+{
+  mainWindow.setTopMostWindow(nullptr);
+  Window::deleteLater();
+}
+
 
 void raiseAlert(const char * title, const char * msg, const char * info, uint8_t sound)
 {

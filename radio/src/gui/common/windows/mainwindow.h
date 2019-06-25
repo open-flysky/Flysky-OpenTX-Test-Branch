@@ -60,6 +60,10 @@ class MainWindow: public Window {
 
     void showKeyboard(KeyboardType keybordType);
 
+    void setTopMostWindow(Window* window);
+
+    Window* getTopMostWindow();
+
   protected:
 
     void checkEvents(bool luaActive);
@@ -69,7 +73,7 @@ class MainWindow: public Window {
 
     void setMaxClientRect(BitmapBuffer * dc);
 
-    Window* attachedKeyboard = nullptr;
+    Window* topMostWindow = nullptr;
     rect_t invalidatedRect;
     bool legacyUImode;
     bool lastLuaState;

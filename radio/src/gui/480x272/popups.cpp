@@ -20,6 +20,7 @@
 
 #include "opentx.h"
 #include "dialog.h"
+#include "mainWindow.h"
 
 const char *warningText = NULL;
 const char *warningInfoText;
@@ -46,6 +47,9 @@ void        (*popupMenuHandler)(const char * result);
 #define ALERT_MESSAGE_TOP         210
 #define ALERT_ACTION_TOP          230
 #define ALERT_BUTTON_TOP          300
+
+
+MessageBox* activePopup = nullptr;
 
 void runPopupWarningBox()
 {
@@ -84,6 +88,46 @@ void showMessageBox(const char * title)
 
 void runPopupWarning(event_t event)
 {
+  warningResult = false;
+  switch (event) {
+  case EVT_KEY_BREAK(KEY_ENTER):
+  case EVT_VK(DialogResult::OK):
+  case EVT_VK(DialogResult::Yes):
+    warningResult = true;
+    // no break
+  case EVT_KEY_BREAK(KEY_EXIT):
+  case EVT_VK(DialogResult::No):
+  case EVT_VK(DialogResult::Cancel):
+    if(activePopup!=nullptr) activePopup->deleteLater();
+    activePopup = nullptr;
+    warningText = nullptr;
+    warningType = WARN_TYPE_ASTERISK;
+    //action detected nothing more to be done
+    return;
+  }
+  if(warningText != nullptr){
+    if(activePopup == nullptr) {
+      DialogResult buttons = DialogResult::OK;
+      const char* title = STR_WARNING;
+      if(warningType != WARN_TYPE_ASTERISK) {
+        switch(warningType){
+        case WARN_TYPE_CONFIRM:
+          title = STR_PRESS_ENTER_TO_CONFIRM;
+          break;
+        case WARN_TYPE_INFO:
+        case WARN_TYPE_INPUT:
+        case WARN_TYPE_ALERT:
+          title = STR_ALERT;
+          break;
+        }
+        buttons = (DialogResult)(buttons | DialogResult::Cancel);
+      }
+      activePopup = new MessageBox((DialogType)warningType, buttons, title, warningText);
+    }
+    else {
+      activePopup->setMessage(warningText);
+    }
+  }
 }
 
 const char * runPopupMenu(event_t event)
