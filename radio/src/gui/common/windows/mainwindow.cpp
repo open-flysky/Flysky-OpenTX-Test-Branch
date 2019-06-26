@@ -113,9 +113,8 @@ void MainWindow::checkEvents(bool luaActive) {
   }
 
 
-  if(!luaActive){
-    Window::checkEvents();
-  }
+  if(!luaActive) Window::checkEvents();
+  else if(topMostWindow != nullptr) topMostWindow->checkEvents();
   emptyTrash();
 }
 
@@ -140,17 +139,7 @@ bool MainWindow::refresh()
 
 bool MainWindow::refresh(bool luaActive)
 {
-  if(luaActive || topMostWindow != nullptr) {
-    if(topMostWindow != nullptr) {
-      coord_t x = lcd->getOffsetX();
-      coord_t y = lcd->getOffsetY();
-      coord_t xmin, xmax, ymin, ymax;
-      lcd->getClippingRect(xmin, xmax, ymin, ymax);
-      paintChild(lcd, topMostWindow, x, y, xmin, xmax, ymin, ymax);
-      setMaxClientRect(lcd);
-    }
-    return true;
-  }
+  if(luaActive && topMostWindow != nullptr) topMostWindow->invalidate();
   if (invalidatedRect.w) {
     if (invalidatedRect.x > 0 || invalidatedRect.y > 0 || invalidatedRect.w < LCD_W || invalidatedRect.h < LCD_H) {
       //TRACE("Refresh rect: left=%d top=%d width=%d height=%d", invalidatedRect.left(), invalidatedRect.top(), invalidatedRect.w, invalidatedRect.h);
@@ -164,12 +153,23 @@ bool MainWindow::refresh(bool luaActive)
     }
     lcd->setOffset(0, 0);
     lcd->setClippingRect(invalidatedRect.left(), invalidatedRect.right(), invalidatedRect.top(), invalidatedRect.bottom());
-    fullPaint(lcd);
+    if(!luaActive) {
+      fullPaint(lcd);
+    }
+    else if(topMostWindow != nullptr) {
+      coord_t x = lcd->getOffsetX();
+      coord_t y = lcd->getOffsetY();
+      coord_t xmin, xmax, ymin, ymax;
+      lcd->getClippingRect(xmin, xmax, ymin, ymax);
+      paintChild(lcd, topMostWindow, x, y, xmin, xmax, ymin, ymax);
+      setMaxClientRect(lcd);
+    }
+
     invalidatedRect.w = 0;
     return true;
   }
   else {
-    return false;
+    return luaActive;
   }
 }
 

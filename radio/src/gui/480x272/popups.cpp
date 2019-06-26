@@ -98,7 +98,7 @@ void runPopupWarning(event_t event)
   case EVT_KEY_BREAK(KEY_EXIT):
   case EVT_VK(DialogResult::No):
   case EVT_VK(DialogResult::Cancel):
-    if(activePopup!=nullptr) activePopup->deleteLater();
+    //if(activePopup!=nullptr) activePopup->deleteLater();
     activePopup = nullptr;
     warningText = nullptr;
     warningType = WARN_TYPE_ASTERISK;

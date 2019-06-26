@@ -95,14 +95,18 @@ public:
 
   void deleteLater();
 
+  void checkEvents() override;
+
   void setMessage(std::string message) {
     this->message = message;
+    invalidate();
   }
 protected:
   uint8_t type;
   std::string title;
   std::string message;
   const BitmapBuffer* icon;
+  bool running;
 };
 
 #endif // _CONFIRMATION_H_

@@ -30,6 +30,7 @@ enum ButtonFlags {
   BUTTON_NOFOCUS = 4,
   BUTTON_CHECKED_ON_FOCUS = 8,
   BUTTON_DISABLED = 16,
+  BUTTON_RESULT = 128
 };
 
 class Button : public Window {
@@ -38,7 +39,8 @@ class Button : public Window {
     Button(Window * parent, const rect_t & rect, std::function<uint8_t(void)> onPress=nullptr, uint8_t flags=0):
       Window(parent, rect),
       onPress(onPress),
-      flags(flags)
+      flags(flags),
+      dialogResult(0)
     {
     }
 
@@ -96,6 +98,8 @@ class Button : public Window {
     bool onTouchEnd(coord_t x, coord_t y) override;
 
     void checkEvents() override;
+
+    event_t getResult();
 
   protected:
     std::function<uint8_t(void)> onPress;

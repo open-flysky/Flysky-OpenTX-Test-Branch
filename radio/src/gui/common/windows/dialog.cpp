@@ -32,8 +32,9 @@
 #define ALERT_ACTION_TOP          230
 #define ALERT_BUTTON_TOP          300
 
-#define DIALOG_BUTTON_WIDTH 70
-#define DIALOG_BUTTON_MARGIN 5
+#define DIALOG_BUTTON_WIDTH       70
+#define DIALOG_BUTTON_MARGIN      5
+#define MESSAGE_BOX_HEADER        30
 
 Dialog::Dialog(uint8_t type, std::string title, std::string message, std::function<void(void)> onConfirm, std::function<void(void)> onCancel, bool cancellable):
   Window(&mainWindow, {0, 0, LCD_W, LCD_H}, OPAQUE),
@@ -58,6 +59,7 @@ Dialog::Dialog(uint8_t type, std::string title, std::string message, std::functi
         });
   }
   mainWindow.setTopMostWindow(this);
+
   bringToTop();
 }
 
@@ -117,10 +119,10 @@ void Dialog::checkEvents()
 void Dialog::deleteLater()
 {
   mainWindow.setTopMostWindow(nullptr);
-  if (running)
-    running = false;
-  else
-    Window::deleteLater();
+  // Dialog is being removed in message loop
+  // Lets wait for new iteration;
+  if (running) running = false;
+  else Window::deleteLater();
 }
 
 void Dialog::runForever()
@@ -151,9 +153,9 @@ MessageBox::MessageBox(DialogType type, DialogResult buttons, std::string title,
     Window(&mainWindow, {25, LCD_H / 2 - 100 , LCD_W - 50, 200 }, OPAQUE),
       type(type),
       title(std::move(title)),
-      message(std::move(message))
+      message(std::move(message)),
+      running(true)
 {
-
   int top = height() - (lineHeight + DIALOG_BUTTON_MARGIN);
   int right = width();
 
@@ -161,27 +163,26 @@ MessageBox::MessageBox(DialogType type, DialogResult buttons, std::string title,
     //TextEdit(this, {right - 100, top - (textBoxHeight + textBotMargin), textBoxWidth *2, textBoxHeight});
   }
 
-  TextButton* button = nullptr;
   buttons = (DialogResult)(buttons & ~DialogResultMask);
   if(buttons & DialogResult::Cancel) {
     right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
-    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "Cancel", EVT_VK(DialogResult::Cancel));
+    new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, STR_DIALOG_CANCEL, EVT_VK(DialogResult::Cancel));
   }
   if(buttons & DialogResult::OK) {
     right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
-    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "OK", EVT_VK(DialogResult::OK));
+    new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, STR_DIALOG_OK, EVT_VK(DialogResult::OK));
   }
   if(buttons & DialogResult::Yes) {
     right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
-    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "Yes", EVT_VK(DialogResult::Yes));
+    new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, STR_DIALOG_YES, EVT_VK(DialogResult::Yes));
   }
   if(buttons & DialogResult::No) {
     right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
-    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "No", EVT_VK(DialogResult::No));
+    new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, STR_DIALOG_NO, EVT_VK(DialogResult::No));
   }
   if(buttons & DialogResult::Abort) {
     right -= DIALOG_BUTTON_WIDTH + DIALOG_BUTTON_MARGIN;
-    button = new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, "Abort", EVT_VK(DialogResult::Abort));
+    new TextButton(this, {right, top, DIALOG_BUTTON_WIDTH, lineHeight}, STR_DIALOG_ABORT, EVT_VK(DialogResult::Abort));
   }
 
 
@@ -190,13 +191,14 @@ MessageBox::MessageBox(DialogType type, DialogResult buttons, std::string title,
   else icon = theme->question;
   mainWindow.setTopMostWindow(this);
   bringToTop();
+  TRACE("CREATE MessageBox");
 }
 
 MessageBox::~MessageBox()
 {
   deleteChildren();
 }
-#define MESSAGE_BOX_HEADER 30
+
 void MessageBox::paint(BitmapBuffer * dc) {
   dc->drawSolidFilledRect(0, 0, width(), MESSAGE_BOX_HEADER, HEADER_BGCOLOR);
   dc->drawSolidFilledRect(0, MESSAGE_BOX_HEADER, width(), height() - MESSAGE_BOX_HEADER, TEXT_BGCOLOR);
@@ -212,6 +214,23 @@ void MessageBox::deleteLater()
   Window::deleteLater();
 }
 
+void MessageBox::checkEvents()
+{
+  Window::checkEvents();
+  if(!running) {
+    deleteLater();
+    return;
+  }
+  for (auto child: children) {
+      TextButton* button = reinterpret_cast<TextButton*>(child);
+      if(button == nullptr) continue;
+      event_t result = button->getResult();
+      if(result) {
+        running = false;
+        return;
+      }
+  }
+}
 
 void raiseAlert(const char * title, const char * msg, const char * info, uint8_t sound)
 {

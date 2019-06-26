@@ -35,11 +35,18 @@ bool Button::onTouchEnd(coord_t x, coord_t y)
     }
     AUDIO_KEY_PRESS();
     if(dialogResult != 0){
+      flags |= BUTTON_RESULT;
       putEvent(dialogResult);
-      //parent->deleteLater(true);
     }
   }
   return true;
+}
+
+event_t Button::getResult() {
+  if((flags & BUTTON_RESULT) == BUTTON_RESULT) {
+    return dialogResult;
+  }
+  return 0;
 }
 
 void Button::checkEvents()

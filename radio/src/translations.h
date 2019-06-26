@@ -813,6 +813,11 @@ extern const pm_char STR_PLAY_FILE[];
 extern const pm_char STR_ASSIGN_BITMAP[];
 #if defined(COLORLCD)
 extern const pm_char STR_ASSIGN_SPLASH[];
+extern const pm_char STR_DIALOG_ABORT[];
+extern const pm_char STR_DIALOG_NO[];
+extern const pm_char STR_DIALOG_YES[];
+extern const pm_char STR_DIALOG_OK[];
+extern const pm_char STR_DIALOG_CANCEL[];
 #endif
 extern const pm_char STR_EXECUTE_FILE[];
 extern const pm_char STR_DELETE_FILE[];
