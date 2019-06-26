@@ -55,7 +55,6 @@ static int luaLcdClear(lua_State *L)
   if (luaLcdAllowed) {
 #if defined(COLORLCD)
     LcdFlags color = luaL_optunsigned(L, 1, TEXT_BGCOLOR);
-    lcdNextLayer();
     lcd->clear(color);
 #else
     lcdClear();

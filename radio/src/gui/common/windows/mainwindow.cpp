@@ -141,15 +141,17 @@ bool MainWindow::refresh(bool luaActive)
 {
   if(luaActive && topMostWindow != nullptr) topMostWindow->invalidate();
   if (invalidatedRect.w) {
-    if (invalidatedRect.x > 0 || invalidatedRect.y > 0 || invalidatedRect.w < LCD_W || invalidatedRect.h < LCD_H) {
-      //TRACE("Refresh rect: left=%d top=%d width=%d height=%d", invalidatedRect.left(), invalidatedRect.top(), invalidatedRect.w, invalidatedRect.h);
-      BitmapBuffer * previous = lcd;
-      lcdNextLayer();
-      DMACopy(previous->getData(), lcd->getData(), DISPLAY_BUFFER_SIZE);
-    }
-    else {
-      //TRACE("Refresh full screen");
-      lcdNextLayer();
+    if(!luaActive) {
+      if (invalidatedRect.x > 0 || invalidatedRect.y > 0 || invalidatedRect.w < LCD_W || invalidatedRect.h < LCD_H) {
+        //TRACE("Refresh rect: left=%d top=%d width=%d height=%d", invalidatedRect.left(), invalidatedRect.top(), invalidatedRect.w, invalidatedRect.h);
+        BitmapBuffer * previous = lcd;
+        lcdNextLayer();
+        DMACopy(previous->getData(), lcd->getData(), DISPLAY_BUFFER_SIZE);
+      }
+      else {
+        //TRACE("Refresh full screen");
+        lcdNextLayer();
+      }
     }
     lcd->setOffset(0, 0);
     lcd->setClippingRect(invalidatedRect.left(), invalidatedRect.right(), invalidatedRect.top(), invalidatedRect.bottom());

@@ -822,6 +822,10 @@ void luaDoOneRunStandalone(event_lua_t evt)
     lua_pushunsigned(lsScripts, evt.evt);
     lua_pushunsigned(lsScripts, evt.wParam);
     lua_pushunsigned(lsScripts, evt.lParam);
+    //always work on copy to avoid flickering
+    BitmapBuffer * previous = lcd;
+    lcdNextLayer();
+    DMACopy(previous->getData(), lcd->getData(), DISPLAY_BUFFER_SIZE);
     if (lua_pcall(lsScripts, 3, 1, 0) == 0) {
       if (!lua_isnumber(lsScripts, -1)) {
         if (instructionsPercent > 100) {
@@ -961,7 +965,10 @@ bool luaDoOneRunPermanentScript(event_lua_t evt, int i, uint32_t scriptType)
     return false;
 #endif
   }
-
+  //always work on copy to avoid flickering
+  BitmapBuffer * previous = lcd;
+  lcdNextLayer();
+  DMACopy(previous->getData(), lcd->getData(), DISPLAY_BUFFER_SIZE);
   if (lua_pcall(lsScripts, inputsCount, sio ? sio->outputsCount : 0, 0) == 0) {
     if (sio) {
       for (int j=sio->outputsCount-1; j>=0; j--) {
