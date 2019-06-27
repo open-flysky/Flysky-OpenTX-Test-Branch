@@ -191,7 +191,6 @@ MessageBox::MessageBox(DialogType type, DialogResult buttons, std::string title,
   else icon = theme->question;
   mainWindow.setTopMostWindow(this);
   bringToTop();
-  TRACE("CREATE MessageBox");
 }
 
 MessageBox::~MessageBox()
@@ -203,9 +202,9 @@ void MessageBox::paint(BitmapBuffer * dc) {
   dc->drawSolidFilledRect(0, 0, width(), MESSAGE_BOX_HEADER, HEADER_BGCOLOR);
   dc->drawSolidFilledRect(0, MESSAGE_BOX_HEADER, width(), height() - MESSAGE_BOX_HEADER, TEXT_BGCOLOR);
   dc->drawRect(0, 0, width(), height(), 1, SOLID, TEXT_COLOR);
-  dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon);
+  //dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon);
   if (!title.empty()) dc->drawText(ALERT_BITMAP_PADDING, 0, title.c_str(), ALARM_COLOR|MIDSIZE);
-  if (!message.empty()) dc->drawText(ALERT_BITMAP_PADDING + icon->getWidth(), MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, message.c_str(), STDSIZE);
+  if (!message.empty()) dc->drawText(ALERT_BITMAP_PADDING /*+ icon->getWidth()*/, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, message.c_str(), STDSIZE);
 };
 
 void MessageBox::deleteLater()

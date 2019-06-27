@@ -215,7 +215,6 @@ void guiMain(event_lua_t evt)
   // draw LCD from menus or from Lua script
   // run Lua scripts that use LCD
   DEBUG_TIMER_START(debugTimerLuaFg);
-  if(evt.evt != 0) TRACE("LUA EVENT %d %d %d", evt.evt, evt.wParam, evt.lParam);
   refreshNeeded = luaTask(evt, RUN_STNDAL_SCRIPT, true);
   if (!refreshNeeded) {
     refreshNeeded = luaTask(evt, RUN_TELEM_FG_SCRIPT, true);
