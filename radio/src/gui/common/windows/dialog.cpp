@@ -203,7 +203,7 @@ void MessageBox::paint(BitmapBuffer * dc) {
   dc->drawSolidFilledRect(0, MESSAGE_BOX_HEADER, width(), height() - MESSAGE_BOX_HEADER, TEXT_BGCOLOR);
   dc->drawRect(0, 0, width(), height(), 1, SOLID, TEXT_COLOR);
   //dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon);
-  if (!title.empty()) dc->drawText(ALERT_BITMAP_PADDING, 0, title.c_str(), ALARM_COLOR|MIDSIZE);
+  if (!title.empty()) dc->drawText(ALERT_BITMAP_PADDING, 5, title.c_str(), ALARM_COLOR | STDSIZE);
   if (!message.empty()) dc->drawText(ALERT_BITMAP_PADDING /*+ icon->getWidth()*/, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, message.c_str(), STDSIZE);
 };
 

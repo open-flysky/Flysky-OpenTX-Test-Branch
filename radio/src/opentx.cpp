@@ -2867,9 +2867,23 @@ uint32_t pwrCheck()
         while ((TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm)) {
 #endif
 #if defined(COLORLCD)
-          //display message box
-          pwr_check_state = PWR_CHECK_OFF;
-          return e_power_off;
+          POPUP_CONFIRMATION("Confirm Shutdown");
+          event_t evt = getEvent(false);
+          DISPLAY_WARNING(evt);
+          if (warningResult) {
+            pwr_check_state = PWR_CHECK_OFF;
+            return e_power_off;
+          }
+          else if (!warningText) {
+             // shutdown has been cancelled
+             pwr_check_state = PWR_CHECK_PAUSED;
+             return e_power_on;
+          }
+          checkBacklight();
+          wdt_reset();
+
+          RTOS_WAIT_MS(20);
+          mainWindow.run();
 #else
           lcdRefreshWait();
           lcdClear();
