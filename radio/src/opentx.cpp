@@ -1796,7 +1796,8 @@ void doMixerCalculations()
         struct t_inactivity *ptrInactivity = &inactivity;
         FORCE_INDIRECT(ptrInactivity) ;
         ptrInactivity->counter++;
-        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
+        //use check against 25 instead 50 because of NV14
+        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && g_vbat100mV > 25 && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
           AUDIO_INACTIVITY();
 
 #if defined(AUDIO)
@@ -2157,7 +2158,8 @@ void checkBattery()
       }
       else
 #endif
-      if (IS_TXBATT_WARNING() && g_vbat100mV>50) {
+      //use check against 25 instead 50 because of NV14
+      if (IS_TXBATT_WARNING() && g_vbat100mV > 25) {
         AUDIO_TX_BATTERY_LOW();
       }
     }
@@ -2858,24 +2860,37 @@ uint32_t pwrCheck()
         BACKLIGHT_ENABLE();
       }
       if (get_tmr10ms() - pwr_press_time > PWR_PRESS_SHUTDOWN_DELAY) {
-        //to be verified
-        //fix text
-        if (TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm){
-        new Dialog(WARNING_TYPE_INPUT, "Shut Down", "PWR Off TX?", [=]() {
-            // power off
-            haptic.play(15, 3, PLAY_NOW);
+
+#if defined(SHUTDOWN_CONFIRMATION)
+        while (1) {
+#else
+        while ((TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm)) {
+#endif
+#if defined(COLORLCD)
+          //display message box
+          pwr_check_state = PWR_CHECK_OFF;
+          return e_power_off;
+#else
+          lcdRefreshWait();
+          lcdClear();
+          POPUP_CONFIRMATION("Confirm Shutdown");
+          event_t evt = getEvent(false);
+          DISPLAY_WARNING(evt);
+          lcdRefresh();
+          if (warningResult) {
             pwr_check_state = PWR_CHECK_OFF;
             return e_power_off;
-        });
-        // shutdown has been cancelled
-        pwr_check_state = PWR_CHECK_PAUSED;
-        return e_power_on;
+          }
+          else if (!warningText) {
+            // shutdown has been cancelled
+            pwr_check_state = PWR_CHECK_PAUSED;
+            return e_power_on;
+          }
+#endif
         }
-        else {
-            haptic.play(15, 3, PLAY_NOW);
-            pwr_check_state = PWR_CHECK_OFF;
-            return e_power_off;
-        }
+        haptic.play(15, 3, PLAY_NOW);
+        pwr_check_state = PWR_CHECK_OFF;
+        return e_power_off;
       }
       else {
         drawShutdownAnimation(pwrPressedDuration(), message);

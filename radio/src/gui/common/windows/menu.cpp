@@ -24,6 +24,7 @@ MenuWindow::MenuWindow(Menu * parent):
   Window(parent, {LCD_W / 2 - 100, LCD_H / 2 - 30 /* to avoid redraw the menus header */, 200, 0}, OPAQUE)
 {
   setScrollbarColor(WARNING_COLOR);
+  onSelect = nullptr;
 }
 
 void MenuWindow::select(int index)
@@ -38,7 +39,8 @@ bool MenuWindow::onTouchEnd(coord_t x, coord_t y)
 {
   AUDIO_KEY_PRESS();
   int index = y / lineHeight;
-  lines[index].onPress();
+  if(lines[index].onPress != nullptr) lines[index].onPress();
+  if(onSelect != nullptr) onSelect(lines[index].text.c_str());
   return false; // = close the menu (inverted so that click outside the menu closes it)
 }
 

@@ -174,6 +174,7 @@ FailSafeMenu::FailSafeMenu(uint8_t moduleIndex) :
 {
   addTab(new FailSafePage(moduleIndex));
 }
+void onBindMenu(const char * result, uint8_t moduleIdx);
 
 class ModuleWindow : public Window {
   public:
@@ -379,11 +380,7 @@ class ModuleWindow : public Window {
       // Bind and Range buttons
       if (isModuleNeedingBindRangeButtons(moduleIndex)) {
         bindButton = new TextButton(this, grid.getFieldSlot(2, 0), STR_4BIND(STR_MODULE_BIND));
-        //questionable check it
-        bindButton->setFocus();
         bindButton->setPressHandler([=]() -> uint8_t {
-          //questionable check it
-          bindButton->bringToTop();
           if (moduleFlag[moduleIndex] == MODULE_RANGECHECK) {
             rangeButton->check(false);
           }
@@ -395,10 +392,15 @@ class ModuleWindow : public Window {
             return 0;
           }
           else {
-            bindButton->setText(STR_MODULE_BINDING);
+
             if (isModuleR9M(moduleIndex) || (isModuleXJT(moduleIndex) && g_model.moduleData[moduleIndex].rfProtocol == RF_PROTO_X16)) {
                   Menu * menu = new Menu();
                   //use global handler
+                  menu->setSelectHandler([=](const char* selected) {
+                    onBindMenu(selected, moduleIndex);
+                    bindButton->setText(STR_MODULE_BINDING);
+                    moduleFlag[moduleIndex] = MODULE_BIND;
+                  });
                   if (isModuleR9M_LBT(moduleIndex)) {
                       menu->addLine(STR_BINDING_25MW_CH1_8_TELEM_OFF);
                       if (!IS_TELEMETRY_INTERNAL_MODULE()) {
@@ -420,11 +422,9 @@ class ModuleWindow : public Window {
                   return 1;
             }
             else {
-                  bindButton->setText(STR_MODULE_BINDING);
-                  moduleFlag[moduleIndex] = MODULE_BIND;
+              bindButton->setText(STR_MODULE_BINDING);
+              moduleFlag[moduleIndex] = MODULE_BIND;
             }
-            //verify
-            g_model.trainerMode = TRAINER_MODE_MASTER_TRAINER_JACK;
             if (isModuleFlysky(moduleIndex))
               onFlySkyBindReceiver(moduleIndex);
             return 1;
@@ -496,43 +496,41 @@ ModelSetupPage::ModelSetupPage() :
 
 uint8_t g_moduleIdx;
 
-void onBindMenu(const char * result)
+void onBindMenu(const char * result, uint8_t moduleIdx)
 {
-  uint8_t moduleIdx = 0; // TODO (menuVerticalPosition >= ITEM_MODEL_EXTERNAL_MODULE_LABEL ? EXTERNAL_MODULE : INTERNAL_MODULE);
-
-  if (result == STR_BINDING_25MW_CH1_8_TELEM_OFF) {
+  if (strcmp(result, STR_BINDING_25MW_CH1_8_TELEM_OFF) == 0) {
     g_model.moduleData[moduleIdx].pxx.power = R9M_LBT_POWER_25;
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = true;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = false;
   }
-  else if (result == STR_BINDING_25MW_CH1_8_TELEM_ON) {
+  else if (strcmp(result, STR_BINDING_25MW_CH1_8_TELEM_ON) == 0) {
     g_model.moduleData[moduleIdx].pxx.power = R9M_LBT_POWER_25;
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = false;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = false;
   }
-  else if (result == STR_BINDING_500MW_CH1_8_TELEM_OFF) {
+  else if (strcmp(result, STR_BINDING_500MW_CH1_8_TELEM_OFF) == 0) {
     g_model.moduleData[moduleIdx].pxx.power = R9M_LBT_POWER_500;
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = true;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = false;
   }
-  else if (result == STR_BINDING_500MW_CH9_16_TELEM_OFF) {
+  else if (strcmp(result, STR_BINDING_500MW_CH9_16_TELEM_OFF) == 0) {
     g_model.moduleData[moduleIdx].pxx.power = R9M_LBT_POWER_500;
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = true;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = true;
   }
-  else if (result == STR_BINDING_1_8_TELEM_ON) {
+  else if (strcmp(result, STR_BINDING_1_8_TELEM_ON) == 0) {
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = false;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = false;
   }
-  else if (result == STR_BINDING_1_8_TELEM_OFF) {
+  else if (strcmp(result, STR_BINDING_1_8_TELEM_OFF) == 0) {
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = true;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = false;
   }
-  else if (result == STR_BINDING_9_16_TELEM_ON) {
+  else if (strcmp(result, STR_BINDING_9_16_TELEM_ON) == 0) {
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = false;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = true;
   }
-  else if (result == STR_BINDING_9_16_TELEM_OFF) {
+  else if (strcmp(result, STR_BINDING_9_16_TELEM_OFF) == 0) {
     g_model.moduleData[moduleIdx].pxx.receiver_telem_off = true;
     g_model.moduleData[moduleIdx].pxx.receiver_channel_9_16 = true;
   }
@@ -741,11 +739,7 @@ void ModelSetupPage::build(Window * window)
   {
     grid.nextLine();
     new StaticText(window, grid.getLabelSlot(), STR_TRAINER);
-    new Choice(window, grid.getFieldSlot(), STR_VTRAINERMODES, 0, 3, GET_DEFAULT(g_model.trainerMode),
-      [=](int32_t newValue) {
-        g_model.trainerMode = newValue;
-        SET_DIRTY();
-    });
+    new Choice(window, grid.getFieldSlot(), STR_VTRAINERMODES, 0, 3, GET_SET_DEFAULT(g_model.trainerMode));
   }
 #endif
 
