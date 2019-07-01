@@ -17,6 +17,8 @@
 local devices = { }
 local lineIndex = 1
 local pageOffset = 0
+local lineCount = 20
+local lineHeight = 22
 
 local function createDevice(id, name)
   local device = {
@@ -96,11 +98,11 @@ local function run(event, wParam, lParam)
   elseif event == EVT_TOUCH_UP and wParam ~= nil and lParam ~= nill then
     lParam = lParam - 10
     if lParam > 0 then
-      lParam = lParam / 22
-      if lParam < #devices then
-        lineIndex = lParam
-	  end
-	end
+      lParam = math.floor(lParam / lineHeight)
+      if lParam < #devices - pageOffset then
+        lineIndex = pageOffset + lParam
+      end
+    end
   end
   
   lcd.clear()
