@@ -1796,7 +1796,8 @@ void doMixerCalculations()
         struct t_inactivity *ptrInactivity = &inactivity;
         FORCE_INDIRECT(ptrInactivity) ;
         ptrInactivity->counter++;
-        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
+        //use check against 25 instead 50 because of NV14
+        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && g_vbat100mV > 25 && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
           AUDIO_INACTIVITY();
 
 #if defined(AUDIO)
@@ -2157,7 +2158,8 @@ void checkBattery()
       }
       else
 #endif
-      if (IS_TXBATT_WARNING() && g_vbat100mV>50) {
+      //use check against 25 instead 50 because of NV14
+      if (IS_TXBATT_WARNING() && g_vbat100mV > 25) {
         AUDIO_TX_BATTERY_LOW();
       }
     }
@@ -2843,13 +2845,6 @@ uint32_t pwrCheck()
     if (TELEMETRY_STREAMING()) {
       message = STR_MODEL_STILL_POWERED;
     }
-#if defined (PCBNV14)
-    if (message && !g_eeGeneral.disableRssiPoweroffAlarm) {
-      audioEvent(AU_MODEL_STILL_POWERED);
-
-      return e_power_on;
-    }
-#endif
     if (pwr_check_state == PWR_CHECK_PAUSED) {
       // nothing
     }
@@ -2871,6 +2866,11 @@ uint32_t pwrCheck()
 #else
         while ((TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm)) {
 #endif
+#if defined(COLORLCD)
+          //display message box
+          pwr_check_state = PWR_CHECK_OFF;
+          return e_power_off;
+#else
           lcdRefreshWait();
           lcdClear();
           POPUP_CONFIRMATION("Confirm Shutdown");
@@ -2886,6 +2886,7 @@ uint32_t pwrCheck()
             pwr_check_state = PWR_CHECK_PAUSED;
             return e_power_on;
           }
+#endif
         }
         haptic.play(15, 3, PLAY_NOW);
         pwr_check_state = PWR_CHECK_OFF;

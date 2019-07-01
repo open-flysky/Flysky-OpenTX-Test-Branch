@@ -71,7 +71,6 @@ void stop_trainer_ppm()
 
 void init_trainer_capture()
 {
-#if 0
   GPIO_InitTypeDef GPIO_InitStructure;
 
   GPIO_InitStructure.GPIO_Pin = TRAINER_IN_GPIO_PIN;
@@ -93,17 +92,14 @@ void init_trainer_capture()
 
   NVIC_EnableIRQ(TRAINER_TIMER_IRQn);
   NVIC_SetPriority(TRAINER_TIMER_IRQn, 7);
-#endif
 }
 
 void stop_trainer_capture()
 {
-#if 0
   NVIC_DisableIRQ(TRAINER_TIMER_IRQn); // Stop Interrupt
 
   TRAINER_TIMER->CR1 &= ~TIM_CR1_CEN; // Stop counter
   TRAINER_TIMER->DIER = 0; // Stop Interrupt
-#endif
 }
 
 void trainerSendNextFrame()
@@ -133,6 +129,7 @@ extern "C" void TRAINER_OUT_DMA_IRQHandler()
   TRAINER_TIMER->SR &= ~TIM_SR_CC1IF; // Clear flag
   TRAINER_TIMER->DIER |= TIM_DIER_CC1IE; // Enable this interrupt
 }
+#endif
 
 extern "C" void TRAINER_TIMER_IRQHandler()
 {
@@ -153,7 +150,7 @@ extern "C" void TRAINER_TIMER_IRQHandler()
   if (doCapture) {
     captureTrainerPulses(capture);
   }
-
+#if 0
   // PPM out compare interrupt
   if ((TRAINER_TIMER->DIER & TIM_DIER_CC1IE) && (TRAINER_TIMER->SR & TIM_SR_CC1IF)) {
     // compare interrupt
@@ -162,5 +159,5 @@ extern "C" void TRAINER_TIMER_IRQHandler()
     setupPulsesPPMTrainer();
     trainerSendNextFrame();
   }
-}
 #endif
+}

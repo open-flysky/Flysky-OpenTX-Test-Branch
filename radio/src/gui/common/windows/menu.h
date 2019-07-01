@@ -85,6 +85,7 @@ class MenuWindow: public Window {
     std::vector<MenuLine> lines;
     int selectedIndex = -1;
     uint8_t lineHeight = ((g_eeGeneral.displayLargeLines) ? 50 : 40);
+    std::function<void(const char*)> onSelect;
 };
 
 class Menu : public Window {
@@ -117,7 +118,7 @@ class Menu : public Window {
 
     void checkEvents() override;
 
-    void addLine(const std::string & text, std::function<void()> onPress);
+    void addLine(const std::string & text, std::function<void()> onPress = nullptr);
 
     void removeLines();
 
@@ -135,6 +136,10 @@ class Menu : public Window {
     bool onTouchEnd(coord_t x, coord_t y) override;
 
     bool onTouchSlide(coord_t x, coord_t y, coord_t startX, coord_t startY, coord_t slideX, coord_t slideY) override;
+
+    void setSelectHandler(std::function<void(const char*)> selectHandler) {
+      menuWindow.onSelect = std::move(selectHandler);
+    }
 
   protected:
     MenuWindow menuWindow;
