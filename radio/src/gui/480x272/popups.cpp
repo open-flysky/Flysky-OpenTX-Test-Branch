@@ -123,6 +123,11 @@ void runPopupWarning(event_t event)
         buttons = (DialogResult)(buttons | DialogResult::Cancel);
       }
       activePopup = new MessageBox((DialogType)warningType, buttons, title, warningText);
+      activePopup->setCloseHandler([=]() {
+        activePopup = nullptr;
+        warningText = nullptr;
+        warningType = WARN_TYPE_ASTERISK;
+      });
     }
     else {
       activePopup->setMessage(warningText);
