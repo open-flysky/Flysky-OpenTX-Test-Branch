@@ -24,7 +24,7 @@ void trainerSendNextFrame();
 
 void init_trainer_ppm()
 {
-#if 0
+
   GPIO_PinAFConfig(TRAINER_GPIO, TRAINER_OUT_GPIO_PinSource, TRAINER_GPIO_AF);
 
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -54,19 +54,16 @@ void init_trainer_ppm()
   NVIC_SetPriority(TRAINER_OUT_DMA_IRQn, 7);
   NVIC_EnableIRQ(TRAINER_TIMER_IRQn);
   NVIC_SetPriority(TRAINER_TIMER_IRQn, 7);
-#endif
 }
 
 void stop_trainer_ppm()
 {
-#if 0
   NVIC_DisableIRQ(TRAINER_OUT_DMA_IRQn);
   NVIC_DisableIRQ(TRAINER_TIMER_IRQn);
 
   TRAINER_OUT_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
   TRAINER_TIMER->DIER = 0; // Stop Interrupt
   TRAINER_TIMER->CR1 &= ~TIM_CR1_CEN; // Stop counter
-#endif
 }
 
 void init_trainer_capture()
@@ -104,7 +101,6 @@ void stop_trainer_capture()
 
 void trainerSendNextFrame()
 {
-#if 0
   TRAINER_TIMER->CCR2 = GET_PPM_DELAY(TRAINER_MODULE)*2;
   TRAINER_TIMER->CCER = TIM_CCER_CC2E | (g_model.moduleData[TRAINER_MODULE].ppm.pulsePol ? 0 : TIM_CCER_CC2P);
   TRAINER_TIMER->CCR1 = *(trainerPulsesData.ppm.ptr - 1) - 4000; // 2mS in advance
@@ -115,10 +111,8 @@ void trainerSendNextFrame()
   TRAINER_OUT_DMA_STREAM->M0AR = CONVERT_PTR_UINT(trainerPulsesData.ppm.pulses);
   TRAINER_OUT_DMA_STREAM->NDTR = trainerPulsesData.ppm.ptr - trainerPulsesData.ppm.pulses;
   TRAINER_OUT_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE; // Enable DMA
-#endif
 }
 
-#if 0
 extern "C" void TRAINER_OUT_DMA_IRQHandler()
 {
   if (!DMA_GetITStatus(TRAINER_OUT_DMA_STREAM, TRAINER_OUT_DMA_FLAG_TC))
@@ -129,7 +123,6 @@ extern "C" void TRAINER_OUT_DMA_IRQHandler()
   TRAINER_TIMER->SR &= ~TIM_SR_CC1IF; // Clear flag
   TRAINER_TIMER->DIER |= TIM_DIER_CC1IE; // Enable this interrupt
 }
-#endif
 
 extern "C" void TRAINER_TIMER_IRQHandler()
 {
@@ -150,7 +143,7 @@ extern "C" void TRAINER_TIMER_IRQHandler()
   if (doCapture) {
     captureTrainerPulses(capture);
   }
-#if 0
+
   // PPM out compare interrupt
   if ((TRAINER_TIMER->DIER & TIM_DIER_CC1IE) && (TRAINER_TIMER->SR & TIM_SR_CC1IF)) {
     // compare interrupt
@@ -159,5 +152,4 @@ extern "C" void TRAINER_TIMER_IRQHandler()
     setupPulsesPPMTrainer();
     trainerSendNextFrame();
   }
-#endif
 }

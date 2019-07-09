@@ -42,6 +42,10 @@ class NumberEdit : public BaseNumberEdit {
     {
       this->enabled = enabled;
     }
+    void setReadonly(bool readonly)
+    {
+      this->readonly = readonly;
+    }
 
     void setPrefix(std::string value)
     {
@@ -73,6 +77,7 @@ class NumberEdit : public BaseNumberEdit {
     std::string suffix;
     std::string zeroText;
     bool enabled = true;
+    bool readonly = false;
 };
 
 #endif // _NUMBEREDIT_H_

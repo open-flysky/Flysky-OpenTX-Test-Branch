@@ -40,7 +40,7 @@ void NumberEdit::paint(BitmapBuffer * dc)
     textColor = TEXT_INVERTED_BGCOLOR;
     lineColor = TEXT_INVERTED_BGCOLOR;
   }
-  else if (enabled) {
+  else if (enabled || readonly) {
     textColor = TEXT_COLOR;
   }
   int32_t value = _getValue();
@@ -58,7 +58,7 @@ void NumberEdit::paint(BitmapBuffer * dc)
 
 bool NumberEdit::onTouchEnd(coord_t, coord_t)
 {
-  if (!enabled) {
+  if (!enabled || readonly) {
     return true;
   }
     AUDIO_KEY_PRESS();

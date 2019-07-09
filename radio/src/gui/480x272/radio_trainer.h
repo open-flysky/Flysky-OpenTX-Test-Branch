@@ -19,13 +19,14 @@
  */
 
 #include "tabsgroup.h"
+#include "numberedit.h"
 
 class RadioTrainerPage: public PageTab {
   public:
     RadioTrainerPage();
 
     void build(Window * window) override;
-
+    void checkEvents() override;
   protected:
-
+    NumberEdit *numEdits[MAX_TRAINER_CHANNELS];
 };

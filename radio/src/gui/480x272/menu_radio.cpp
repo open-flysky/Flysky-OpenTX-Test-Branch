@@ -25,6 +25,7 @@
 #include "radio_calibration.h"
 #include "radio_version.h"
 #include "radio_hardware.h"
+#include "radio_trainer.h"
 #include "myeeprom.h"
 
 RadioMenu::RadioMenu():
@@ -33,7 +34,7 @@ RadioMenu::RadioMenu():
   addTab(new RadioSetupPage());
   addTab(new RadioSdManagerPage());
   addTab(new SpecialFunctionsPage(g_eeGeneral.customFn));
-  // TODO trainer
+  addTab(new RadioTrainerPage());
   addTab(new RadioHardwarePage());
   addTab(new RadioCalibrationPage());
   addTab(new RadioVersionPage());

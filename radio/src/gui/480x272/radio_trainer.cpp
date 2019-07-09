@@ -19,11 +19,84 @@
  */
 
 #include "opentx.h"
+#include "radio_trainer.h"
+#include "libwindows.h"
+
+#define SET_DIRTY()     storageDirty(EE_GENERAL)
 
 #define TRAINER_COLUMN_WIDTH   60
 #define TRAINER_COLUMN_1       MENUS_MARGIN_LEFT+100
 #define TRAINER_COLUMN_2       TRAINER_COLUMN_1+TRAINER_COLUMN_WIDTH
 #define TRAINER_COLUMN_3       TRAINER_COLUMN_2+TRAINER_COLUMN_WIDTH
+#define PPM_CHANNELS_TRAINER   4
+RadioTrainerPage::RadioTrainerPage():
+  PageTab(STR_MENUTRAINER, ICON_RADIO_TRAINER)
+{
+}
+void RadioTrainerPage::checkEvents()
+{
+  PageTab::checkEvents();
+  for (int i=0; i<PPM_CHANNELS_TRAINER; i++) {
+    int32_t value = 0;
+#if defined (PPM_UNIT_PERCENT_PREC1)
+    value = (ppmInput[i]-g_eeGeneral.trainer.calib[i])*2;
+#else
+    value = (ppmInput[i]-g_eeGeneral.trainer.calib[i])/5;
+#endif
+    if(value != numEdits[i]->getValue()) {
+      numEdits[i]->invalidate();
+    }
+  }
+}
+void RadioTrainerPage::build(Window * window)
+{
+  bool slave = SLAVE_MODE();
+  GridLayout grid;
+  grid.spacer(8);
+  grid.setLabelWidth(LCD_W/2);
+  if(slave) {
+    new StaticText(window, grid.getLineSlot(), STR_SLAVE, CENTERED);
+    return;
+  }
+  for (uint8_t i=0; i<NUM_STICKS; i++) {
+    uint8_t channel = channel_order(i+1);
+    TrainerMix* trainerMix = &g_eeGeneral.trainer.mix[channel-1];
+    rect_t labelSlot = grid.getLabelSlot();
+    new StaticText(window, labelSlot, getSourceString(channel));
+    labelSlot.x += 60;
+    labelSlot.w -= 60 + lineSpacing;
+    new Choice(window, labelSlot, STR_TRNMODE, 0, 2, GET_SET_DEFAULT(trainerMix->mode));
+    auto weight = new NumberEdit(window, grid.getFieldSlot(2, 0), -125, 125, GET_SET_DEFAULT(trainerMix->studWeight));
+    weight->setSuffix("%");
+    new Choice(window, grid.getFieldSlot(2, 1), STR_TRNCHN, 0, 3, GET_SET_DEFAULT(trainerMix->srcChn));
+    grid.nextLine();
+  }
+  new StaticText(window, grid.getLabelSlot(), STR_MULTIPLIER, 0);
+  new NumberEdit(window, grid.getFieldSlot(), -10, 40, GET_SET_WITH_OFFSET(g_eeGeneral.PPM_Multiplier, 10), PREC1);
+  grid.nextLine();
+
+  for (int i=0; i<PPM_CHANNELS_TRAINER; i++) {
+    NumberEdit* numEdit = nullptr;
+    rect_t targetSlot = grid.getLineSlot();
+    targetSlot.x += i * (targetSlot.w /4);
+    targetSlot.w = (targetSlot.w /4) - lineSpacing;
+    if(i > 1) targetSlot = grid.getFieldSlot(2, i-2);
+ #if defined (PPM_UNIT_PERCENT_PREC1)
+    numEdit = new NumberEdit(window, targetSlot, -100, +100, [=] { return (ppmInput[i]-g_eeGeneral.trainer.calib[i])*2; }, [=](int32_t newValue) {  }, PREC1);
+ #else
+    numEdit = new NumberEdit(window, targetSlot, -100, +100, [=] { return (ppmInput[i]-g_eeGeneral.trainer.calib[i])/5; }, [=](int32_t newValue) {  });
+ #endif
+    numEdit->setReadonly(true);
+    numEdits[i] = numEdit;
+  }
+  grid.nextLine();
+  new TextButton(window, grid.getLineSlot(), "Calibrate...", [=]() -> uint8_t {
+    memcpy(g_eeGeneral.trainer.calib, ppmInput, sizeof(g_eeGeneral.trainer.calib));
+    storageDirty(EE_GENERAL);
+    AUDIO_WARNING1();
+    return 1;
+  });
+}
 
 #if 0
 bool menuRadioTrainer(event_t event)
@@ -34,7 +107,7 @@ bool menuRadioTrainer(event_t event)
   MENU(STR_MENUTRAINER, RADIO_ICONS, menuTabGeneral, MENU_RADIO_TRAINER, (slave ? 0 : 6), { NAVIGATION_LINE_BY_LINE|2, NAVIGATION_LINE_BY_LINE|2, NAVIGATION_LINE_BY_LINE|2, NAVIGATION_LINE_BY_LINE|2, 0, 0});
 
   if (slave) {
-    lcdDrawText(LCD_W/2, 5*FH, STR_SLAVE, CENTERED|TEXT_COLOR);
+    lcdDrawText(LCD_W/2, 5*FH, STR_SLAVE, |TEXT_COLOR);
     return true;
   }
 
