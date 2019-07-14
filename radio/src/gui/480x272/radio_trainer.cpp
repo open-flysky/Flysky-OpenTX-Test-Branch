@@ -36,6 +36,8 @@ RadioTrainerPage::RadioTrainerPage():
 void RadioTrainerPage::checkEvents()
 {
   PageTab::checkEvents();
+  
+  if (SLAVE_MODE()) {return;}
   for (int i=0; i<PPM_CHANNELS_TRAINER; i++) {
     int32_t value = 0;
 #if defined (PPM_UNIT_PERCENT_PREC1)
