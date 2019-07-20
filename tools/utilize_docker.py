@@ -159,7 +159,10 @@ for ext_opt, ext_value in extra_options.items():
 # Start the timer
 start = time.time()
 
-# create the build directory and enter
+# create directory structure
+if not os.path.exists(output_dir_name):
+    os.mkdir(output_dir_name)
+
 if not os.path.exists(build_dir):
     os.mkdir(build_dir)
 
