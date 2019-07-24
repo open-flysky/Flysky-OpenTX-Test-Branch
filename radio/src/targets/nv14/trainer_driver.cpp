@@ -135,7 +135,7 @@ extern "C" void TRAINER_TIMER_IRQHandler()
   if ((TRAINER_TIMER->DIER & TIM_DIER_CC1IE) && (TRAINER_TIMER->SR & TIM_SR_CC1IF)) {
     // capture mode on trainer jack
     capture = TRAINER_TIMER->CCR1;
-    if (TRAINER_CONNECTED() && currentTrainerMode == TRAINER_MODE_MASTER_TRAINER_JACK) {
+    if (/*TRAINER_CONNECTED() && */currentTrainerMode == TRAINER_MODE_MASTER_TRAINER_JACK) {
       doCapture = true;
     }
   }
@@ -147,9 +147,9 @@ extern "C" void TRAINER_TIMER_IRQHandler()
   // PPM out compare interrupt
   if ((TRAINER_TIMER->DIER & TIM_DIER_CC1IE) && (TRAINER_TIMER->SR & TIM_SR_CC1IF)) {
     // compare interrupt
-    TRAINER_TIMER->DIER &= ~TIM_DIER_CC1IE; // stop this interrupt
+    //TRAINER_TIMER->DIER &= ~TIM_DIER_CC1IE; // stop this interrupt
     TRAINER_TIMER->SR &= ~TIM_SR_CC1IF; // Clear flag
-    setupPulsesPPMTrainer();
-    trainerSendNextFrame();
+    //setupPulsesPPMTrainer();
+    //trainerSendNextFrame();
   }
 }

@@ -29,4 +29,5 @@ class RadioTrainerPage: public PageTab {
     void checkEvents() override;
   protected:
     NumberEdit *numEdits[MAX_TRAINER_CHANNELS];
+    int32_t last_values[MAX_TRAINER_CHANNELS];
 };
