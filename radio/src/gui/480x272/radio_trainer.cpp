@@ -36,6 +36,8 @@ RadioTrainerPage::RadioTrainerPage():
 void RadioTrainerPage::checkEvents()
 {
   PageTab::checkEvents();
+  
+  if (SLAVE_MODE()) {return;}
   for (int i=0; i<PPM_CHANNELS_TRAINER; i++) {
     int32_t value = numEdits[i]->getValue();
     if(value != last_values[i]) {
