@@ -39,15 +39,11 @@ void RadioTrainerPage::checkEvents()
   
   if (SLAVE_MODE()) {return;}
   for (int i=0; i<PPM_CHANNELS_TRAINER; i++) {
-    int32_t value = 0;
-#if defined (PPM_UNIT_PERCENT_PREC1)
-    value = (ppmInput[i]-g_eeGeneral.trainer.calib[i])*2;
-#else
-    value = (ppmInput[i]-g_eeGeneral.trainer.calib[i])/5;
-#endif
-    if(value != numEdits[i]->getValue()) {
+    int32_t value = numEdits[i]->getValue();
+    if(value != last_values[i]) {
       numEdits[i]->invalidate();
     }
+    last_values[i] = value;
   }
 }
 void RadioTrainerPage::build(Window * window)
