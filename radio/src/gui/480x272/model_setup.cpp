@@ -259,6 +259,12 @@ class ModuleWindow : public Window {
                      moduleFlagBackNormal(moduleIndex);
                      onFlySkyReceiverSetPulse(INTERNAL_MODULE, newValue);
                    });
+        
+#if defined (PCBNV14)
+        grid.nextLine();
+		    new StaticText(this, grid.getLabelSlot(), STR_FLYSKY_TELEMETRY);
+		    new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.rssiAlarms.flysky_telemetry));					   
+#endif        
       }
 
       if (isModuleXJT(moduleIndex)) {
