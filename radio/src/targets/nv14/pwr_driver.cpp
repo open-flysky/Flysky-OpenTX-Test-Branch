@@ -60,11 +60,6 @@ void pwrInit()
   GPIO_InitStructure.GPIO_Pin = SD_PRESENT_GPIO_PIN;
   GPIO_Init(SD_PRESENT_GPIO, &GPIO_InitStructure);
 
-  // TODO move this elsewhere! (plus SD DETECT on other boards)
-  // Init TRAINER DETECT PIN
-  // GPIO_InitStructure.GPIO_Pin = TRAINER_DETECT_GPIO_PIN;
-  // GPIO_Init(TRAINER_DETECT_GPIO, &GPIO_InitStructure);
-
   boardState = BOARD_POWER_OFF;
 }
 

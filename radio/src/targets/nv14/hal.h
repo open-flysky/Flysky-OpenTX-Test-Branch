@@ -388,22 +388,39 @@
 #define TRAINER_IN_GPIO_PinSource       GPIO_PinSource12
 #define TRAINER_OUT_GPIO_PIN            GPIO_Pin_13 // PD.13
 #define TRAINER_OUT_GPIO_PinSource      GPIO_PinSource13
-#define TRAINER_DETECT_GPIO             GPIOB
-#define TRAINER_DETECT_GPIO_PIN         GPIO_Pin_4  // PB.04
+
 #define TRAINER_TIMER                   TIM4
+#define TRAINER_GPIO_AF                 GPIO_AF_TIM4 // TIM4_CH1 (in) + TIM4_CH2 (out)
 #define TRAINER_TIMER_IRQn              TIM4_IRQn
 #define TRAINER_TIMER_IRQHandler        TIM4_IRQHandler
 #define TRAINER_TIMER_FREQ              (PERI1_FREQUENCY * TIMER_MULT_APB1)
-#define TRAINER_GPIO_AF                 GPIO_AF_TIM4 // TIM4_CH1 (in) + TIM4_CH2 (out)
-#define TRAINER_OUT_DMA                 DMA1
-#define TRAINER_OUT_DMA_CHANNEL         DMA_Channel_2
-#define TRAINER_OUT_DMA_STREAM          DMA1_Stream3
-#define TRAINER_OUT_DMA_IRQn            DMA1_Stream3_IRQn
-#define TRAINER_OUT_DMA_IRQHandler      DMA1_Stream3_IRQHandler
-#define TRAINER_OUT_DMA_FLAG_TC         DMA_IT_TCIF3
-#define TRAINER_EXTMODULE_TIMER_IRQn    TIM4_IRQn
-#define TRAINER_EXTMODULE_TIMER_IRQHandler  TIM4_IRQHandler
-#define TRAINER_EXTMODULE_TIMER_FREQ    (PERI1_FREQUENCY * TIMER_MULT_APB1)
+
+#define TRAINER_OUT_CCMR1               TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2PE;
+#define TRAINER_IN_CCMR1                TIM_CCMR1_IC1F_0 | TIM_CCMR1_IC1F_1 | TIM_CCMR1_CC1S_0;
+#define TRAINER_OUT_COUNTER_REGISTER    TRAINER_TIMER->CCR2
+#define TRAINER_IN_COUNTER_REGISTER     TRAINER_TIMER->CCR1
+#define TRAINER_SETUP_REGISTER          TRAINER_TIMER->CCR3
+#define TRAINER_OUT_INTERRUPT_FLAG      TIM_SR_CC3IF
+#define TRAINER_OUT_INTERRUPT_ENABLE    TIM_DIER_CC3IE
+#define TRAINER_IN_INTERRUPT_ENABLE     TIM_DIER_CC1IE
+#define TRAINER_IN_INTERRUPT_FLAG       TIM_SR_CC1IF
+#define TRAINER_OUT_CCER                TIM_CCER_CC2E
+#define TRAINER_CCER_POLARYTY           TIM_CCER_CC2P
+#define TRAINER_IN_CCER                 TIM_CCER_CC1E
+/*
+ * IN DMA Mode only first pulse is sent
+ * probably we need to use stream 6 channel 2
+ * */
+/*
+#define TRAINER_DMA                   DMA1
+#define TRAINER_DMA_CHANNEL           DMA_Channel_2
+#define TRAINER_DMA_STREAM            DMA1_Stream3
+#define TRAINER_DMA_IRQn              DMA1_Stream3_IRQn
+#define TRAINER_DMA_IRQHandler        DMA1_Stream3_IRQHandler
+#define TRAINER_DMA_FLAG_TC           DMA_IT_TCIF6
+*/
+
+#define TRAINER_CONNECTED()           (true)
 
 // Xms Interrupt
 #define INTERRUPT_xMS_RCC_APB1Periph    RCC_APB1Periph_TIM14

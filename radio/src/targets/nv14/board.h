@@ -103,8 +103,6 @@ extern uint16_t sessionTimer;
 
 #define SLAVE_MODE()                    (g_model.trainerMode == TRAINER_MODE_SLAVE)
 
-#define TRAINER_CONNECTED()             (GPIO_ReadInputDataBit(TRAINER_DETECT_GPIO, TRAINER_DETECT_GPIO_PIN) == Bit_SET)
-
 // Board driver
 void boardInit(void);
 void boardOff(void);
