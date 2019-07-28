@@ -426,7 +426,7 @@ end
 
 -- Main
 local function runDevicePage(event, wParam, lParam)
-  if event == EVT_EXIT_BREAK or event == EVT_SLIDE_LEFT then  -- exit script
+  if event == EVT_EXIT_BREAK or event == EVT_SLIDE_RIGHT then  -- exit script
     if edit == true then
       edit = false
       local field = getField(lineIndex)
