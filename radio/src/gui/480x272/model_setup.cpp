@@ -196,7 +196,10 @@ class ModuleWindow : public Window {
     TextButton * bindButton = nullptr;
     TextButton * rangeButton = nullptr;
     Choice * failSafeChoice = nullptr;
-
+    bool isPPM(uint8_t moduleIndex){
+      if(moduleIndex == TRAINER_MODULE) return g_model.trainerMode == TRAINER_MODE_SLAVE;
+      return isModulePPM(moduleIndex);
+    }
     void addChannelRange(GridLayout &grid, uint8_t moduleIndex)
     {
       new StaticText(this, grid.getLabelSlot(true), STR_CHANNELRANGE);
@@ -234,24 +237,36 @@ class ModuleWindow : public Window {
 
       // Module Type
       new StaticText(this, grid.getLabelSlot(true), STR_MODE);
-      moduleChoice = new Choice(this, grid.getFieldSlot(2, 0), STR_MODULE_PROTOCOLS,
-                                MODULE_TYPE_NONE, MODULE_TYPE_COUNT - 1,
-                                GET_DEFAULT(g_model.moduleData[moduleIndex].type),
-                                [=](int32_t newValue) {
-                                  g_model.moduleData[moduleIndex].type = newValue;
-                                  SET_DIRTY();
-                                  resetModuleSettings(moduleIndex);
-                                  onFlySkyModuleSetPower(moduleIndex, newValue == MODULE_TYPE_FLYSKY);
-                                  update();
-                                  moduleChoice->setFocus();
-                                });
-      moduleChoice->setAvailableHandler([=](int8_t moduleType) {
-        return isModuleTypeAllowed(moduleIndex, moduleType);
-      });
+      if (moduleIndex == TRAINER_MODULE) {
+        moduleChoice = new Choice(this, grid.getFieldSlot(), STR_VTRAINERMODES, 0, TRAINER_MODE_MAX(), GET_DEFAULT(g_model.trainerMode), [=](int32_t newValue) {
+          g_model.trainerMode = newValue;
+          g_model.moduleData[moduleIndex].type = newValue == TRAINER_MODE_SLAVE ? MODULE_TYPE_PPM : MODULE_TYPE_NONE;
+          update();
+          SET_DIRTY();
+          moduleChoice->setFocus();
 
+        });
+      }
+      else {
+        moduleChoice = new Choice(this, grid.getFieldSlot(),
+            STR_MODULE_PROTOCOLS, MODULE_TYPE_NONE, MODULE_TYPE_COUNT - 1,
+            GET_DEFAULT(g_model.moduleData[moduleIndex].type),
+            [=](int32_t newValue) {
+              g_model.moduleData[moduleIndex].type = newValue;
+              SET_DIRTY();
+              resetModuleSettings(moduleIndex);
+              onFlySkyModuleSetPower(moduleIndex, newValue == MODULE_TYPE_FLYSKY);
+              update();
+              moduleChoice->setFocus();
+            });
+        moduleChoice->setAvailableHandler([=](int8_t moduleType) {
+          return isModuleTypeAllowed(moduleIndex, moduleType);
+        });
+      }
+      grid.nextLine();
       // Module parameters
       if (isModuleFlysky(moduleIndex)) {
-        new Choice(this, grid.getFieldSlot(2, 1), STR_FLYSKY_PROTOCOLS, 0, 3,
+        new Choice(this, grid.getFieldSlot(), STR_FLYSKY_PROTOCOLS, 0, 3,
                    GET_DEFAULT(g_model.moduleData[moduleIndex].romData.mode),
                    [=](int32_t newValue) -> void {
                      g_model.moduleData[moduleIndex].romData.mode = newValue;
@@ -268,7 +283,7 @@ class ModuleWindow : public Window {
       }
 
       if (isModuleXJT(moduleIndex)) {
-        auto xjtChoice = new Choice(this, grid.getFieldSlot(2, 1), STR_XJT_PROTOCOLS, RF_PROTO_OFF, RF_PROTO_LAST,
+        auto xjtChoice = new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_OFF, RF_PROTO_LAST,
                                     GET_SET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol));
         xjtChoice->setAvailableHandler([](int index) {
           return index != RF_PROTO_OFF;
@@ -276,12 +291,12 @@ class ModuleWindow : public Window {
       }
 
       if (isModuleDSM2(moduleIndex)) {
-        new Choice(this, grid.getFieldSlot(2, 1), STR_DSM_PROTOCOLS, DSM2_PROTO_LP45, DSM2_PROTO_DSMX,
+        new Choice(this, grid.getFieldSlot(), STR_DSM_PROTOCOLS, DSM2_PROTO_LP45, DSM2_PROTO_DSMX,
                    GET_SET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol));
       }
 
       if (isModuleR9M(moduleIndex)) {
-        new Choice(this, grid.getFieldSlot(2, 1), STR_R9M_MODES, MODULE_SUBTYPE_R9M_FCC,
+        new Choice(this, grid.getFieldSlot(), STR_R9M_MODES, MODULE_SUBTYPE_R9M_FCC,
                    MODULE_SUBTYPE_R9M_LBT,
                    GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
                    [=](int32_t newValue) {
@@ -291,8 +306,8 @@ class ModuleWindow : public Window {
                    });
       }
 
-      if (isModulePPM(moduleIndex)) {
-        new Choice(this, grid.getFieldSlot(2, 1), "\006""     +""     -", 0,
+      if (isPPM(moduleIndex)) {
+        new Choice(this, grid.getFieldSlot(), "\006""     +""     -", 0,
                    1,
                    GET_DEFAULT(g_model.moduleData[moduleIndex].ppm.pulsePol),
                    [=](int32_t newValue) {
@@ -311,7 +326,7 @@ class ModuleWindow : public Window {
       }
 
       // PPM modules
-      if (isModulePPM(moduleIndex)) {
+      if (isPPM(moduleIndex)) {
         // PPM frame
         new StaticText(this, grid.getLabelSlot(true), STR_PPMFRAME);
 
@@ -743,9 +758,9 @@ void ModelSetupPage::build(Window * window)
   // Trainer Mode
 #if defined(TRAINERMODULE)
   {
+    new Subtitle(window, grid.getLineSlot(), STR_TRAINER);
     grid.nextLine();
-    new StaticText(window, grid.getLabelSlot(), STR_TRAINER);
-    new Choice(window, grid.getFieldSlot(), STR_VTRAINERMODES, 0, 3, GET_SET_DEFAULT(g_model.trainerMode));
+    grid.addWindow(new ModuleWindow(window, {0, grid.getWindowHeight(), LCD_W, 0}, TRAINER_MODULE));
   }
 #endif
 

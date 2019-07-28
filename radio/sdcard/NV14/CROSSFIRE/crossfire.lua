@@ -89,7 +89,7 @@ local function run(event, wParam, lParam)
   if event == nil then
     error("Cannot be run as a model script!")
     return 2
-  elseif event == EVT_EXIT_BREAK or event == EVT_SLIDE_LEFT then
+  elseif event == EVT_EXIT_BREAK or event == EVT_SLIDE_RIGHT then
     return 2
   elseif event == EVT_ROT_LEFT then
     selectDevice(1)

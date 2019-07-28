@@ -60,6 +60,7 @@
   #define HAS_WIRELESS_TRAINER_HARDWARE() (g_eeGeneral.auxSerialMode==UART_MODE_SBUS_TRAINER)
 #else
   #define IS_TRAINER_EXTERNAL_MODULE()    false
+  #define HAS_WIRELESS_TRAINER_HARDWARE() false
 #endif
 
 #if defined(VOICE)
