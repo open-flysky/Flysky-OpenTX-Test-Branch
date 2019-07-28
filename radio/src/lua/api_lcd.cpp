@@ -827,6 +827,16 @@ static int luaLcdSetColor(lua_State *L)
   lcdColorTable[index] = color;
   return 0;
 }
+/*luadoc
+@function lcd.showKeyboard(type)
+Displays keyboard that sends events
+
+@param type of the keyboard to be displayed - available types
+ * `KEYBOARD_NONE`
+ * `KEYBOARD_NUM_INC_DEC`
+ * `KEYBOARD_NUM`
+ * `KEYBOARD_ALPHABETIC`
+*/
 static int luaShowKeyboard(lua_State *L)
 {
   if (!luaLcdAllowed) return 0;
@@ -861,6 +871,67 @@ static int luaRGB(lua_State *L)
   lua_pushinteger(L, RGB(r, g, b));
   return 1;
 }
+/*luadoc
+@function lcd.getHeight(text, flags)
+Returns text height to be displayed
+
+@param text text to be measured
+@param flags text formatting flags
+*/
+
+static int luaLcdGetHeight(lua_State *L)
+{
+  if (!luaLcdAllowed) return 0;
+  //const char * s = luaL_checkstring(L, 1);
+  unsigned int att = luaL_optunsigned(L, 2, 0);
+
+  static const uint8_t heightTable[16] = { 22, 13, 16, 24, 32, 64, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12 };
+  int fontindex = FONTINDEX(att);
+  int h = heightTable[fontindex];
+  switch(fontindex) {
+  case STDSIZE_INDEX:
+    h = INVERT_HORZ_MARGIN + INVERT_LINE_HEIGHT;
+    break;
+  case TINSIZE_INDEX:
+    h +=2;
+    break;
+  case SMLSIZE_INDEX:
+  case XXLSIZE_INDEX:
+    h += INVERT_HORZ_MARGIN + 2;
+    break;
+  case MIDSIZE_INDEX:
+  case DBLSIZE_INDEX:
+    h += INVERT_HORZ_MARGIN + 3;
+    break;
+  }
+  lua_pushnumber(L, h);
+  return 1;
+}
+/*luadoc
+@function lcd.getWidth(text, flags)
+Returns text width to be displayed
+
+@param text text to be measured
+@param flags text formatting flags
+*/
+static int luaLcdGetWidth(lua_State *L) {
+  if (!luaLcdAllowed) return 0;
+  const char * s = luaL_checkstring(L, 1);
+  unsigned int att = luaL_optunsigned(L, 2, 0);
+  size_t len = strlen(s);
+  int result = 0;
+  const uint16_t * specs = fontspecsTable[FONTINDEX(att)];
+  for (size_t i = 0; len == 0 || i < len; ++i) {
+    char c = (att & ZCHAR) ? idx2char(*s) : *s;
+
+    if (c == '\0') break;
+    result += getCharWidth(c, specs);
+    ++s;
+  }
+  lua_pushnumber(L, result);
+  return 1;
+}
+
 #endif
 
 const luaL_Reg lcdLib[] = {
@@ -882,6 +953,8 @@ const luaL_Reg lcdLib[] = {
   { "setColor", luaLcdSetColor },
   { "RGB", luaRGB },
   { "showKeyboard", luaShowKeyboard },
+  { "getHeight", luaLcdGetHeight },
+  { "getWidth", luaLcdGetWidth },
 #else
   { "getLastPos", luaLcdGetLastPos },
   { "getLastRightPos", luaLcdGetLastPos },
