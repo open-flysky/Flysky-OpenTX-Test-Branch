@@ -49,11 +49,7 @@ void init_trainer_ppm()
 #endif
   TRAINER_TIMER->BDTR = TIM_BDTR_MOE;
   TRAINER_TIMER->EGR = 1;
-#if defined(TRAINER_DMA_STREAM)
   TRAINER_TIMER->DIER |= TIM_DIER_UDE;
-#else
-  TRAINER_TIMER->DIER = 0;
-#endif
   TRAINER_TIMER->CR1 |= TIM_CR1_CEN;
 
   setupPulsesPPMTrainer();
@@ -131,6 +127,7 @@ void trainerSendNextFrame()
   TRAINER_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE; // Enable DMA
 #else
   trainerPulsesData.ppm.ptr = trainerPulsesData.ppm.pulses;
+  TRAINER_TIMER->DIER |= TIM_DIER_UDE;
   TRAINER_TIMER->SR &= ~TIM_SR_UIF; // Clear this flag
   TRAINER_TIMER->DIER |= TIM_DIER_UIE; // Enable this interrupt
 #endif
