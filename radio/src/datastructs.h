@@ -450,6 +450,9 @@ PACK(struct ScriptData {
 /*
  * Frsky Telemetry structure
  */
+ #define RSSI_WARNING_OFFSET 	45
+ #define RSSI_CRITICAL_OFFSET	42
+
 #if defined(CPUARM)
 #if 0
 PACK(struct RssiAlarmData {
@@ -458,18 +461,23 @@ PACK(struct RssiAlarmData {
   int8_t warning:6;
   int8_t spare2:2;
   int8_t critical:6;
-  inline int8_t getWarningRssi() {return 45 + warning;}
-  inline int8_t getCriticalRssi() {return 42 + critical;}
+  inline int8_t getWarningRssi() {return RSSI_WARNING_OFFSET + warning;}
+  inline int8_t getCriticalRssi() {return RSSI_CRITICAL_OFFSET + critical;}
  });
 #else
 PACK(struct RssiAlarmData {
   int8_t disabled:1;
+  #if defined (PCBNV14) 
+  uint8_t   flysky_telemetry:1;	// if set for FlySky receivers use native RSSI values instead of rescaled ones
+  int8_t spare:6;
+ #else  
   int8_t spare:7;
+  #endif 
   int8_t warning;
   //int8_t spare2:2;
   int8_t critical;
-  inline int8_t getWarningRssi() {return 45 + warning;}
-  inline int8_t getCriticalRssi() {return 42 + critical;}
+  inline int8_t getWarningRssi() {return RSSI_WARNING_OFFSET + warning;}
+  inline int8_t getCriticalRssi() {return RSSI_CRITICAL_OFFSET + critical;}
  });
 #endif
 #else

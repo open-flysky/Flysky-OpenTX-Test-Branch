@@ -433,15 +433,15 @@ void ModelTelemetryPage::build(Window * window, int8_t focusSensorIndex)
     new Subtitle(window, grid.getLineSlot(), "RSSI");
   grid.nextLine();
 
-  new StaticText(window, grid.getLabelSlot(true), STR_LOWALARM);
-  auto edit = new NumberEdit(window, grid.getFieldSlot(), -30, 30, GET_SET_DEFAULT(g_model.rssiAlarms.warning));
+    new StaticText(window, grid.getLabelSlot(true), STR_LOWALARM);
+  auto edit = new NumberEdit(window, grid.getFieldSlot(), -82 - RSSI_WARNING_OFFSET, 82 - RSSI_WARNING_OFFSET, GET_SET_DEFAULT(g_model.rssiAlarms.warning));
   edit->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
     drawNumber(dc, 2, 2, g_model.rssiAlarms.getWarningRssi(), flags);
   });
   grid.nextLine();
 
   new StaticText(window, grid.getLabelSlot(true), STR_CRITICALALARM);
-  edit = new NumberEdit(window, grid.getFieldSlot(), -30, 30, GET_SET_DEFAULT(g_model.rssiAlarms.critical));
+  edit = new NumberEdit(window, grid.getFieldSlot(), -85 - RSSI_CRITICAL_OFFSET, 85 - RSSI_CRITICAL_OFFSET, GET_SET_DEFAULT(g_model.rssiAlarms.critical));
   edit->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
     drawNumber(dc, 2, 2, g_model.rssiAlarms.getCriticalRssi(), flags);
   });
