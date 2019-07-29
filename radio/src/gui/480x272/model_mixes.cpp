@@ -375,10 +375,10 @@ void ModelMixesPage::build(Window * window, int8_t focusMixIndex)
   int mixIndex = 0;
   MixData * mix = g_model.mixData;
   for (uint8_t ch = 0; ch < MAX_OUTPUT_CHANNELS; ch++) {
-    if (mixIndex < MAX_MIXERS && mix->srcRaw > 0 && mix->destCh == ch) {
+    if (mixIndex < MAX_MIXERS && mix->srcRaw >= 0 && mix->destCh == ch) {
       new TextButton(window, grid.getLabelSlot(), getSourceString(MIXSRC_CH1 + ch));
       uint8_t count = 0;
-      while (mixIndex < MAX_MIXERS && mix->srcRaw > 0 && mix->destCh == ch) {
+      while (mixIndex < MAX_MIXERS && mix->srcRaw >= 0 && mix->destCh == ch) {
         Button * button = new MixLineButton(window, grid.getFieldSlot(), mixIndex);
         if (focusMixIndex == mixIndex)
           button->setFocus();

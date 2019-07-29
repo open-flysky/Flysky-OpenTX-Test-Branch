@@ -430,6 +430,7 @@ extern const pm_char STR_TTRACE[];
 extern const pm_char STR_TTRIM[];
 extern const pm_char STR_BEEPCTR[];
 extern const pm_char STR_USE_GLOBAL_FUNCS[];
+extern const pm_char STR_FLYSKY_TELEMETRY[];
 #if defined(PCBSKY9X) && defined(REVX)
   extern const pm_char STR_OUTPUT_TYPE[];
 #endif

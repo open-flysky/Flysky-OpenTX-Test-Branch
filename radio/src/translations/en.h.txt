@@ -688,6 +688,7 @@
 #define TR_TTRIM                       TR("T-Trim", INDENT "Trim idle only")
 #define TR_BEEPCTR                     TR("Ctr Beep", "Center Beep")
 #define TR_USE_GLOBAL_FUNCS            TR("Glob.Funcs", "Use global funcs")
+#define TR_FLYSKY_TELEM			       TR("FlySky RSSI #", "Use FlySky RSSI value without rescalling")
 #if defined(PCBSKY9X) && defined(REVX)
   #define TR_OUTPUT_TYPE               INDENT "Output"
 #endif

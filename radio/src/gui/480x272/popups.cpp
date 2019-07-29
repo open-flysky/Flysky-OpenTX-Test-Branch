@@ -20,7 +20,7 @@
 
 #include "opentx.h"
 #include "dialog.h"
-#include "mainWindow.h"
+#include "mainwindow.h"
 
 const char *warningText = NULL;
 const char *warningInfoText;
