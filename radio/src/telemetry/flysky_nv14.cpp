@@ -160,8 +160,13 @@ int32_t GetSensorValueFlySkyNv14(const FlyskyNv14Sensor* sensor, const uint8_t *
 
   if(sensor->id == FLYSKY_SENSOR_RX_RSSI) {
     if(value < -200) value = -200;
-    value += 200;
-    value /= 2;
+#if defined (PCBNV14)
+	if(!g_model.rssiAlarms.flysky_telemetry)
+#endif
+	{
+	    value += 200;
+        value /= 2;
+	}
 	telemetryData.rssi.set(value);
   }
   if(sensor->id == FLYSKY_SENSOR_PRESURRE && sensor->subId != 0){
