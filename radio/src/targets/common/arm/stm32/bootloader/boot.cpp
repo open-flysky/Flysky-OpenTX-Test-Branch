@@ -34,16 +34,6 @@
 #define MAIN_MENU_LEN 2
 #endif
 
-typedef void (*voidFunction)(void);
-
-#define jumpTo(addr) {                                          \
-        SCB->VTOR = addr;                                       \
-        __set_MSP(*(__IO uint32_t*)addr);                       \
-        uint32_t     jumpAddress = *(uint32_t*)(addr + 4);      \
-        voidFunction jumpFn = (voidFunction)jumpAddress;        \
-        jumpFn();                                               \
-    }
-
 // Bootloader marker:
 // -> used to detect valid bootloader files
 const uint8_t bootloaderVersion[] __attribute__ ((section(".version"), used)) =
@@ -196,7 +186,15 @@ void writeEepromBlock()
   eepromAddress += BlockCount;
 }
 #endif
-
+void jumpTo(uint32_t address )
+{
+  asm(" ldr r2, =0xE000ED08");
+  asm(" str r0, [r2]"); //SCB->VTOR = address;
+  asm(" ldr r1, [r0,#0]"); // get the stack pointer value from the program's reset vector
+  asm(" mov sp, r1");      // copy the value to the stack pointer
+  asm(" ldr r0, [r0,#4]"); // get the program counter value from the program's reset vector
+  asm(" blx r0");          // jump to the start address
+}
 int main()
 {
   BootloaderState state = ST_START;
@@ -232,10 +230,15 @@ int main()
   }
 
   pwrInit();
+  pwrOn();
   delaysInit(); // needed for lcdInit()
 
-#if defined(DEBUG)
+#if defined(DEBUG) 
+  #if defined(PCBNV14)
+  auxSerialInit(UART_MODE_DEBUG, 0); // default serial mode (None if DEBUG not defined)
+  #else
   serial2Init(UART_MODE_DEBUG, 0); // default serial mode (None if DEBUG not defined)
+  #endif
 #endif
 
   __enable_irq();
@@ -268,13 +271,13 @@ int main()
 
     if (Tenms) {
       Tenms = 0;
-
+      lcdNextLayer();
       if (state != ST_USB) {
         if (usbPlugged()) {
           state = ST_USB;
           if (!unlocked) {
             unlocked = 1;
-            unlockFlash();
+            flashUnlock();
           }
           usbStart();
           usbPluggedIn();
@@ -286,7 +289,7 @@ int main()
               vpos = 0;
               usbStop();
               if (unlocked) {
-                  lockFlash();
+                  flashLock();
                   unlocked = 0;
               }
               state = ST_START;
@@ -430,7 +433,7 @@ int main()
         // commit to flashing
         if (!unlocked && (memoryType == MEM_FLASH)) {
           unlocked = 1;
-          unlockFlash();
+          flashUnlock();
         }
 
         int progress = 0;
@@ -467,7 +470,7 @@ int main()
 
       if (state == ST_FLASH_DONE) {
         if (unlocked) {
-          lockFlash();
+          flashLock();
           unlocked = 0;
         }
 
@@ -528,6 +531,6 @@ int main()
   return 0;
 }
 
-#if defined(PCBHORUS)
+#if defined(PCBHORUS) || defined(PCBNV14)
 void *__dso_handle = 0;
 #endif

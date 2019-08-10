@@ -2,7 +2,7 @@
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-if(PCB STREQUAL X12S OR PCB STREQUAL X10)
+if(PCB STREQUAL X12S OR PCB STREQUAL X10 OR PCB STREQUAL NV14)
   set(BOOTLOADER_SRC
     ${BOOTLOADER_SRC}
     ../f4/system_stm32f4xx.c
@@ -77,8 +77,13 @@ set(BOOTLOADER_SRC
   boot.cpp
   bin_files.cpp
   )
-
-if(NOT (PCB STREQUAL X10 OR PCB STREQUAL X12S))
+if(PCB STREQUAL NV14)
+  set(BOOTLOADER_SRC
+    ${BOOTLOADER_SRC}
+    ../../../../../targets/${TARGET_DIR}/touch_driver.cpp
+    )
+endif()
+if(NOT (PCB STREQUAL X10 OR PCB STREQUAL X12S OR PCB STREQUAL NV14))
   set(BOOTLOADER_SRC
     ${BOOTLOADER_SRC}
     ../../../../../targets/${TARGET_DIR}/i2c_driver.cpp
@@ -101,8 +106,19 @@ else()
       ${BOOTLOADER_SRC}
       ../../../../../${STM32LIB_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_usart.c
       ../../../../../serial.cpp
-      ../serial2_driver.cpp
+      ../../../../../debug.cpp
       )
+    if(PCB STREQUAL NV14)
+      set(BOOTLOADER_SRC 
+        ${BOOTLOADER_SRC}
+        ../aux_serial_driver.cpp
+      )
+    else()
+      set(BOOTLOADER_SRC 
+        ${BOOTLOADER_SRC}
+        ../serial2_driver.cpp
+      )
+    endif()
   endif()
 endif()
 

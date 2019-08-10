@@ -174,7 +174,7 @@ void boardInit()
   __enable_irq();
 
 #if defined(DEBUG)
-   auxSerialInit(0, 0); // default serial mode (None if DEBUG nm  ot defined)
+   auxSerialInit(0, 0); // default serial mode (None if DEBUG not defined)
 #endif
   TRACE("\nNV14 board started :)");
   delay_ms(10);

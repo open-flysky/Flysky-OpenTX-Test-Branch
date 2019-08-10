@@ -554,8 +554,9 @@ char * strAppendDate(char * str, bool time)
   }
 }
 #endif
-#endif
 
+#endif
+#if !defined(BOOT)
 static char tmpHelpersString[32];
 
 char * getSwitchString(swsrc_t idx)
@@ -582,3 +583,4 @@ char * getTimerString(putstime_t tme, uint8_t hours)
 {
   return getTimerString(tmpHelpersString, tme, hours);
 }
+#endif
