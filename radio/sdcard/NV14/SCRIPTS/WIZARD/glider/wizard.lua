@@ -16,6 +16,14 @@
 ---- #########################################################################
 local VALUE = 0
 local COMBO = 1
+local BUTTON = 2
+local NAV_BUTTON_TOP = 235
+local NAV_BUTTON_BOTTOM = 300
+local NAV_BUTTON_NEXT_LEFT = 295
+local NAV_BUTTON_PREV_RIGHT = 25
+local FIELD_HEIGHT = 30
+local TEXT_LEFT = 10
+local FIELD_LEFT = 20
 
 local edit = false
 local page = 1
@@ -27,8 +35,8 @@ local fields = {}
 local ImgMarkBg = Bitmap.open("img/mark_bg.png")
 local BackgroundImg = Bitmap.open("img/background.png")
 local ImgPlane = Bitmap.open("img/plane.png")
-local ImgPageUp = Bitmap.open("img/pageup.png")
-local ImgPageDn = Bitmap.open("img/pagedn.png")
+local ImgPrev = Bitmap.open("img/pageup.png")
+local ImgNext = Bitmap.open("img/pagedn.png")
 
 
 -- Change display attribute to current field
@@ -44,6 +52,22 @@ local function addField(step)
   end
   if (step < 0 and field[5] > min) or (step > 0 and field[5] < max) then
     field[5] = field[5] + step
+  end
+end
+local function setMinMin(setMin)
+  local field = fields[current]
+  local min, max
+  if field[3] == VALUE then
+    min = field[6]
+    max = field[7]
+  elseif field[3] == COMBO then
+    min = 0
+    max = #(field[6]) - 1
+  end
+  if setMin == true then
+    field[5] = min
+  else
+    field[5] = max
   end
 end
 
@@ -72,14 +96,22 @@ local function redrawFieldsPage(event)
 
     local attr = current == (index) and ((edit == true and BLINK or 0) + INVERS) or 0
     attr = attr + TEXT_COLOR
-
+     lcd.setColor(CUSTOM_COLOR, lcd.RGB(255, 255, 255))
     if field[4] == 1 then
       if field[3] == VALUE then
+        lcd.drawFilledRectangle(field[1]-10, field[2]-5, field[7], FIELD_HEIGHT, CUSTOM_COLOR)
         lcd.drawNumber(field[1], field[2], field[5], LEFT + attr)
       elseif field[3] == COMBO then
+        lcd.drawFilledRectangle(field[1]-10, field[2]-5, field[7], FIELD_HEIGHT, CUSTOM_COLOR)
         if field[5] >= 0 and field[5] < #(field[6]) then
           lcd.drawText(field[1],field[2], field[6][1+field[5]], attr)
         end
+      elseif field[3] == BUTTON then
+        lcd.drawFilledRectangle(TEXT_LEFT, field[2] - 5, field[7], FIELD_HEIGHT, CURVE_AXIS_COLOR)
+        if current == (index) then
+          lcd.drawRectangle(TEXT_LEFT, field[2] - 5, field[7], FIELD_HEIGHT, SCROLLBOX_COLOR, 2)
+        end
+        lcd.drawText((field[1] + field[7]) / 2, field[2], field[5], field[6])
       end
     end
   end
@@ -88,11 +120,43 @@ end
 local function updateField(field)
   local value = field[5]
 end
-
+--  {FIELD_LEFT, 50, COMBO, 1, 2, { "None", "One, or two with Y cable", "Two"}, 300 },
+local function getField(x, y)
+   for i = 1, #fields do
+    local field = fields[i]
+    local field_left = field[1] - 10
+    local field_top = field[2] - 5
+    local field_right = field_left + field[7]
+    local field_bottom = field_top + FIELD_HEIGHT
+    -- visible
+    if field[4] == 1 and x >= field_left and x <= field_right and y >= field_top and y <= field_bottom then
+      return i
+    end
+  end
+  return -1
+end
 -- Main
-local function runFieldsPage(event)
+local function runFieldsPage(event, x, y)
+  if event ~= 0 then
+    trace(event, x, y)
+  end
   if event == EVT_EXIT_BREAK then -- exit script
     return 2
+  elseif event == EVT_TOUCH_UP then
+    local index = getField(x,y)
+    if (index ~= -1) then
+      trace(event, 666, index)
+      if fields[index][3] ~= BUTTON then
+        edit = true
+        current = index
+        lcd.showKeyboard(KEYBOARD_NUM_INC_DEC)
+      else
+        return fields[index][8]()
+      end
+    else
+      edit = false
+      lcd.showKeyboard(KEYBOARD_NONE)
+    end
   elseif event == EVT_ENTER_BREAK or event == EVT_ROT_BREAK then -- toggle editing/selecting current field
     if fields[current][5] ~= nil then
       edit = not edit
@@ -101,10 +165,16 @@ local function runFieldsPage(event)
       end
     end
   elseif edit then
-    if event == EVT_PLUS_FIRST or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT then
+    if event == EVT_PLUS_FIRST or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_VK_INC or event == EVT_VK_INC_LARGE then
       addField(1)
-    elseif event == EVT_MINUS_FIRST or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
+    elseif event == EVT_MINUS_FIRST or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_VK_DEC or event == EVT_VK_DEC_LARGE then
       addField(-1)
+    elseif event == EVT_VK_MIN then
+      setMinMin(true)
+    elseif event == EVT_VK_MAX then
+      setMinMin(false)
+    elseif event == EVT_VK_DEFAULT then
+      setMinMin(true)
     end
   else
     if event == EVT_MINUS_FIRST or event == EVT_ROT_RIGHT then
@@ -116,7 +186,6 @@ local function runFieldsPage(event)
   redrawFieldsPage(event)
   return 0
 end
-
 -- set visibility flags starting with SECOND field of fields
 local function setFieldsVisible(...)
   local arg={...}
@@ -135,263 +204,202 @@ end
 
 
 local MotorFields = {
-  {50, 50, COMBO, 1, 1, { "No", "Yes"} },
-  {50, 127, COMBO, 1, 2, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } },
+  {FIELD_LEFT, 50, COMBO, 1, 1, { "No", "Yes"}, 100},
+  {FIELD_LEFT, 107, COMBO, 1, 2, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100},
 }
 
+local function drawNavButtons()
+  lcd.drawBitmap(BackgroundImg, 0, 0)
+  lcd.drawBitmap(ImgNext, NAV_BUTTON_NEXT_LEFT, NAV_BUTTON_TOP)
+  lcd.drawBitmap(ImgPrev, 0, NAV_BUTTON_TOP)
+end
 local ImgEngine
 
-local function runMotorConfig(event)
+local function runMotorConfig(event, x, y)
   lcd.clear()
   if ImgEngine == nil then
    ImgEngine = Bitmap.open("img/prop.png")
   end
-  lcd.drawBitmap(BackgroundImg, 0, 0)
-  lcd.drawBitmap(ImgPageDn, 455, 95)
-  lcd.drawBitmap(ImgEngine, 310, 50)
+  drawNavButtons()
+  lcd.drawBitmap(ImgEngine, 80, 180)
   lcd.setColor(CUSTOM_COLOR, lcd.RGB(255, 255, 255))
   fields = MotorFields
-  lcd.drawText(40, 20, "Does your model have a motor ?", TEXT_COLOR)
-  lcd.drawFilledRectangle(40, 45, 200, 30, CUSTOM_COLOR)
+  lcd.drawText(TEXT_LEFT, 20, "Does your model have a motor ?", TEXT_COLOR)
+  --lcd.drawFilledRectangle(TEXT_LEFT, 45, 200, FIELD_HEIGHT, CUSTOM_COLOR)
   fields[2][4]=0
   if fields[1][5] == 1 then
-    lcd.drawText(40, 100, "What channel is it on ?", TEXT_COLOR)
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
+    lcd.drawText(TEXT_LEFT, 80, "What channel is it on ?", TEXT_COLOR)
+    --lcd.drawFilledRectangle(TEXT_LEFT, 122, 100, FIELD_HEIGHT, CUSTOM_COLOR)
     fields[2][4]=1
   end
-  local result = runFieldsPage(event)
+  local result = runFieldsPage(event, x, y)
   return result
 end
 
 -- fields format : {[1]x, [2]y, [3]COMBO, [4]visible, [5]default, [6]{values}}
 -- fields format : {[1]x, [2]y, [3]VALUE, [4]visible, [5]default, [6]min, [7]max}
+-- fields format : {[1]x, [2]y, [3]TEXT,  [4]visible, [5]text}
 local AilFields = {
-  {50, 50, COMBO, 1, 2, { "None", "One, or two with Y cable", "Two"} },
-  {50, 127, COMBO, 1, 0, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } }, -- Ail1 chan
-  {50, 167, COMBO, 1, 4, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } }, -- Ail2 chan
+  {FIELD_LEFT, 50, COMBO, 1, 2, { "None", "One, or two with Y cable", "Two"}, 280 },
+  {FIELD_LEFT, 107, COMBO, 1, 0, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100}, -- Ail1 chan
+  {FIELD_LEFT, 147, COMBO, 1, 4, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100 }, -- Ail2 chan
 }
 
 local ImgAilR
 local ImgAilL
 
-local function runAilConfig(event)
+local function runAilConfig(event, x, y)
   lcd.clear()
   if ImgAilR == nil then
     ImgAilR = Bitmap.open("img/rail.png")
     ImgAilL = Bitmap.open("img/lail.png")
   end
-  lcd.drawBitmap(BackgroundImg, 0, 0)
-  lcd.drawBitmap(ImgPageUp, 0, 95)
-  lcd.drawBitmap(ImgPageDn, 455, 95)
-  lcd.drawBitmap(ImgPlane, 252, 100)
+  drawNavButtons()
+  lcd.drawBitmap(ImgPlane, 52, 200)
   fields = AilFields
   if fields[1][5] == 1 then
-    lcd.drawBitmap(ImgAilR, 274, 123)
-    lcd.drawBitmap(ImgAilL, 395, 235)
-    drawMark(308, 115, "A")
-    drawMark(422, 220, "A")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
+    lcd.drawBitmap(ImgAilR, 44, 253)
+    lcd.drawBitmap(ImgAilL, 165, 365)
+    drawMark(108, 215, "A")
+    drawMark(222, 320, "A")
+    --lcd.drawFilledRectangle(TEXT_LEFT, 122, 100, FIELD_HEIGHT, CUSTOM_COLOR)
+    drawMark(132, 104, "A")
     setFieldsVisible(1, 0)
   elseif fields[1][5] == 2 then
-    lcd.drawBitmap(ImgAilR, 274, 123)
-    lcd.drawBitmap(ImgAilL, 395, 235)
-    drawMark(308, 115, "A")
-    drawMark(422, 220, "B")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
-    lcd.drawFilledRectangle(40, 162, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 164, "B")
+    lcd.drawBitmap(ImgAilR, 74, 223)
+    lcd.drawBitmap(ImgAilL, 195, 335)
+    drawMark(108, 215, "A")
+    drawMark(222, 320, "B")
+    --lcd.drawFilledRectangle(TEXT_LEFT, 122, 100, FIELD_HEIGHT, CUSTOM_COLOR)
+    drawMark(132, 104, "A")
+    --lcd.drawFilledRectangle(TEXT_LEFT, 162, 100, FIELD_HEIGHT, CUSTOM_COLOR)
+    drawMark(132, 144, "B")
     setFieldsVisible(1, 1)
   else
     setFieldsVisible(0, 0)
   end
-  lcd.drawText(40, 20, "Number of ailerons on your model ?", TEXT_COLOR)
-  lcd.drawFilledRectangle(40, 45, 400, 30, CUSTOM_COLOR)
-  local result = runFieldsPage(event)
+  lcd.drawText(TEXT_LEFT, 20, "Number of ailerons on your model ?", TEXT_COLOR)
+  --lcd.drawFilledRectangle(TEXT_LEFT, 45, 300, FIELD_HEIGHT, CUSTOM_COLOR)
+  local result = runFieldsPage(event, x, y)
   return result
 end
 
 local FlapsFields = {
-  {50, 50, COMBO, 1, 0, { "No", "Yes, on one channel", "Yes, on two channels"} },
-  {50, 127, COMBO, 1, 6, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } },
-  {50, 167, COMBO, 1, 7, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } },
+  {FIELD_LEFT, 50, COMBO, 1, 0, { "No", "Yes, on one channel", "Yes, on two channels"}, 280 },
+  {FIELD_LEFT, 107, COMBO, 1, 6, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100 },
+  {FIELD_LEFT, 147, COMBO, 1, 7, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100 },
 }
 
 local ImgFlp
 
-local function runFlapsConfig(event)
+local function runFlapsConfig(event, x, y)
   lcd.clear()
   if ImgFlp == nil then
     ImgFlp = Bitmap.open("img/flap.png")
   end
-  lcd.drawBitmap(BackgroundImg, 0, 0)
-  lcd.drawBitmap(ImgPageUp, 0, 95)
-  lcd.drawBitmap(ImgPageDn, 455, 95)
-  lcd.drawBitmap(ImgPlane, 252, 100)
+  drawNavButtons()
+  lcd.drawBitmap(ImgPlane, 52, 200)
   fields = FlapsFields
   if fields[1][5] == 1 then
-    lcd.drawBitmap(ImgFlp, 315, 160)
-    lcd.drawBitmap(ImgFlp, 358, 202)
-    drawMark(332, 132, "A")
-    drawMark(412, 215, "A")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
+    lcd.drawBitmap(ImgFlp, 115, 260)
+    lcd.drawBitmap(ImgFlp, 158, 302)
+    drawMark(132, 232, "A")
+    drawMark(212, 315, "A")
+    --lcd.drawFilledRectangle(TEXT_LEFT, 122, 100, FIELD_HEIGHT, CUSTOM_COLOR)
+    drawMark(152, 104, "A")
     setFieldsVisible(1, 0)
   elseif fields[1][5] == 2 then
-    lcd.drawBitmap(ImgFlp, 315, 160)
-    lcd.drawBitmap(ImgFlp, 358, 202)
-    drawMark(332, 132, "A")
-    drawMark(412, 215, "B")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
-    lcd.drawFilledRectangle(40, 162, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 164, "B")
+    lcd.drawBitmap(ImgFlp, 115, 260)
+    lcd.drawBitmap(ImgFlp, 158, 302)
+    drawMark(132, 232, "A")
+    drawMark(212, 315, "B")
+    --lcd.drawFilledRectangle(TEXT_LEFT, 122, 100, FIELD_HEIGHT, CUSTOM_COLOR)
+    drawMark(152, 104, "A")
+    --lcd.drawFilledRectangle(TEXT_LEFT, 162, 100, FIELD_HEIGHT, CUSTOM_COLOR)
+    drawMark(152, 144, "B")
     setFieldsVisible(1, 1)
   else
     setFieldsVisible(0, 0)
   end
-  lcd.drawText(40, 20, "Does your model have flaps ?", TEXT_COLOR)
-  lcd.drawFilledRectangle(40, 45, 400, 30, CUSTOM_COLOR)
-  local result = runFieldsPage(event)
+  lcd.drawText(TEXT_LEFT, 20, "Does your model have flaps ?", TEXT_COLOR)
+  --lcd.drawFilledRectangle(TEXT_LEFT, 45, 300, FIELD_HEIGHT, CUSTOM_COLOR)
+  local result = runFieldsPage(event, x, y)
   return result
 end
 
 local TailFields = {
-  {50, 50, COMBO, 1, 1, { "1 channel for Elevator, no Rudder", "One chan for Elevator, one for Rudder", "Two chans for Elevator, one for Rudder", "V Tail"} },
-  {50, 127, COMBO, 1, 1, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } }, --ele
-  {50, 167, COMBO, 1, 3, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } }, --rud
-  {50, 207, COMBO, 0, 5, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" } }, --ele2
+  {FIELD_LEFT, 50, COMBO, 1, 1, { "1 CH Elevator, no Rudder", "1 CH Elevator, 1 CH Rudder", "2 CHs for Elevator, 1 CH Rudder", "V Tail"}, 280 },
+  {FIELD_LEFT, 107, COMBO, 1, 1, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100 }, --ele
+  {FIELD_LEFT, 147, COMBO, 1, 3, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100 }, --rud
+  {FIELD_LEFT, 187, COMBO, 0, 5, { "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8" }, 100 }, --ele2
 }
 
 local ImgTail
 local ImgVTail
 local ImgTailRud
 
-local function runTailConfig(event)
+local function runTailConfig(event, x, y)
   lcd.clear()
   if ImgTail == nil then
     ImgTail = Bitmap.open("img/tail.png")
     ImgVTail = Bitmap.open("img/vtail.png")
     ImgTailRud = Bitmap.open("img/tailrud.png")
   end
-  lcd.drawBitmap(BackgroundImg, 0, 0)
-  lcd.drawBitmap(ImgPageUp, 0, 95)
-  lcd.drawBitmap(ImgPageDn, 455, 95)
+  drawNavButtons()
   fields = TailFields
   if fields[1][5] == 0 then
-    lcd.drawBitmap(ImgTail, 252, 100)
-    drawMark(360, 125, "A")
-    drawMark(390, 155, "A")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
+    lcd.drawBitmap(ImgTail, 52, 200)
+    drawMark(220, 250, "A")
+    drawMark(180, 220, "A")
+    drawMark(152, 104, "A")
     setFieldsVisible(1, 0, 0)
   end
   if fields[1][5] == 1 then
-    lcd.drawBitmap(ImgTail, 252, 100)
-    lcd.drawBitmap(ImgTailRud, 340, 100)
-    drawMark(415, 150, "A")
-    drawMark(380, 120, "A")
-    drawMark(390, 185, "B")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
-    lcd.drawFilledRectangle(40, 162, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 164, "B")
+    lcd.drawBitmap(ImgTail, 52, 200)
+    lcd.drawBitmap(ImgTailRud, 140, 200)
+    drawMark(220, 250, "A")
+    drawMark(180, 220, "A")
+    drawMark(190, 285, "B")
+    drawMark(152, 104, "A")
+    drawMark(152, 144, "B")
     setFieldsVisible(1, 1, 0)
   end
   if fields[1][5] == 2 then
-    lcd.drawBitmap(ImgTail, 252, 100)
-    lcd.drawBitmap(ImgTailRud, 340, 100)
-    drawMark(415, 150, "A")
-    drawMark(380, 120, "C")
-    drawMark(390, 185, "B")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
-    lcd.drawFilledRectangle(40, 162, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 164, "B")
-    lcd.drawFilledRectangle(40, 202, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 204, "C")
+    lcd.drawBitmap(ImgTail, 52, 200)
+    lcd.drawBitmap(ImgTailRud, 140, 200)
+    drawMark(220, 250, "A")
+    drawMark(180, 220, "C")
+    drawMark(190, 285, "B")
+    drawMark(152, 104, "A")
+    drawMark(152, 144, "B")
+    drawMark(152, 184, "C")
     setFieldsVisible(1, 1, 1)
   end
   if fields[1][5] == 3 then
-    lcd.drawBitmap(ImgVTail, 252, 100)
-    drawMark(315, 110, "A")
-    drawMark(382, 120, "B")
-    lcd.drawFilledRectangle(40, 122, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 124, "A")
-    lcd.drawFilledRectangle(40, 162, 100, 30, CUSTOM_COLOR)
-    drawMark(152, 164, "B")
+    lcd.drawBitmap(ImgVTail, 52, 200)
+    drawMark(115, 210, "A")
+    drawMark(182, 220, "B")
+    drawMark(152, 104, "A")
+    drawMark(152, 144, "B")
     setFieldsVisible(1, 1, 0)
   end
-  lcd.drawText(40, 20, "Pick the tail config of your model", TEXT_COLOR)
-  lcd.drawFilledRectangle(40, 45, 400, 30, CUSTOM_COLOR)
-  local result = runFieldsPage(event)
+  lcd.drawText(TEXT_LEFT, 20, "Pick the tail config of your model", TEXT_COLOR)
+  --lcd.drawFilledRectangle(TEXT_LEFT, 45, 300, FIELD_HEIGHT, CUSTOM_COLOR)
+  local result = runFieldsPage(event, x, y)
   return result
 end
 
 local lineIndex
 local function drawNextLine(text, text2)
-  lcd.drawText(40, lineIndex, text, TEXT_COLOR)
-  lcd.drawText(250, lineIndex, text2 + 1, TEXT_COLOR)
+  lcd.drawText(TEXT_LEFT, lineIndex, text, TEXT_COLOR)
+  lcd.drawText(TEXT_LEFT + 170, lineIndex, text2 + 1, TEXT_COLOR)
   lineIndex = lineIndex + 20
 end
-
-local ConfigSummaryFields = {
-  {110, 250, COMBO, 1, 0, { "No, I need to change something", "Yes, all is well, create the plane !"} },
-}
-
-local ImgSummary
-
-local function runConfigSummary(event)
-  lcd.clear()
-  if ImgSummary == nil then
-    ImgSummary = Bitmap.open("img/summary.png")
-  end
-  fields = ConfigSummaryFields
-  lcd.drawBitmap(BackgroundImg, 0, 0)
-  lcd.drawBitmap(ImgPageUp, 0, 95)
-  lcd.drawBitmap(ImgSummary, 300, 60)
-  lineIndex = 40
-  -- motors
-  if(MotorFields[1][5] == 1) then
-    drawNextLine("Motor chan :", MotorFields[2][5])
-  elseif (MotorFields[2][5] == 2) then
-    drawNextLine("Motor 1 chan :", MotorFields[2][5])
-    drawNextLine("Motor 2 chan :", MotorFields[3][5])
-  end
-  -- ail
-  if(AilFields[1][5] == 1) then
-    drawNextLine("Aileron chan :",AilFields[2][5])
-  elseif (AilFields[1][5] == 2) then
-    drawNextLine("Aileron 1 chan :",AilFields[2][5])
-    drawNextLine("Aileron 2 chan :",AilFields[3][5])
-  end
-  -- flaps
-  if(FlapsFields[1][5] == 1) then
-    drawNextLine("Flaps chan :",FlapsFields[2][5])
-  elseif (FlapsFields[1][5] == 2) then
-    drawNextLine("Flaps 1 chan :",FlapsFields[2][5])
-    drawNextLine("Flaps 2 chan :",FlapsFields[3][5])
-  end
-  -- tail
-  if(TailFields[1][5] == 0) then
-    drawNextLine("Elevator chan :",TailFields[2][5])
-  elseif (TailFields[1][5] == 1) then
-    drawNextLine("Elevator chan :",TailFields[2][5])
-    drawNextLine("Rudder chan :",TailFields[3][5])
-  elseif (TailFields[1][5] == 2) then
-    drawNextLine("Elevator 1 chan :",TailFields[2][5])
-    drawNextLine("Rudder chan :",TailFields[3][5])
-    drawNextLine("Elevator 2 chan :",TailFields[4][5])
-  elseif (TailFields[1][5] == 3) then
-    drawNextLine("V-Tail elevator :", TailFields[2][5])
-    drawNextLine("V-Tail rudder :", TailFields[3][5])
-  end
-  local result = runFieldsPage(event)
-  if(fields[1][5] == 1 and edit == false) then
-    selectPage(1)
-  end
-  return result
+local function selectFirstPage()
+  page = 1
+  edit = false
+  current = 1
+  return 0
 end
 
 local function addMix(channel, input, name, weight, index)
@@ -405,10 +413,7 @@ local function addMix(channel, input, name, weight, index)
   model.insertMix(channel, index, mix)
 end
 
-local function createModel(event)
-  lcd.clear()
-  lcd.drawBitmap(BackgroundImg, 0, 0)
-  lcd.drawBitmap(ImgSummary, 300, 60)
+local function saveModel()
   model.defaultInputs()
   model.deleteMixes()
   -- motor
@@ -448,9 +453,81 @@ local function createModel(event)
     addMix(TailFields[3][5], MIXSRC_FIRST_INPUT+defaultChannel(1), "V-EleR", 50)
     addMix(TailFields[3][5], MIXSRC_FIRST_INPUT+defaultChannel(0), "V-RudR", -50, 1)
   end
-  lcd.drawText(70, 90, "Model successfully created !", TEXT_COLOR)
-  lcd.drawText(100, 130, "Press RTN to exit", TEXT_COLOR)
+  selectPage(1)
+  return 0
+end
+local ConfigSummaryFields = {
+  {FIELD_LEFT, 395, BUTTON, 1, "No, I need to change something", 4, 300, selectFirstPage },
+  {FIELD_LEFT, 435, BUTTON, 1,  "Yes, all is well, create the plane !", 4, 300, saveModel },
+}
+
+local ImgSummary
+
+local function runConfigSummary(event, x, y)
+  lcd.clear()
+  if ImgSummary == nil then
+    ImgSummary = Bitmap.open("img/summary.png")
+  end
+  fields = ConfigSummaryFields
+  lcd.drawBitmap(BackgroundImg, 0, 0)
+  lcd.drawBitmap(ImgPrev, 0, NAV_BUTTON_TOP)
+  lcd.drawBitmap(ImgSummary, 160, 200)
+  lineIndex = 40
+  -- motors
+  if(MotorFields[1][5] == 1) then
+    drawNextLine("Motor channel:", MotorFields[2][5])
+  elseif (MotorFields[2][5] == 2) then
+    drawNextLine("Motor 1 channel:", MotorFields[2][5])
+    drawNextLine("Motor 2 channel:", MotorFields[3][5])
+  end
+  -- ail
+  if(AilFields[1][5] == 1) then
+    drawNextLine("Aileron channel:",AilFields[2][5])
+  elseif (AilFields[1][5] == 2) then
+    drawNextLine("Aileron 1 channel:",AilFields[2][5])
+    drawNextLine("Aileron 2 channel:",AilFields[3][5])
+  end
+  -- flaps
+  if(FlapsFields[1][5] == 1) then
+    drawNextLine("Flaps channel:",FlapsFields[2][5])
+  elseif (FlapsFields[1][5] == 2) then
+    drawNextLine("Flaps 1 channel:",FlapsFields[2][5])
+    drawNextLine("Flaps 2 channel:",FlapsFields[3][5])
+  end
+  -- tail
+  if(TailFields[1][5] == 0) then
+    drawNextLine("Elevator channel:",TailFields[2][5])
+  elseif (TailFields[1][5] == 1) then
+    drawNextLine("Elevator channel:",TailFields[2][5])
+    drawNextLine("Rudder channel:",TailFields[3][5])
+  elseif (TailFields[1][5] == 2) then
+    drawNextLine("Elevator 1 channel:",TailFields[2][5])
+    drawNextLine("Rudder channel:",TailFields[3][5])
+    drawNextLine("Elevator 2 channel:",TailFields[4][5])
+  elseif (TailFields[1][5] == 3) then
+    drawNextLine("V-Tail elevator:", TailFields[2][5])
+    drawNextLine("V-Tail rudder:", TailFields[3][5])
+  end
+  local result = runFieldsPage(event, x, y)
+  return result
+end
+
+local function closeScript()
   return 2
+end
+
+local DoneFields = {
+  {FIELD_LEFT, 400, BUTTON, 1, "Press to exit", 4, 300, closeScript }
+}
+
+local function createModel(event, x, y)
+  fields = DoneFields
+  lcd.clear()
+  lcd.drawBitmap(BackgroundImg, 0, 0)
+  lcd.drawBitmap(ImgSummary, 120, 60)
+  lcd.drawText(TEXT_LEFT, 245, "Model successfully created !", TEXT_COLOR)
+  local result = runFieldsPage(event, x, y)
+  return result
 end
 
 -- Init
@@ -467,18 +544,21 @@ local function init()
 end
 
 -- Main
-local function run(event)
+local function run(event, x, y)
   if event == nil then
     error("Cannot be run as a model script!")
     return 2
-  elseif (event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST) and page < #pages-1 then
+  elseif (event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST or event == EVT_SLIDE_LEFT or (event == EVT_TOUCH_UP and x >= NAV_BUTTON_NEXT_LEFT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page < #pages-1 then
     selectPage(1)
-  elseif (event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST) and page > 1 then
+  elseif (event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST or event == EVT_SLIDE_RIGHT or (event == EVT_TOUCH_UP and x <= NAV_BUTTON_PREV_RIGHT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page > 1 then
     killEvents(event);
     selectPage(-1)
+  elseif (event == EVT_SLIDE_RIGHT) and page == 1 then
+   killEvents(event);
+   return 2
   end
 
-  local result = pages[page](event)
+  local result = pages[page](event, x, y)
   return result
 end
 
