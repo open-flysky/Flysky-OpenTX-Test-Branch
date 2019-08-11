@@ -19,8 +19,8 @@ local COMBO = 1
 local BUTTON = 2
 local NAV_BUTTON_TOP = 235
 local NAV_BUTTON_BOTTOM = 300
-local NAV_BUTTON_NEXT_LEFT = 295
-local NAV_BUTTON_PREV_RIGHT = 25
+local NAV_BUTTON_NEXT_LEFT = 285
+local NAV_BUTTON_PREV_RIGHT = 35
 local FIELD_HEIGHT = 30
 local TEXT_LEFT = 10
 local FIELD_LEFT = 20
@@ -137,15 +137,11 @@ local function getField(x, y)
 end
 -- Main
 local function runFieldsPage(event, x, y)
-  if event ~= 0 then
-    trace(event, x, y)
-  end
   if event == EVT_EXIT_BREAK then -- exit script
     return 2
   elseif event == EVT_TOUCH_UP then
     local index = getField(x,y)
     if (index ~= -1) then
-      trace(event, 666, index)
       if fields[index][3] ~= BUTTON then
         edit = true
         current = index
