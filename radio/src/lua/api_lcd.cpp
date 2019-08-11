@@ -587,7 +587,7 @@ static int luaLcdDrawRectangle(lua_State *L)
   int w = luaL_checkinteger(L, 3);
   int h = luaL_checkinteger(L, 4);
   unsigned int flags = luaL_optunsigned(L, 5, 0);
-#if defined(PCBHORUS)
+#if defined(PCBHORUS) || defined(PCBNV14)
   unsigned int t = luaL_optunsigned(L, 6, 1);
   lcdDrawRect(x, y, w, h, t, 0xff, flags);
 #else
