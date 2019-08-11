@@ -418,18 +418,7 @@
 #define TRAINER_IN_CCER                 TIM_CCER_CC1E
 
 
-/*
- * IN DMA Mode only first pulse is sent
- * probably we need to use stream 6 channel 2
- * */
-/*
-#define TRAINER_DMA                   DMA1
-#define TRAINER_DMA_CHANNEL           DMA_Channel_2
-#define TRAINER_DMA_STREAM            DMA1_Stream3
-#define TRAINER_DMA_IRQn              DMA1_Stream3_IRQn
-#define TRAINER_DMA_IRQHandler        DMA1_Stream3_IRQHandler
-#define TRAINER_DMA_FLAG_TC           DMA_IT_TCIF3
-*/
+
 /*
 #define TRAINER_MODULE_SBUS_GPIO             EXTMODULE_USART_GPIO
 #define TRAINER_MODULE_SBUS_GPIO_PIN         EXTMODULE_RX_GPIO_PIN
