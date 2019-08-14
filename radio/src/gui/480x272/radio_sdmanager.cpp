@@ -123,7 +123,6 @@ void RadioSdManagerPage::build(Window * window)
 #if defined(LUA)
           else if (isExtensionMatching(ext, SCRIPTS_EXT)) {
             menu->addLine(STR_EXECUTE_FILE, [=]() {
-              mainWindow.resetDisplayRect();
               luaExec(getFullPath(name));
             });
           }
