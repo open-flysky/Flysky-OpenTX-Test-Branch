@@ -212,7 +212,7 @@ public:
 
   virtual void paint(BitmapBuffer * dc) override {
     if(background!=nullptr) dc->drawBitmap(0, 0, background);
-    dc->drawRect(0,0, 85, 130, 2, SOLID, hasFocus() ? SCROLLBOX_COLOR : CURVE_AXIS_COLOR);
+    dc->drawRect(0,0, WIZARD_ICON_W, WIZARD_ICON_H, 2, SOLID, hasFocus() ? SCROLLBOX_COLOR : CURVE_AXIS_COLOR);
   }
 protected:
   BitmapBuffer * background;
@@ -248,17 +248,16 @@ class WizardsList: public Window {
           column = index % itemsPerRow;
           row = index / itemsPerRow;
           pos_x = WIZARD_ICON_SPACE * (column + 1) + WIZARD_ICON_W * column;
-          pos_y = WIZARD_ICON_SPACE + (row * 140);
+          pos_y = WIZARD_ICON_SPACE + (row * (WIZARD_ICON_H + WIZARD_ICON_SPACE));
           index++;
           new WizardButton(this, { pos_x, pos_y, WIZARD_ICON_W, WIZARD_ICON_H }, wizpath);
         }
       }
     }
-    row *= 140;
-    row += 10;
+    row = ((row + 1) * (WIZARD_ICON_H + WIZARD_ICON_SPACE)) + WIZARD_ICON_SPACE;
     this->adjustInnerHeight();
     this->setHeight(row);
-    this->setTop((LCD_H - row) / 2);
+    this->setTop((window->height() - row) / 2);
   }
 
 
