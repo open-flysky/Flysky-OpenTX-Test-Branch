@@ -174,7 +174,7 @@ void boardInit()
   __enable_irq();
 
 #if defined(DEBUG)
-   auxSerialInit(0, 0); // default serial mode (None if DEBUG nm  ot defined)
+   auxSerialInit(0, 0); // default serial mode (None if DEBUG not defined)
 #endif
   TRACE("\nNV14 board started :)");
   delay_ms(10);
@@ -264,8 +264,10 @@ void checkTrainerSettings()
       case TRAINER_MODE_SLAVE:
         stop_trainer_ppm();
         break;
-      case TRAINER_MODE_MASTER_BATTERY_COMPARTMENT:
-        auxSerialStop();
+      case TRAINER_MODE_MASTER_CPPM_EXTERNAL_MODULE:
+        break;
+      case TRAINER_MODE_MASTER_SBUS_EXTERNAL_MODULE:
+        break;
     }
 
     currentTrainerMode = requiredTrainerMode;
@@ -273,15 +275,12 @@ void checkTrainerSettings()
       case TRAINER_MODE_SLAVE:
         init_trainer_ppm();
         break;
-      case TRAINER_MODE_MASTER_BATTERY_COMPARTMENT:
-        if (g_eeGeneral.auxSerialMode == UART_MODE_SBUS_TRAINER) {
-          auxSerialSbusInit();
-          break;
-        }
-        // no break
-      default:
-        // master is default
+      case TRAINER_MODE_MASTER_TRAINER_JACK:
         init_trainer_capture();
+        break;
+      case TRAINER_MODE_MASTER_CPPM_EXTERNAL_MODULE:
+        break;
+      case TRAINER_MODE_MASTER_SBUS_EXTERNAL_MODULE:
         break;
     }
   }

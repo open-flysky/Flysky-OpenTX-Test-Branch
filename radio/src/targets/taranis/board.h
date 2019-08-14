@@ -163,8 +163,8 @@ uint32_t sdMounted(void);
 
 // Flash Write driver
 #define FLASH_PAGESIZE 256
-void unlockFlash(void);
-void lockFlash(void);
+void flashUnlock(void);
+void flashLock(void);
 void flashWrite(uint32_t * address, uint32_t * buffer);
 uint32_t isFirmwareStart(const uint8_t * buffer);
 uint32_t isBootloaderStart(const uint8_t * buffer);

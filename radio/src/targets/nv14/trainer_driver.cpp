@@ -46,7 +46,6 @@ void init_trainer_ppm()
   TRAINER_TIMER->CCMR1 = TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2PE; // PWM mode 1
   TRAINER_TIMER->CR1 |= TIM_CR1_CEN;
 
-  setupPulsesPPMTrainer();
   trainerSendNextFrame();
 
   NVIC_EnableIRQ(TRAINER_TIMER_IRQn);
@@ -91,11 +90,14 @@ void stop_trainer_capture()
   TRAINER_TIMER->CR1 &= ~TIM_CR1_CEN; // Stop counter
   TRAINER_TIMER->DIER = 0; // Stop Interrupt
 }
+short unsigned int* lastPulse = 0;
 
 void trainerSendNextFrame()
 {
+  setupPulsesPPMTrainer();
   TRAINER_TIMER->CCR2 = GET_PPM_DELAY(TRAINER_MODULE) * 2;
   TRAINER_TIMER->CCER = TIM_CCER_CC2E | (GET_PPM_POLARITY(TRAINER_MODULE) ? 0 : TIM_CCER_CC2P);
+  lastPulse = trainerPulsesData.ppm.ptr;
   TRAINER_TIMER->CCR3 = *(trainerPulsesData.ppm.ptr - 1) - 4000; // 2mS in advance
 
   trainerPulsesData.ppm.ptr = trainerPulsesData.ppm.pulses;
@@ -125,14 +127,13 @@ extern "C" void TRAINER_TIMER_IRQHandler()
     // compare interrupt
     TRAINER_TIMER->DIER &= ~TIM_DIER_CC3IE; // stop this interrupt
     TRAINER_TIMER->SR &= ~TIM_SR_CC3IF; // Clear flag
-    setupPulsesPPMTrainer();
     trainerSendNextFrame();
   }
 
   if ((TRAINER_TIMER->DIER & TIM_DIER_UIE) && (TRAINER_TIMER->SR & TIM_SR_UIF)) {
     TRAINER_TIMER->SR &= ~TIM_SR_UIF; // Clear flag
     TRAINER_TIMER->ARR = *trainerPulsesData.ppm.ptr++;
-    if (*trainerPulsesData.ppm.ptr == 0) {
+    if (trainerPulsesData.ppm.ptr == lastPulse) {
       TRAINER_TIMER->SR &= ~TIM_SR_CC3IF; // Clear flag
       TRAINER_TIMER->DIER |= TIM_DIER_CC3IE; // Enable this interrupt
     }

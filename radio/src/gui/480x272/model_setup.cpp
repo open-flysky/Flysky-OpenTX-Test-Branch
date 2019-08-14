@@ -244,8 +244,8 @@ class ModuleWindow : public Window {
           update();
           SET_DIRTY();
           moduleChoice->setFocus();
-
         });
+        moduleChoice->setAvailableHandler([=](int8_t moduleType) { return isTrainerModeAvailable(moduleType);});
       }
       else {
         moduleChoice = new Choice(this, grid.getFieldSlot(),
@@ -277,8 +277,9 @@ class ModuleWindow : public Window {
         
 #if defined (PCBNV14)
         grid.nextLine();
-		    new StaticText(this, grid.getLabelSlot(), STR_FLYSKY_TELEMETRY);
-		    new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.rssiAlarms.flysky_telemetry));					   
+        new StaticText(this, grid.getLabelSlot(), STR_FLYSKY_TELEMETRY);
+        new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.rssiAlarms.flysky_telemetry));
+        grid.nextLine();
 #endif        
       }
 

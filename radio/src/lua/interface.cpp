@@ -26,6 +26,7 @@
 #include "bin_allocator.h"
 #include "lua_api.h"
 #include "sdcard.h"
+#include "mainwindow.h"
 
 extern "C" {
   #include <lundump.h>
@@ -796,6 +797,7 @@ void luaError(lua_State * L, uint8_t error, bool acknowledge)
 
 void luaExec(const char * filename)
 {
+  mainWindow.resetDisplayRect();
   luaInit();
 
   if (luaState != INTERPRETER_PANIC) {

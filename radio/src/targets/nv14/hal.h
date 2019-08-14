@@ -174,6 +174,9 @@
 #define AUX_SERIAL_RX_INVERT_GPIO       GPIOI
 #define AUX_SERIAL_RX_INVERT_GPIO_PIN   GPIO_Pin_15 // PI.15
 
+//used in BOOTLOADER
+#define SERIAL_RCC_AHB1Periph 0
+#define SERIAL_RCC_APB1Periph 0
 // Telemetry
 #define TELEMETRY_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOJ | RCC_AHB1Periph_DMA1)
 #define TELEMETRY_RCC_APB1Periph        RCC_APB1Periph_USART2
@@ -233,6 +236,7 @@
 // TODO TIM3, TIM8, TIM14, review the channel in backlight_driver.cpp according to the chosen timer
 #define BACKLIGHT_RCC_AHB1Periph        RCC_AHB1Periph_GPIOA
 #define BACKLIGHT_RCC_APB1Periph        RCC_APB1Periph_TIM2
+#define BACKLIGHT_RCC_APB2Periph        0
 #define BACKLIGHT_GPIO                  GPIOA
 #define BACKLIGHT_GPIO_PIN              GPIO_Pin_15
 #define BACKLIGHT_GPIO_PinSource        GPIO_PinSource15
@@ -414,18 +418,7 @@
 #define TRAINER_IN_CCER                 TIM_CCER_CC1E
 
 
-/*
- * IN DMA Mode only first pulse is sent
- * probably we need to use stream 6 channel 2
- * */
-/*
-#define TRAINER_DMA                   DMA1
-#define TRAINER_DMA_CHANNEL           DMA_Channel_2
-#define TRAINER_DMA_STREAM            DMA1_Stream3
-#define TRAINER_DMA_IRQn              DMA1_Stream3_IRQn
-#define TRAINER_DMA_IRQHandler        DMA1_Stream3_IRQHandler
-#define TRAINER_DMA_FLAG_TC           DMA_IT_TCIF3
-*/
+
 /*
 #define TRAINER_MODULE_SBUS_GPIO             EXTMODULE_USART_GPIO
 #define TRAINER_MODULE_SBUS_GPIO_PIN         EXTMODULE_RX_GPIO_PIN
