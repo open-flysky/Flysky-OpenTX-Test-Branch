@@ -216,7 +216,8 @@ local function runMotorConfig(event, x, y)
   if ImgEngine == nil then
    ImgEngine = Bitmap.open("img/prop.png")
   end
-  drawNavButtons()
+  lcd.drawBitmap(BackgroundImg, 0, 0)
+  lcd.drawBitmap(ImgNext, NAV_BUTTON_NEXT_LEFT, NAV_BUTTON_TOP)
   lcd.drawBitmap(ImgEngine, 80, 180)
   lcd.setColor(CUSTOM_COLOR, lcd.RGB(255, 255, 255))
   fields = MotorFields
@@ -549,9 +550,6 @@ local function run(event, x, y)
   elseif (event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST or event == EVT_SLIDE_RIGHT or (event == EVT_TOUCH_UP and x <= NAV_BUTTON_PREV_RIGHT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page > 1 then
     killEvents(event);
     selectPage(-1)
-  elseif (event == EVT_SLIDE_RIGHT) and page == 1 then
-   killEvents(event);
-   return 2
   end
 
   local result = pages[page](event, x, y)
