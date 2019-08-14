@@ -573,6 +573,15 @@ bool isTrainerModeAvailable(int mode)
   else
     return true;
 }
+#elif defined(PCBNV14)
+bool isTrainerModeAvailable(int mode)
+{
+  //for now only trainer port
+  if (/*IS_EXTERNAL_MODULE_ENABLED() && */(mode == TRAINER_MODE_MASTER_SBUS_EXTERNAL_MODULE || mode == TRAINER_MODE_MASTER_CPPM_EXTERNAL_MODULE))
+    return false;
+  else
+    return true;
+}
 #elif defined(PCBX7)
 bool isTrainerModeAvailable(int mode)
 {
@@ -586,6 +595,7 @@ bool isTrainerModeAvailable(int mode)
     return true;
 }
 #endif
+
 
 bool modelHasNotes()
 {
