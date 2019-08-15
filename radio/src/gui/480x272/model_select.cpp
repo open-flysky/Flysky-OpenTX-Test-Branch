@@ -154,7 +154,6 @@ class ModelselectButton: public Button {
     ModelCell * modelCell;
 };
 
-#define LUA
 #if defined(LUA)
 
 #define MAX_WIZARD_NAME_LEN            (sizeof(WIZARD_PATH)+20)
