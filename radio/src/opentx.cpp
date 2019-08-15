@@ -276,9 +276,11 @@ void generalDefault()
 #if defined(DEFAULT_MODE)
   g_eeGeneral.stickMode = DEFAULT_MODE-1;
 #endif
-  g_eeGeneral.stickMode = 1;
+  g_eeGeneral.stickMode = 0;
 #if defined(PCBTARANIS)
   g_eeGeneral.templateSetup = 17; /* TAER */
+#else defined( PCBNV14 )
+  g_eeGeneral.templateSetup = 21; /* AETR */
 #endif
 
 #if !defined(CPUM64)
