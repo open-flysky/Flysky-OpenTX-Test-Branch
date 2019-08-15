@@ -498,10 +498,10 @@ getvalue_t getValue(mixsrc_t i)
 #endif
   else return 0;
 }
-#define N_OFFSET           ((float)(-30.0))
-#define P_OFFSET           ((float)(30.0))
-#define P_PROPORTION       ((float)(3.0/10.0))    //must be<1
-#define N_PROPORTION       ((float)(3.0/10.0))    //must be<1
+#define N_OFFSET           ((float)(-100.0))
+#define P_OFFSET           ((float)(100.0))
+#define P_PROPORTION       ((float)(0))    //must be<1
+#define N_PROPORTION       ((float)(0))    //must be<1
 void evalInputs(uint8_t mode)
 {
   BeepANACenter anaCenter = 0;

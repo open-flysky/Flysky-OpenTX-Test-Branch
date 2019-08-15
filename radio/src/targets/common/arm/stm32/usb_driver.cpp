@@ -154,7 +154,8 @@ void usbJoystickUpdate()
       int16_t value = channelOutputs[i] / 8;
       if ( value > 127 ) value = 127;
       else if ( value < -127 ) value = -127;
-      HID_Buffer[i+3] = static_cast<int8_t>(value);
+      uint8_t value1 = value+127;
+      HID_Buffer[i+3] = static_cast<uint8_t>(value1);
     }
     USBD_HID_SendReport(&USB_OTG_dev, HID_Buffer, HID_IN_PACKET);
   }

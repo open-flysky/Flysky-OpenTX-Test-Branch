@@ -344,7 +344,7 @@ void ModelLogicalSwitchesPage::build(Window * window, int8_t focusIndex)
   grid.spacer(8);
   grid.setLabelWidth(70);
 
-  for (uint8_t i=0; i<MAX_OUTPUT_CHANNELS; i++) {
+  for (uint8_t i=0; i<MAX_LOGICAL_SWITCHES; i++) {
     new TextButton(window, grid.getLabelSlot(), getSwitchString(SWSRC_SW1+i));
 
     Button * button = new LogicalSwitchButton(window, grid.getFieldSlot(), i,

@@ -70,6 +70,24 @@ class SwitchDynamicLabel : public StaticText {
     uint8_t lastpos = 0xff;
 };
 
+class BatteryNumberEdit : public NumberEdit {
+public:
+  BatteryNumberEdit(Window * parent, const rect_t & rect):
+    NumberEdit(parent, rect, -127, 127, GET_SET_DEFAULT(g_eeGeneral.txVoltageCalibration)) {
+    setDisplayHandler([=](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
+        lastBatteryVoltage = getBatteryVoltage();
+        drawNumber(dc, 2, 2, lastBatteryVoltage, flags | PREC2, 0, nullptr, "V");
+    });
+  }
+  void checkEvents() override
+  {
+    NumberEdit::checkEvents();
+    if(lastBatteryVoltage != getBatteryVoltage()) invalidate();
+  }
+protected:
+  uint16_t lastBatteryVoltage = 0;
+};
+
 RadioHardwarePage::RadioHardwarePage():
   PageTab(STR_HARDWARE, ICON_RADIO_HARDWARE)
 {
@@ -119,10 +137,7 @@ void RadioHardwarePage::build(Window * window)
 
   // Bat calibration
   new StaticText(window, grid.getLabelSlot(), STR_BATT_CALIB);
-  auto batCal = new NumberEdit(window, grid.getFieldSlot(), -127, 127, GET_SET_DEFAULT(g_eeGeneral.txVoltageCalibration));
-  batCal->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
-    drawNumber(dc, 2, 2, getBatteryVoltage(), flags | PREC2, 0, nullptr, "V");
-  });
+  new BatteryNumberEdit(window, grid.getFieldSlot());
   window->invalidate();
   grid.nextLine();
   grid.nextLine();

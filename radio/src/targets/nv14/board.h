@@ -400,8 +400,8 @@ uint16_t getAnalogValue(uint8_t index);
 uint16_t getBatteryVoltage();   // returns current battery voltage in 10mV steps
 uint16_t getBattery2Voltage();   // returns current battery voltage in 10mV steps
 
-#define BATTERY_WARN                  37 // 3.7V
-#define BATTERY_MIN                   36 // 3.6V
+#define BATTERY_WARN                  36 // 3.7V
+#define BATTERY_MIN                   35 // 3.6V
 #define BATTERY_MAX                   42 // 4.1V
 
 #if defined(__cplusplus) && !defined(SIMU)

@@ -179,7 +179,7 @@ void periodicTick()
   static uint32_t lastTime;
 
   if ( (get_tmr10ms() - lastTime) >= 100 ) {
-    lastTime += 100;
+   lastTime = get_tmr10ms();
     periodicTick_1s();
     if (++count10s >= 10) {
       count10s = 0;
