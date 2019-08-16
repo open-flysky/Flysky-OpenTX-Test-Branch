@@ -148,6 +148,15 @@ void getSwitchesPosition(bool startup)
   CHECK_2POS(SW_SD);
   CHECK_2POS(SW_SE);
   CHECK_2POS(SW_SF);
+#elif defined(PCBNV14)
+  CHECK_2POS(SW_SA);
+  CHECK_3POS(0, SW_SB);
+  CHECK_2POS(SW_SC);
+  CHECK_2POS(SW_SD);
+  CHECK_2POS(SW_SE);
+  CHECK_3POS(1, SW_SF);
+  CHECK_3POS(2, SW_SG);
+  CHECK_2POS(SW_SH);  
 #else
   CHECK_3POS(0, SW_SA);
   CHECK_3POS(1, SW_SB);
