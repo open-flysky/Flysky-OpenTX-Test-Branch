@@ -179,6 +179,7 @@ class SpecialFunctionEditWindow : public Page {
           edit->setDisplayHandler([=](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
             lcdDrawNumber(2, 2, CFN_PARAM(cfn), PREC1, sizeof(CFN_PARAM(cfn)), nullptr, "s");
           });
+          grid.nextLine();
           break;
         }
       }
@@ -204,6 +205,8 @@ class SpecialFunctionEditWindow : public Page {
             drawNumber(dc, 2, 2, value * CFN_PLAY_REPEAT_MUL, flags, 0, nullptr, "s");
         });
       }
+
+      specialFunctionOneWindow->adjustHeight();
     }
 
     void buildBody(Window * window)
