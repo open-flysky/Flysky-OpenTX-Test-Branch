@@ -194,7 +194,7 @@ class SpecialFunctionEditWindow : public Page {
         NumberEdit* repeat = new NumberEdit(specialFunctionOneWindow, grid.getFieldSlot(2, 1), -1, 60/CFN_PLAY_REPEAT_MUL, GET_SET_DEFAULT(CFN_PLAY_REPEAT(cfn)));
         repeat->setGetNextValueHandler([=]() {
           if(CFN_PLAY_REPEAT(cfn) == CFN_PLAY_REPEAT_NOSTART) return 0;
-          return CFN_PLAY_REPEAT(cfn) + repeat->getStep();
+          return (int)(CFN_PLAY_REPEAT(cfn) + repeat->getStep());
         });
         repeat->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
           if (value == 0)
