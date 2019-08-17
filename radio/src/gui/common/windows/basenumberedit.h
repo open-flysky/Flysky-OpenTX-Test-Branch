@@ -34,6 +34,7 @@ class BaseNumberEdit : public Window {
       _setValue(std::move(setValue)),
       flags(flags)
     {
+      _getNextValue = nullptr;
     }
 
     void setLcdFlags(LcdFlags value){
@@ -91,9 +92,18 @@ class BaseNumberEdit : public Window {
       return _getValue();
     }
 
+    int32_t getNextValue() const {
+      if(_getNextValue != nullptr) return _getNextValue();
+      return getValue() + getStep();
+    }
+
     void setSetValueHandler(std::function<void(int32_t)> handler)
     {
       _setValue = handler;
+    }
+
+    void setGetNextValueHandler(std::function<int32_t()> handler) {
+      _getNextValue = handler;
     }
 
   protected:
@@ -104,6 +114,7 @@ class BaseNumberEdit : public Window {
     std::function<int32_t()> _getValue;
     std::function<void(int32_t)> _setValue;
     LcdFlags flags;
+    std::function<int32_t()> _getNextValue;
 };
 
 #endif // _BASENUMBEREDIT_H_

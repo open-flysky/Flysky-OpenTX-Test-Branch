@@ -190,7 +190,11 @@ class SpecialFunctionEditWindow : public Page {
       }
       else if (HAS_REPEAT_PARAM(func)) { // !1x 1x 1s 2s 3s ...
         new StaticText(specialFunctionOneWindow, grid.getLabelSlot(), STR_REPEAT);
-        auto repeat = new NumberEdit(specialFunctionOneWindow, grid.getFieldSlot(2, 1), -1, 60/CFN_PLAY_REPEAT_MUL, GET_SET_DEFAULT(CFN_PLAY_REPEAT(cfn)));
+        NumberEdit* repeat = new NumberEdit(specialFunctionOneWindow, grid.getFieldSlot(2, 1), -1, 60/CFN_PLAY_REPEAT_MUL, GET_SET_DEFAULT(CFN_PLAY_REPEAT(cfn)));
+        repeat->setGetNextValueHandler([=]() {
+          if(CFN_PLAY_REPEAT(cfn) == CFN_PLAY_REPEAT_NOSTART) return 0;
+          return CFN_PLAY_REPEAT(cfn) + repeat->getStep();
+        });
         repeat->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
           if (value == 0)
             lcdDrawText(2, 2, "1x", flags);
