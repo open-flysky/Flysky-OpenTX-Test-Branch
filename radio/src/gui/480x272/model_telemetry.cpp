@@ -132,9 +132,22 @@ class SensorEditWindow : public Page {
       buildHeader(&header);
     }
 
-    void checkEvents()
-    {
-      invalidate();
+
+    void checkEvents() {
+      Page::checkEvents();
+      getvalue_t sensorVal = getValue(MIXSRC_FIRST_TELEM + 3 * index);
+      if (lastSensorVal != sensorVal) {
+        TelemetrySensor & telemetrySensor = g_model.telemetrySensors[index];
+        uint8_t unit = telemetrySensor.unit == UNIT_CELLS ? UNIT_VOLTS : telemetrySensor.unit;
+        if (unit != UNIT_RAW) {
+          char unitStr[8];
+          strAppend(unitStr, STR_VTELEMUNIT + 1 + unit * STR_VTELEMUNIT[0], STR_VTELEMUNIT[0]);
+          sensorValue->setText(std::to_string(sensorVal) + unitStr);
+        } else {
+          sensorValue->setText(std::to_string(sensorVal));
+        }
+        lastSensorVal = sensorVal;
+      }
     }
 
     ~SensorEditWindow()
@@ -145,19 +158,21 @@ class SensorEditWindow : public Page {
   protected:
     uint8_t index;
     Window * sensorOneWindow = nullptr;
-
+    StaticText* sensorValue = nullptr;
+    getvalue_t lastSensorVal;
     void buildHeader(Window * window)
     {
       new StaticText(window, {70, 4, 200, 20}, STR_SENSOR + std::to_string(index + 1), MENU_TITLE_COLOR);
       TelemetrySensor & telemetrySensor = g_model.telemetrySensors[index];
       uint8_t unit = telemetrySensor.unit == UNIT_CELLS ? UNIT_VOLTS : telemetrySensor.unit;
+      lastSensorVal = getValue(MIXSRC_FIRST_TELEM + 3 * index);
       if (unit != UNIT_RAW) {
         char unitStr[8];
         strAppend(unitStr, STR_VTELEMUNIT+1+unit*STR_VTELEMUNIT[0], STR_VTELEMUNIT[0]);
-        new StaticText(window, {185, 4, 200, 20}, std::to_string(getValue(MIXSRC_FIRST_TELEM + 3 * index)) + unitStr, MENU_TITLE_COLOR);
+        sensorValue = new StaticText(window, {185, 4, 200, 20}, std::to_string(lastSensorVal) + unitStr, MENU_TITLE_COLOR);
       }
       else {
-        new StaticText(window, {185, 4, 200, 20}, std::to_string(getValue(MIXSRC_FIRST_TELEM + 3 * index)), MENU_TITLE_COLOR);
+        sensorValue = new StaticText(window, {185, 4, 200, 20}, std::to_string(lastSensorVal), MENU_TITLE_COLOR);
       }
     }
 
