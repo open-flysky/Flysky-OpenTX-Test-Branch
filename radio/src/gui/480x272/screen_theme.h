@@ -39,9 +39,16 @@ class ZoneOptionPage : public PageTab {
 class ScreenThemePage: public ZoneOptionPage {
   public:
     ScreenThemePage();
+    ~ScreenThemePage(){
+      if(updateNeeded) {
+        theme->update(false);
+        storageDirty(EE_GENERAL);
+      }
+    }
     void build(Window * window) override;
   protected:
     void onZoneOptionChanged(const ZoneOption* option) override;
+    bool updateNeeded;
 };
 
 #endif //_SCREEN_THEME_H_

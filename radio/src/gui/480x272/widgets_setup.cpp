@@ -108,6 +108,11 @@ void WidgetsSetupView::showWidgetMenu(unsigned int zone)
 
 bool WidgetsSetupView::onTouchEnd(coord_t x, coord_t y)
 {
+  if (x <= TOPBAR_BUTTON_WIDTH && y <= TOPBAR_BUTTON_WIDTH) {
+    container = nullptr;
+    deleteLater(true);// do not remove - we used existing control
+    return 1;
+  }
   for (unsigned int index=0; index < container->getZonesCount(); index++) {
     Zone zone = container->getZone(index);
     if(x >= zone.x && x <= (zone.x + zone.w) && y >= zone.y && y <= (zone.y + zone.h)){
@@ -122,8 +127,9 @@ bool WidgetsSetupView::onTouchSlide(coord_t x, coord_t y, coord_t startX, coord_
   if(slideDirection == SlideDirection::None) {
     if (startX < x && (x - startX > LCD_W / 3)){
       slideDirection = SlideDirection::Right;
-      this->detach();
-      return true;
+      container = nullptr;
+      deleteLater(true);
+      return 1;
     }
   }
   return true;
@@ -136,6 +142,7 @@ uint8_t WidgetsSetupView::currentView() {
 void WidgetsSetupView::paint(BitmapBuffer * dc)
 {
   ViewMain::paint(dc);
+  dc->drawBitmap(0, 0, theme->getIconBitmap(ICON_BACK, false));
   for (int i=container->getZonesCount()-1; i>=0; i--) {
     Zone zone = container->getZone(i);
     lcdDrawRect(zone.x-padding, zone.y-padding, zone.w+2*padding, zone.h+2*padding, thickness, 0x3F, color);
