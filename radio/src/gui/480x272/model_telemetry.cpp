@@ -122,6 +122,44 @@ class SensorButton : public Button {
     uint8_t index;
 };
 
+class SensorHeader : public Window {
+public:
+  SensorHeader(Window * parent, uint8_t index) : Window(parent, {70, 0, parent->width() - 70, parent->height()}), index(index) {
+
+  }
+  void checkEvents() override {
+    getvalue_t sensorVal = getValue(MIXSRC_FIRST_TELEM + 3 * index);
+    if (lastSensorVal != sensorVal) {
+      lastSensorVal = sensorVal;
+      invalidate();
+    }
+  }
+
+  void paint(BitmapBuffer * dc) override {
+    TelemetryItem &telemetryItem = telemetryItems[index];
+    TelemetrySensor sensor = g_model.telemetrySensors[index];
+    char text[255];
+    strcpy(text, STR_SENSOR);
+    size_t len = strlen(STR_SENSOR);
+    text[len++] = ' ';
+    strcpy(text + len, std::to_string(len + 1).c_str());
+
+    lcdDrawText(0, 8, text, MENU_TITLE_COLOR);
+    if (telemetryItem.isAvailable()) {
+      LcdFlags flags = LEFT | MENU_TITLE_COLOR;
+      if(sensor.unit == UNIT_GPS) flags |= EXPANDED;
+      drawSensorCustomValue(0, 28, index, lastSensorVal, flags);
+    }
+    else {
+      lcdDrawText(0, 28, "---", MENU_TITLE_COLOR);
+    }
+  }
+
+protected:
+  uint8_t index;
+  getvalue_t lastSensorVal;
+};
+
 class SensorEditWindow : public Page {
   public:
     SensorEditWindow(uint8_t index) :
@@ -129,26 +167,9 @@ class SensorEditWindow : public Page {
       index(index)
     {
       buildBody(&body);
-      buildHeader(&header);
+      new SensorHeader(&header, index);
     }
 
-
-    void checkEvents() {
-      Page::checkEvents();
-      getvalue_t sensorVal = getValue(MIXSRC_FIRST_TELEM + 3 * index);
-      if (lastSensorVal != sensorVal) {
-        TelemetrySensor & telemetrySensor = g_model.telemetrySensors[index];
-        uint8_t unit = telemetrySensor.unit == UNIT_CELLS ? UNIT_VOLTS : telemetrySensor.unit;
-        if (unit != UNIT_RAW) {
-          char unitStr[8];
-          strAppend(unitStr, STR_VTELEMUNIT + 1 + unit * STR_VTELEMUNIT[0], STR_VTELEMUNIT[0]);
-          sensorValue->setText(std::to_string(sensorVal) + unitStr);
-        } else {
-          sensorValue->setText(std::to_string(sensorVal));
-        }
-        lastSensorVal = sensorVal;
-      }
-    }
 
     ~SensorEditWindow()
     {
@@ -158,23 +179,6 @@ class SensorEditWindow : public Page {
   protected:
     uint8_t index;
     Window * sensorOneWindow = nullptr;
-    StaticText* sensorValue = nullptr;
-    getvalue_t lastSensorVal;
-    void buildHeader(Window * window)
-    {
-      new StaticText(window, {70, 4, 200, 20}, STR_SENSOR + std::to_string(index + 1), MENU_TITLE_COLOR);
-      TelemetrySensor & telemetrySensor = g_model.telemetrySensors[index];
-      uint8_t unit = telemetrySensor.unit == UNIT_CELLS ? UNIT_VOLTS : telemetrySensor.unit;
-      lastSensorVal = getValue(MIXSRC_FIRST_TELEM + 3 * index);
-      if (unit != UNIT_RAW) {
-        char unitStr[8];
-        strAppend(unitStr, STR_VTELEMUNIT+1+unit*STR_VTELEMUNIT[0], STR_VTELEMUNIT[0]);
-        sensorValue = new StaticText(window, {185, 4, 200, 20}, std::to_string(lastSensorVal) + unitStr, MENU_TITLE_COLOR);
-      }
-      else {
-        sensorValue = new StaticText(window, {185, 4, 200, 20}, std::to_string(lastSensorVal), MENU_TITLE_COLOR);
-      }
-    }
 
     void updateSensorOneWindow()
     {
