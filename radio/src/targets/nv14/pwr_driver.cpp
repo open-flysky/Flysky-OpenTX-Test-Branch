@@ -40,11 +40,6 @@ void pwrInit()
   //GPIO_InitStructure.GPIO_Pin = INTMODULE_PWR_GPIO_PIN;
   //GPIO_Init(INTMODULE_PWR_GPIO, &GPIO_InitStructure);
 
-  //TODO move this elsewhere!
-  GPIO_ResetBits(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN);
-  GPIO_InitStructure.GPIO_Pin = EXTMODULE_PWR_GPIO_PIN;
-  GPIO_Init(EXTMODULE_PWR_GPIO, &GPIO_InitStructure);
-
   //Bluetooth
   GPIO_SetBits(BLUETOOTH_ON_GPIO, BLUETOOTH_ON_GPIO_PIN);
   GPIO_InitStructure.GPIO_Pin = BLUETOOTH_ON_GPIO_PIN;
