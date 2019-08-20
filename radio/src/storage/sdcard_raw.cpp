@@ -234,6 +234,30 @@ const char * createModel()
   return g_eeGeneral.currModelFilename;
 }
 
+void storageEraseModels()
+{
+  DIR dir;
+  FILINFO fno;
+  char fullFileName[255];
+  size_t len = strlen(MODELS_PATH);
+  strcpy(fullFileName, MODELS_PATH);
+  fullFileName[len++] = '/';
+
+  FRESULT res = f_opendir(&dir, MODELS_PATH);
+  if (res == FR_OK) {
+    for (;;) {
+      res = f_readdir(&dir, &fno);
+      if (res != FR_OK || fno.fname[0] == 0) {
+        break;
+      }
+      if (fno.fattrib & (AM_RDO | AM_DIR | AM_HID | AM_SYS)) {
+        continue;
+      }
+      strcpy(fullFileName + len, fno.fname);
+      f_unlink(fullFileName);
+    }
+  }
+}
 void storageEraseAll(bool warn)
 {
   TRACE("storageEraseAll");
@@ -251,7 +275,7 @@ void storageEraseAll(bool warn)
   }
 
   RAISE_ALERT(STR_STORAGE_WARNING, STR_STORAGE_FORMAT, NULL, AU_NONE);
-
+  storageEraseModels();
   storageFormat();
   storageDirty(EE_GENERAL|EE_MODEL);
   storageCheck(true);
