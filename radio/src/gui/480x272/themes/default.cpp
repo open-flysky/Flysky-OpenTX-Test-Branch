@@ -80,18 +80,17 @@ class DefaultTheme: public Theme
       if (mask) {
         uint8_t width = mask->getWidth();
         uint8_t height = mask->getHeight();
-
-        // TODO delete iconMask[index];
+        if(iconMask[index] != NULL) delete iconMask[index];
         iconMask[index] = mask;
 
-        // TODO delete menuIconNormal[index];
+        if(menuIconNormal[index] != NULL) delete menuIconNormal[index];
         menuIconNormal[index] = new BitmapBuffer(BMP_RGB565, TOPBAR_BUTTON_WIDTH, TOPBAR_BUTTON_WIDTH);
         if (menuIconNormal[index]) {
           menuIconNormal[index]->clear(HEADER_BGCOLOR);
           menuIconNormal[index]->drawMask((TOPBAR_BUTTON_WIDTH-width)/2, (TOPBAR_BUTTON_WIDTH-width)/2, mask, color);
         }
 
-        // TODO delete menuIconSelected[index];
+        if(menuIconSelected[index] != NULL) delete menuIconSelected[index];
         menuIconSelected[index] = new BitmapBuffer(BMP_RGB565, TOPBAR_BUTTON_WIDTH, TOPBAR_BUTTON_WIDTH);
         if (menuIconSelected[index]) {
           if (index <= ICON_BACK)
@@ -172,28 +171,28 @@ class DefaultTheme: public Theme
         currentMenuBackground->drawMask(10, 39, dot, MENU_TITLE_COLOR);
       }
 
-      // TODO delete topleftBitmap;
+      if(topleftBitmap) delete topleftBitmap;
       topleftBitmap = BitmapBuffer::loadMaskOnBackground("topleft.png", TITLE_BGCOLOR, HEADER_BGCOLOR);
 
-      // TODO delete background;
-      // TODO delete shadow;
-      // TODO delete dot;
+      delete background;
+      delete shadow;
+      delete dot;
     }
 
     void loadThemeBitmaps() const
     {
       TRACE("Theme default -> loadThemeBitmaps");
       // Calibration screen
-      // TODO delete calibStick;
+      if(calibStick) delete calibStick;
       calibStick = BitmapBuffer::load(getThemePath("stick_pointer.png"));
 
-      // TODO delete calibStickBackground;
+      if(calibStickBackground) delete calibStickBackground;
       calibStickBackground = BitmapBuffer::load(getThemePath("stick_background.png"));
 
-      // TODO delete calibTrackpBackground;
+      if(calibTrackpBackground) delete calibTrackpBackground;
       calibTrackpBackground = BitmapBuffer::load(getThemePath("trackp_background.png"));
 
-      // TODO delete calibHorus;
+      if(calibHorus) delete calibHorus;
 #if defined(PCBX10)
       if(ANALOGS_PWM_ENABLED()) {
         calibHorus = BitmapBuffer::load(getThemePath("X10S.bmp"));
@@ -206,77 +205,77 @@ class DefaultTheme: public Theme
 #endif
 
       // Model Selection screen
-      // TODO delete modelselIconBitmap;
+      if(modelselIconBitmap) delete modelselIconBitmap;
       modelselIconBitmap = BitmapBuffer::loadMaskOnBackground("modelsel/mask_iconback.png", TITLE_BGCOLOR, TEXT_BGCOLOR);
       if (modelselIconBitmap) {
         BitmapBuffer * bitmap = BitmapBuffer::load(getThemePath("modelsel/icon_default.png"));
         modelselIconBitmap->drawBitmap(20, 8, bitmap);
-        // TODO delete bitmap;
+        delete bitmap;
       }
 
-      // TODO delete modelselSdFreeBitmap;
+      if(modelselSdFreeBitmap) delete modelselSdFreeBitmap;
       modelselSdFreeBitmap = BitmapBuffer::loadMaskOnBackground("modelsel/mask_sdfree.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete modelselModelQtyBitmap;
+      if(modelselModelQtyBitmap) delete modelselModelQtyBitmap;
       modelselModelQtyBitmap = BitmapBuffer::loadMaskOnBackground("modelsel/mask_modelqty.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete modelselModelNameBitmap;
+      if(modelselModelNameBitmap) delete modelselModelNameBitmap;
       modelselModelNameBitmap = BitmapBuffer::loadMaskOnBackground("modelsel/mask_modelname.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete modelselModelMoveBackground;
+      if(modelselModelMoveBackground) delete modelselModelMoveBackground;
       modelselModelMoveBackground = BitmapBuffer::loadMask(getThemePath("modelsel/mask_moveback.png"));
 
-      // TODO delete modelselModelMoveIcon;
+      if(modelselModelMoveIcon) delete modelselModelMoveIcon;
       modelselModelMoveIcon = BitmapBuffer::loadMask(getThemePath("modelsel/mask_moveico.png"));
 
-      // TODO delete modelselWizardBackground;
+      if(modelselWizardBackground) delete modelselWizardBackground;
       modelselWizardBackground = BitmapBuffer::load(getThemePath("wizard/background.png"));
 
       // Channels monitor screen
-      // TODO delete chanMonLockedBitmap;
+      if(chanMonLockedBitmap) delete chanMonLockedBitmap;
       chanMonLockedBitmap = BitmapBuffer::loadMaskOnBackground("mask_monitor_lockch.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete chanMonInvertedBitmap;
+      if(chanMonInvertedBitmap) delete chanMonInvertedBitmap;
       chanMonInvertedBitmap = BitmapBuffer::loadMaskOnBackground("mask_monitor_inver.png", TEXT_COLOR, TEXT_BGCOLOR);
 
       // Mixer setup screen
-      // TODO delete mixerSetupMixerBitmap;
+      if(mixerSetupMixerBitmap) delete mixerSetupMixerBitmap;
       mixerSetupMixerBitmap = BitmapBuffer::loadMaskOnBackground("mask_sbar_mixer.png", MENU_TITLE_COLOR, HEADER_BGCOLOR);
 
-      // TODO delete mixerSetupToBitmap;
+      if(mixerSetupToBitmap) delete mixerSetupToBitmap;
       mixerSetupToBitmap = BitmapBuffer::loadMaskOnBackground("mask_sbar_to.png", MENU_TITLE_COLOR, HEADER_BGCOLOR);
 
-      // TODO delete mixerSetupOutputBitmap;
+      if(mixerSetupOutputBitmap) delete mixerSetupOutputBitmap;
       mixerSetupOutputBitmap = BitmapBuffer::loadMaskOnBackground("mask_sbar_output.png", MENU_TITLE_COLOR, HEADER_BGCOLOR);
 
-      // TODO delete mixerSetupAddBitmap;
+      if(mixerSetupAddBitmap) delete mixerSetupAddBitmap;
       mixerSetupAddBitmap = BitmapBuffer::loadMaskOnBackground("mask_mplex_add.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupMultiBitmap;
+      if(mixerSetupMultiBitmap) delete mixerSetupMultiBitmap;
       mixerSetupMultiBitmap = BitmapBuffer::loadMaskOnBackground("mask_mplex_multi.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupReplaceBitmap;
+      if(mixerSetupReplaceBitmap) delete mixerSetupReplaceBitmap;
       mixerSetupReplaceBitmap = BitmapBuffer::loadMaskOnBackground("mask_mplex_replace.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupLabelBitmap;
+      if(mixerSetupLabelBitmap) delete mixerSetupLabelBitmap;
       mixerSetupLabelBitmap = BitmapBuffer::loadMaskOnBackground("mask_textline_label.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupCurveBitmap;
+      if(mixerSetupCurveBitmap) delete mixerSetupCurveBitmap;
       mixerSetupCurveBitmap = BitmapBuffer::loadMaskOnBackground("mask_textline_curve.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupSwitchBitmap;
+      if(mixerSetupSwitchBitmap) delete mixerSetupSwitchBitmap;
       mixerSetupSwitchBitmap = BitmapBuffer::loadMaskOnBackground("mask_textline_switch.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupFlightmodeBitmap;
+      if(mixerSetupFlightmodeBitmap) delete mixerSetupFlightmodeBitmap;
       mixerSetupFlightmodeBitmap = BitmapBuffer::loadMaskOnBackground("mask_textline_fm.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupSlowBitmap;
+      if(mixerSetupSlowBitmap) delete mixerSetupSlowBitmap;
       mixerSetupSlowBitmap = BitmapBuffer::loadMaskOnBackground("mask_textline_slow.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupDelayBitmap;
+      if(mixerSetupDelayBitmap) delete mixerSetupDelayBitmap;
       mixerSetupDelayBitmap = BitmapBuffer::loadMaskOnBackground("mask_textline_delay.png", TEXT_COLOR, TEXT_BGCOLOR);
 
-      // TODO delete mixerSetupDelaySlowBitmap;
+      if(mixerSetupDelaySlowBitmap) delete mixerSetupDelaySlowBitmap;
       mixerSetupDelaySlowBitmap = BitmapBuffer::loadMaskOnBackground("mask_textline_delayslow.png", TEXT_COLOR, TEXT_BGCOLOR);
     }
 
@@ -289,20 +288,24 @@ class DefaultTheme: public Theme
         TRACE("Theme default -> load backgroundBitmap");
         backgroundBitmap = BitmapBuffer::load(getThemePath("background.png"));
       }
-      update();
+      update(true);
     }
 
-    virtual void update() const
+    virtual void update(bool withBitmaps = true) const
     {
       updatecolor();
       loadIcons();
-      loadThemeBitmaps();
+      if(withBitmaps)
+        loadThemeBitmaps();
     }
-    virtual void updatecolor() const
+    void updatecolor() const
     {
 #if defined(PCBHORUS)|| defined(PCBFLYSKY)
       uint32_t color = g_eeGeneral.themeData.options[1].unsignedValue;
       uint32_t bg_color = UNEXPECTED_SHUTDOWN() ? WHITE : g_eeGeneral.themeData.options[0].unsignedValue;
+      if(color == bg_color) {
+        bg_color = WHITE;
+      }
 
       lcdColorTable[TEXT_BGCOLOR_INDEX] = bg_color;
       lcdColorTable[TEXT_INVERTED_BGCOLOR_INDEX] = color;

@@ -118,9 +118,7 @@ Window * ZoneOptionPage::createOptionEdit(Window * parent, const rect_t &rect, c
 
 void ScreenThemePage::onZoneOptionChanged(const ZoneOption* option)
 {
-  if(option->type == ZoneOption::Color) theme->updatecolor();
-  else theme->update();
-  storageDirty(EE_GENERAL);
+  updateNeeded = true;
 }
 
 void ScreenThemePage::build(Window * window)

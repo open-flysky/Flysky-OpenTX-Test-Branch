@@ -62,10 +62,7 @@ class Theme
 
     void init() const;
 
-    virtual void update() const
-    {
-    }
-    virtual void updatecolor() const
+    virtual void update(bool withBitmaps = true) const
     {
     }
 

@@ -52,7 +52,7 @@ NumberKeyboard::NumberKeyboard():
   new TextButton(this, { LCD_W/2 + 5, 10, 50, 30 }, "+",
                  [=]() -> uint8_t {
                    if (field) {
-                     field->setValue(field->getValue() + field->getStep());
+                     field->setValue(field->getNextValue());
                    }
                    else putEvent(EVT_VK(VKEY_INC));
                    return 0;
