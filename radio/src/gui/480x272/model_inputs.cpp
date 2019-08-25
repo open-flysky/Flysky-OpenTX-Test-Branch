@@ -356,6 +356,9 @@ class InputLineButton : public Button {
     bool active = false;
 };
 
+uint8_t ModelInputsPage::s_inputCopySrcIdx = 0;
+int8_t ModelInputsPage::s_inputCopyMode = 0;
+
 ModelInputsPage::ModelInputsPage():
   PageTab(STR_MENUINPUTS, ICON_MODEL_INPUTS)
 {
@@ -410,31 +413,31 @@ void ModelInputsPage::build(Window * window, int8_t focusIndex)
               editInput(window, input, index + 1);
             });
             menu->addLine(STR_COPY, [=]() {
-              s_copyMode = COPY_MODE;
-              s_copySrcIdx = index;
+              ModelInputsPage::s_inputCopyMode = COPY_MODE;
+              ModelInputsPage::s_inputCopySrcIdx = index;
             });
-            if (s_copyMode != 0) {
+            if (ModelInputsPage::s_inputCopyMode != 0) {
               menu->addLine(STR_PASTE_BEFORE, [=]() {
-                copyExpo(s_copySrcIdx, index, PASTE_BEFORE);
-                if(s_copyMode == MOVE_MODE) {
-                  deleteExpo((s_copySrcIdx > index) ? s_copySrcIdx+1 : s_copySrcIdx);
-                  s_copyMode = 0;
+                copyExpo(ModelInputsPage::s_inputCopySrcIdx, index, PASTE_BEFORE);
+                if(ModelInputsPage::s_inputCopyMode == MOVE_MODE) {
+                  deleteExpo((ModelInputsPage::s_inputCopySrcIdx > index) ? ModelInputsPage::s_inputCopySrcIdx+1 : ModelInputsPage::s_inputCopySrcIdx);
+                  ModelInputsPage::s_inputCopyMode = 0;
                 }
                 rebuild(window, index);
               });
               menu->addLine(STR_PASTE_AFTER, [=]() {
-                copyExpo(s_copySrcIdx, index, PASTE_AFTER);
-                if(s_copyMode == MOVE_MODE) {
-                  deleteExpo((s_copySrcIdx > index) ? s_copySrcIdx+1 : s_copySrcIdx);
-                  s_copyMode = 0;
+                copyExpo(ModelInputsPage::s_inputCopySrcIdx, index, PASTE_AFTER);
+                if(ModelInputsPage::s_inputCopyMode == MOVE_MODE) {
+                  deleteExpo((ModelInputsPage::s_inputCopySrcIdx > index) ? ModelInputsPage::s_inputCopySrcIdx+1 : ModelInputsPage::s_inputCopySrcIdx);
+                  ModelInputsPage::s_inputCopyMode = 0;
                 }
                 rebuild(window, index+1);
               });
             }
           }
           menu->addLine(STR_MOVE, [=]() {
-            s_copyMode = MOVE_MODE;
-            s_copySrcIdx = index;
+            ModelInputsPage::s_inputCopyMode = MOVE_MODE;
+            ModelInputsPage::s_inputCopySrcIdx = index;
           });
           menu->addLine(STR_DELETE, [=]() {
             deleteExpo(index);
@@ -464,12 +467,12 @@ void ModelInputsPage::build(Window * window, int8_t focusIndex)
           return 0;
         });
         if (!reachExposLimit()) {
-          if (s_copyMode != 0) {
+          if (ModelInputsPage::s_inputCopyMode != 0) {
             menu->addLine(STR_PASTE, [=]() {
-              copyExpo(s_copySrcIdx, index, input);
-              if(s_copyMode == MOVE_MODE) {
-                deleteExpo((s_copySrcIdx >= index) ? s_copySrcIdx+1 : s_copySrcIdx);
-                s_copyMode = 0;
+              copyExpo(ModelInputsPage::s_inputCopySrcIdx, index, input);
+              if(ModelInputsPage::s_inputCopyMode == MOVE_MODE) {
+                deleteExpo((ModelInputsPage::s_inputCopySrcIdx >= index) ? ModelInputsPage::s_inputCopySrcIdx+1 : ModelInputsPage::s_inputCopySrcIdx);
+                ModelInputsPage::s_inputCopyMode = 0;
               }
               rebuild(window, -1);
               return 0;
@@ -494,8 +497,6 @@ void ModelInputsPage::build(Window * window, int8_t focusIndex)
 
 // TODO port: avoid global s_currCh on ARM boards (as done here)...
 int8_t s_currCh;
-uint8_t s_copyMode;
-int8_t s_copySrcRow;
 
 void insertExpo(uint8_t idx, uint8_t input)
 {
