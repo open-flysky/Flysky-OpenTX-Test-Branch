@@ -60,6 +60,11 @@ void pwrInit()
   GPIO_InitStructure.GPIO_Pin = SD_PRESENT_GPIO_PIN;
   GPIO_Init(SD_PRESENT_GPIO, &GPIO_InitStructure);
 
+  //turn power off
+  GPIO_ResetBits(PWR_GPIO, PWR_ON_GPIO_PIN);
+  //turn Bluetooth off
+  GPIO_ResetBits(PWR_GPIO, BLUETOOTH_ON_GPIO_PIN);
+
   boardState = BOARD_POWER_OFF;
 }
 

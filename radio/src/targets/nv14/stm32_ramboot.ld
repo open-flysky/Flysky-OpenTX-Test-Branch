@@ -35,7 +35,8 @@ MEMORY
 {
   FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 2048K
   RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 192K
-  CCM (xrw)       : ORIGIN = 0x10000000, LENGTH = 64K
+  CCM (xrw)       : ORIGIN = 0x10000000, LENGTH = 65520
+  NO_INIT (xrw)   : ORIGIN = 0x1000FFF0, LENGTH = 16
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
   SDRAM(xrw)      : ORIGIN = 0xC0000000, LENGTH = 8192K
 }
@@ -132,7 +133,8 @@ SECTIONS
   .noinit (NOLOAD) :
   {
     *(.noinit)
-  } >CCM
+  } >NO_INIT
+
 
   /* collect all uninitialized .ccm sections */
   .ram (NOLOAD) :

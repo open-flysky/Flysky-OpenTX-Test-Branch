@@ -33,7 +33,8 @@ enum ChargeState
 {
   CHARGE_NONE,
   CHARGE_STARTED,
-  CHARGE_FINISHED
+  CHARGE_FINISHED,
+  CHARGE_UNKNOWN
 };
 
 
@@ -49,7 +50,7 @@ enum ChargeState
 #define READ_CHARGING_STATE()                    GPIO_ReadInputDataBit( PWR_CHARGING_GPIO, PWR_CHARGING_GPIO_PIN )
 
 extern void battery_charge_init();
-extern void handle_battery_charge();
+extern void handle_battery_charge(bool firstCheck, uint32_t last_press_time);
 extern uint16_t get_battery_charge_state();
 extern uint16_t getBatteryVoltage();   // returns current battery voltage in 10mV steps
 

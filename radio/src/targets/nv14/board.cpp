@@ -184,28 +184,31 @@ void boardInit()
   battery_charge_init();
   init2MhzTimer();
   init1msTimer();
-  uint32_t pwr_press_time = 0;
+  uint32_t press_start = 0;
+  uint32_t hold_time = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
   backlightInit();
   lcdInit();
+
+  bool firstCheck = true;
   while (boardState == BOARD_POWER_OFF)
   {
+    uint16_t now = get_tmr10ms();
     if (pwrPressed())
     {
-      if (pwr_press_time == 0)
-      {
-         pwr_press_time = get_tmr10ms();
-      }
-      if ((get_tmr10ms() - pwr_press_time) > POWER_ON_DELAY)
+      hold_time = now;
+      if (press_start == 0) press_start = now;
+      if ((now - press_start) > POWER_ON_DELAY)
       {
           pwrOn();
+          break;
       }
     }
-    else
-    {
-       pwr_press_time = 0;
-       handle_battery_charge();
-    }   
+    else {
+      press_start = 0;
+      handle_battery_charge(firstCheck, hold_time);
+      firstCheck = false;
+    }
   }
 
   keysInit();

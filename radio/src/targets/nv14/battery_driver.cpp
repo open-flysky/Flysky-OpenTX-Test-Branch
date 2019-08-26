@@ -136,39 +136,55 @@ void drawChargingInfo(uint16_t chargeState){
         h = BATTERY_H_INNER;
         color = ROUND|TEXT_COLOR;
     }
-    if((CHARGE_FINISHED == chargeState) && (get_tmr10ms()%200 < 100))
-    {
-        BACKLIGHT_DISABLE();
-        //lcd->clear();
-        //lcd->drawSizedText(LCD_W/2, LCD_H-50, text, strlen(text), CENTERED|TEXT_BGCOLOR);
-    }
-    else
-    {
-        BACKLIGHT_ENABLE();
-	lcd->drawSizedText(LCD_W/2, LCD_H-50, text, strlen(text), CENTERED|TEXT_BGCOLOR);
 
-	lcd->drawFilledRect((LCD_W - BATTERY_W)/2, BATTERY_TOP, BATTERY_W, BATTERY_H, SOLID, ROUND|TEXT_BGCOLOR);
-	lcd->drawFilledRect((LCD_W - BATTERY_W_INNER)/2, BATTERY_TOP_INNER, BATTERY_W_INNER, BATTERY_H_INNER, SOLID, ROUND|TEXT_COLOR);
+    BACKLIGHT_ENABLE();
+    lcd->drawSizedText(LCD_W/2, LCD_H-50, text, strlen(text), CENTERED|TEXT_BGCOLOR);
+
+    lcd->drawFilledRect((LCD_W - BATTERY_W)/2, BATTERY_TOP, BATTERY_W, BATTERY_H, SOLID, ROUND|TEXT_BGCOLOR);
+    lcd->drawFilledRect((LCD_W - BATTERY_W_INNER)/2, BATTERY_TOP_INNER, BATTERY_W_INNER, BATTERY_H_INNER, SOLID, ROUND|TEXT_COLOR);
 
     lcd->drawFilledRect((LCD_W - BATTERY_W_INNER)/2, BATTERY_TOP_INNER + BATTERY_H_INNER - h , BATTERY_W_INNER, h, SOLID, color);
-	lcd->drawFilledRect((LCD_W - BATTERY_CONNECTOR_W)/2, BATTERY_TOP-BATTERY_CONNECTOR_H , BATTERY_CONNECTOR_W, BATTERY_CONNECTOR_H, SOLID, TEXT_BGCOLOR);
-    }
+    lcd->drawFilledRect((LCD_W - BATTERY_CONNECTOR_W)/2, BATTERY_TOP-BATTERY_CONNECTOR_H , BATTERY_CONNECTOR_W, BATTERY_CONNECTOR_H, SOLID, TEXT_BGCOLOR);
 }
-
+#define CHARGE_INFO_DURATION 500
 //this method should be called by timer interrupt or by GPIO interrupt
-void handle_battery_charge()
+void handle_battery_charge(bool firstCheck, uint32_t last_press_time)
 {
 #if !defined(SIMU)
   static uint16_t chargeState = CHARGE_NONE;
   static uint32_t updateTime = 0;
-  if(boardState != BOARD_POWER_OFF) return;
-
   static uint32_t checkTime = 0;
-  if(checkTime == 0 || ((get_tmr10ms() - checkTime) >= 1))
-  {
-    checkTime = get_tmr10ms();
-    chargeState = get_battery_charge_state();
+  static uint16_t lastState = CHARGE_UNKNOWN;
+  static uint32_t info_until = 0;
+
+  if(boardState != BOARD_POWER_OFF) return;
+  uint16_t now = get_tmr10ms();
+  chargeState = get_battery_charge_state();
+  if(lastState == CHARGE_UNKNOWN) {
+    //charge started for first time
+    if(chargeState != CHARGE_NONE) {
+      info_until = now + CHARGE_INFO_DURATION;
+    }
   }
+  else if(lastState != chargeState) {
+    //charge state changed - last state known
+    info_until = now + CHARGE_INFO_DURATION;
+  }
+  //power buttons pressed
+  else if(now - last_press_time < POWER_ON_DELAY) {
+    info_until = now + CHARGE_INFO_DURATION;
+  }
+
+  lastState = chargeState;
+
+
+  if(now > info_until) {
+    info_until = 0;
+    lcd->clear();
+    BACKLIGHT_DISABLE();
+    return;
+  }
+
   if(updateTime == 0 || ((get_tmr10ms() - updateTime) >= 50))
   {
       updateTime = get_tmr10ms();     
@@ -176,7 +192,6 @@ void handle_battery_charge()
       lcd->clear();
       drawChargingInfo(chargeState);
       lcdRefresh();
-
    }
 #endif
 }
