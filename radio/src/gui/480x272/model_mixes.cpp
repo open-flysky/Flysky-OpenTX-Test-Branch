@@ -337,6 +337,9 @@ void insertMix(uint8_t idx, uint8_t channel)
   storageDirty(EE_MODEL);
 }
 
+uint8_t ModelMixesPage::s_mixCopySrcIdx = 0;
+int8_t ModelMixesPage::s_mixCopyMode = 0;
+
 ModelMixesPage::ModelMixesPage() :
   PageTab(STR_MIXER, ICON_MODEL_MIXER)
 {
@@ -385,6 +388,7 @@ void ModelMixesPage::build(Window * window, int8_t focusMixIndex)
         button->setPressHandler([=]() -> uint8_t {
           button->bringToTop();
           Menu * menu = new Menu();
+          TRACE("ModelMixesPage::s_mixCopyMode %d", ModelMixesPage::s_mixCopyMode);
           menu->addLine(STR_EDIT, [=]() {
             editMix(window, ch, mixIndex);
           });
@@ -398,31 +402,31 @@ void ModelMixesPage::build(Window * window, int8_t focusMixIndex)
               editMix(window, ch, mixIndex + 1);
             });
             menu->addLine(STR_COPY, [=]() {
-              s_copyMode = COPY_MODE;
-              s_copySrcIdx =mixIndex;
+              ModelMixesPage::s_mixCopyMode = COPY_MODE;
+              ModelMixesPage::s_mixCopySrcIdx = mixIndex;
             });
-            if (s_copyMode != 0) {
+            //if (ModelMixesPage::s_mixCopyMode != 0) {
               menu->addLine(STR_PASTE_BEFORE, [=]() {
-                copyMix(s_copySrcIdx, mixIndex, PASTE_BEFORE);
-                if(s_copyMode == MOVE_MODE) {
-                  deleteMix((s_copySrcIdx > mixIndex) ? s_copySrcIdx+1 : s_copySrcIdx);
-                  s_copyMode = 0;
+                copyMix(ModelMixesPage::s_mixCopySrcIdx, mixIndex, PASTE_BEFORE);
+                if(ModelMixesPage::s_mixCopyMode == MOVE_MODE) {
+                  deleteMix((ModelMixesPage::s_mixCopySrcIdx > mixIndex) ? ModelMixesPage::s_mixCopySrcIdx+1 : ModelMixesPage::s_mixCopySrcIdx);
+                  ModelMixesPage::s_mixCopyMode = 0;
                 }
                 rebuild(window, mixIndex);
               });
               menu->addLine(STR_PASTE_AFTER, [=]() {
-                copyMix(s_copySrcIdx, mixIndex, PASTE_AFTER);
-                if(s_copyMode == MOVE_MODE) {
-                  deleteMix((s_copySrcIdx > mixIndex) ? s_copySrcIdx+1 : s_copySrcIdx);
-                  s_copyMode = 0;
+                copyMix(ModelMixesPage::s_mixCopySrcIdx, mixIndex, PASTE_AFTER);
+                if(ModelMixesPage::s_mixCopyMode == MOVE_MODE) {
+                  deleteMix((ModelMixesPage::s_mixCopySrcIdx > mixIndex) ? ModelMixesPage::s_mixCopySrcIdx+1 : ModelMixesPage::s_mixCopySrcIdx);
+                  ModelMixesPage::s_mixCopyMode = 0;
                 }
                 rebuild(window, mixIndex+1);
               });
-            }
+            //}
           }
           menu->addLine(STR_MOVE, [=]() {
-            s_copyMode = MOVE_MODE;
-            s_copySrcIdx = mixIndex;
+            ModelMixesPage::s_mixCopyMode = MOVE_MODE;
+            ModelMixesPage::s_mixCopySrcIdx = mixIndex;
           });
           menu->addLine(STR_DELETE, [=]() {
             deleteMix(mixIndex);
@@ -455,12 +459,12 @@ void ModelMixesPage::build(Window * window, int8_t focusMixIndex)
           return 0;
         });
         if (!reachMixesLimit()) {
-          if (s_copyMode != 0) {
+          if (ModelMixesPage::s_mixCopyMode != 0) {
             menu->addLine(STR_PASTE, [=]() {
-              copyMix(s_copySrcIdx, mixIndex, ch);
-              if(s_copyMode == MOVE_MODE) {
-                deleteMix((s_copySrcIdx >= mixIndex) ? s_copySrcIdx+1 : s_copySrcIdx);
-                s_copyMode = 0;
+              copyMix(ModelMixesPage::s_mixCopySrcIdx, mixIndex, ch);
+              if(ModelMixesPage::s_mixCopyMode == MOVE_MODE) {
+                deleteMix((ModelMixesPage::s_mixCopySrcIdx >= mixIndex) ? ModelMixesPage::s_mixCopySrcIdx+1 : ModelMixesPage::s_mixCopySrcIdx);
+                ModelMixesPage::s_mixCopyMode = 0;
               }
               rebuild(window, -1);
               return 0;

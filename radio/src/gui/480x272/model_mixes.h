@@ -30,12 +30,12 @@ class ModelMixesPage: public PageTab {
     virtual void build(Window * window) override {
       build(window, -1);
     }
-
   protected:
     void build(Window * window, int8_t focusMixIndex);
     void rebuild(Window * window, int8_t focusMixIndex);
     void editMix(Window * window, uint8_t channel, uint8_t mixIndex);
-    uint8_t s_copySrcIdx;
+    static uint8_t s_mixCopySrcIdx;
+    static int8_t s_mixCopyMode;
 };
 
 #endif // _MODEL_MIXES_H_
