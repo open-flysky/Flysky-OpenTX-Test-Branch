@@ -121,6 +121,49 @@ void delay_self(int count)
        for (; count > 0; count--);
    }
 }
+#define RCC_AHB1PeriphMinimum (PWR_RCC_AHB1Periph |\
+                               LCD_RCC_AHB1Periph |\
+                               BACKLIGHT_RCC_AHB1Periph |\
+                               SDRAM_RCC_AHB1Periph \
+                              )
+#define RCC_AHB1PeriphOther   (SD_RCC_AHB1Periph |\
+                               AUDIO_RCC_AHB1Periph |\
+                               MONITOR_RCC_AHB1Periph |\
+                               KEYS_RCC_AHB1Periph |\
+                               ADC_RCC_AHB1Periph |\
+                               AUX_SERIAL_RCC_AHB1Periph |\
+                               TELEMETRY_RCC_AHB1Periph |\
+                               TRAINER_RCC_AHB1Periph |\
+                               AUDIO_RCC_AHB1Periph |\
+                               HAPTIC_RCC_AHB1Periph |\
+                               INTMODULE_RCC_AHB1Periph |\
+                               INTMODULE_RCC_AHB1Periph|\
+                               EXTMODULE_RCC_AHB1Periph\
+                              )
+#define RCC_AHB3PeriphMinimum (SDRAM_RCC_AHB3Periph)
+
+#define RCC_APB1PeriphMinimum (INTERRUPT_xMS_RCC_APB1Periph |\
+                               TIMER_2MHz_RCC_APB1Periph |\
+                               BACKLIGHT_RCC_APB1Periph \
+                              )
+
+#define RCC_APB1PeriphOther   (TELEMETRY_RCC_APB1Periph |\
+                               TRAINER_RCC_APB1Periph |\
+                               INTMODULE_RCC_APB1Periph |\
+                               HALL_RCC_APB1Periph |\
+                               EXTMODULE_RCC_APB1Periph |\
+                               INTMODULE_RCC_APB1Periph_TIM3 \
+                              )
+#define RCC_APB2PeriphMinimum (LCD_RCC_APB2Periph)
+
+#define RCC_APB2PeriphOther   (ADC_RCC_APB2Periph |\
+                               HAPTIC_RCC_APB2Periph |\
+                               AUX_SERIAL_RCC_APB2Periph |\
+                               AUDIO_RCC_APB2Periph |\
+                               EXTMODULE_RCC_APB2Periph \
+                              )
+
+
 
 void boardInit()
 {
@@ -129,47 +172,10 @@ void boardInit()
 #endif
 
 #if !defined(SIMU)
-  RCC_AHB1PeriphClockCmd(PWR_RCC_AHB1Periph |
-                         LCD_RCC_AHB1Periph |
-                         BACKLIGHT_RCC_AHB1Periph |
-                         SD_RCC_AHB1Periph |
-                         SDRAM_RCC_AHB1Periph |
-                         AUDIO_RCC_AHB1Periph |
-                         MONITOR_RCC_AHB1Periph |
-                         KEYS_RCC_AHB1Periph |
-                         ADC_RCC_AHB1Periph |
-                         AUX_SERIAL_RCC_AHB1Periph |
-                         TELEMETRY_RCC_AHB1Periph |
-                         TRAINER_RCC_AHB1Periph |
-                         AUDIO_RCC_AHB1Periph |
-                         HAPTIC_RCC_AHB1Periph |
-                         INTMODULE_RCC_AHB1Periph |
-                         INTMODULE_RCC_AHB1Periph|
-                         EXTMODULE_RCC_AHB1Periph,
-                         ENABLE);
-
-  RCC_AHB3PeriphClockCmd(SDRAM_RCC_AHB3Periph,
-                         ENABLE);
-
-  RCC_APB1PeriphClockCmd(INTERRUPT_xMS_RCC_APB1Periph |
-                         TIMER_2MHz_RCC_APB1Periph |
-                         TELEMETRY_RCC_APB1Periph |
-                         TRAINER_RCC_APB1Periph |
-                         INTMODULE_RCC_APB1Periph |
-                         HALL_RCC_APB1Periph |
-                         EXTMODULE_RCC_APB1Periph |
-                         INTMODULE_RCC_APB1Periph_TIM3 |
-                         BACKLIGHT_RCC_APB1Periph,
-                         ENABLE);
-
-  RCC_APB2PeriphClockCmd(LCD_RCC_APB2Periph |
-                         ADC_RCC_APB2Periph |
-                         HAPTIC_RCC_APB2Periph |
-                         AUX_SERIAL_RCC_APB2Periph |
-                         //INTMODULE_RCC_APB2Periph |
-                         AUDIO_RCC_APB2Periph |
-                         EXTMODULE_RCC_APB2Periph,
-                         ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1PeriphMinimum | RCC_AHB1PeriphOther, ENABLE);
+  RCC_AHB3PeriphClockCmd(RCC_AHB3PeriphMinimum, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1PeriphMinimum | RCC_APB1PeriphOther, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2PeriphMinimum | RCC_APB2PeriphOther, ENABLE);
 
   __enable_irq();
 
@@ -185,10 +191,8 @@ void boardInit()
   init2MhzTimer();
   init1msTimer();
   uint32_t press_start = 0;
-  uint32_t hold_time = 0;
+  uint32_t press_end = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
-  backlightInit();
-  lcdInit();
 
   bool firstCheck = true;
   while (boardState == BOARD_POWER_OFF)
@@ -196,7 +200,7 @@ void boardInit()
     uint16_t now = get_tmr10ms();
     if (pwrPressed())
     {
-      hold_time = now;
+      press_end = now;
       if (press_start == 0) press_start = now;
       if ((now - press_start) > POWER_ON_DELAY)
       {
@@ -206,7 +210,8 @@ void boardInit()
     }
     else {
       press_start = 0;
-      handle_battery_charge(firstCheck, hold_time);
+      handle_battery_charge(firstCheck, press_end);
+      press_end = 0;
       firstCheck = false;
     }
   }

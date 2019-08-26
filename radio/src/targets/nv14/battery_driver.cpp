@@ -153,22 +153,25 @@ void handle_battery_charge(bool firstCheck, uint32_t last_press_time)
 #if !defined(SIMU)
   static uint16_t chargeState = CHARGE_NONE;
   static uint32_t updateTime = 0;
-  static uint32_t checkTime = 0;
   static uint16_t lastState = CHARGE_UNKNOWN;
   static uint32_t info_until = 0;
+  static bool lcdInited = false;
 
   if(boardState != BOARD_POWER_OFF) return;
+
+  if(firstCheck) lastState = CHARGE_UNKNOWN;
+
   uint16_t now = get_tmr10ms();
   chargeState = get_battery_charge_state();
   if(lastState == CHARGE_UNKNOWN) {
     //charge started for first time
     if(chargeState != CHARGE_NONE) {
-      info_until = now + CHARGE_INFO_DURATION;
+      info_until = now + (CHARGE_INFO_DURATION << 2);
     }
   }
   else if(lastState != chargeState) {
     //charge state changed - last state known
-    info_until = now + CHARGE_INFO_DURATION;
+    info_until = now + (CHARGE_INFO_DURATION << 2);
   }
   //power buttons pressed
   else if(now - last_press_time < POWER_ON_DELAY) {
@@ -182,11 +185,20 @@ void handle_battery_charge(bool firstCheck, uint32_t last_press_time)
     info_until = 0;
     lcd->clear();
     BACKLIGHT_DISABLE();
+    if(!lcdInited) {
+      lcdInited = false;
+      lcdOff();
+    }
     return;
   }
 
   if(updateTime == 0 || ((get_tmr10ms() - updateTime) >= 50))
   {
+      if(!lcdInited) {
+        backlightInit();
+        lcdInit();
+        lcdInited = true;
+      }
       updateTime = get_tmr10ms();     
       lcdNextLayer();
       lcd->clear();
