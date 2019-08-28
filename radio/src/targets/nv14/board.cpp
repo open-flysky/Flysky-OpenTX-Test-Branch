@@ -194,7 +194,6 @@ void boardInit()
   uint32_t press_end = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
 
-  bool firstCheck = true;
   while (boardState == BOARD_POWER_OFF)
   {
     uint16_t now = get_tmr10ms();
@@ -210,9 +209,9 @@ void boardInit()
     }
     else {
       press_start = 0;
-      handle_battery_charge(firstCheck, press_end);
+      handle_battery_charge(press_end);
+      delay_ms(20);
       press_end = 0;
-      firstCheck = false;
     }
   }
 

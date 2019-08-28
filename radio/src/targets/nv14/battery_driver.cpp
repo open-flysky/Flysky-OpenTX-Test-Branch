@@ -43,66 +43,39 @@ void battery_charge_init()
   GPIO_SetBits(PWR_CHARGING_GPIO, PWR_CHARGE_FINISHED_GPIO_PIN | PWR_CHARGING_GPIO_PIN);
 }
 
+#define CHARGE_SAMPLES 10
+
 uint16_t get_battery_charge_state()
 {
+  static uint16_t chargeSamples[CHARGE_SAMPLES] = {0};
+  static uint16_t chargeSampleIndex = 0;
+  bool lastChargeState = CHARGE_UNKNOWN;
+  uint16_t chargeState = CHARGE_UNKNOWN;
 #if !defined(SIMU)
-   static unsigned int finishedTime = 0;
-   static unsigned int chargingTime = 0;
-   static unsigned int noneTime = 0;
-   unsigned short DelayTime = 0;
-   if( BOARD_POWER_OFF == boardState )
-   {
-       DelayTime = 150;
-   }
-   else
-   {
-       DelayTime = 3;
-   }
-
-  if (!READ_CHARGE_FINISHED_STATE())
-  {
-      finishedTime++;
-      if(finishedTime > 1000)
-          finishedTime = 1000;
-      if(chargingTime)
-          chargingTime--;
-  }
-  else if (!READ_CHARGING_STATE())
-  {
-      chargingTime++;
-      if(chargingTime > 1000)
-          chargingTime = 1000;
-      if(finishedTime)
-          finishedTime--;
-  }
-  else
-  {
-      noneTime++;
-      //if(noneTime>2)
-      {   if(finishedTime>200)
-            finishedTime -= 50;
-          else
-            finishedTime = 0;
-          if(chargingTime>200)
-            chargingTime -= 50;
-          else
-            chargingTime = 0;
-      }
-  }
-  if(finishedTime>DelayTime)
-  {
-     noneTime = 0;
-     chargingTime = 0;
-     return CHARGE_FINISHED;
-  }
-  if(chargingTime>DelayTime)
-  {
-      noneTime = 0;
-     finishedTime = 0;
-     return CHARGE_STARTED;
-  }
+  bool isFinished = !READ_CHARGE_FINISHED_STATE();
+  bool isCharging = !READ_CHARGING_STATE();
+  int maxSamples = boardState == BOARD_POWER_OFF ? CHARGE_SAMPLES/2 : CHARGE_SAMPLES;
+  maxSamples = CHARGE_SAMPLES;
+  if(chargeSampleIndex >= maxSamples) chargeSampleIndex = 0;
+  uint16_t currentChargeState = isFinished ? CHARGE_FINISHED : isCharging ? CHARGE_STARTED : CHARGE_NONE;
+  chargeSamples[chargeSampleIndex++] = currentChargeState;
+  TRACE("CHARGE sample %d value %d", chargeSampleIndex -1, currentChargeState);
 #endif
-  return CHARGE_NONE;
+  for(int index = 0; index < maxSamples; index++) {
+    if(chargeState == CHARGE_UNKNOWN) {
+      //prevent entering to charged status from non charging state
+      if(chargeSamples[index] == CHARGE_FINISHED && lastChargeState != CHARGE_STARTED) continue;
+      chargeState = chargeSamples[index];
+    }
+    else if(chargeState != chargeSamples[index]) {
+      //the only way to detect none state is searching for inconsistent state
+      //when battery is not charged finished pin is triggered periodically only
+      chargeState = CHARGE_NONE;
+    }
+  }
+  TRACE("CHARGE STATE %d", chargeState);
+  if(chargeState != CHARGE_UNKNOWN) lastChargeState = chargeState;
+  return chargeState;
 }
 
 void drawChargingInfo(uint16_t chargeState){
@@ -148,38 +121,32 @@ void drawChargingInfo(uint16_t chargeState){
 }
 #define CHARGE_INFO_DURATION 500
 //this method should be called by timer interrupt or by GPIO interrupt
-void handle_battery_charge(bool firstCheck, uint32_t last_press_time)
+void handle_battery_charge(uint32_t last_press_time)
 {
 #if !defined(SIMU)
-  static uint16_t chargeState = CHARGE_NONE;
-  static uint32_t updateTime = 0;
+  static uint16_t updateTime = 0;
   static uint16_t lastState = CHARGE_UNKNOWN;
   static uint32_t info_until = 0;
   static bool lcdInited = false;
 
   if(boardState != BOARD_POWER_OFF) return;
-
-  if(firstCheck) lastState = CHARGE_UNKNOWN;
-
   uint16_t now = get_tmr10ms();
-  chargeState = get_battery_charge_state();
-  if(lastState == CHARGE_UNKNOWN) {
-    //charge started for first time
-    if(chargeState != CHARGE_NONE) {
-      info_until = now + (CHARGE_INFO_DURATION << 2);
+  uint16_t chargeState = get_battery_charge_state();
+  if(chargeState != CHARGE_UNKNOWN) {
+
+    if(lastState != chargeState) {
+      //avoid positive check when none and unknown
+      if(lastState + chargeState > 1) {
+        //charge state changed - last state known
+        info_until = now + (CHARGE_INFO_DURATION);
+      }
     }
+    //power buttons pressed
+    else if(now - last_press_time < POWER_ON_DELAY) {
+      info_until = now + CHARGE_INFO_DURATION;
+    }
+    lastState = chargeState;
   }
-  else if(lastState != chargeState) {
-    //charge state changed - last state known
-    info_until = now + (CHARGE_INFO_DURATION << 2);
-  }
-  //power buttons pressed
-  else if(now - last_press_time < POWER_ON_DELAY) {
-    info_until = now + CHARGE_INFO_DURATION;
-  }
-
-  lastState = chargeState;
-
 
   if(now > info_until) {
     info_until = 0;
