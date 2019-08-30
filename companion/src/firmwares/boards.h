@@ -51,9 +51,10 @@ namespace Board {
     BOARD_TARANIS_XLITES,
     BOARD_TARANIS_X9LITE,
     BOARD_JUMPER_T12,
+    BOARD_JUMPER_T16,
   };
 
-  constexpr int BOARD_TYPE_MAX = BOARD_JUMPER_T12 ;
+  constexpr int BOARD_TYPE_MAX = BOARD_JUMPER_T16 ;
 
   enum PotType
   {
@@ -222,6 +223,11 @@ inline bool IS_JUMPER_T12(Board::Type board)
   return board == Board::BOARD_JUMPER_T12;
 }
 
+inline bool IS_JUMPER_T16(Board::Type board)
+{
+  return board == Board::BOARD_JUMPER_T16;
+}
+
 inline bool IS_TARANIS_XLITE(Board::Type board)
 {
   return board == Board::BOARD_TARANIS_XLITE || board == Board::BOARD_TARANIS_XLITES;
@@ -284,7 +290,7 @@ inline bool IS_HORUS_X12S(Board::Type board)
 
 inline bool IS_HORUS(Board::Type board)
 {
-  return IS_HORUS_X12S(board) || IS_HORUS_X10(board);
+  return IS_HORUS_X12S(board) || IS_HORUS_X10(board) || IS_JUMPER_T16(board);
 }
 
 inline bool IS_HORUS_OR_TARANIS(Board::Type board)
@@ -309,7 +315,7 @@ inline bool HAS_LARGE_LCD(Board::Type board)
 
 inline bool HAS_EXTERNAL_ANTENNA(Board::Type board)
 {
-  return (IS_HORUS(board) && board != Board::BOARD_X10_EXPRESS) || (IS_TARANIS_XLITE(board) && !IS_TARANIS_XLITES(board));
+  return (board == Board::BOARD_X10 || board == Board::BOARD_HORUS_X12S || (IS_TARANIS_XLITE(board) && !IS_TARANIS_XLITES(board)));
 }
 
 #endif // _BOARDS_H_

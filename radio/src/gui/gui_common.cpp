@@ -567,6 +567,11 @@ bool isInternalModuleAvailable(int moduleType)
   if (moduleType == MODULE_TYPE_NONE)
     return true;
 
+#if defined(INTERNAL_MODULE_MULTI)
+  if (moduleType == MODULE_TYPE_MULTIMODULE)
+    return true;
+#endif
+
   if (moduleType == MODULE_TYPE_XJT_PXX1) {
 #if defined(PXX1) && defined(INTERNAL_MODULE_PXX1)
     return !isModuleUsingSport(EXTERNAL_MODULE, g_model.moduleData[EXTERNAL_MODULE].type);
@@ -584,7 +589,6 @@ bool isInternalModuleAvailable(int moduleType)
     return true;
 #endif
   }
-
   return false;
 }
 #endif

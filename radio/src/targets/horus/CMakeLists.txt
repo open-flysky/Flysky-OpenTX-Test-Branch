@@ -2,6 +2,13 @@ option(DISK_CACHE "Enable SD card disk cache" ON)
 option(UNEXPECTED_SHUTDOWN "Enable the Unexpected Shutdown screen" ON)
 option(PXX1 "PXX1 protocol support" ON)
 option(PXX2 "PXX2 protocol support" OFF)
+option(MULTIMODULE "DIY Multiprotocol TX Module (https://github.com/pascallanger/DIY-Multiprotocol-TX-Module)" ON)
+option(HARDWARE_INTERNAL_MODULE "Support hardware internal module" OFF)
+option(INTERNAL_MODULE_PXX1 "Support for PXX1 internal module" OFF)
+option(INTERNAL_MODULE_PXX2 "Support for PXX2 internal module" OFF)
+option(INTERNAL_MODULE_MULTI "Support for MULTI internal module" OFF)
+option(INTERNAL_MODULE_PPM "Support for PPM internal module" OFF)
+option(INTERNAL_MODULE_FLYSKY "Support for FLYSKY internal module" OFF)
 
 set(PWR_BUTTON "PRESS" CACHE STRING "Pwr button type (PRESS/SWITCH)")
 set(CPU_TYPE STM32F4)
@@ -42,17 +49,21 @@ if (PCB STREQUAL X10)
   set(LUA_EXPORT lua_export_x10)
   if (PCBREV STREQUAL EXPRESS)
     set(FLAVOUR x10express)
-    option(INTERNAL_MODULE_PXX1 "Support for PXX1 internal module" OFF)
-    option(INTERNAL_MODULE_PXX2 "Support for PXX2 internal module" ON)
+    set(INTERNAL_MODULE_PXX2 ON)
+    add_definitions(-DBLUETOOTH)
+  elseif (PCBREV STREQUAL T16)
+    set(FLAVOUR t16)
+    set(LUA_EXPORT lua_export_t16)
+    add_definitions(-DRADIO_T16)
   else()
     set(FLAVOUR x10)
-    option(INTERNAL_MODULE_PXX1 "Support for PXX1 internal module" ON)
-    option(INTERNAL_MODULE_PXX2 "Support for PXX2 internal module" OFF)
+    set(INTERNAL_MODULE_PXX1 ON)
+    add_definitions(-DBLUETOOTH)
   endif()
 elseif (PCB STREQUAL X12S)
-  option(INTERNAL_MODULE_PXX1 "Support for PXX1 internal module" ON)
-  option(INTERNAL_MODULE_PXX2 "Support for PXX2 internal module" OFF)
+  set(INTERNAL_MODULE_PXX1 ON)
   set(FLAVOUR x12s)
+  add_definitions(-DBLUETOOTH)
   set(PCBREV "13" CACHE STRING "PCB Revision")
   if(${PCBREV} GREATER 10)
     option(INTERNAL_GPS "Internal GPS installed" YES)
@@ -91,12 +102,34 @@ if(NOT UNEXPECTED_SHUTDOWN)
 endif()
 
 if(INTERNAL_MODULE_PXX1)
+  add_definitions(-DHARDWARE_INTERNAL_MODULE)
   add_definitions(-DINTERNAL_MODULE_PXX1)
 endif()
 
 if(INTERNAL_MODULE_PXX2)
   set(PXX2 ON)
+  add_definitions(-DHARDWARE_INTERNAL_MODULE)
   add_definitions(-DINTERNAL_MODULE_PXX2)
+endif()
+
+if(INTERNAL_MODULE_MULTI)
+    add_definitions(-DHARDWARE_INTERNAL_MODULE)
+    add_definitions(-DINTERNAL_MODULE_MULTI)
+endif()
+
+if(INTERNAL_MODULE_PPM)
+    add_definitions(-DHARDWARE_INTERNAL_MODULE)
+    add_definitions(-DINTERNAL_MODULE_PPM)
+endif()
+
+if(INTERNAL_MODULE_FLYSKY)
+    add_definitions(-DHARDWARE_INTERNAL_MODULE)
+    add_definitions(-DINTERNAL_MODULE_FLYSKY)
+endif()
+
+if(MULTIMODULE)
+  add_definitions(-DMULTIMODULE)
+  set(SRC ${SRC} pulses/multi.cpp telemetry/spektrum.cpp telemetry/flysky_ibus.cpp telemetry/multi.cpp)
 endif()
 
 include_directories(${RADIO_SRC_DIRECTORY}/fonts/480x272 gui/${GUI_DIR} gui/${GUI_DIR}/layouts)
@@ -163,9 +196,19 @@ set(TARGET_SRC
   ../common/arm/stm32/heartbeat_driver.cpp
   ../common/arm/stm32/timers_driver.cpp
   ../common/arm/stm32/intmodule_serial_driver.cpp
-  ../common/arm/stm32/bluetooth_driver.cpp
   ../common/arm/stm32/rotary_encoder_driver.cpp
   )
+
+if(BLUETOOTH)
+  set(TARGET_SRC
+    ${TARGET_SRC}
+    ../common/arm/stm32/bluetooth_driver.cpp
+  )
+  set(SRC
+    ${SRC}
+    bluetooth.cpp
+    )
+endif()
 
 set(FIRMWARE_TARGET_SRC
   ${FIRMWARE_TARGET_SRC}
@@ -179,12 +222,10 @@ set(FIRMWARE_TARGET_SRC
   ../common/arm/loadboot.cpp
   )
 
-add_definitions(-DBLUETOOTH)
-
 set(SRC
   ${SRC}
-  bluetooth.cpp
   io/frsky_firmware_update.cpp
+  io/multi_firmware_update.cpp
   )
 
 set(STM32LIB_SRC
@@ -202,4 +243,3 @@ if(PYTHONINTERP_FOUND)
     DEPENDS ${RADIO_DIRECTORY}/src/datastructs.h ${RADIO_DIRECTORY}/util/generate_datacopy.py
   )
 endif()
-

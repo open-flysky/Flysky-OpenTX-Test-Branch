@@ -1,9 +1,14 @@
 option(SHUTDOWN_CONFIRMATION "Shutdown confirmation" OFF)
 option(LCD_DUAL_BUFFER "Dual LCD Buffer" OFF)
-option(INTERNAL_MODULE_PPM "Support for PPM internal module hack" OFF)
-option(INTERNAL_MODULE_PXX1 "Support for PXX1 internal module replacement" OFF)
 option(PXX1 "PXX1 protocol support" ON)
 option(PXX2 "PXX2 protocol support" OFF)
+option(MULTIMODULE "DIY Multiprotocol TX Module (https://github.com/pascallanger/DIY-Multiprotocol-TX-Module)" ON)
+option(HARDWARE_INTERNAL_MODULE "Support hardware internal module" OFF)
+option(INTERNAL_MODULE_PXX1 "Support for PXX1 internal module" OFF)
+option(INTERNAL_MODULE_PXX2 "Support for PXX2 internal module" OFF)
+option(INTERNAL_MODULE_MULTI "Support for MULTI internal module" OFF)
+option(INTERNAL_MODULE_PPM "Support for PPM internal module" OFF)
+option(INTERNAL_MODULE_FLYSKY "Support for FLYSKY internal module" OFF)
 option(AUTOUPDATE "Auto update internal chips from SD" OFF)
 
 if(PCB STREQUAL X9E)
@@ -245,6 +250,7 @@ add_definitions(-DAUDIO -DVOICE -DRTCLOCK)
 set(SRC
   ${SRC}
   io/frsky_firmware_update.cpp
+  io/multi_firmware_update.cpp
   )
 
 set(GUI_SRC
@@ -301,12 +307,35 @@ if(LCD_DUAL_BUFFER)
   add_definitions(-DLCD_DUAL_BUFFER)
 endif()
 
+if(INTERNAL_MODULE_PXX1)
+  add_definitions(-DHARDWARE_INTERNAL_MODULE)
+  add_definitions(-DINTERNAL_MODULE_PXX1)
+endif()
+
+if(INTERNAL_MODULE_PXX2)
+  set(PXX2 ON)
+  add_definitions(-DHARDWARE_INTERNAL_MODULE)
+  add_definitions(-DINTERNAL_MODULE_PXX2)
+endif()
+
+if(INTERNAL_MODULE_MULTI)
+  add_definitions(-DHARDWARE_INTERNAL_MODULE)
+  add_definitions(-DINTERNAL_MODULE_MULTI)
+endif()
+
 if(INTERNAL_MODULE_PPM)
+  add_definitions(-DHARDWARE_INTERNAL_MODULE)
   add_definitions(-DINTERNAL_MODULE_PPM)
 endif()
 
-if(INTERNAL_MODULE_PXX1)
-  add_definitions(-DINTERNAL_MODULE_PXX1)
+if(INTERNAL_MODULE_FLYSKY)
+  add_definitions(-DHARDWARE_INTERNAL_MODULE)
+  add_definitions(-DINTERNAL_MODULE_FLYSKY)
+endif()
+
+if(MULTIMODULE)
+  add_definitions(-DMULTIMODULE)
+  set(SRC ${SRC} pulses/multi.cpp telemetry/spektrum.cpp telemetry/flysky_ibus.cpp telemetry/multi.cpp)
 endif()
 
 set(FIRMWARE_DEPENDENCIES ${FIRMWARE_DEPENDENCIES} ${BITMAPS_TARGET})

@@ -23,7 +23,11 @@
 #if defined(SIMU)
   // not needed
 #elif defined(PCBX10)
-  const int8_t adcDirection[NUM_ANALOGS] = {1,-1,1,-1,  -1,1,-1, 1,1, 1, -1};
+  #if defined(RADIO_T16)
+    const int8_t adcDirection[NUM_ANALOGS] = {1,-1,1,-1,  1,1,1,  -1,1,  -1,1};
+  #else
+    const int8_t adcDirection[NUM_ANALOGS] = {1,-1,1,-1,  -1,1,-1,   1,1,    1, -1};
+  #endif
 #elif defined(PCBX9E)
 #if defined(HORUS_STICKS)
   const int8_t adcDirection[NUM_ANALOGS] = {1,-1,1,-1,  -1,-1,-1,1, -1,1,-1,  -1,-1,-1};
