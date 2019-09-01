@@ -19,7 +19,6 @@
  */
 
 #include "opentx.h"
-#include "touch_driver.h"
 #if defined(__cplusplus) && !defined(SIMU)
 extern "C" {
 #endif
@@ -80,18 +79,11 @@ void interrupt1ms()
     DEBUG_TIMER_STOP(debugTimerHaptic);
   }
 #endif
-#if !defined(SIMU) && defined (FLYSKY_HALL_STICKS)
-    if (boardState == BOARD_STARTED)// && 0 == pre_scale%3)
-    {
-      hall_stick_loop();
-    }
-#endif
+
   if (pre_scale == 10) {
     pre_scale = 0;
 #if !defined(SIMU)
-    if (boardState == BOARD_STARTED) {
-        TouchDriver();
-    }
+    if (boardState == BOARD_STARTED) hall_stick_loop();
 #endif
     DEBUG_TIMER_START(debugTimerPer10ms);
     DEBUG_TIMER_SAMPLE(debugTimerPer10msPeriod);
