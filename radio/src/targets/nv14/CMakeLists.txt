@@ -1,5 +1,6 @@
 option(DISK_CACHE "Enable SD card disk cache" YES)
 option(UNEXPECTED_SHUTDOWN "Enable the Unexpected Shutdown screen" YES)
+option(STICKS_DEAD_ZONE "Enable sticks dead zone" NO)
 set(PWR_BUTTON "PRESS" CACHE STRING "Pwr button type (PRESS/SWITCH)")
 
 set(CPU_TYPE STM32F4)
@@ -59,6 +60,11 @@ add_definitions(-DCROSSFIRE_NATIVE)
 add_definitions(-DFLYSKY_HALL_STICKS_REVERSE)
 add_definitions(-DHALL_STICKS)
 #add_definitions(-DFLYSKY_AUTO_POWER_DOWN)
+
+if(STICKS_DEAD_ZONE)
+  add_definitions(-DSTICK_DEAD_ZONE)
+endif()
+
 if(NOT UNEXPECTED_SHUTDOWN)
   add_definitions(-DNO_UNEXPECTED_SHUTDOWN)
 endif()

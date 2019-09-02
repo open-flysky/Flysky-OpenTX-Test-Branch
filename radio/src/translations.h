@@ -1022,6 +1022,7 @@ extern const pm_char STR_ENABLE[];
   extern const pm_char STR_MENU_OTHER[];
   extern const pm_char STR_MENU_INVERT[];
   extern const pm_char STR_JITTER_FILTER[];
+  extern const pm_char STR_DEAD_ZONE[];
 #endif
 
 #if MENUS_LOCK == 1

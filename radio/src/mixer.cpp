@@ -498,8 +498,7 @@ getvalue_t getValue(mixsrc_t i)
 #endif
   else return 0;
 }
-#define N_OFFSET           ((float)(-100.0))
-#define P_OFFSET           ((float)(100.0))
+
 #define P_PROPORTION       ((float)(0))    //must be<1
 #define N_PROPORTION       ((float)(0))    //must be<1
 void evalInputs(uint8_t mode)
@@ -536,14 +535,21 @@ void evalInputs(uint8_t mode)
 
     if (v < -RESX) v = -RESX;
     if (v >  RESX) v =  RESX;
- #if 1
+
+ #if defined(STICK_DEAD_ZONE)
+    //dead zone invented by FlySky in my opinion it should goes into ADC
+    //float calculations are not efficient
+    if(g_eeGeneral.stickDeadZone && ch!=THR_STICK){
+    float N_OFFSET = (-10.0f * (float)g_eeGeneral.stickDeadZone);
+    float P_OFFSET = (10.0f * (float)g_eeGeneral.stickDeadZone);
+
     if(v>P_OFFSET)
     {
         // v = k * v + b;
         // k = (P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024)
         // b = 1024*(1-((P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024))
-        const static float multi_p = P_OFFSET * P_PROPORTION;//9
-        const static float sub_p = 1024.0-P_OFFSET;//994
+        float multi_p = P_OFFSET * P_PROPORTION;//9
+        float sub_p = 1024.0-P_OFFSET;//994
         v = v*(1024.0-multi_p)/(sub_p)-1024.0*(((1024.0-multi_p)/(sub_p))-1);
     }
     else if((v<=P_OFFSET) && (v > 0))
@@ -563,9 +569,10 @@ void evalInputs(uint8_t mode)
         // v = k3 * v + b1;
         //k3  = (1024.0-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET)
         //b1 = 1024*(1-((1024-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET )))
-        const static float multi_n = N_OFFSET * N_PROPORTION;// -9
-        const static float sub_n = 1024.0+N_OFFSET;// 994
+        float multi_n = N_OFFSET * N_PROPORTION;// -9
+        float sub_n = 1024.0+N_OFFSET;// 994
         v = v*(1024.0+multi_n)/(sub_n)+1024.0*(((1024.0+multi_n)/(sub_n))-1);
+    }
     }
 #endif
     if (g_model.throttleReversed && ch==THR_STICK) {

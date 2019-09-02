@@ -133,8 +133,14 @@ void RadioHardwarePage::build(Window * window)
   // ADC filter
   new StaticText(window, grid.getLabelSlot(), STR_JITTER_FILTER);
   new CheckBox(window, grid.getFieldSlot(), GET_SET_INVERTED(g_eeGeneral.jitterFilter));
-  grid.nextLine();
 
+  grid.nextLine();
+#if defined(STICK_DEAD_ZONE)
+  new StaticText(window, grid.getLabelSlot(), TR_DEAD_ZONE);
+  auto deadZone = new NumberEdit(window, grid.getFieldSlot(), 0, 7, GET_SET_DEFAULT(g_eeGeneral.stickDeadZone));
+  deadZone->setSuffix("%");
+  grid.nextLine();
+#endif
   // Bat calibration
   new StaticText(window, grid.getLabelSlot(), STR_BATT_CALIB);
   new BatteryNumberEdit(window, grid.getFieldSlot());
