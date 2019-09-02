@@ -24,6 +24,7 @@
 #include "dataconstants.h"
 #include "lcd.h"
 #include "strhelpers.h"
+#include "opentx.h"
 
 class SourceChoiceMenuToolbar : public MenuToolbar<SourceChoice> {
   public:
@@ -66,6 +67,29 @@ void SourceChoice::paint(BitmapBuffer * dc)
   drawSolidRect(dc, 0, 0, rect.w, rect.h, 1, lineColor);
 }
 
+void SourceChoice::checkEvents()
+{
+  Window::checkEvents();
+  if (menu != nullptr)
+  {
+    int8_t value = getValue();
+    int8_t source = getMovedSource(vmin);
+    if (!source) 
+      return;
+	
+    if(value != source)
+	  {
+      std::map<int, int>::iterator it = valueIndexMap.find(static_cast<int>(source));
+      if (it != valueIndexMap.end() && it->second >= 0)
+      {
+        TRACE("EVENTS CHECK - source change detected");
+        setValue(static_cast<int16_t>(source));
+        menu->select(it->second);
+      }
+	  }	
+  }
+}
+
 void SourceChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
 {
   auto value = getValue();
@@ -73,7 +97,8 @@ void SourceChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
   int current = -1;
 
   menu->removeLines();
-
+  valueIndexMap.clear();
+  
   for (int i = vmin; i <= vmax; ++i) {
     if (filter && !filter(i))
       continue;
@@ -100,6 +125,7 @@ bool SourceChoice::onTouchEnd(coord_t, coord_t)
 
   menu->setToolbar(new SourceChoiceMenuToolbar(this, menu));
   AUDIO_KEY_PRESS();
+  menu->setCloseHandler(std::bind(&SourceChoice::deleteMenu, this));  
   setFocus();
   return true;
 }
