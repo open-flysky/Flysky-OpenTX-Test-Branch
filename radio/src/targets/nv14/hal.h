@@ -79,10 +79,17 @@
 // ADC
 #define ADC_RCC_AHB1Periph              (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOF | RCC_AHB1Periph_DMA2)
 #define ADC_RCC_APB2Periph              (RCC_APB2Periph_ADC1 | RCC_APB2Periph_ADC3)
-//#define ADC_GPIO_PIN_STICK_LH           GPIO_Pin_2      // PA.02
+#if !defined(HALL_STICKS)
+#define ADC_GPIO_PIN_STICK_LH           GPIO_Pin_2      // PA.02
 #define ADC_GPIO_PIN_STICK_LV           GPIO_Pin_3      // PA.03
 #define ADC_GPIO_PIN_STICK_RH           GPIO_Pin_4      // PA.04
 #define ADC_GPIO_PIN_STICK_RV           GPIO_Pin_5      // PA.05
+#else
+#define ADC_GPIO_PIN_STICK_LH           0
+#define ADC_GPIO_PIN_STICK_LV           0
+#define ADC_GPIO_PIN_STICK_RH           0
+#define ADC_GPIO_PIN_STICK_RV           0
+#endif
 #define ADC_GPIO_PIN_POT1               GPIO_Pin_6      // PA.06 VRA
 #define ADC_GPIO_PIN_POT2               GPIO_Pin_4      // PC.04 VRB
 #define ADC_GPIO_PIN_SWA                GPIO_Pin_1      // PB.01
@@ -95,16 +102,17 @@
 #define ADC_GPIO_PIN_SWH                GPIO_Pin_1      // PC.01
 #define ADC_GPIO_PIN_BATT               GPIO_Pin_5      // PC.05
 
-#define ADC_GPIOA_PINS                  (/*GPIO_Pin_2 | */GPIO_Pin_3 | GPIO_Pin_4| GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7)
-#define ADC_GPIOB_PINS                  (GPIO_Pin_0 | GPIO_Pin_1)
-#define ADC_GPIOC_PINS                  (GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5)
-#define ADC_GPIOF_PINS                  (GPIO_Pin_8 | GPIO_Pin_10)
+#define ADC_GPIOA_PINS                  (ADC_GPIO_PIN_STICK_LH | ADC_GPIO_PIN_STICK_LV | ADC_GPIO_PIN_STICK_RH | ADC_GPIO_PIN_STICK_RV | ADC_GPIO_PIN_POT1 | ADC_GPIO_PIN_SWF)
+#define ADC_GPIOB_PINS                  (ADC_GPIO_PIN_SWC | ADC_GPIO_PIN_SWA)
+#define ADC_GPIOC_PINS                  (ADC_GPIO_PIN_SWG | ADC_GPIO_PIN_SWH | ADC_GPIO_PIN_SWE | ADC_GPIO_PIN_POT2 | ADC_GPIO_PIN_BATT)
+#define ADC_GPIOF_PINS                  (ADC_GPIO_PIN_SWB | ADC_GPIO_PIN_SWD)
 
-//#define ADC_CHANNEL_STICK_LH            ADC_Channel_2   // ADC123_IN2 -> ADC1_IN2
-#define ADC_CHANNEL_STICK_LH            ADC_Channel_3
+#if !defined(HALL_STICKS)
+#define ADC_CHANNEL_STICK_LH            ADC_Channel_2   // ADC123_IN2 -> ADC1_IN2
 #define ADC_CHANNEL_STICK_LV            ADC_Channel_3   // ADC123_IN3 -> ADC1_IN3
 #define ADC_CHANNEL_STICK_RH            ADC_Channel_4   // ADC12_IN4  -> ADC1_IN4
 #define ADC_CHANNEL_STICK_RV            ADC_Channel_5   // ADC12_IN5  -> ADC1_IN5
+#endif
 #define ADC_CHANNEL_POT1                ADC_Channel_6   // ADC12_IN6  -> ADC1_IN6
 #define ADC_CHANNEL_POT2                ADC_Channel_14  // ADC12_IN14 -> ADC1_IN14
 #define ADC_CHANNEL_SWA                 ADC_Channel_9   // ADC12_IN9  -> ADC1_IN9
