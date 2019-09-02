@@ -131,7 +131,7 @@ class CostomScriptsEditWindow: public Page {
                                    });
           }
           else {
-              auto swicthchoice = new SourceChoice(window, grid.getFieldSlot(), 0, MIXSRC_LAST_TELEM, GET_SET_DEFAULT(g_model.scriptsData[cs].inputs[i].source));
+              auto switchchoice = new SourceChoice(window, grid.getFieldSlot(), 0, MIXSRC_LAST_TELEM, GET_SET_DEFAULT(g_model.scriptsData[cs].inputs[i].source));
           }
           grid.nextLine();
       }
