@@ -79,7 +79,7 @@
 // ADC
 #define ADC_RCC_AHB1Periph              (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOF | RCC_AHB1Periph_DMA2)
 #define ADC_RCC_APB2Periph              (RCC_APB2Periph_ADC1 | RCC_APB2Periph_ADC3)
-#define ADC_GPIO_PIN_STICK_LH           GPIO_Pin_2      // PA.02
+//#define ADC_GPIO_PIN_STICK_LH           GPIO_Pin_2      // PA.02
 #define ADC_GPIO_PIN_STICK_LV           GPIO_Pin_3      // PA.03
 #define ADC_GPIO_PIN_STICK_RH           GPIO_Pin_4      // PA.04
 #define ADC_GPIO_PIN_STICK_RV           GPIO_Pin_5      // PA.05
@@ -95,12 +95,13 @@
 #define ADC_GPIO_PIN_SWH                GPIO_Pin_1      // PC.01
 #define ADC_GPIO_PIN_BATT               GPIO_Pin_5      // PC.05
 
-#define ADC_GPIOA_PINS                  (GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4| GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7)
+#define ADC_GPIOA_PINS                  (/*GPIO_Pin_2 | */GPIO_Pin_3 | GPIO_Pin_4| GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7)
 #define ADC_GPIOB_PINS                  (GPIO_Pin_0 | GPIO_Pin_1)
 #define ADC_GPIOC_PINS                  (GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5)
 #define ADC_GPIOF_PINS                  (GPIO_Pin_8 | GPIO_Pin_10)
 
-#define ADC_CHANNEL_STICK_LH            ADC_Channel_2   // ADC123_IN2 -> ADC1_IN2
+//#define ADC_CHANNEL_STICK_LH            ADC_Channel_2   // ADC123_IN2 -> ADC1_IN2
+#define ADC_CHANNEL_STICK_LH            ADC_Channel_3
 #define ADC_CHANNEL_STICK_LV            ADC_Channel_3   // ADC123_IN3 -> ADC1_IN3
 #define ADC_CHANNEL_STICK_RH            ADC_Channel_4   // ADC12_IN4  -> ADC1_IN4
 #define ADC_CHANNEL_STICK_RV            ADC_Channel_5   // ADC12_IN5  -> ADC1_IN5
@@ -360,7 +361,9 @@
 #define EXTMODULE_PULSES
 #define EXTMODULE_PWR_GPIO              GPIOD
 #define EXTMODULE_PWR_GPIO_PIN          GPIO_Pin_11
-#define EXTMODULE_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA2)
+#define EXTMODULE_PWR_FIX_GPIO          GPIOA
+#define EXTMODULE_PWR_FIX_GPIO_PIN      GPIO_Pin_2      // PA.02
+#define EXTMODULE_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA2)
 #define EXTMODULE_RCC_APB1Periph        0
 #define EXTMODULE_RCC_APB2Periph        RCC_APB2Periph_TIM8
 #define EXTMODULE_TX_GPIO               GPIOC

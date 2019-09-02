@@ -187,6 +187,7 @@ void boardInit()
   TRACE("RCC->CSR = %08x", RCC->CSR);
 
   pwrInit();
+  extModuleInit();
   battery_charge_init();
   init2MhzTimer();
   init1msTimer();
