@@ -73,13 +73,15 @@ void SwitchChoice::checkEvents()
     {
       if (isValueAvailable && !isValueAvailable(val))
         return;
-      std::map<int, int>::iterator it = valueIndexMap.find(static_cast<int>(val));
+      /*
+      auto it = valueIndexMap.find(static_cast<int>(val));
       if (it != valueIndexMap.end() && it->second >= 0)
       {
         TRACE("EVENTS CHECK - change detected");
         setValue(static_cast<int16_t>(val));
         menu->select(it->second);
       }
+      */
     }
   }
 }
