@@ -136,9 +136,11 @@ void RadioHardwarePage::build(Window * window)
 
   grid.nextLine();
 #if defined(STICK_DEAD_ZONE)
-  new StaticText(window, grid.getLabelSlot(), TR_DEAD_ZONE);
+  new StaticText(window, grid.getLabelSlot(), STR_DEAD_ZONE);
   auto deadZone = new NumberEdit(window, grid.getFieldSlot(), 0, 7, GET_SET_DEFAULT(g_eeGeneral.stickDeadZone));
-  deadZone->setSuffix("%");
+  deadZone->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
+    drawNumber(dc, 2, Y_ENLARGEABLE, value ? 2 << (value -1) : 0, flags);
+  });
   grid.nextLine();
 #endif
   // Bat calibration

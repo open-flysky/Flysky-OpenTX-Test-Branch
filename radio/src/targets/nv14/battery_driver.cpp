@@ -59,7 +59,7 @@ uint16_t get_battery_charge_state()
   if(chargeSampleIndex >= maxSamples) chargeSampleIndex = 0;
   uint16_t currentChargeState = isFinished ? CHARGE_FINISHED : isCharging ? CHARGE_STARTED : CHARGE_NONE;
   chargeSamples[chargeSampleIndex++] = currentChargeState;
-  TRACE("CHARGE sample %d value %d", chargeSampleIndex -1, currentChargeState);
+  //TRACE("CHARGE sample %d value %d", chargeSampleIndex -1, currentChargeState);
 #endif
   for(int index = 0; index < maxSamples; index++) {
     if(chargeState == CHARGE_UNKNOWN) {
@@ -73,7 +73,6 @@ uint16_t get_battery_charge_state()
       chargeState = CHARGE_NONE;
     }
   }
-  TRACE("CHARGE STATE %d", chargeState);
   if(chargeState != CHARGE_UNKNOWN) lastChargeState = chargeState;
   return chargeState;
 }

@@ -767,7 +767,7 @@ const pm_char STR_ENABLE[] PROGMEM = TR_ENABLE;
   const pm_char STR_MENU_OTHER[] PROGMEM = TR_MENU_OTHER;
   const pm_char STR_MENU_INVERT[] PROGMEM = TR_MENU_INVERT;
   const pm_char STR_JITTER_FILTER[] PROGMEM = TR_JITTER_FILTER;
-  const pm_char STR_STR_DEAD_ZONE[] PROGMEM = TR_DEAD_ZONE;
+  const pm_char STR_DEAD_ZONE[] PROGMEM = TR_DEAD_ZONE;
 #endif
 
 #if MENUS_LOCK == 1
