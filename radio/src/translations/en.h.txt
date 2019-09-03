@@ -1376,6 +1376,7 @@
 #define TR_MENU_INVERT                 "Invert"
 #define TR_JITTER_FILTER               "ADC filter"
 #define TR_CROSSFIRE_SETUP             "Crossfire setup"
+#define TR_DEAD_ZONE                   "Dead zone"
 #define ZSTR_NOISE                     "Noise"
 #define ZSTR_RSSI                      "RSSI"
 #define ZSTR_SNR                       "SNR"
