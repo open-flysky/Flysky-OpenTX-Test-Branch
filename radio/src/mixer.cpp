@@ -811,14 +811,14 @@ void evalFlightModeMixes(uint8_t mode, uint8_t tick10ms)
 
       MixData *md = mixAddress(i);
 
-      if (md->srcRaw == 0) break;
+      if (md->srcRaw == 0) continue;
 
       mixsrc_t stickIndex = md->srcRaw - MIXSRC_Rud;
 
       if (!(dirtyChannels & ((bitfield_channels_t)1 << md->destCh))) continue;
 
       // if this is the first calculation for the destination channel, initialize it with 0 (otherwise would be random)
-      if (i == 0 || md->destCh != (md-1)->destCh) {
+      if (i == 0 || ((md-1)->srcRaw == 0) || (md->destCh != (md-1)->destCh) ) {
         chans[md->destCh] = 0;
       }
 
