@@ -26,7 +26,7 @@
 int8_t char2idx(char c);
 char idx2char(int8_t idx);
 
-constexpr coord_t KEYBOARD_HEIGHT = 170;
+constexpr coord_t KEYBOARD_HEIGHT = 190;
 
 TextKeyboard * TextKeyboard::_instance = nullptr;
 
@@ -128,18 +128,7 @@ TextKeyboard::TextKeyboard():
 
 void TextKeyboard::setSize()
 {
-  //disale LARGE_KEYBOARD_LOWERCASE
-  if (g_eeGeneral.displayLargeLines && false) {
-    layout = LARGE_KEYBOARD_LOWERCASE;
-    x_space = 30;
-    x_spacebar = 160;
-    x_special = 50;
-    x_regular = 45;
-    x_enter = 80;
-    lines = 5;
-    setHeight(220);
-  }
-  else {
+  {
     layout = KEYBOARD_LOWERCASE;
     x_space = 15;
     x_spacebar = 135;
