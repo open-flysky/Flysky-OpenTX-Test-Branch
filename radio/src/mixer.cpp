@@ -516,6 +516,18 @@ void evalInputs(uint8_t mode)
     }
   }
 #endif
+#if defined(STICK_DEAD_ZONE)
+  static int16_t P_OFFSET = 0;
+  static int16_t N_OFFSET = 0;
+  static float sub = 0.0f;
+  static int16_t lastDeadZone = -1;
+  if(lastDeadZone != g_eeGeneral.stickDeadZone) {
+    P_OFFSET = (g_eeGeneral.stickDeadZone ? 2 << (g_eeGeneral.stickDeadZone-1) : 0);
+    N_OFFSET = (-1)*P_OFFSET;
+    sub = 1024.0 / (1024.0-(float)P_OFFSET);
+    lastDeadZone = g_eeGeneral.stickDeadZone;
+  }
+#endif
 
   for (uint8_t i=0; i<NUM_STICKS+NUM_POTS+NUM_SLIDERS; i++) {
     // normalization [0..2048] -> [-1024..1024]
@@ -536,42 +548,21 @@ void evalInputs(uint8_t mode)
     if (v < -RESX) v = -RESX;
     if (v >  RESX) v =  RESX;
 
- #if defined(STICK_DEAD_ZONE)
+#if defined(STICK_DEAD_ZONE)
     //dead zone invented by FlySky in my opinion it should goes into ADC
     //float calculations are not efficient
-    if(g_eeGeneral.stickDeadZone && ch!=THR_STICK){
-    float N_OFFSET = (-10.0f * (float)g_eeGeneral.stickDeadZone);
-    float P_OFFSET = (10.0f * (float)g_eeGeneral.stickDeadZone);
-
-    if(v>P_OFFSET)
+    if(g_eeGeneral.stickDeadZone && ch != THR_STICK){
+    if(v > P_OFFSET)
     {
-        // v = k * v + b;
-        // k = (P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024)
-        // b = 1024*(1-((P_OFFSET * P_PROPORTION -1024)/(P_OFFSET-1024))
-        float multi_p = P_OFFSET * P_PROPORTION;//9
-        float sub_p = 1024.0-P_OFFSET;//994
-        v = v*(1024.0-multi_p)/(sub_p)-1024.0*(((1024.0-multi_p)/(sub_p))-1);
+        v = v * sub - 1024.0*(sub-1.0f);
     }
-    else if((v<=P_OFFSET) && (v > 0))
+    else if((v <= P_OFFSET) && (v >= N_OFFSET))
     {
-        // v = k1 * v;
-        // k1 = P_PROPORTION
-        v = P_PROPORTION *v;
+      v = 0;
     }
-    else if((v>=N_OFFSET) && (v < 0))
+    else if(v < N_OFFSET)
     {
-        // v = k2 * v;
-        // k2 = N_PROPORTION
-        v = N_PROPORTION *v;
-    }
-    else if(v<N_OFFSET)
-    {
-        // v = k3 * v + b1;
-        //k3  = (1024.0-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET)
-        //b1 = 1024*(1-((1024-N_OFFSET * N_PROPORTION)/(1024-N_OFFSET )))
-        float multi_n = N_OFFSET * N_PROPORTION;// -9
-        float sub_n = 1024.0+N_OFFSET;// 994
-        v = v*(1024.0+multi_n)/(sub_n)+1024.0*(((1024.0+multi_n)/(sub_n))-1);
+        v = v*sub+1024.0*(sub-1.0f);
     }
     }
 #endif

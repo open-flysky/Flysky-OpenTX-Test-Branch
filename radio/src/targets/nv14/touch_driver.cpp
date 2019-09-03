@@ -300,7 +300,7 @@ unsigned char ReadTouchData( unsigned char *pData, unsigned char Length )
                   SendAckToTouch( 1 );
               }
           }
-
+          //TRACE("%02X %02X %02X %02X %02X %02X %02X %02X", pData[0],pData[1],pData[2],pData[3],pData[4],pData[5],pData[6],pData[7]);
           TouchStop();
           return( !0 );
 
