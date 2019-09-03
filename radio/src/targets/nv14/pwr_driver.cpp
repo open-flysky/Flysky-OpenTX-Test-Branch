@@ -40,11 +40,6 @@ void pwrInit()
   //GPIO_InitStructure.GPIO_Pin = INTMODULE_PWR_GPIO_PIN;
   //GPIO_Init(INTMODULE_PWR_GPIO, &GPIO_InitStructure);
 
-  //TODO move this elsewhere!
-  GPIO_ResetBits(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN);
-  GPIO_InitStructure.GPIO_Pin = EXTMODULE_PWR_GPIO_PIN;
-  GPIO_Init(EXTMODULE_PWR_GPIO, &GPIO_InitStructure);
-
   //Bluetooth
   GPIO_SetBits(BLUETOOTH_ON_GPIO, BLUETOOTH_ON_GPIO_PIN);
   GPIO_InitStructure.GPIO_Pin = BLUETOOTH_ON_GPIO_PIN;
@@ -59,6 +54,11 @@ void pwrInit()
   GPIO_ResetBits(SD_PRESENT_GPIO, SD_PRESENT_GPIO_PIN);
   GPIO_InitStructure.GPIO_Pin = SD_PRESENT_GPIO_PIN;
   GPIO_Init(SD_PRESENT_GPIO, &GPIO_InitStructure);
+
+  //turn power off
+  GPIO_ResetBits(PWR_GPIO, PWR_ON_GPIO_PIN);
+  //turn Bluetooth off
+  GPIO_ResetBits(PWR_GPIO, BLUETOOTH_ON_GPIO_PIN);
 
   boardState = BOARD_POWER_OFF;
 }

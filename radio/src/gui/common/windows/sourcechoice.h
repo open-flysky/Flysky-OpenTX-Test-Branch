@@ -22,6 +22,7 @@
 #define _SOURCECHOICE_H_
 
 #include "window.h"
+#include <map>
 
 class Menu;
 
@@ -48,7 +49,7 @@ class SourceChoice : public Window {
 #endif
 
     void checkEvents() override;
-    
+
     void paint(BitmapBuffer * dc) override;
 
     bool onTouchEnd(coord_t x, coord_t y) override;
@@ -65,8 +66,9 @@ class SourceChoice : public Window {
     std::function<void(int16_t)> setValue;
     std::function<bool(int)> isValueAvailable = isSourceAvailable;
     void fillMenu(Menu * menu, std::function<bool(int16_t)> condition=nullptr);
+	std::map<int, int> valueIndexMap;
     Menu * menu;
-    void deleteMenu() { menu = nullptr; }	  
+    void deleteMenu() { menu = nullptr; }
 };
 
 #endif // _SOURCECHOICE_H_

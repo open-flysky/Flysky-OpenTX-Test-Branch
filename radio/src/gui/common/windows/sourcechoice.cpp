@@ -74,11 +74,11 @@ void SourceChoice::checkEvents()
   {
     int8_t value = getValue();
     int8_t source = getMovedSource(vmin);
-    if (!source) 
+    if (!source)
       return;
-	
+
     if(value != source)
-	  {
+    {
       std::map<int, int>::iterator it = valueIndexMap.find(static_cast<int>(source));
       if (it != valueIndexMap.end() && it->second >= 0)
       {
@@ -86,7 +86,7 @@ void SourceChoice::checkEvents()
         setValue(static_cast<int16_t>(source));
         menu->select(it->second);
       }
-	  }	
+    }
   }
 }
 
@@ -104,6 +104,7 @@ void SourceChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
       continue;
     if (isValueAvailable && !isValueAvailable(i))
       continue;
+    valueIndexMap[i] = count;
     menu->addLine(getSourceString(i), [=]() {
       setValue(i);
     });
