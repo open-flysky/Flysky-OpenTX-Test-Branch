@@ -111,7 +111,7 @@ class ChannelsMonitorPage: public PageTab {
   protected:
     static constexpr coord_t footerHeight = 30;
 };
-#define HALL_STICKS
+
 #if defined(HALL_STICKS)
 class HallStickMonitor : public PageTab {
 public:
