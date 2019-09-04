@@ -21,6 +21,9 @@
 #include "view_channels.h"
 #include "opentx.h"
 #include "libwindows.h"
+#if defined(HALL_STICKS)
+#include "hallStick_driver.h"
+#endif
 
 #define RECT_OFFSET                    80
 #define ROW_HEIGHT                     42
@@ -108,7 +111,87 @@ class ChannelsMonitorPage: public PageTab {
   protected:
     static constexpr coord_t footerHeight = 30;
 };
+#define HALL_STICKS
+#if defined(HALL_STICKS)
+class HallStickMonitor : public PageTab {
+public:
+  HallStickMonitor() :
+    PageTab("Hall DEBUG", ICON_MONITOR_CHANNELS1)
+  {
+    fields = new NumberEdit*[FLYSKY_HALL_CHANNEL_COUNT*5];
+  }
 
+  ~HallStickMonitor(){
+    delete[] fields;
+  }
+
+  virtual void checkEvents() override
+  {
+    PageTab::checkEvents();
+    for(uint32_t index =0; index < FLYSKY_HALL_CHANNEL_COUNT*5; index++) {
+      fields[index]->invalidate();
+    }
+  }
+
+  virtual void build(Window * window) override
+  {
+    GridLayout grid;
+    grid.setLabelWidth(180);
+    //new StaticText(window, grid.getLabelSlot(), )
+    char tmpBuffer[32];
+    NumberEdit * ne;
+    uint8_t index = 0;
+    for (uint8_t channel=0; channel < FLYSKY_HALL_CHANNEL_COUNT; channel++) {
+      sprintf(tmpBuffer, "RAW channel %d", channel);
+      new StaticText(window, grid.getLabelSlot(), std::string(tmpBuffer));
+      ne = new NumberEdit(window, grid.getFieldSlot(), -4095, 4095, GET_DEFAULT(hall_raw_values[channel]));
+      ne->setReadonly(true);
+      fields[index++] = ne;
+      grid.nextLine();
+    }
+    for (uint8_t channel=0; channel < FLYSKY_HALL_CHANNEL_COUNT; channel++) {
+      sprintf(tmpBuffer, "ADC channel %d", channel);
+      new StaticText(window, grid.getLabelSlot(), std::string(tmpBuffer));
+      ne = new NumberEdit(window, grid.getFieldSlot(), 0, 4095, GET_DEFAULT(hall_adc_values[channel]));
+      ne->setReadonly(true);
+      fields[index++] = ne;
+      grid.nextLine();
+    }
+    for (uint8_t channel = 0; channel < FLYSKY_HALL_CHANNEL_COUNT; channel++) {
+      sprintf(tmpBuffer, "Calibration channel %d", channel);
+      new StaticText(window, grid.getLineSlot(), std::string(tmpBuffer));
+      grid.nextLine();
+      new StaticText(window, grid.getLabelSlot(), std::string("Min"));
+      ne = new NumberEdit(window, grid.getFieldSlot(), -4095, 4095, GET_DEFAULT(hall_calibration[channel].min));
+      ne->setReadonly(true);
+      fields[index++] = ne;
+      grid.nextLine();
+      new StaticText(window, grid.getLabelSlot(), std::string("Mid"));
+      ne = new NumberEdit(window, grid.getFieldSlot(), -4095, 4095, GET_DEFAULT(hall_calibration[channel].mid));
+      ne->setReadonly(true);
+      fields[index++] = ne;
+      grid.nextLine();
+      new StaticText(window, grid.getLabelSlot(), std::string("Max"));
+      ne = new NumberEdit(window, grid.getFieldSlot(), -4095, 4095, GET_DEFAULT(hall_calibration[channel].max));
+      ne->setReadonly(true);
+      fields[index++] = ne;
+      grid.nextLine();
+    }
+    grid.nextLine();
+    TextButton* te = new TextButton(window, grid.getLineSlot(), "RESET GIMBALS");
+    te->setPressHandler([=]() -> int8_t {
+        reset_hall_stick();
+        te->setText("Command executed");
+        return 1;
+    });
+    grid.nextLine();
+    window->setInnerHeight(grid.getWindowHeight());
+  }
+  private:
+  NumberEdit** fields;
+
+};
+#endif
 class LogicalSwitchesMonitorPage: public PageTab {
   public:
     LogicalSwitchesMonitorPage() :
@@ -129,6 +212,9 @@ ChannelsMonitorMenu::ChannelsMonitorMenu():
 {
   addTab(new ChannelsMonitorPage());
   addTab(new LogicalSwitchesMonitorPage());
+#if defined(HALL_STICKS)
+  addTab(new HallStickMonitor());
+#endif
 }
 
 
