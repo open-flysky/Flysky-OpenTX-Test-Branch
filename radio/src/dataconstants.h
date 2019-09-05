@@ -245,6 +245,7 @@ enum BeeperMode {
     FLASHING_MODULE,
   };
   enum TrainerMode {
+    TRAINER_MODE_OFF,
     TRAINER_MODE_MASTER_TRAINER_JACK,
     TRAINER_MODE_SLAVE,
 #if defined(PCBTARANIS) || defined(PCBNV14)
