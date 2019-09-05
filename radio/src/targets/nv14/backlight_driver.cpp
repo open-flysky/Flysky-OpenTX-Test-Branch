@@ -47,3 +47,14 @@ void backlightEnable(uint8_t dutyCycle)
 {
   BACKLIGHT_TIMER->CCR1 = dutyCycle;
 }
+
+void lcdOff() {
+  if(lcdOffFunction) lcdOffFunction();
+  backlightEnable(0); /* just disable the backlight */
+}
+
+void lcdOn(){
+  if(lcdOnFunction) lcdOnFunction();
+  else lcdInit();
+  backlightEnable(BACKLIGHT_LEVEL_MAX);
+}

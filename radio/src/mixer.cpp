@@ -499,8 +499,6 @@ getvalue_t getValue(mixsrc_t i)
   else return 0;
 }
 
-#define P_PROPORTION       ((float)(0))    //must be<1
-#define N_PROPORTION       ((float)(0))    //must be<1
 void evalInputs(uint8_t mode)
 {
   BeepANACenter anaCenter = 0;
@@ -519,12 +517,14 @@ void evalInputs(uint8_t mode)
 #if defined(STICK_DEAD_ZONE)
   static int16_t P_OFFSET = 0;
   static int16_t N_OFFSET = 0;
-  static float sub = 0.0f;
+  static float aParam = 0.0f;
+  static float bParam = 0.0f;
   static int16_t lastDeadZone = -1;
   if(lastDeadZone != g_eeGeneral.stickDeadZone) {
     P_OFFSET = (g_eeGeneral.stickDeadZone ? 2 << (g_eeGeneral.stickDeadZone-1) : 0);
     N_OFFSET = (-1)*P_OFFSET;
-    sub = 1024.0 / (1024.0-(float)P_OFFSET);
+    aParam = 1024.0 / (1024.0-(float)P_OFFSET);
+    bParam = 1024.0*(aParam-1.0f);
     lastDeadZone = g_eeGeneral.stickDeadZone;
   }
 #endif
@@ -554,7 +554,8 @@ void evalInputs(uint8_t mode)
     if(g_eeGeneral.stickDeadZone && ch != THR_STICK){
     if(v > P_OFFSET)
     {
-        v = v * sub - 1024.0*(sub-1.0f);
+      //y=ax+b
+      v = (int)((aParam * (float)v) - bParam);
     }
     else if((v <= P_OFFSET) && (v >= N_OFFSET))
     {
@@ -562,7 +563,8 @@ void evalInputs(uint8_t mode)
     }
     else if(v < N_OFFSET)
     {
-        v = v*sub+1024.0*(sub-1.0f);
+      //y=ax+b
+      v = (int)((aParam * (float)v) + bParam);
     }
     }
 #endif

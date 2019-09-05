@@ -653,7 +653,7 @@ static int luaLcdDrawGauge(lua_State *L)
   int num = luaL_checkinteger(L, 5);
   int den = luaL_checkinteger(L, 6);
   unsigned int flags = luaL_optunsigned(L, 7, 0);
-#if defined(PCBHORUS)
+#if defined(PCBHORUS) || defined(PCBNV14)
   lcdDrawRect(x, y, w, h, 1, 0xff, flags);
 #else
   lcdDrawRect(x, y, w, h, 0xff, flags);

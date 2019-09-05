@@ -27,9 +27,9 @@ unsigned char HallCmd[264] __DMA;
 
 STRUCT_HALL HallProtocol = { 0 };
 STRUCT_HALL HallProtocolTx = { 0 };
-STRUCT_HALL_CHANNEL Channel;
-STRUCT_STICK_CALIBRATION StickCallbration[4] = { {0, 0, 0} };
-unsigned short HallChVal[4];
+signed short hall_raw_values[FLYSKY_HALL_CHANNEL_COUNT];
+STRUCT_STICK_CALIBRATION hall_calibration[FLYSKY_HALL_CHANNEL_COUNT] = { {0, 0, 0} };
+unsigned short hall_adc_values[FLYSKY_HALL_CHANNEL_COUNT];
 
 /* crc16 implementation according to CCITT standards */
 const unsigned short CRC16Table[256]= {
@@ -92,14 +92,14 @@ uint16_t get_hall_adc_value(uint8_t ch)
 #if defined(FLYSKY_HALL_STICKS_REVERSE)
   ch = sticks_mapping[ch];
 
-  return MAX_ADC_CHANNEL_VALUE - HallChVal[ch];
+  return MAX_ADC_CHANNEL_VALUE - hall_adc_values[ch];
 #else
   if (ch < 2)
   {
-    return MAX_ADC_CHANNEL_VALUE - HallChVal[ch];
+    return MAX_ADC_CHANNEL_VALUE - hall_adc_values[ch];
   }
 
-  return HallChVal[ch];
+  return hall_adc_values[ch];
 #endif
 }
 
@@ -175,11 +175,10 @@ void hall_stick_init(uint32_t baudrate)
 
 void HallSendBuffer(uint8_t * buffer, uint32_t count)
 {
-  for(int idx = 0; buffer != HallCmd && idx < count; idx++)
+  for(uint32_t idx = 0; buffer != HallCmd && idx < count; idx++)
   {
     HallCmd[idx] = buffer[idx];
   }
-
   DMA_InitTypeDef DMA_InitStructure;
   DMA_DeInit(HALL_DMA_Stream_TX);
   DMA_InitStructure.DMA_Channel = HALL_DMA_Channel;
@@ -385,31 +384,31 @@ void convert_hall_to_adcVaule( void )
 {
     uint16_t value;
 
-    for ( uint8_t i = 0; i < 4; i++ )
+    for ( uint8_t channel = 0; channel < 4; channel++ )
     {
-        if (Channel.channel[i] < StickCallbration[i].mid)
+        if (hall_raw_values[channel] < hall_calibration[channel].mid)
         {
-            value = StickCallbration[i].mid - (StickCallbration[i].min+ERROR_OFFSET);
-            value = ( MIDDLE_ADC_CHANNLE_VALUE * (StickCallbration[i].mid - Channel.channel[i] ) ) / ( value );
+            value = hall_calibration[channel].mid - (hall_calibration[channel].min+ERROR_OFFSET);
+            value = ( MIDDLE_ADC_CHANNLE_VALUE * (hall_calibration[channel].mid - hall_raw_values[channel] ) ) / ( value );
 
             if (value >= MIDDLE_ADC_CHANNLE_VALUE ) {
                 value = MIDDLE_ADC_CHANNLE_VALUE;
             }
 
-            HallChVal[i] = MIDDLE_ADC_CHANNLE_VALUE - value;
+            hall_adc_values[channel] = MIDDLE_ADC_CHANNLE_VALUE - value;
         }
         else
         {
-            value = (StickCallbration[i].max - ERROR_OFFSET) - StickCallbration[i].mid;
+            value = (hall_calibration[channel].max - ERROR_OFFSET) - hall_calibration[channel].mid;
 
-            value = ( MIDDLE_ADC_CHANNLE_VALUE * (Channel.channel[i] - StickCallbration[i].mid ) ) / (value );
+            value = ( MIDDLE_ADC_CHANNLE_VALUE * (hall_raw_values[channel] - hall_calibration[channel].mid ) ) / (value );
 
             if (value >= MIDDLE_ADC_CHANNLE_VALUE )
             {
                 value = MIDDLE_ADC_CHANNLE_VALUE;
             }
 
-            HallChVal[i] = MIDDLE_ADC_CHANNLE_VALUE + value + 1;
+            hall_adc_values[channel] = MIDDLE_ADC_CHANNLE_VALUE + value + 1;
         }
     }
 }
@@ -576,11 +575,11 @@ void hall_stick_loop(void)
             case TRANSFER_DIR_TXMCU:
                 if ( 0x0e == HallProtocol.hallID.hall_Id.packetID )
                 {
-                    memcpy(&StickCallbration, HallProtocol.data, sizeof(StickCallbration));
+                    memcpy(&hall_calibration, HallProtocol.data, sizeof(hall_calibration));
                 }
                 else if ( 0x0c == HallProtocol.hallID.hall_Id.packetID )
                 {
-                    memcpy(&Channel, HallProtocol.data, sizeof(Channel));
+                    memcpy(hall_raw_values, HallProtocol.data, sizeof(hall_raw_values));
 
                     convert_hall_to_adcVaule();
                 }                
@@ -609,8 +608,8 @@ void hall_stick_loop(void)
     if (((get_tmr10ms() - getCfgTime) > 200) && (HALLSTICK_SEND_STATE_IDLE == hallStickSendState))
     {
         if (
-            ((0 == StickCallbration[0].max) && (0 == StickCallbration[0].mid) && (0== StickCallbration[0].min) )
-            ||( (-1 == StickCallbration[0].max) && (-1 == StickCallbration[0].mid) && (-1== StickCallbration[0].min))
+            ((0 == hall_calibration[0].max) && (0 == hall_calibration[0].mid) && (0== hall_calibration[0].min) )
+            ||( (-1 == hall_calibration[0].max) && (-1 == hall_calibration[0].mid) && (-1== hall_calibration[0].min))
            )
         {
             get_hall_config();

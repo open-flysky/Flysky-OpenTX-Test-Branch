@@ -151,8 +151,7 @@ void handle_battery_charge(uint32_t last_press_time)
     info_until = 0;
     lcd->clear();
     BACKLIGHT_DISABLE();
-    if(!lcdInited) {
-      lcdInited = false;
+    if(lcdInited) {
       lcdOff();
     }
     return;
@@ -164,6 +163,9 @@ void handle_battery_charge(uint32_t last_press_time)
         backlightInit();
         lcdInit();
         lcdInited = true;
+      }
+      else {
+        lcdOn();
       }
       updateTime = get_tmr10ms();     
       lcdNextLayer();

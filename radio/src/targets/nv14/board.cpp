@@ -238,7 +238,6 @@ void boardInit()
 #endif
 }
 
-
 void boardOff()
 {
   BACKLIGHT_DISABLE();
