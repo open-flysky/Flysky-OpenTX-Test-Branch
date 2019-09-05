@@ -121,7 +121,7 @@ void SourceChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
 
 bool SourceChoice::onTouchEnd(coord_t, coord_t)
 {
-  auto menu = new Menu();
+  menu = new Menu();
   fillMenu(menu);
 
   menu->setToolbar(new SourceChoiceMenuToolbar(this, menu));
