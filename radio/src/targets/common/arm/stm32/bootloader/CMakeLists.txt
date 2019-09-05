@@ -41,6 +41,8 @@ else()
     )
 endif()
 
+remove_definitions(-DDEBUG)
+
 set(BOOTLOADER_SRC
   ${BOOTLOADER_SRC}
   ../../../../../gui/${GUI_DIR}/lcd.cpp
@@ -89,7 +91,7 @@ if(NOT (PCB STREQUAL X10 OR PCB STREQUAL X12S OR PCB STREQUAL NV14))
     ../../../../../targets/${TARGET_DIR}/i2c_driver.cpp
     )
 
-  remove_definitions(-DDEBUG)
+
 
 else()
   set(BOOTLOADER_SRC

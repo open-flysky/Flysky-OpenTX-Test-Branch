@@ -1267,23 +1267,28 @@ void lcdInit(void) {
 
   /* Send LCD initializaiton commands */
   if (LCD_ILI9481_ReadID() == LCD_ILI9481_ID) {
+    TRACE("LCD INIT: ILI9481");
     lcdInitFunction = LCD_ILI9481_Init;
     lcdOffFunction = LCD_ILI9481_Off;
     lcdOnFunction = LCD_ILI9481_On;
   } else if (LCD_ILI9486_ReadID() == LCD_ILI9486_ID) {
+    TRACE("LCD INIT: ILI9486");
     lcdInitFunction = LCD_ILI9486_Init;
     lcdOffFunction = LCD_ILI9486_Off;
     lcdOnFunction = LCD_ILI9486_On;
   } else if (LCD_ILI9488_ReadID() == LCD_ILI9488_ID) {
+    TRACE("LCD INIT: ILI9488");
     lcdInitFunction = LCD_ILI9488_Init;
     lcdOffFunction = LCD_ILI9488_Off;
     lcdOnFunction = LCD_ILI9488_On;
   } else if (LCD_HX8357D_ReadID() == LCD_HX8357D_ID) {
     lcdInitFunction = LCD_HX8357D_Init;
-    lcdOffFunction = LCD_HX8357D_Off; //missing
-    lcdOnFunction = LCD_HX8357D_On; //missing
+    lcdOffFunction = LCD_HX8357D_Off;
+    lcdOnFunction = LCD_HX8357D_On;
+    TRACE("LCD INIT: HX8357D");
   } else { //if (LCD_ST7796S_ReadID() == LCD_ST7796S_ID)
     /* Default is ST7796S */
+    TRACE("LCD INIT (default): ST7796S");
     lcdInitFunction = LCD_ST7796S_Init;
     lcdOffFunction = LCD_ST7796S_Off;
     lcdOnFunction = LCD_ST7796S_On;

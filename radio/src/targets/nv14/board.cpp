@@ -238,17 +238,6 @@ void boardInit()
 #endif
 }
 
-void lcdOff() {
-  lcdOffFunction();
-  backlightEnable(0); /* just disable the backlight */
-}
-
-void lcdOn(){
-  lcdOnFunction();
-  backlightEnable(BACKLIGHT_LEVEL_MAX);
-}
-
-
 void boardOff()
 {
   BACKLIGHT_DISABLE();
