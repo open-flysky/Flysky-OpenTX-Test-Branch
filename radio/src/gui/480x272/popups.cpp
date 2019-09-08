@@ -39,16 +39,6 @@ uint16_t    popupMenuOffset = 0;
 uint8_t     popupMenuOffsetType = MENU_OFFSET_INTERNAL;
 void        (*popupMenuHandler)(const char * result);
 
-#define ALERT_FRAME_TOP           70
-#define ALERT_FRAME_PADDING       10
-#define ALERT_BITMAP_PADDING      15
-#define ALERT_TITLE_LEFT          135
-#define ALERT_TITLE_LINE_HEIGHT   30
-#define ALERT_MESSAGE_TOP         210
-#define ALERT_ACTION_TOP          230
-#define ALERT_BUTTON_TOP          300
-
-
 MessageBox* activePopup = nullptr;
 
 void runPopupWarningBox()

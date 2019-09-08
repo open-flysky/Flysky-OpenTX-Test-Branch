@@ -17,6 +17,7 @@ set(SRC
     ${WINDOWS_DIRECTORY}/tabsgroup.cpp
     ${WINDOWS_DIRECTORY}/page.cpp
     ${WINDOWS_DIRECTORY}/sourcechoice.cpp
+    ${WINDOWS_DIRECTORY}/switch_warn_dialog.cpp
     ${WINDOWS_DIRECTORY}/switchchoice.cpp
     ${WINDOWS_DIRECTORY}/filechoice.cpp
     ${WINDOWS_DIRECTORY}/slider.cpp
