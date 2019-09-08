@@ -90,6 +90,51 @@ void deleteExpo(uint8_t idx)
   storageDirty(EE_MODEL);
 }
 
+class SensorValue : Window {
+public:
+  SensorValue(Window * parent, const rect_t &rect, ExpoData * expoData) :
+    Window(parent, rect),
+    expoData(expoData)
+  {
+
+  }
+  void paint(BitmapBuffer * dc) override {
+    if(isTeletryValue()){
+      uint8_t sensorIndex = (expoData->srcRaw - MIXSRC_FIRST_TELEM)/3;
+      TelemetryItem &telemetryItem = telemetryItems[sensorIndex];
+      TelemetrySensor sensor = g_model.telemetrySensors[sensorIndex];
+      if (telemetryItem.isAvailable()) {
+         LcdFlags flags = LEFT | TEXT_COLOR;
+         if(sensor.unit == UNIT_GPS) flags |= EXPANDED;
+         drawSensorCustomValue(3, Y_ENLARGEABLE, sensorIndex, lastSensorVal, flags);
+      }
+      else {
+        lcdDrawText(3, Y_ENLARGEABLE, "---", TEXT_COLOR);
+      }
+    }
+    else {
+      dc->clearClippingRect();
+    }
+  }
+  bool isTeletryValue() {
+    return expoData->srcRaw >= MIXSRC_FIRST_TELEM && expoData->srcRaw <= MIXSRC_LAST_TELEM;
+  }
+  void checkEvents() override
+  {
+    getvalue_t sensorVal = -1;
+    if (isTeletryValue()) {
+      sensorVal = getValue(expoData->srcRaw);
+    }
+    if (lastSensorVal != sensorVal) {
+      lastSensorVal = sensorVal;
+      invalidate();
+    }
+  }
+protected:
+  getvalue_t lastSensorVal;
+  ExpoData * expoData;
+};
+
 class InputEditWindow: public Page {
   public:
     InputEditWindow(int8_t input, uint8_t index):
@@ -118,6 +163,7 @@ class InputEditWindow: public Page {
     Choice * trimChoice = nullptr;
     Window * updateCurvesWindow = nullptr;
     Choice * curveTypeChoice = nullptr;
+    NumberEdit* scale = nullptr;
 
     void buildHeader(Window * window) {
       new StaticText(window, { 70, 4, 100, 20 }, STR_MENUINPUTS, MENU_TITLE_COLOR);
@@ -211,20 +257,20 @@ class InputEditWindow: public Page {
                            line->carryTrim = TRIM_OFF;
                            trimChoice->invalidate();
                          }
+                         scale->enable(line->srcRaw >= MIXSRC_FIRST_TELEM && line->srcRaw <= MIXSRC_LAST_TELEM);
                          SET_DIRTY();
                        }
       );
-      /* TODO telemetry current value
-      if (ed->srcRaw >= MIXSRC_FIRST_TELEM) {
-        drawSensorCustomValue(EXPO_ONE_2ND_COLUMN+75, y, (ed->srcRaw - MIXSRC_FIRST_TELEM)/3, convertTelemValue(ed->srcRaw - MIXSRC_FIRST_TELEM + 1, ed->scale), LEFT|(menuHorizontalPosition==1?attr:0));
-      } */
       grid.nextLine();
 
-      // Scale
-      // TODO only displayed when source is telemetry + unfinished
+      /* TODO telemetry current value - verify */
+      //Scale only displayed when source is telemetry + unfinished
       new StaticText(window, grid.getLabelSlot(), STR_SCALE);
-      new NumberEdit(window, grid.getFieldSlot(), -100, 100, GET_SET_DEFAULT(line->scale));
+      scale = new NumberEdit(window, grid.getFieldSlot(2, 0), 0, 100, GET_SET_DEFAULT(line->scale));
+      scale->enable(line->srcRaw >= MIXSRC_FIRST_TELEM && line->srcRaw <= MIXSRC_LAST_TELEM);
+      new SensorValue(window, grid.getFieldSlot(2, 1), line);
       grid.nextLine();
+
 
       // Weight
       new StaticText(window, grid.getLabelSlot(), STR_WEIGHT);
