@@ -276,6 +276,7 @@ class InputEditWindow: public Page {
       new StaticText(window, grid.getLabelSlot(), STR_WEIGHT);
       // TODO GVAR ?
       edit = new NumberEdit(window, grid.getFieldSlot(), -100, 100, GET_SET_DEFAULT(line->weight));
+      edit->setDefault(100);
       edit->setSuffix("%");
       grid.nextLine();
 
