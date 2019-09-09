@@ -385,79 +385,77 @@ void ModelMixesPage::build(Window * window, int8_t focusMixIndex)
   int mixIndex = 0;
   MixData * mix = g_model.mixData;
   for (uint8_t ch = 0; ch < MAX_OUTPUT_CHANNELS; ch++) {
-    if (mixIndex < MAX_MIXERS && mix->srcRaw > 0 && mix->destCh == ch) {
-      new TextButton(window, grid.getLabelSlot(), getSourceString(MIXSRC_CH1 + ch));
-      uint8_t count = 0;
-      while (mixIndex < MAX_MIXERS && mix->srcRaw > 0 && mix->destCh == ch) {
-        Button * button = new MixLineButton(window, grid.getFieldSlot(), mixIndex, count);
-        if (focusMixIndex == mixIndex)
-          button->setFocus();
-        button->setPressHandler([=]() -> uint8_t {
-          button->bringToTop();
-          Menu * menu = new Menu();
-          menu->addLine(STR_EDIT, [=]() {
-            editMix(window, ch, mixIndex);
-          });
-          if (!reachMixesLimit()) {
-            menu->addLine(STR_INSERT_BEFORE, [=]() {
-              insertMix(mixIndex, ch);
-              editMix(window, ch, mixIndex);
-            });
-            menu->addLine(STR_INSERT_AFTER, [=]() {
-              insertMix(mixIndex + 1, ch);
-              editMix(window, ch, mixIndex + 1);
-            });
-            menu->addLine(STR_COPY, [=]() {
-              ModelMixesPage::s_mixCopyMode = COPY_MODE;
-              ModelMixesPage::s_mixCopySrcIdx = mixIndex;
-            });
-            //if (ModelMixesPage::s_mixCopyMode != 0) {
-              menu->addLine(STR_PASTE_BEFORE, [=]() {
-                copyMix(ModelMixesPage::s_mixCopySrcIdx, mixIndex, PASTE_BEFORE);
-                if(ModelMixesPage::s_mixCopyMode == MOVE_MODE) {
-                  deleteMix((ModelMixesPage::s_mixCopySrcIdx > mixIndex) ? ModelMixesPage::s_mixCopySrcIdx+1 : ModelMixesPage::s_mixCopySrcIdx);
-                  ModelMixesPage::s_mixCopyMode = 0;
-                }
-                rebuild(window, mixIndex);
-              });
-              menu->addLine(STR_PASTE_AFTER, [=]() {
-                copyMix(ModelMixesPage::s_mixCopySrcIdx, mixIndex, PASTE_AFTER);
-                if(ModelMixesPage::s_mixCopyMode == MOVE_MODE) {
-                  deleteMix((ModelMixesPage::s_mixCopySrcIdx > mixIndex) ? ModelMixesPage::s_mixCopySrcIdx+1 : ModelMixesPage::s_mixCopySrcIdx);
-                  ModelMixesPage::s_mixCopyMode = 0;
-                }
-                rebuild(window, mixIndex+1);
-              });
-            //}
-          }
-          menu->addLine(STR_MOVE, [=]() {
-            ModelMixesPage::s_mixCopyMode = MOVE_MODE;
-            ModelMixesPage::s_mixCopySrcIdx = mixIndex;
-          });
-          menu->addLine(STR_DELETE, [=]() {
-            deleteMix(mixIndex);
-            rebuild(window, -1);
-          });
-          return 0;
-        });
-
-        if (count++ > 0) {
-          new StaticBitmap(window, {35, button->top() + (button->height() - 18) / 2, 25, 17}, mixerMultiplexBitmap[mix->mltpx]);
-        }
-
-        grid.spacer(button->height() - 2);
-        ++mixIndex;
-        ++mix;
-      }
-
-      grid.spacer(7);
-    }
-    else {
-      auto button = new TextButton(window, grid.getLabelSlot(), getSourceString(MIXSRC_CH1 + ch));
-      if (focusMixIndex == mixIndex)
-        button->setFocus();
+    Button* channelButton = new TextButton(window, grid.getLabelSlot(), getSourceString(MIXSRC_CH1 + ch));
+    uint8_t count = 0;
+    while (mixIndex < MAX_MIXERS && mix->destCh == ch) {
+      //do not allow mixes with source 0 to be displayed for channel 0
+      if(ch == 0 && mix->srcRaw == 0) break;
+      Button * button = new MixLineButton(window, grid.getFieldSlot(), mixIndex, count);
+      if (focusMixIndex == mixIndex) button->setFocus();
       button->setPressHandler([=]() -> uint8_t {
         button->bringToTop();
+        Menu * menu = new Menu();
+        menu->addLine(STR_EDIT, [=]() {
+          editMix(window, ch, mixIndex);
+        });
+
+        if (!reachMixesLimit()) {
+          menu->addLine(STR_INSERT_BEFORE, [=]() {
+            insertMix(mixIndex, ch);
+            editMix(window, ch, mixIndex);
+          });
+          menu->addLine(STR_INSERT_AFTER, [=]() {
+            insertMix(mixIndex + 1, ch);
+            editMix(window, ch, mixIndex + 1);
+          });
+          menu->addLine(STR_COPY, [=]() {
+            ModelMixesPage::s_mixCopyMode = COPY_MODE;
+            ModelMixesPage::s_mixCopySrcIdx = mixIndex;
+          });
+          //if (ModelMixesPage::s_mixCopyMode != 0) {
+          menu->addLine(STR_PASTE_BEFORE, [=]() {
+            copyMix(ModelMixesPage::s_mixCopySrcIdx, mixIndex, PASTE_BEFORE);
+              if(ModelMixesPage::s_mixCopyMode == MOVE_MODE) {
+                deleteMix((ModelMixesPage::s_mixCopySrcIdx > mixIndex) ? ModelMixesPage::s_mixCopySrcIdx+1 : ModelMixesPage::s_mixCopySrcIdx);
+                ModelMixesPage::s_mixCopyMode = 0;
+              }
+              rebuild(window, mixIndex);
+          });
+          menu->addLine(STR_PASTE_AFTER, [=]() {
+            copyMix(ModelMixesPage::s_mixCopySrcIdx, mixIndex, PASTE_AFTER);
+            if(ModelMixesPage::s_mixCopyMode == MOVE_MODE) {
+              deleteMix((ModelMixesPage::s_mixCopySrcIdx > mixIndex) ? ModelMixesPage::s_mixCopySrcIdx+1 : ModelMixesPage::s_mixCopySrcIdx);
+              ModelMixesPage::s_mixCopyMode = 0;
+            }
+            rebuild(window, mixIndex+1);
+          });
+          //}
+        }
+        menu->addLine(STR_MOVE, [=]() {
+          ModelMixesPage::s_mixCopyMode = MOVE_MODE;
+          ModelMixesPage::s_mixCopySrcIdx = mixIndex;
+          });
+        menu->addLine(STR_DELETE, [=]() {
+          deleteMix(mixIndex);
+          rebuild(window, -1);
+          });
+        return 0;
+      });
+
+      if (count++ > 0) {
+        new StaticBitmap(window, { 35, button->top() + (button->height() - 18) / 2, 25, 17 }, mixerMultiplexBitmap[mix->mltpx]);
+      }
+
+      grid.spacer(button->height() - 2);
+      ++mixIndex;
+      ++mix;
+    }
+
+    if (count == 0) { // no mixes for current channel
+
+      if (focusMixIndex == mixIndex) channelButton->setFocus();
+      channelButton->setPressHandler([=]() -> uint8_t {
+        channelButton->bringToTop();
         Menu * menu = new Menu();
         menu->addLine(STR_EDIT, [=]() {
           insertMix(mixIndex, ch);
@@ -480,8 +478,10 @@ void ModelMixesPage::build(Window * window, int8_t focusMixIndex)
         // TODO STR_MOVE
         return 0;
       });
+
       grid.nextLine();
     }
+    else grid.spacer(7);
   }
 
   Window * focus = Window::getFocus();
