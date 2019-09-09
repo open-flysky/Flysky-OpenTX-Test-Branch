@@ -592,6 +592,7 @@
 #define TR_VTMRMODES                   "Off""ON\0""THs""TH%""THt"
 
 #define LEN_VTRAINERMODES              "\022"
+#define TR_VTRAINER_OFF                "Off\0              "
 #define TR_VTRAINER_MASTER_JACK        "Master/Jack\0      "
 #define TR_VTRAINER_SLAVE_JACK         "Slave/Jack\0       "
 #define TR_VTRAINER_MASTER_SBUS_MODULE "Master/SBUS Module"

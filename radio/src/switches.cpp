@@ -20,6 +20,8 @@
 
 #include "opentx.h"
 #include "mainwindow.h"
+#include "switch_warn_dialog.h"
+
 
 #define CS_LAST_VALUE_INIT -32768
 
@@ -642,16 +644,15 @@ swsrc_t getMovedSwitch()
   return result;
 }
 
-#if defined(GUI)
+
+#if defined(GUI) && defined(COLORLCD)
 void checkSwitches()
 {
-#if defined (SIMU)
-  //in simu we can not refresh buffer
-  return;
-#endif
-#if defined(COLORLCD)
-    mainWindow.resetDisplayRect();
-#endif
+  (new SwitchWarnDialog())->runForever();
+}
+#elif defined(GUI)
+void checkSwitches()
+{
 #if defined(MODULE_ALWAYS_SEND_PULSES)
   static swarnstate_t last_bad_switches = 0xff;
 #else

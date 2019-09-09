@@ -41,6 +41,15 @@ enum DialogResult {
   OK = 0x40     | DialogResultMask,
 };
 
+#define ALERT_FRAME_TOP           70
+#define ALERT_FRAME_PADDING       10
+#define ALERT_BITMAP_PADDING      15
+#define ALERT_TITLE_LEFT          135
+#define ALERT_TITLE_LINE_HEIGHT   30
+#define ALERT_MESSAGE_TOP         210
+#define ALERT_ACTION_TOP          230
+#define ALERT_BUTTON_TOP          300
+
 
 class Dialog : public Window {
   public:

@@ -112,7 +112,7 @@ class ChannelsMonitorPage: public PageTab {
     static constexpr coord_t footerHeight = 30;
 };
 
-#if defined(HALL_STICKS)
+#if defined(HALL_STICKS) && !defined(SIMU)
 class HallStickMonitor : public PageTab {
 public:
   HallStickMonitor() :
@@ -212,7 +212,7 @@ ChannelsMonitorMenu::ChannelsMonitorMenu():
 {
   addTab(new ChannelsMonitorPage());
   addTab(new LogicalSwitchesMonitorPage());
-#if defined(HALL_STICKS)
+#if defined(HALL_STICKS) && !defined(SIMU)
   addTab(new HallStickMonitor());
 #endif
 }

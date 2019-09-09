@@ -51,11 +51,11 @@ uint16_t get_battery_charge_state()
   static uint16_t chargeSampleIndex = 0;
   bool lastChargeState = CHARGE_UNKNOWN;
   uint16_t chargeState = CHARGE_UNKNOWN;
+  int maxSamples = CHARGE_SAMPLES;
 #if !defined(SIMU)
   bool isFinished = !READ_CHARGE_FINISHED_STATE();
   bool isCharging = !READ_CHARGING_STATE();
-  int maxSamples = boardState == BOARD_POWER_OFF ? CHARGE_SAMPLES/2 : CHARGE_SAMPLES;
-  maxSamples = CHARGE_SAMPLES;
+  //maxSamples = boardState == BOARD_POWER_OFF ? CHARGE_SAMPLES/2 : CHARGE_SAMPLES;
   if(chargeSampleIndex >= maxSamples) chargeSampleIndex = 0;
   uint16_t currentChargeState = isFinished ? CHARGE_FINISHED : isCharging ? CHARGE_STARTED : CHARGE_NONE;
   chargeSamples[chargeSampleIndex++] = currentChargeState;

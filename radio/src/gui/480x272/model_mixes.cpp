@@ -233,9 +233,10 @@ static constexpr coord_t line2 = 22;
 
 class MixLineButton : public Button {
   public:
-    MixLineButton(Window * parent, const rect_t &rect, uint8_t mixIndex) :
+    MixLineButton(Window * parent, const rect_t &rect, uint8_t mixIndex, uint8_t mixCount) :
       Button(parent, rect),
-      mixIndex(mixIndex)
+      mixIndex(mixIndex),
+      mixCount(mixCount)
     {
       const MixData & mix = g_model.mixData[mixIndex];
       if (mix.swtch || mix.curve.value != 0 || mix.flightModes) {
@@ -279,8 +280,13 @@ class MixLineButton : public Button {
       const MixData &mix = g_model.mixData[mixIndex];
 
       // first line ...
-      drawNumber(dc, 3, line1, mix.weight, 0, 0, nullptr, "%");
-      // TODO gvarWeightItem(MIX_LINE_WEIGHT_POS, y, md, RIGHT | attr | (isMixActive(i) ? BOLD : 0), event);
+      if (mixCount == 0 && mix.mltpx == 1) {
+        dc->drawSizedText(3, line1, "MULT!", 5, 0);
+      }
+      else {
+        drawNumber(dc, 3, line1, mix.weight, 0, 0, nullptr, "%");
+        // TODO gvarWeightItem(MIX_LINE_WEIGHT_POS, y, md, RIGHT | attr | (isMixActive(i) ? BOLD : 0), 0);
+      }
 
       drawSource(dc, 60, line1, mix.srcRaw);
 
@@ -315,6 +321,7 @@ class MixLineButton : public Button {
 
   protected:
     uint8_t mixIndex;
+    uint8_t mixCount;
     bool active = false;
 };
 
@@ -382,13 +389,12 @@ void ModelMixesPage::build(Window * window, int8_t focusMixIndex)
       new TextButton(window, grid.getLabelSlot(), getSourceString(MIXSRC_CH1 + ch));
       uint8_t count = 0;
       while (mixIndex < MAX_MIXERS && mix->srcRaw >= 0 && mix->destCh == ch) {
-        Button * button = new MixLineButton(window, grid.getFieldSlot(), mixIndex);
+        Button * button = new MixLineButton(window, grid.getFieldSlot(), mixIndex, count);
         if (focusMixIndex == mixIndex)
           button->setFocus();
         button->setPressHandler([=]() -> uint8_t {
           button->bringToTop();
           Menu * menu = new Menu();
-          TRACE("ModelMixesPage::s_mixCopyMode %d", ModelMixesPage::s_mixCopyMode);
           menu->addLine(STR_EDIT, [=]() {
             editMix(window, ch, mixIndex);
           });

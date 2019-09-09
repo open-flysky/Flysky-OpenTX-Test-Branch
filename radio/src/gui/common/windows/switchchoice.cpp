@@ -73,7 +73,7 @@ void SwitchChoice::checkEvents()
     {
       if (isValueAvailable && !isValueAvailable(val))
         return;
-      /*
+
       auto it = valueIndexMap.find(static_cast<int>(val));
       if (it != valueIndexMap.end() && it->second >= 0)
       {
@@ -81,7 +81,7 @@ void SwitchChoice::checkEvents()
         setValue(static_cast<int16_t>(val));
         menu->select(it->second);
       }
-      */
+
     }
   }
 }
