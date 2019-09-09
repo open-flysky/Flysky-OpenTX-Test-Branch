@@ -374,6 +374,10 @@ class InputLineButton : public Button {
         dc->drawBitmap(146, 4, mixerSetupLabelBitmap);
         dc->drawSizedText(166, 2, line.name, sizeof(line.name), ZCHAR);
       }
+      if (line.mode!=3) {
+        char mode = line.mode == 2 ? 126 : 127;
+        dc->drawSizedText(220, 2, &mode, 1);
+      }
 
       // second line ...
       if (line.swtch) {
