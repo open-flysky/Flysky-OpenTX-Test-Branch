@@ -390,7 +390,7 @@ void usbSetFrameTransmit(uint8_t packetID, uint8_t *dataBuf, uint32_t nBytes)
 
     if ( packetID == 0x08 ) {
       uint8_t fwVerision[40];
-      for(int idx = 40; idx > 0; idx--)
+      for(uint32_t idx = 40; idx > 0; idx--)
       {
           if ( idx <= nBytes ) {
               fwVerision[idx-1] = dataBuf[idx-1];
@@ -404,7 +404,7 @@ void usbSetFrameTransmit(uint8_t packetID, uint8_t *dataBuf, uint32_t nBytes)
     rfProtocolRx.length = nBytes;
 
     TRACE_NOCRLF("\r\nToUSB: 55 %02X %02X ", rfProtocolRx.hallID.ID, nBytes);
-    for ( int idx = 0; idx < nBytes; idx++ )
+    for ( uint32_t idx = 0; idx < nBytes; idx++ )
     {
         rfProtocolRx.data[idx] = dataBuf[idx];
         TRACE_NOCRLF("%02X ", rfProtocolRx.data[idx]);
@@ -733,7 +733,7 @@ void parseFlySkyFeedbackFrame(uint8_t port)
   uint8_t frame_type = *ptr++;
   uint8_t command_id = *ptr++;
   uint8_t first_para = *ptr++;
-  uint8_t * p_data = NULL;
+  // uint8_t * p_data = NULL;
 
   dataLen -= 2;
   if (!checkFlySkyFrameCrc(modulePulsesData[port].flysky.telemetry + 1, dataLen)) {
@@ -953,7 +953,7 @@ void setupPulsesFlySky(uint8_t port)
 
   if (modulePulsesData[port].flysky.state < FLYSKY_MODULE_STATE_DEFAULT) {
 
-    if (++modulePulsesData[port].flysky.state_index >= FLYSKY_MODULE_TIMEOUT / PXX_PERIOD_DURATION) {
+    if (++modulePulsesData[port].flysky.state_index >= FLYSKY_MODULE_TIMEOUT / PXX_PERIOD) {
 
       modulePulsesData[port].flysky.state_index = 0;
 
@@ -1060,7 +1060,7 @@ void usbDownloadTransmit(uint8_t *buffer, uint32_t size)
 {
     if (USB_SERIAL_MODE != getSelectedUsbMode()) return;
     buffer[0] = HALL_PROTOLO_HEAD;
-    for (int idx = 0; idx < size; idx++)
+    for (uint32_t idx = 0; idx < size; idx++)
     {
         usbSerialPutc(buffer[idx]);
     }

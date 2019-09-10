@@ -184,18 +184,18 @@ void setupPulses(uint8_t port)
       if (init_needed)
         resetPulsesFlySky(port);
       setupPulsesFlySky(port);
-      scheduleNextMixerCalculation(port, 9);
+      scheduleNextMixerCalculation(port, FLYSKY_PERIOD);
       break;
 #endif
 
     case PROTO_PXX:
       setupPulsesPXX(port);
-      scheduleNextMixerCalculation(port, 9);
+      scheduleNextMixerCalculation(port, PXX_PERIOD);
       break;
 
     case PROTO_SBUS:
       setupPulsesSbus(port);
-      scheduleNextMixerCalculation(port, (45+g_model.moduleData[port].sbus.refreshRate)/2);
+      scheduleNextMixerCalculation(port, SBUS_PERIOD);
       break;
 
 #if defined(DSM2)
@@ -203,7 +203,7 @@ void setupPulses(uint8_t port)
     case PROTO_DSM2_DSM2:
     case PROTO_DSM2_DSMX:
       setupPulsesDSM2(port);
-      scheduleNextMixerCalculation(port, 11);
+      scheduleNextMixerCalculation(port, DSM2_PERIOD);
       break;
 #endif
 
