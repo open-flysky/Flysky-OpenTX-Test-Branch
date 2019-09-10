@@ -368,8 +368,10 @@ void TouchDriver( void )
                   TouchStartX = Tx;
                   TouchStartY = Ty;
 
-                  if (g_eeGeneral.backlightMode & e_backlight_mode_keys)
+                  if (g_eeGeneral.backlightMode & e_backlight_mode_keys && !isBacklightEnabled()){
                     backlightOn(); // TODO is that the best place ?
+                    TouchState = TOUCH_NONE; //ignore touch
+                  }
               }
               else
               {
