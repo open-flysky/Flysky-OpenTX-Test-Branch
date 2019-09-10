@@ -178,13 +178,20 @@ public:
       grid.nextLine();
     }
     grid.nextLine();
-    TextButton* te = new TextButton(window, grid.getLineSlot(), "RESET GIMBALS");
-    te->setPressHandler([=]() -> int8_t {
+    auto reset = new TextButton(window, grid.getLineSlot(), "RESET GIMBALS");
+    reset->setPressHandler([=]() -> int8_t {
         reset_hall_stick();
-        te->setText("Command executed");
+        reset->setText("Command executed");
         return 1;
     });
     grid.nextLine();
+    auto config = new TextButton(window, grid.getLineSlot(), "GET GIMBALS CONFIG");
+    config->setPressHandler([=]() -> int8_t {
+      get_hall_config();
+      config->setText("Command executed");
+      return 1;
+    });
+        grid.nextLine();
     window->setInnerHeight(grid.getWindowHeight());
   }
   private:

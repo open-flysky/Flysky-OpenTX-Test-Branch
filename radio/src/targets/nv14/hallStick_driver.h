@@ -150,7 +150,9 @@ enum TRANSFER_DIR_E {
     TRANSFER_DIR_RFMODULE,
 };
 
-#define HALL_PROTOLO_HEAD                ( 0x55 )
+#define HALL_PROTOLO_HEAD                 0x55
+#define HALL_RESP_TYPE_CALIB              0x0e
+#define HALL_RESP_TYPE_VALUES             0x0c
 
 #define HALL_SERIAL_USART                 UART4
 #define HALL_SERIAL_GPIO                  GPIOA
