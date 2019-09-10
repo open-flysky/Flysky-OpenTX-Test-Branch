@@ -74,7 +74,7 @@ void MainWindow::checkEvents(bool luaActive) {
 
     bool handled = false;
     uint32_t event = 0;
-    bool screenOff = (g_eeGeneral.backlightMode & e_backlight_mode_keys) && !isBacklightEnabled();
+    bool screenOff = !isBacklightEnabled();
     if (touchState.Event == TE_DOWN) {
        if(screenOff) handled = true; //just ignore
        else if(!luaActive) handled = onTouchStart(touchState.X, touchState.Y);
@@ -83,10 +83,7 @@ void MainWindow::checkEvents(bool luaActive) {
     }
     else if (touchState.Event == TE_UP) {
        touchState.Event = TE_NONE;
-       if(screenOff) {
-         handled = true; //just ignore
-         backlightOn();
-       }
+       if(screenOff) handled = true; //just ignore
        else if(!luaActive) handled = onTouchEnd(touchState.startX, touchState.startY);
        else if(topMostWindow != nullptr) handled = onTouchEnd(topMostWindow, touchState.startX, touchState.startY);
        if(!handled){

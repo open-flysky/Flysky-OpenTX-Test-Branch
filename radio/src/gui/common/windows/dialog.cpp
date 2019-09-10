@@ -22,6 +22,7 @@
 #include "mainwindow.h"
 #include "opentx.h"
 #include "gridlayout.h"
+#include "keys.h"
 
 #define ALERT_FRAME_TOP           70
 #define ALERT_FRAME_PADDING       10
@@ -112,7 +113,8 @@ bool Dialog::onTouchEnd(coord_t x, coord_t y)
 void Dialog::checkEvents()
 {
   Window::checkEvents();
-  if (closeCondition && closeCondition())
+
+  if ((closeCondition && closeCondition()) || (getEvent(true) & EVT_KEY_FIRST(0)) != 0)
     deleteLater();
 }
 
