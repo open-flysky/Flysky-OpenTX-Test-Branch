@@ -328,6 +328,12 @@ static unsigned short Tyold;
 static unsigned short TouchStartX;
 static unsigned short TouchStartY;
 
+
+#define FT6206_TOUCH_EVT_FLAG_PRESS_DOWN 0x00
+#define FT6206_TOUCH_EVT_FLAG_LIFT_UP    0x01
+#define FT6206_TOUCH_EVT_FLAG_CONTACT    0x02
+#define FT6206_TOUCH_EVT_FLAG_NO_EVENT   0x03
+
 void TouchDriver( void )
 {
   SET_TOUCH_RESET();
@@ -355,28 +361,21 @@ void TouchDriver( void )
           Ty = Tx;
           Tx = x;
           #endif
-          if( 2 == TouchEvent )
+          if(TouchEvent == FT6206_TOUCH_EVT_FLAG_CONTACT)
           {
               touchState.X = Tx;
               touchState.Y = Ty;
 
-              if( TOUCH_NONE == TouchState )
+              if(TouchState == TOUCH_NONE)
               {
-                  touchState.Event = TE_NONE;
-                  TouchState = TOUCH_CLICK;
-
-                  TouchStartX = Tx;
-                  TouchStartY = Ty;
-
-                  if (g_eeGeneral.backlightMode & e_backlight_mode_keys && !isBacklightEnabled()){
-                    backlightOn(); // TODO is that the best place ?
-                    TouchState = TOUCH_NONE; //ignore touch
-                  }
+                    touchState.Event = TE_NONE;
+                    TouchState = TOUCH_CLICK;
+                    TouchStartX = Tx;
+                    TouchStartY = Ty;
               }
               else
               {
-
-                  if ( TOUCH_CLICK == TouchState )
+                  if (TouchState == TOUCH_CLICK)
                   {
                     x = Tx - Txold;
                     y = Ty - Tyold;
@@ -407,7 +406,7 @@ void TouchDriver( void )
           }
           else
           {
-              if ( TOUCH_CLICK == TouchState )
+              if (TouchState == TOUCH_CLICK)
               {
                   touchState.X = Txold;
                   touchState.Y = Tyold;
@@ -420,7 +419,6 @@ void TouchDriver( void )
                   touchState.Y = LCD_HEIGHT;
                   touchState.Event = TE_NONE;
               }
-
               TouchState = TOUCH_NONE;
           }
       }
