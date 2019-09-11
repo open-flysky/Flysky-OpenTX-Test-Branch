@@ -450,8 +450,10 @@ void lcdOn();
 void backlightInit(void);
 #if defined(SIMU)
 #define backlightEnable(...)
+#define isBacklightEnabled() (true)
 #else
 void backlightEnable(uint8_t dutyCycle);
+bool isBacklightEnabled();
 #endif
 
 #define BACKLIGHT_LEVEL_MAX             100
@@ -460,11 +462,6 @@ void backlightEnable(uint8_t dutyCycle);
 #define BACKLIGHT_ENABLE()              backlightEnable(unexpectedShutdown ? BACKLIGHT_LEVEL_MAX : BACKLIGHT_LEVEL_MAX-g_eeGeneral.backlightBright)
 #define BACKLIGHT_DISABLE()             backlightEnable(unexpectedShutdown ? BACKLIGHT_LEVEL_MAX : ((g_eeGeneral.blOffBright == BACKLIGHT_LEVEL_MIN) && (g_eeGeneral.backlightMode != e_backlight_mode_off)) ? 0 : g_eeGeneral.blOffBright)
 
-#if defined(SIMU)
-bool isBacklightEnabled()               (true)
-#else
-bool isBacklightEnabled();
-#endif
 #if !defined(SIMU)
 void usbJoystickUpdate();
 #endif
