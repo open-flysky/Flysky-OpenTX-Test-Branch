@@ -46,6 +46,8 @@
 #define MIN_ADC_CHANNLE_VALUE           ( 0 )
 #define MIDDLE_ADC_CHANNLE_VALUE        ( 2047 )
 
+#define  STICK_DEAD_ZONE
+
 typedef  struct
 {
     signed short min;
