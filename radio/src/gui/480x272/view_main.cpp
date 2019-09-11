@@ -248,18 +248,12 @@ void ViewMain::paint(BitmapBuffer * dc)
 {
   uint8_t view = currentView();
   Layout* layout = customScreens[view];
+  theme->drawBackground();
 
   for (uint8_t i=0; i<MAX_CUSTOM_SCREENS; i++) {
     if (i != view && customScreens[i]) customScreens[i]->background();
   }
-
   if(layout) {
-    bool empty = !layout->topBarHeight() && !isNavigationVisible() && !layout->flightModeHeight() && !layout->trimHeight() && !layout->sliderHeight();
-    //check if there is 1x1 layout defined
-    //and it contains lua widget
-    if(!empty || layout->getZonesCount() != 1) {
-       theme->drawBackground();
-    }
     int32_t y = 0;
     if (layout->topBarHeight()) drawTopBar();
     y += layout->topBarHeight();
@@ -274,7 +268,7 @@ void ViewMain::paint(BitmapBuffer * dc)
     y += layout->flightModeHeight();
     if(layout->trimHeight()) drawTrims(mixerCurrentFlightMode);
     if(layout->sliderHeight()) drawMainPots();
-    layout->refresh();
+    customScreens[view]->refresh();
   }
 
 
