@@ -44,6 +44,37 @@ template<class T> struct PpmPulsesData {
   T * ptr;
 };
 
+#if defined(PXX_FREQUENCY_HIGH)
+#define EXTMODULE_USART_PXX_BAUDRATE 420000
+#define INTMODULE_USART_PXX_BAUDRATE 450000
+
+#define PXX_PERIOD 4 /*ms*/
+#else
+#define EXTMODULE_USART_PXX_BAUDRATE 115200
+#define INTMODULE_USART_PXX_BAUDRATE 115200
+
+#define FLYSKY_PERIOD 9 /*ms*/
+#endif
+
+#define HALF_US_MULTI 200
+#define PERIOD_LENGHT 2000
+
+#define PXX_PERIOD 9 /*ms*/
+#define PXX_PERIOD_HALF_US (PXX_PERIOD * PERIOD_LENGHT)
+
+#define PPM_PERIOD_HALF_US(module) (g_model.moduleData[module].ppm.frameLength * 5 + 225) * HALF_US_MULTI)
+#define PPM_PERIOD(module) (PPM_PERIOD_HALF_US(module) / PERIOD_LENGHT)
+
+#define DSM2_BAUDRATE 125000
+#define DSM2_PERIOD 22 /*ms*/
+
+#define SBUS_BAUDRATE 100000
+#define SBUS_PERIOD_HALF_US ((g_model.moduleData[EXTERNAL_MODULE].sbus.refreshRate * 5 + 225) * HALF_US_MULTI)                                          /*half us*/
+#define SBUS_PERIOD (SBUS_PERIOD_HALF_US / PERIOD_LENGHT)
+
+#define MULTIMODULE_BAUDRATE 100000
+#define MULTIMODULE_PERIOD 7 /*ms*/
+
 #if defined(PPM_PIN_SERIAL)
 PACK(struct PxxSerialPulsesData {
   uint8_t  pulses[64];
@@ -84,8 +115,6 @@ PACK(struct FlySkySerialPulsesData {
 });
 #endif
 
-#define PXX_PERIOD_DURATION  9 /* ms */
-#define MULTIMODULE_BAUDRATE 100000
 #if defined(INTMODULE_PULSES) || defined(EXTMODULE_PULSES)
 /* PXX uses 20 bytes (as of Rev 1.1 document) with 8 changes per byte + stop bit ~= 162 max pulses */
 /* DSM2 uses 2 header + 12 channel bytes, with max 10 changes (8n2) per byte + 16 bits trailer ~= 156 max pulses */
