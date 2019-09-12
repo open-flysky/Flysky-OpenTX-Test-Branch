@@ -21,6 +21,7 @@
 #include "view_channels.h"
 #include "opentx.h"
 #include "libwindows.h"
+#include "view_logical_switches.h"
 #if defined(HALL_STICKS)
 #include "hallStick_driver.h"
 #endif
@@ -42,7 +43,6 @@
 #define VIEW_CHANNELS_LIMIT_PCT        (g_model.extendedLimits ? LIMIT_EXT_PERCENT : 100)
 
 bool menuChannelsMonitor(event_t event, uint8_t page);
-bool menuLogicalSwitches(event_t);
 
 template<int index>
 bool menuChannelsMonitor(event_t event)
@@ -199,20 +199,6 @@ public:
 
 };
 #endif
-class LogicalSwitchesMonitorPage: public PageTab {
-  public:
-    LogicalSwitchesMonitorPage() :
-      PageTab(STR_MONITOR_SWITCHES, ICON_MONITOR_LOGICAL_SWITCHES)
-    {
-    }
-
-    virtual void build(Window * window) override
-    {
-    }
-
-  protected:
-
-};
 
 ChannelsMonitorMenu::ChannelsMonitorMenu():
   TabsGroup()
@@ -232,7 +218,6 @@ const MenuHandlerFunc menuTabMonitors[] PROGMEM = {
   menuChannelsMonitor<3>,
   menuChannelsMonitor<4>,
   menuChannelsMonitor<5>,
-  menuLogicalSwitches
 };
 
 uint8_t lastMonitorPage = 0;
