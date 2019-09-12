@@ -176,7 +176,7 @@ class InputEditWindow: public Page {
 
       updateCurvesWindow->clear();
 
-      ExpoData * line = expoAddress(index) ;
+      ExpoData * line = expoAddress(index);
 
       new StaticText(updateCurvesWindow, grid.getLabelSlot(), STR_CURVE);
       curveTypeChoice = new Choice(updateCurvesWindow, grid.getFieldSlot(2, 0), "\004DiffExpoFuncCstm", 0, CURVE_REF_CUSTOM,
@@ -248,6 +248,27 @@ class InputEditWindow: public Page {
       grid.nextLine();
 
       // Source
+      //fix source value if invalid one is used as default
+      uint16_t source = line->srcRaw;
+      if(!isSourceAvailable(source)){
+        for(source = INPUTSRC_FIRST; source < INPUTSRC_LAST; source++) {
+          if(!isSourceAvailable(source)) continue;
+          bool used = false;
+          for(uint8_t input = 0; input < NUM_INPUTS; input++) {
+            ExpoData * otherLine = expoAddress(input);
+            if(otherLine->srcRaw == source) {
+              used = true;
+              break;
+            }
+          }
+          if(!used) {
+            line->srcRaw = source;
+            break;
+          }
+        }
+      }
+
+
       new StaticText(window, grid.getLabelSlot(), STR_SOURCE);
       new SourceChoice(window, grid.getFieldSlot(), INPUTSRC_FIRST, INPUTSRC_LAST,
                        GET_DEFAULT(line->srcRaw),
