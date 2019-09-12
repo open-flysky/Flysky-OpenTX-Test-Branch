@@ -597,8 +597,8 @@ void hall_stick_loop(void)
             }
         }
     }
-
-    if (get_tmr10ms() - lastConfigTime > 200 && hallStickSendState == HALLSTICK_SEND_STATE_IDLE)
+    //check periodically  if calibration is correct
+    if (get_tmr10ms() - lastConfigTime > 200)
     {
         //invalid calibration
         if(hall_calibration[0].max - hall_calibration[0].min < 1024) {
