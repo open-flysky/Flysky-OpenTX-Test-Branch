@@ -867,6 +867,8 @@ bool inputsMoved()
   }
 }
 
+extern STRUCT_TOUCH touchState; //definition in mainwindow.cpp
+
 void checkBacklight()
 {
   static uint8_t tmr10ms ;
@@ -884,8 +886,11 @@ void checkBacklight()
         backlightOn();
       }
     }
-
+    if ((g_eeGeneral.backlightMode & e_backlight_mode_keys) && touchState.Time + 50 > get_tmr10ms()) {
+      backlightOn();
+    }
     bool backlightOn = (g_eeGeneral.backlightMode == e_backlight_mode_on || lightOffCounter || isFunctionActive(FUNCTION_BACKLIGHT));
+
     if (flashCounter) backlightOn = !backlightOn;
     if (backlightOn)
       BACKLIGHT_ENABLE();

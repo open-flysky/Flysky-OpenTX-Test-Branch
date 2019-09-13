@@ -23,6 +23,11 @@
 
 #include "curve.h"
 
+struct CurveDetails {
+  int8_t* pointsPtr;
+  uint8_t points;
+  uint8_t custom;
+};
 class CurveEdit: public Curve {
   friend class CurveKeyboard;
 
@@ -50,6 +55,10 @@ class CurveEdit: public Curve {
     void right();
     void left();
     bool isCustomCurve();
+
+    int8_t* pointsPtr;
+    uint8_t pointsTotal;
+    bool custom;
 };
 
 #endif // _CURVEEDIT_H_

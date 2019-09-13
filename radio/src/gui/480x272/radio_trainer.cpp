@@ -60,7 +60,7 @@ void RadioTrainerPage::build(Window * window)
     uint8_t channel = channel_order(i+1);
     TrainerMix* trainerMix = &g_eeGeneral.trainer.mix[channel-1];
     rect_t labelSlot = grid.getLabelSlot();
-    new StaticText(window, labelSlot, getSourceString(channel));
+    new StaticText(window, labelSlot, getSourceString(MIXSRC_FIRST_STICK+channel-1));
     labelSlot.x += 60;
     labelSlot.w -= 60 + lineSpacing;
     new Choice(window, labelSlot, STR_TRNMODE, 0, 2, GET_SET_DEFAULT(trainerMix->mode));

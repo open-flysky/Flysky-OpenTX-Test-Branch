@@ -545,10 +545,9 @@ void hallStick_GetTxDataFromUSB( void )
 /* Run it in 1ms timer routine */
 void hall_stick_loop(void)
 {
-    unsigned char ch;
     static uint8_t count = 0;
-    static unsigned int getCfgTime = get_tmr10ms();
-    uint32_t printf_log_now = 0;
+    static tmr10ms_t lastConfigTime = get_tmr10ms();
+    bool log = 0;
 
     hallStick_GetTxDataFromUSB();
 
@@ -558,12 +557,12 @@ void hall_stick_loop(void)
         hallstick_send_by_state();
     }
     count++;
-
-    while( HallGetByte(&ch) )
+    uint8_t byte;
+    while(HallGetByte(&byte))
     {
         HallProtocol.index++;
 
-        Parse_Character(&HallProtocol, ch );
+        Parse_Character(&HallProtocol, byte);
 
         if ( HallProtocol.msg_OK )
         {
@@ -573,21 +572,16 @@ void hall_stick_loop(void)
             switch ( HallProtocol.hallID.hall_Id.receiverID )
             {
             case TRANSFER_DIR_TXMCU:
-                if ( 0x0e == HallProtocol.hallID.hall_Id.packetID )
-                {
-                    memcpy(&hall_calibration, HallProtocol.data, sizeof(hall_calibration));
+                if(HallProtocol.hallID.hall_Id.packetID == HALL_RESP_TYPE_CALIB) {
+                  memcpy(&hall_calibration, HallProtocol.data, sizeof(hall_calibration));
                 }
-                else if ( 0x0c == HallProtocol.hallID.hall_Id.packetID )
-                {
-                    memcpy(hall_raw_values, HallProtocol.data, sizeof(hall_raw_values));
-
-                    convert_hall_to_adcVaule();
-                }                
+                else if(HallProtocol.hallID.hall_Id.packetID == HALL_RESP_TYPE_VALUES) {
+                  memcpy(hall_raw_values, HallProtocol.data, sizeof(hall_raw_values));
+                  convert_hall_to_adcVaule();
+                }
                 break;
-
             case TRANSFER_DIR_HOSTPC:
-                if ( 0x01 == HallProtocol.length &&
-                   ( 0x05 == HallProtocol.data[0] || 0x06 == HallProtocol.data[0]) )
+                if (HallProtocol.length == 0x01 && (HallProtocol.data[0] == 0x05 || HallProtocol.data[0] == 0x06) )
                 {
                     hallStickSendState = HALLSTICK_SEND_STATE_IDLE;
                 }
@@ -601,22 +595,19 @@ void hall_stick_loop(void)
                 usbDownloadTransmit( pt, HallProtocol.length + 5 );
                 break;
             }
-            //printf_log_now = 1;
         }
     }
-
-    if (((get_tmr10ms() - getCfgTime) > 200) && (HALLSTICK_SEND_STATE_IDLE == hallStickSendState))
+    //check periodically  if calibration is correct
+    if (get_tmr10ms() - lastConfigTime > 200)
     {
-        if (
-            ((0 == hall_calibration[0].max) && (0 == hall_calibration[0].mid) && (0== hall_calibration[0].min) )
-            ||( (-1 == hall_calibration[0].max) && (-1 == hall_calibration[0].mid) && (-1== hall_calibration[0].min))
-           )
-        {
-            get_hall_config();
-            getCfgTime = get_tmr10ms();
+        //invalid calibration
+        if(hall_calibration[0].max - hall_calibration[0].min < 1024) {
+          TRACE("GET HALL CONFIG");
+          get_hall_config();
+          lastConfigTime = get_tmr10ms();
         }
 
-        if ( printf_log_now != 0)
+        if (log)
         {
             TRACE_NOCRLF("Hall(%0d):", FLYSKY_HALL_BAUDRATE);
             for (int idx = 0; idx < HallProtocol.length + 5; idx++)

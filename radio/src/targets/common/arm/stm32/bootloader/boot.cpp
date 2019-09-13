@@ -34,6 +34,10 @@
 #define MAIN_MENU_LEN 2
 #endif
 
+#define FIRMWARE_NAME_LEN           23
+#define STR_EXTRA_NAME              "***.bin"
+#define STR_EXTRA_NAME_LEN          strlen(STR_EXTRA_NAME)
+
 // Bootloader marker:
 // -> used to detect valid bootloader files
 const uint8_t bootloaderVersion[] __attribute__ ((section(".version"), used)) =
@@ -202,7 +206,7 @@ int main()
   uint8_t index = 0;
   FRESULT fr;
   uint32_t nameCount = 0;
-
+  uint8_t PowerReleaseFlg = 0;
   wdt_reset();
   RCC_AHB1PeriphClockCmd(PWR_RCC_AHB1Periph | KEYS_RCC_AHB1Periph |
                          LCD_RCC_AHB1Periph | BACKLIGHT_RCC_AHB1Periph |
@@ -259,13 +263,14 @@ int main()
   // init screen
   bootloaderInitScreen();
 
+#if 0
 #if defined(PWR_BUTTON_PRESS)
   // wait until power button is released
   while(pwrPressed()) {
     wdt_reset();
   }
 #endif
-
+#endif
   for (;;) {
     wdt_reset();
 
@@ -386,8 +391,13 @@ int main()
 
         bootloaderDrawScreen(state, 0);
 
-        for (uint32_t i=0; i<limit; i++) {
-            bootloaderDrawFilename(binFiles[i].name, i, (vpos == i));
+        for (uint8_t i=0; i<limit; i++) {
+            char name[FIRMWARE_NAME_LEN+2];
+            memcpy(name, binFiles[i].name, FIRMWARE_NAME_LEN);
+            if(strlen(binFiles[i].name)>FIRMWARE_NAME_LEN){
+                memcpy(&name[FIRMWARE_NAME_LEN-STR_EXTRA_NAME_LEN], STR_EXTRA_NAME, STR_EXTRA_NAME_LEN);
+            }
+            bootloaderDrawFilename(name, i, (vpos == i));
         }
 
         if (event == EVT_KEY_BREAK(KEY_ENTER)) {
@@ -403,8 +413,12 @@ int main()
         }
       }
       else if (state == ST_FLASH_CHECK) {
-
-          bootloaderDrawScreen(state, Valid, binFiles[vpos].name);
+            char name[FIRMWARE_NAME_LEN+2];
+            memcpy(name, binFiles[vpos].name, FIRMWARE_NAME_LEN);
+            if(strlen(binFiles[vpos].name)>FIRMWARE_NAME_LEN){
+                memcpy(&name[FIRMWARE_NAME_LEN-STR_EXTRA_NAME_LEN], STR_EXTRA_NAME, STR_EXTRA_NAME_LEN);
+            }
+            bootloaderDrawScreen(state, Valid, name);
 
           int result = menuFlashFile(vpos, event);
           if (result == 0) {
@@ -500,12 +514,17 @@ int main()
 
     if (state != ST_FLASHING && state != ST_USB) {
       if (pwrOffPressed()) {
-        lcdClear();
-        lcdOff(); // this drains LCD caps
-        pwrOff();
-        for (;;) {
-          // Wait for power to go off
-        }
+            if(PowerReleaseFlg){
+                lcdClear();
+                lcdOff(); // this drains LCD caps
+                pwrOff();
+                for (;;) {
+                  // Wait for power to go off
+                }
+            }
+            }
+            else{
+                PowerReleaseFlg = 1;
       }
     }
 

@@ -74,14 +74,17 @@ void MainWindow::checkEvents(bool luaActive) {
 
     bool handled = false;
     uint32_t event = 0;
+    bool screenOff = !isBacklightEnabled();
     if (touchState.Event == TE_DOWN) {
-       if(!luaActive) handled = onTouchStart(touchState.X, touchState.Y);
+       if(screenOff) handled = true; //just ignore
+       else if(!luaActive) handled = onTouchStart(touchState.X, touchState.Y);
        else if(topMostWindow != nullptr) handled = onTouchStart(topMostWindow, touchState.X, touchState.Y);
        if(!handled) event = TOUCH_DOWN;
     }
     else if (touchState.Event == TE_UP) {
        touchState.Event = TE_NONE;
-       if(!luaActive) handled = onTouchEnd(touchState.startX, touchState.startY);
+       if(screenOff) handled = true; //just ignore
+       else if(!luaActive) handled = onTouchEnd(touchState.startX, touchState.startY);
        else if(topMostWindow != nullptr) handled = onTouchEnd(topMostWindow, touchState.startX, touchState.startY);
        if(!handled){
          //maybe it was long range slide

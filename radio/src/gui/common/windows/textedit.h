@@ -63,7 +63,7 @@ class TextEdit : public Window {
 
   protected:
     void textChaged();
-	void commit();
+    void commit();
     char * value;
     uint8_t length;
     LcdFlags lcdFlags;

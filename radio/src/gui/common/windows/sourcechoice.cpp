@@ -82,7 +82,6 @@ void SourceChoice::checkEvents()
       std::map<int, int>::iterator it = valueIndexMap.find(static_cast<int>(source));
       if (it != valueIndexMap.end() && it->second >= 0)
       {
-        TRACE("EVENTS CHECK - source change detected");
         setValue(static_cast<int16_t>(source));
         menu->select(it->second);
       }

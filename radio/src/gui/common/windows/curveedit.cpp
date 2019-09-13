@@ -27,7 +27,7 @@ CurveEdit::CurveEdit(Window * parent, const rect_t &rect, uint8_t index) :
     return applyCustomCurve(x, index);
   }),
   index(index),
-  current(0)
+  current(-1)
 {
   update();
 }
@@ -35,8 +35,17 @@ CurveEdit::CurveEdit(Window * parent, const rect_t &rect, uint8_t index) :
 void CurveEdit::update()
 {
   clearPoints();
-  CurveInfo & curve = g_model.curves[index];
-  for (uint8_t i = 0; i < 5 + curve.points; i++) {
+  pointsPtr = curveAddress(index);
+  uint8_t size = curveAddress(index+1) - pointsPtr;
+  if ((size & 1) == 0) {
+    pointsTotal = (size / 2) + 1;
+    custom = true;
+  }
+  else {
+    pointsTotal = size;
+    custom = false;
+  }
+  for (uint8_t i = 0; i < pointsTotal; i++) {
     if (hasFocus() && current == i) {
       position = [=] () -> int {
         return getPoint(index, i).x;
@@ -60,36 +69,28 @@ bool CurveEdit::onTouchEnd(coord_t x, coord_t y)
   if (keyboard->getField() != this) {
     keyboard->setField(this);
   }
-  bool pointSelected = false;
+  bool pointSelect = false;
 
-  CurveInfo & curve = g_model.curves[index];
-  for (int i=0; i<5 + curve.points; i++) {
+  for (int i=0; i < pointsTotal; i++) {
     if (i != current) {
       point_t point = getPoint(index, i);
       if (abs(getPointX(point.x) - x) <= 10 && abs(getPointY(point.y) - y) <= 10) {
         current = i;
-        pointSelected = true;
+        pointSelect = true;
         update();
         break;
       }
     }
   }
 
-  if(!pointSelected){
-    int8_t & point = curveAddress(index)[current];
-    point = min<int8_t>(100, ++point);
+  if(!pointSelect){
+    int8_t* point = pointsPtr + current;
+    *point = (int8_t)((((y) * (2000) / (height()) - 1000) / 10)*-1);
+    if(*point < -100) *point = -100;
+    if(*point > 100) *point = 100;
     storageDirty(EE_MODEL);
-    coord_t c = rect.h/2;
-    if(y>c){ //negative part
-      y -= c;
-      point = 0 - y;
-    }
-    else { //positive part
-      point = 100 - y;
-    }
     invalidate();
   }
-
   return true;
 }
 
@@ -100,7 +101,7 @@ void CurveEdit::onFocusLost()
 
 void CurveEdit::next()
 {
-  if (++current > points.size()) {
+  if (++current > (int8_t)points.size()) {
     current = 0;
   }
   update();
@@ -115,47 +116,51 @@ void CurveEdit::previous()
 
 void CurveEdit::up()
 {
-  int8_t & point = curveAddress(index)[current];
-  point = min<int8_t>(100, ++point);
-  storageDirty(EE_MODEL);
-  invalidate();
+  //move on Y axis
+  if (current < pointsTotal) {
+    int8_t* point = pointsPtr + current;
+    *point = min<int8_t>(100, ++(*point));
+    storageDirty(EE_MODEL);
+    invalidate();
+  }
 }
 
 void CurveEdit::down()
 {
-  int8_t & point = curveAddress(index)[current];
-  point = max<int8_t>(-100, --point);
+  //move on Y axis
+  if (current < pointsTotal) {
+    int8_t* point = pointsPtr + current;
+    *point = max<int8_t>(-100, --(*point));
+    storageDirty(EE_MODEL);
+    invalidate();
+  }
+}
+
+void CurveEdit::right() {
+  if (!custom || current == 0 || current == pointsTotal-1)
+    return;
+
+  int targetOffset = pointsTotal + (current-1);
+  int8_t* point = pointsPtr + targetOffset;
+  int8_t next = current == pointsTotal-2 ? 95 : *(point+1) - 5;
+  if((*point)+1 < next) (*point)++;
   storageDirty(EE_MODEL);
   invalidate();
 }
 
-void CurveEdit::right()
-{
-  CurveInfo & curve = g_model.curves[index];
-  if (curve.type == CURVE_TYPE_CUSTOM && current != 0 && current != curve.points - 1) {
-    int8_t * points = curveAddress(index);
-    int8_t * point = &points[5 + curve.points + current - 1];
-    int8_t xmax = (current == (curve.points - 2) ? +100 : *(point + 1));
-    *point = min<int8_t>(*point + 1, xmax-1);
-    storageDirty(EE_MODEL);
-    invalidate();
-  }
-}
-
 void CurveEdit::left()
 {
-  CurveInfo & curve = g_model.curves[index];
-  if (curve.type == CURVE_TYPE_CUSTOM && current != 0 && current != curve.points - 1) {
-    int8_t * points = curveAddress(index);
-    int8_t * point = &points[5 + curve.points + current - 1];
-    int8_t xmin = (current == 1 ? -100 : *(point - 1));
-    *point = max<int8_t>(xmin+1, *point - 1);
-    storageDirty(EE_MODEL);
-    invalidate();
-  }
+  if (!custom || current == 0 || current == pointsTotal-1)
+    return;
+
+  int targetOffset = pointsTotal + (current-1);
+  int8_t* point = pointsPtr + targetOffset;
+  int8_t prev = current == 1 ? -95 : *(point-1) + 5;
+  if((*point)-1 > prev) (*point)--;
+  storageDirty(EE_MODEL);
+  invalidate();
+}
+bool CurveEdit::isCustomCurve() {
+  return custom;
 }
 
-bool CurveEdit::isCustomCurve()
-{
-  return g_model.curves[index].type == CURVE_TYPE_CUSTOM;
-}
