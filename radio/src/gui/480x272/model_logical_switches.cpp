@@ -286,14 +286,9 @@ void LogicalSwitchButton::paint(BitmapBuffer * dc) {
   drawSolidRect(dc, 0, 0, rect.w, rect.h, 2,
       hasFocus() ? SCROLLBOX_COLOR : CURVE_AXIS_COLOR);
 
-  if(!defined) {
-    lcdDrawSizedText(col1, line1, "---", 3, MIDSIZE);
-    return;
-  }
+  if(!defined) return;
   // CSW func
   lcdDrawTextAtIndex(col1, line1, STR_VCSWFUNC, ls->func);
-
-
 
   // CSW params
   if (lsFamily == LS_FAMILY_BOOL || lsFamily == LS_FAMILY_STICKY) {

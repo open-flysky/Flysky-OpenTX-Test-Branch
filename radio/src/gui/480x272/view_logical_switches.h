@@ -38,12 +38,14 @@ public:
   virtual bool onTouchEnd(coord_t x, coord_t y) override;
   virtual void checkEvents() override;
   void build();
-  void setButton(LogicalSwitchButton* button) {
+  void setButtons(TextButton* nameButton, LogicalSwitchButton* button) {
+    lsNameButton = nameButton;
     lsButton = button;
   }
 protected:
   StaticText** logicalSwitches;
   LogicalSwitchButton* lsButton;
+  TextButton* lsNameButton;
 };
 
 
@@ -57,8 +59,10 @@ public:
   {
     auto body = new LSMonitorBody(window,
         { 0, 0, LCD_W, window->height() - footerHeight });
-    LogicalSwitchButton *button = new LogicalSwitchButton(window, { 0, window->height() - footerHeight, LCD_W, footerHeight }, -1, nullptr);
-    body->setButton(button);
+    LogicalSwitchButton *button = new LogicalSwitchButton(window, { 70, window->height() - footerHeight, LCD_W - 70, footerHeight }, -1, nullptr);
+    button->setDefined(false);
+    TextButton* nameButton = new TextButton(window, { 0, window->height() - footerHeight, 70, footerHeight }, "");
+    body->setButtons(nameButton, button);
   }
 
 protected:

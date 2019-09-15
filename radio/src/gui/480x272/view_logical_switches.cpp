@@ -49,7 +49,13 @@ bool LSMonitorBody::onTouchEnd(coord_t x, coord_t y) {
   //set item as not defined and reset index to 0
   lsButton->setDefined(index >= 0);
   if(index < 0) index = 0;
+  else {
+    char lsString[] = "L64";
+    strAppendSigned(&lsString[1], index + 1, 2);
+    lsNameButton->setText(lsString);
+  }
   lsButton->setLsIndex((uint8_t)index);
+
   return result || index !=-1;
 }
 void LSMonitorBody::checkEvents() {
