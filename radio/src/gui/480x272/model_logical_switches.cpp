@@ -235,87 +235,98 @@ static constexpr coord_t col1 = 20;
 static constexpr coord_t col2 = (LCD_W - 100) / 3 + col1;
 static constexpr coord_t col3 = ((LCD_W - 100) / 3) * 2 + col1;
 
-class LogicalSwitchButton : public Button {
-  public:
-    LogicalSwitchButton(Window * parent, const rect_t & rect, int lsIndex, std::function<uint8_t(void)> onPress):
-      Button(parent, rect, onPress),
-      lsIndex(lsIndex),
-      active(isActive())
-    {
-      LogicalSwitchData * ls = lswAddress(lsIndex);
-      if (ls->andsw != SWSRC_NONE || ls->duration != 0 || ls->delay != 0)
-        setHeight(getHeight() + 20);
-      if (lswFamily(ls->func) == LS_FAMILY_EDGE)
-        setHeight(getHeight() + 20);
-    }
 
-    bool isActive()
-    {
-      return getSwitch(SWSRC_FIRST_LOGICAL_SWITCH + lsIndex);
-    }
+LogicalSwitchButton::LogicalSwitchButton(Window * parent, const rect_t & rect,
+  int lsIndex, std::function<uint8_t(void)> onPress) :
+  Button(parent, rect, onPress),
+  lsIndex(lsIndex),
+  active(isActive()),
+  defined(true)
+{
+  updateHeight();
+}
+void LogicalSwitchButton::updateHeight() {
+  LogicalSwitchData * ls = lswAddress(lsIndex);
+  if (ls->andsw != SWSRC_NONE || ls->duration != 0 || ls->delay != 0)
+    setHeight(getHeight() + 20);
+  if (lswFamily(ls->func) == LS_FAMILY_EDGE)
+    setHeight(getHeight() + 20);
+}
+void LogicalSwitchButton::setLsIndex(uint8_t index) {
+  lsIndex = index;
+  updateHeight();
+  checkEvents();
+  invalidate();
+}
 
-    void checkEvents() override
-    {
-      if (active != isActive()) {
-        invalidate();
-        active = !active;
-      }
-    }
+bool LogicalSwitchButton::isActive() {
+  return defined && getSwitch(SWSRC_FIRST_LOGICAL_SWITCH + lsIndex);
+}
 
-    virtual void paint(BitmapBuffer * dc) override
-    {
-      LogicalSwitchData * ls = lswAddress(lsIndex);
-      uint8_t lsFamily = lswFamily(ls->func);
+void LogicalSwitchButton::setDefined(bool defined){
+  this->defined = defined;
+  checkEvents();
+}
 
-      if (active)
-        dc->drawSolidFilledRect(2, 2, rect.w-4, rect.h-4, WARNING_COLOR);
+void LogicalSwitchButton::checkEvents() {
+  if (active != isActive()) {
+    invalidate();
+    active = !active;
+  }
+}
 
-      // The bounding rect
-      drawSolidRect(dc, 0, 0, rect.w, rect.h, 2, hasFocus() ? SCROLLBOX_COLOR : CURVE_AXIS_COLOR);
+void LogicalSwitchButton::paint(BitmapBuffer * dc) {
+  LogicalSwitchData * ls = lswAddress(lsIndex);
+  uint8_t lsFamily = lswFamily(ls->func);
 
-      // CSW func
-      lcdDrawTextAtIndex(col1, line1, STR_VCSWFUNC, ls->func);
+  if (active)
+    dc->drawSolidFilledRect(2, 2, rect.w - 4, rect.h - 4, WARNING_COLOR);
 
-      // CSW params
-      if (lsFamily == LS_FAMILY_BOOL || lsFamily == LS_FAMILY_STICKY) {
-        drawSwitch(col2, line1, ls->v1);
-        drawSwitch(col3, line1, ls->v2);
-      }
-      else if (lsFamily == LS_FAMILY_EDGE) {
-        drawSwitch(col1, line2, ls->v1);
-        putsEdgeDelayParam(col2, line2, ls);
-      }
-      else if (lsFamily == LS_FAMILY_COMP) {
-        drawSource(col2, line1, ls->v1, 0);
-        drawSource(col3, line1, ls->v2, 0);
-      }
-      else if (lsFamily == LS_FAMILY_TIMER) {
-        lcdDrawNumber(col2, line1, lswTimerValue(ls->v1), LEFT|PREC1);
-        lcdDrawNumber(col3, line1, lswTimerValue(ls->v2), LEFT|PREC1);
-      }
-      else {
-        drawSource(col2, line1, ls->v1, 0);
-        drawSourceCustomValue(col3, line1, ls->v1, (ls->v1 <= MIXSRC_LAST_CH ? calc100toRESX(ls->v2) : ls->v2), 0);
-      }
+  // The bounding rect
+  drawSolidRect(dc, 0, 0, rect.w, rect.h, 2,
+      hasFocus() ? SCROLLBOX_COLOR : CURVE_AXIS_COLOR);
 
-      // AND switch
-      drawSwitch(col1, (lsFamily == LS_FAMILY_EDGE) ? line3 : line2, ls->andsw, 0);
+  if(!defined) {
+    lcdDrawSizedText(col1, line1, "---", 3, MIDSIZE);
+    return;
+  }
+  // CSW func
+  lcdDrawTextAtIndex(col1, line1, STR_VCSWFUNC, ls->func);
 
-      // CSW duration
-      if (ls->duration > 0) {
-        drawNumber(dc, col2, (lsFamily == LS_FAMILY_EDGE) ? line3 : line2, ls->duration, PREC1 | LEFT);
-      }
 
-      // CSW delay
-      if (lsFamily != LS_FAMILY_EDGE && ls->delay > 0) {
-        drawNumber(dc, col3, (lsFamily == LS_FAMILY_EDGE) ? line3 : line2, ls->delay, PREC1 | LEFT);
-      }
-    }
 
-  protected:
-    uint8_t lsIndex;
-    bool active;
-};
+  // CSW params
+  if (lsFamily == LS_FAMILY_BOOL || lsFamily == LS_FAMILY_STICKY) {
+    drawSwitch(col2, line1, ls->v1);
+    drawSwitch(col3, line1, ls->v2);
+  } else if (lsFamily == LS_FAMILY_EDGE) {
+    drawSwitch(col1, line2, ls->v1);
+    putsEdgeDelayParam(col2, line2, ls);
+  } else if (lsFamily == LS_FAMILY_COMP) {
+    drawSource(col2, line1, ls->v1, 0);
+    drawSource(col3, line1, ls->v2, 0);
+  } else if (lsFamily == LS_FAMILY_TIMER) {
+    lcdDrawNumber(col2, line1, lswTimerValue(ls->v1), LEFT | PREC1);
+    lcdDrawNumber(col3, line1, lswTimerValue(ls->v2), LEFT | PREC1);
+  } else {
+    drawSource(col2, line1, ls->v1, 0);
+    drawSourceCustomValue(col3, line1, ls->v1, (ls->v1 <= MIXSRC_LAST_CH ? calc100toRESX(ls->v2) : ls->v2), 0);
+  }
+
+  // AND switch
+  drawSwitch(col1, (lsFamily == LS_FAMILY_EDGE) ? line3 : line2, ls->andsw, 0);
+
+  // CSW duration
+  if (ls->duration > 0) {
+    drawNumber(dc, col2, (lsFamily == LS_FAMILY_EDGE) ? line3 : line2, ls->duration, PREC1 | LEFT);
+  }
+
+  // CSW delay
+  if (lsFamily != LS_FAMILY_EDGE && ls->delay > 0) {
+    drawNumber(dc, col3, (lsFamily == LS_FAMILY_EDGE) ? line3 : line2, ls->delay, PREC1 | LEFT);
+  }
+}
+
 
 ModelLogicalSwitchesPage::ModelLogicalSwitchesPage():
   PageTab(STR_MENULOGICALSWITCHES, ICON_MODEL_LOGICAL_SWITCHES)
