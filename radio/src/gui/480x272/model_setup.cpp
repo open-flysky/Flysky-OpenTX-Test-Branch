@@ -274,13 +274,7 @@ class ModuleWindow : public Window {
                      moduleFlagBackNormal(moduleIndex);
                      onFlySkyReceiverSetPulse(INTERNAL_MODULE, newValue);
                    });
-        
-#if defined (PCBNV14)
         grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(), STR_FLYSKY_TELEMETRY);
-        new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.rssiAlarms.flysky_telemetry));
-        grid.nextLine();
-#endif        
       }
 
       if (isModuleXJT(moduleIndex)) {
@@ -466,8 +460,23 @@ class ModuleWindow : public Window {
           }
           if (moduleFlag[moduleIndex] != MODULE_RANGECHECK) {
             moduleFlag[moduleIndex] = MODULE_RANGECHECK;
-            if (isModuleFlysky(moduleIndex))
-              onFlySkyReceiverRange(moduleIndex);
+            if (isModuleFlysky(moduleIndex)) onFlySkyReceiverRange(moduleIndex);
+            MessageBox* mb = new MessageBox(WARNING_TYPE_INFO, DialogResult::Cancel, "Range check", "",
+              [=](DialogResult result) {
+                moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
+                if (isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
+                rangeButton->check(false);
+              }
+            );
+
+            char* messageBuffer = new char[32];
+            uint8_t lastTelemetry = 255;
+            mb->setUpdateMethod([=](){
+              if(lastTelemetry != TELEMETRY_RSSI()) {
+                sprintf(messageBuffer, "RSSI: %d", TELEMETRY_RSSI());
+                mb->setMessage(std::string(messageBuffer));
+              }
+            });
             return 1;
           }
           moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
