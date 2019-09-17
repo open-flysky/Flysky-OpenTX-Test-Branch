@@ -151,12 +151,13 @@ void Dialog::runForever()
   Window::deleteLater();
 }
 
-MessageBox::MessageBox(DialogType type, DialogResult buttons, std::string title, std::string message) :
+MessageBox::MessageBox(DialogType type, DialogResult buttons, std::string title, std::string message, std::function<void(DialogResult)> onClose) :
     Window(&mainWindow, {25, LCD_H / 2 - 100 , LCD_W - 50, 200 }, OPAQUE),
       type(type),
       title(std::move(title)),
       message(std::move(message)),
-      running(true)
+      running(true),
+      onClose(onClose)
 {
   int top = height() - (lineHeight + DIALOG_BUTTON_MARGIN);
   int right = width();
@@ -204,15 +205,19 @@ void MessageBox::paint(BitmapBuffer * dc) {
   dc->drawSolidFilledRect(0, 0, width(), MESSAGE_BOX_HEADER, HEADER_BGCOLOR);
   dc->drawSolidFilledRect(0, MESSAGE_BOX_HEADER, width(), height() - MESSAGE_BOX_HEADER, TEXT_BGCOLOR);
   dc->drawRect(0, 0, width(), height(), 1, SOLID, TEXT_COLOR);
-  //dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon);
-  if (!title.empty()) dc->drawText(ALERT_BITMAP_PADDING, 5, title.c_str(), ALARM_COLOR | STDSIZE);
-  if (!message.empty()) dc->drawText(ALERT_BITMAP_PADDING /*+ icon->getWidth()*/, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, message.c_str(), STDSIZE);
+  if (icon != nullptr) dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon);
+  if (!title.empty()) dc->drawText(ALERT_BITMAP_PADDING, 5, title.c_str(), TEXT_INVERTED_COLOR | STDSIZE);
+  if (!message.empty()) dc->drawText(ALERT_BITMAP_PADDING + ((icon != nullptr) ? icon->getWidth() : 0), MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, message.c_str(), STDSIZE);
 };
 
 void MessageBox::deleteLater()
 {
   mainWindow.setTopMostWindow(nullptr);
   Window::deleteLater();
+}
+
+void MessageBox::setUpdateMethod(std::function<void(void)> update) {
+  this->onUpdate = std::move(update);
 }
 
 void MessageBox::checkEvents()
@@ -222,11 +227,15 @@ void MessageBox::checkEvents()
     deleteLater();
     return;
   }
+  if(onUpdate != nullptr) {
+    onUpdate();
+  }
   for (auto child: children) {
       TextButton* button = reinterpret_cast<TextButton*>(child);
       if(button == nullptr) continue;
       event_t result = button->getResult();
       if(result) {
+        if(onClose != nullptr) onClose((DialogResult)result);
         running = false;
         return;
       }

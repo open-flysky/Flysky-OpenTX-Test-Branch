@@ -438,9 +438,8 @@ void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn)
 
 void onFlySkyReceiverRange(uint8_t port)
 {
-    resetPulsesFlySky(port);
+    resetPulsesFlySky(port, 0);
     moduleFlag[port] = MODULE_RANGECHECK;
-    modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_INIT;
 }
 
 void onFlySkyBindReceiver(uint8_t port)
@@ -470,13 +469,6 @@ void onFlySkyReceiverSetPulse(uint8_t port, uint8_t mode_and_port) // mode_and_p
   if ((DEBUG_RF_FRAME_PRINT & TX_FRAME_ONLY)) TRACE("PulseMode+Port: %0d", mode_and_port);
   sendPulsesFrameByState(port, FLYSKY_MODULE_STATE_SET_RX_PWM_PPM);
 }
-
-void onFlySkyTransmitterPower(uint8_t port, uint8_t dBmValue)
-{
-  tx_working_power = dBmValue;
-  modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_SET_TX_POWER;
-}
-
 
 void onFlySkyUpdateReceiverFirmwareStart(uint8_t port)
 {
@@ -763,12 +755,6 @@ void parseFlySkyFeedbackFrame(uint8_t port)
           if ( moduleFlag[port] == MODULE_BIND ) {
             modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_BIND;
           }
-
-          else if (moduleFlag[port] == MODULE_RANGECHECK && tx_working_power != 0) {
-            onFlySkyTransmitterPower(port, 0);
-            break;
-          }
-
           if (modulePulsesData[port].flysky.state == FLYSKY_MODULE_STATE_INIT) {
             modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_SET_RECEIVER_ID;
           }
@@ -927,13 +913,13 @@ void checkFlySkyFeedback(uint8_t port)
 }
 #endif
 
-void resetPulsesFlySky(uint8_t port)
+void resetPulsesFlySky(uint8_t port, int power)
 {
   modulePulsesData[port].flysky.frame_index = 1;
   modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_SET_TX_POWER;
   modulePulsesData[port].flysky.state_index = 0;
   modulePulsesData[port].flysky.esc_state = 0;
-  tx_working_power = 90; // 17dBm
+  tx_working_power = (power >= 0 && power <= 90) ? (uint)power : 90; // 17dBm
   uint16_t rx_freq = g_model.moduleData[port].romData.rx_freq[0];
   rx_freq += (g_model.moduleData[port].romData.rx_freq[1] * 256);
   if (50 > rx_freq || 400 < rx_freq) {

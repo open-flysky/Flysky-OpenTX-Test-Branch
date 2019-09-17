@@ -23,6 +23,21 @@
 
 #include "tabsgroup.h"
 
+class LogicalSwitchButton : public Button {
+  public:
+    LogicalSwitchButton(Window * parent, const rect_t & rect, int lsIndex, std::function<uint8_t(void)> onPress);
+    bool isActive();
+    void checkEvents() override;
+    virtual void paint(BitmapBuffer * dc) override;
+    void updateHeight();
+    void setLsIndex(uint8_t index);
+    void setDefined(bool defined);
+  protected:
+    uint8_t lsIndex;
+    bool active;
+    bool defined;
+};
+
 class ModelLogicalSwitchesPage: public PageTab {
 public:
     ModelLogicalSwitchesPage();

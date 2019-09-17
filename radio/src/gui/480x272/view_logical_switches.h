@@ -23,24 +23,7 @@
 
 #include "opentx.h"
 #include "libwindows.h"
-
-
-class LSMonitorFooter: public Window {
-public:
-  LSMonitorFooter(Window * parent, const rect_t & rect) :
-      Window(parent, rect) {
-    selectedLS = -1;
-  }
-
-  virtual void paint(BitmapBuffer * dc) override;
-
-  void setSelected(int8_t selected) {
-    selectedLS = selected;
-    invalidate();
-  }
-public:
-  int8_t selectedLS;
-};
+#include "model_logical_switches.h"
 
 class LSMonitorBody: public Window {
 public:
@@ -55,12 +38,14 @@ public:
   virtual bool onTouchEnd(coord_t x, coord_t y) override;
   virtual void checkEvents() override;
   void build();
-  void setFooter(LSMonitorFooter* footer) {
-    lsFooter = footer;
+  void setButtons(TextButton* nameButton, LogicalSwitchButton* button) {
+    lsNameButton = nameButton;
+    lsButton = button;
   }
 protected:
   StaticText** logicalSwitches;
-  LSMonitorFooter* lsFooter;
+  LogicalSwitchButton* lsButton;
+  TextButton* lsNameButton;
 };
 
 
@@ -74,12 +59,13 @@ public:
   {
     auto body = new LSMonitorBody(window,
         { 0, 0, LCD_W, window->height() - footerHeight });
-    LSMonitorFooter *footer = new LSMonitorFooter(window,
-        { 0, window->height() - footerHeight, LCD_W, footerHeight });
-    body->setFooter(footer);
+    LogicalSwitchButton *button = new LogicalSwitchButton(window, { 70, window->height() - footerHeight, LCD_W - 70, footerHeight }, -1, nullptr);
+    button->setDefined(false);
+    TextButton* nameButton = new TextButton(window, { 0, window->height() - footerHeight, 70, footerHeight }, "");
+    body->setButtons(nameButton, button);
   }
 
 protected:
-  static constexpr coord_t footerHeight = 30;
+  static constexpr coord_t footerHeight = 52;
 };
 #endif // _VIEW_CHANNELS_H_

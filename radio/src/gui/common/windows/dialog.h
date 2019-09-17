@@ -89,7 +89,7 @@ class Dialog : public Window {
 
 class MessageBox : public Window {
 public:
-  MessageBox(DialogType type, DialogResult buttons, std::string title, std::string message="");
+  MessageBox(DialogType type, DialogResult buttons, std::string title, std::string message="", std::function<void(DialogResult)> onClose=nullptr);
 
   ~MessageBox() override;
 
@@ -110,12 +110,15 @@ public:
     this->message = message;
     invalidate();
   }
+  void setUpdateMethod(std::function<void(void)> update);
 protected:
   uint8_t type;
   std::string title;
   std::string message;
   const BitmapBuffer* icon;
   bool running;
+  std::function<void(void)> onUpdate;
+  std::function<void(DialogResult)> onClose;
 };
 
 #endif // _CONFIRMATION_H_

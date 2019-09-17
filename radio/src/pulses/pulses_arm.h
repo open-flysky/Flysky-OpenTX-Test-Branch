@@ -183,7 +183,7 @@ void setupPulsesDSM2(uint8_t port);
 void setupPulsesMultimodule(uint8_t port);
 void setupPulsesSbus(uint8_t port);
 void setupPulsesPXX(uint8_t port);
-void resetPulsesFlySky(uint8_t port);
+void resetPulsesFlySky(uint8_t port, int power = -1);
 void setupPulsesFlySky(uint8_t port);
 void setupPulsesPPMModule(uint8_t port);
 void setupPulsesPPMTrainer();
