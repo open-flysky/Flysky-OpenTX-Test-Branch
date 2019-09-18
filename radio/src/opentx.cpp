@@ -2780,6 +2780,7 @@ uint8_t UsbModeSelect( uint32_t index )
     lcd->clearClippingRect();
     if(!index)
     {
+        lcdOn();
         lcdDrawBlackOverlay();
         lcd->drawFilledRect(70, 195, 200, 120, SOLID, HEADER_BGCOLOR);
         const  char *s = STR_USBMODESELECT;
