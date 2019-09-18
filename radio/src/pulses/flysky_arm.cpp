@@ -626,16 +626,15 @@ void putFlySkySendChannelData(uint8_t port)
 {
   uint16_t pulseValue = 0;
   uint8_t channels_start = g_model.moduleData[port].channelsStart;
-  uint8_t channels_count = min<unsigned int>(NUM_OF_NV14_CHANNELS, channels_start + 8 + g_model.moduleData[port].channelsCount);
-
+  uint8_t channels_last = channels_start + 8 + g_model.moduleData[port].channelsCount;
   putFlySkyFrameByte(port, FRAME_TYPE_REQUEST_NACK);
   putFlySkyFrameByte(port, COMMAND_ID_SEND_CHANNEL_DATA);
 
   if ( failsafeCounter[port]-- == 0 ) {
     failsafeCounter[port] = FAILSAVE_SEND_COUNTER_MAX;
     putFlySkyFrameByte(port, 0x01);
-    putFlySkyFrameByte(port, NUM_OF_NV14_CHANNELS/*channels_count*/);
-    for (uint8_t channel = channels_start; channel < channels_count; channel++) {
+    putFlySkyFrameByte(port, channels_last - channels_start);
+    for (uint8_t channel = channels_start; channel < channels_last; channel++) {
       if ( g_model.moduleData[port].failsafeMode == FAILSAFE_CUSTOM) {
           int16_t failsafeValue = g_model.moduleData[port].failsafeChannels[channel];
           pulseValue = limit<uint16_t>(0, 988 + ((failsafeValue + 1024) / 2), 0xfff);
@@ -652,8 +651,8 @@ void putFlySkySendChannelData(uint8_t port)
   }
   else {
     putFlySkyFrameByte(port, 0x00);
-    putFlySkyFrameByte(port, channels_count);
-    for (uint8_t channel = channels_start; channel < channels_count; channel++) {
+    putFlySkyFrameByte(port, channels_last - channels_start);
+    for (uint8_t channel = channels_start; channel < channels_last; channel++) {
       int channelValue = channelOutputs[channel] + 2*PPM_CH_CENTER(channel) - 2*PPM_CENTER;
       pulseValue = limit<uint16_t>(0, 988 + ((channelValue + 1024) / 2), 0xfff);
       putFlySkyFrameByte(port, pulseValue & 0xff);
