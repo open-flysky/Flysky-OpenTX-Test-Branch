@@ -164,7 +164,7 @@ static void processFlySkySensor(const uint8_t *packet, uint8_t type)
   {
     case AFHDS2A_ID_RX_NOISE:
     case AFHDS2A_ID_RX_RSSI:
-      value  = - value;
+      value  = 135 - value;
       break;
     case AFHDS2A_ID_RX_ERR_RATE:
       value = 100 - value;
