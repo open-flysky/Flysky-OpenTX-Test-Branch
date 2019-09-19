@@ -694,7 +694,7 @@ bool isTelemetryProtocolAvailable(int protocol)
   }
 
 #if !defined(MULTIMODULE)
-  if (protocol == PROTOCOL_TELEMETRY_SPEKTRUM || protocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS || protocol == PROTOCOL_TELEMETRY_MULTIMODULE) {
+  if (protocol == PROTOCOL_TELEMETRY_SPEKTRUM || protocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS || protocol == PROTOCOL_TELEMETRY_HITEC || protocol == PROTOCOL_TELEMETRY_MULTIMODULE) {
     return false;
   }
 #endif

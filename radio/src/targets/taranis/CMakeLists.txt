@@ -335,7 +335,7 @@ endif()
 
 if(MULTIMODULE)
   add_definitions(-DMULTIMODULE)
-  set(SRC ${SRC} pulses/multi.cpp telemetry/spektrum.cpp telemetry/flysky_ibus.cpp telemetry/multi.cpp)
+  set(SRC ${SRC} pulses/multi.cpp telemetry/spektrum.cpp telemetry/flysky_ibus.cpp telemetry/hitec.cpp telemetry/multi.cpp)
 endif()
 
 set(FIRMWARE_DEPENDENCIES ${FIRMWARE_DEPENDENCIES} ${BITMAPS_TARGET})

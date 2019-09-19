@@ -53,6 +53,10 @@ void processTelemetryData(uint8_t data)
     processFlySkyTelemetryData(data, telemetryRxBuffer, telemetryRxBufferCount);
     return;
   }
+  if (telemetryProtocol == PROTOCOL_TELEMETRY_HITEC) {
+    processHitecTelemetryData(data, telemetryRxBuffer, &telemetryRxBufferCount);
+    return;
+  }
   if (telemetryProtocol == PROTOCOL_TELEMETRY_MULTIMODULE) {
     processMultiTelemetryData(data, EXTERNAL_MODULE);
     return;
@@ -262,7 +266,7 @@ void telemetryInit(uint8_t protocol)
   }
 
 #if defined(MULTIMODULE)
-  else if (protocol == PROTOCOL_TELEMETRY_MULTIMODULE || protocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS) {
+  else if (protocol == PROTOCOL_TELEMETRY_MULTIMODULE || protocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS || protocol == PROTOCOL_TELEMETRY_HITEC) {
     // The DIY Multi module always speaks 100000 baud regardless of the telemetry protocol in use
     telemetryPortInit(MULTIMODULE_BAUDRATE, TELEMETRY_SERIAL_8E2);
 #if defined(LUA)

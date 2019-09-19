@@ -46,6 +46,7 @@ enum MultiBufferState : uint8_t {
   FrskyTelemetryFallbackFirstByte,
   FrskyTelemetryFallbackNextBytes,
   FlyskyTelemetryFallback,
+  HitecTelemetryFallback,
   MultiStatusOrFrskyData
 };
 
@@ -139,6 +140,8 @@ static MultiBufferState guessProtocol(uint8_t module)
     return SpektrumTelemetryFallback;
   else if (g_model.moduleData[module].getMultiProtocol(false) == MODULE_SUBTYPE_MULTI_FS_AFHDS2A)
     return FlyskyTelemetryFallback;
+  else if (g_model.moduleData[module].getMultiProtocol(false) == MODULE_SUBTYPE_MULTI_HITEC)
+    return HitecTelemetryFallback;
   else
     return FrskyTelemetryFallback;
 }
@@ -223,6 +226,13 @@ static void processMultiTelemetryPaket(const uint8_t *packet, uint8_t module)
         processFlySkyPacketAC(data);
       else
         TRACE("[MP] Received IBUS telemetry AC len %d < 28", len);
+      break;
+
+    case HitecTelemetry:
+      if (len >= 8)
+        processHitecPacket(data);
+      else
+        TRACE("[MP] Received Hitec telemetry len %d < 8", len);
       break;
 
     case FrSkyHubTelemetry:
@@ -523,6 +533,13 @@ void processMultiTelemetryData(uint8_t data, uint8_t module)
     case FlyskyTelemetryFallback:
       processFlySkyTelemetryData(data, rxBuffer, rxBufferCount);
       if (rxBufferCount == 0) {
+        setMultiTelemetryBufferState(module, NoProtocolDetected);
+      }
+      break;
+
+    case HitecTelemetryFallback:
+      processHitecTelemetryData(data, rxBuffer, rxBufferCount);
+      if ((*rxBufferCount) == 0) {
         setMultiTelemetryBufferState(module, NoProtocolDetected);
       }
       break;
