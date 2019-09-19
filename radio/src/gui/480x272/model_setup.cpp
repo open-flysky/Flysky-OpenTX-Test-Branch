@@ -1057,29 +1057,29 @@ bool menuModelSetup(event_t event)
           }
         }
 #endif
-        if(attr && menuHorizontalPosition == 0) {
-          if (s_editMode > 0) {
-            if (moduleIdx == 0 )
-              INTERNAL_MODULE_OFF();
-            else
-              EXTERNAL_MODULE_OFF();
-          }
-          else {
-            if (moduleIdx == 0 )
-              INTERNAL_MODULE_ON();
-            else
-              EXTERNAL_MODULE_ON();
-          }
-        }
+        // if(attr && menuHorizontalPosition == 0) {
+        //   if (s_editMode > 0) {
+        //     if (moduleIdx == 0 )
+        //       INTERNAL_MODULE_OFF();
+        //     else
+        //       EXTERNAL_MODULE_OFF();
+        //   }
+        //   else {
+        //     if (moduleIdx == 0 )
+        //       INTERNAL_MODULE_ON();
+        //     else
+        //       EXTERNAL_MODULE_ON();
+        //   }
+        // }
         if (attr) {
           if (s_editMode > 0) {
             switch (menuHorizontalPosition) {
               case 0:
               {
-                if (moduleIdx == 0 )
-                  INTERNAL_MODULE_OFF();
-                else
-                  EXTERNAL_MODULE_OFF();
+                // if (moduleIdx == 0 )
+                //   INTERNAL_MODULE_OFF();
+                // else
+                //   EXTERNAL_MODULE_OFF();
 #if defined(HARDWARE_INTERNAL_MODULE)
                 IsValueAvailable checkFun = moduleIdx == 0 ? isInternalModuleAvailable : isExternalModuleAvailable;
 #else
