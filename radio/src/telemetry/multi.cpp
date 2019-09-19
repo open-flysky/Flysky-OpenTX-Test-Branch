@@ -419,17 +419,28 @@ void MultiModuleStatus::getStatusString(char *statusText)
     strcat(statusText, STR_MODULE_BINDING);
 }
 
+static uint8_t* getRxBuffer(uint8_t moduleIdx)
+{
+#if defined(INTERNAL_MODULE_MULTI)
+  if (moduleIdx == INTERNAL_MODULE)
+    return intTelemetryRxBuffer;
+#endif
+  return telemetryRxBuffer;
+}
+
+static uint8_t& getRxBufferCount(uint8_t moduleIdx)
+{
+#if defined(INTERNAL_MODULE_MULTI)
+  if (moduleIdx == INTERNAL_MODULE)
+    return intTelemetryRxBufferCount;
+#endif
+  return telemetryRxBufferCount;
+}
+
 static void processMultiTelemetryByte(const uint8_t data, uint8_t module)
 {
-  uint8_t* rxBuffer = telemetryRxBuffer;
-  uint8_t& rxBufferCount = telemetryRxBufferCount;
-
-#if defined(INTERNAL_MODULE_MULTI)
-  if(module == INTERNAL_MODULE) {
-    rxBuffer = intTelemetryRxBuffer;
-    rxBufferCount = intTelemetryRxBufferCount;
-  }
-#endif
+  uint8_t* rxBuffer = getRxBuffer(module);
+  uint8_t& rxBufferCount = getRxBufferCount(module);
 
   if (rxBufferCount < TELEMETRY_RX_PACKET_SIZE) {
     rxBuffer[rxBufferCount++] = data;
@@ -459,14 +470,8 @@ static void processMultiTelemetryByte(const uint8_t data, uint8_t module)
 
 void processMultiTelemetryData(uint8_t data, uint8_t module)
 {
-  uint8_t* rxBuffer = telemetryRxBuffer;
-  uint8_t& rxBufferCount = telemetryRxBufferCount;
-#if defined(INTERNAL_MODULE_MULTI)
-  if(module == INTERNAL_MODULE) {
-    rxBuffer = intTelemetryRxBuffer;
-    rxBufferCount = intTelemetryRxBufferCount;
-  }
-#endif
+  uint8_t* rxBuffer = getRxBuffer(module);
+  uint8_t& rxBufferCount = getRxBufferCount(module);
 
   debugPrintf("State: %d, byte received %02X, buflen: %d\r\n", multiTelemetryBufferState, data, rxBufferCount);
   switch (getMultiTelemetryBufferState(module)) {
