@@ -114,7 +114,7 @@ protected:
 
   bool getByte(uint8_t& byte) const override
   {
-    return intmoduleFifo.pop(byte);
+    return telemetryGetByte(&byte);
   }
 
   void sendByte(uint8_t byte) const override

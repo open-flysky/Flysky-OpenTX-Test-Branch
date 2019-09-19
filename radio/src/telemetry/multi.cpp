@@ -102,7 +102,7 @@ MultiModuleStatus& getMultiModuleStatus(uint8_t)
   return multiModuleStatus;
 }
 
-MultiModuleSyncStatus getMultiSyncStatus(uint8_t)
+MultiModuleSyncStatus& getMultiSyncStatus(uint8_t)
 {
   return multiSyncStatus;
 }
@@ -424,7 +424,7 @@ static void processMultiTelemetryByte(const uint8_t data, uint8_t module)
   uint8_t* rxBuffer = telemetryRxBuffer;
   uint8_t& rxBufferCount = telemetryRxBufferCount;
 
-#if defined(INTERNAL_MULTIMODULE)
+#if defined(INTERNAL_MODULE_MULTI)
   if(module == INTERNAL_MODULE) {
     rxBuffer = intTelemetryRxBuffer;
     rxBufferCount = intTelemetryRxBufferCount;
@@ -461,7 +461,7 @@ void processMultiTelemetryData(uint8_t data, uint8_t module)
 {
   uint8_t* rxBuffer = telemetryRxBuffer;
   uint8_t& rxBufferCount = telemetryRxBufferCount;
-#if defined(INTERNAL_MULTIMODULE)
+#if defined(INTERNAL_MODULE_MULTI)
   if(module == INTERNAL_MODULE) {
     rxBuffer = intTelemetryRxBuffer;
     rxBufferCount = intTelemetryRxBufferCount;
