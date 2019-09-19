@@ -69,7 +69,7 @@ enum MenuModelSetupItems {
 #if defined(HARDWARE_INTERNAL_MODULE)
   ITEM_MODEL_SETUP_INTERNAL_MODULE_LABEL,
   ITEM_MODEL_SETUP_INTERNAL_MODULE_TYPE,
-#if defined(HARDWARE_INTERNAL_MODULE)
+#if defined(INTERNAL_MODULE_MULTI)
   ITEM_MODEL_SETUP_INTERNAL_MODULE_STATUS,
   ITEM_MODEL_SETUP_INTERNAL_MODULE_SYNCSTATUS,
 #endif
@@ -77,7 +77,7 @@ enum MenuModelSetupItems {
   ITEM_MODEL_SETUP_INTERNAL_MODULE_NOT_ACCESS_BIND,
   ITEM_MODEL_SETUP_INTERNAL_MODULE_PXX2_MODEL_NUM,
   ITEM_MODEL_SETUP_INTERNAL_MODULE_OPTIONS,
-#if defined(HARDWARE_INTERNAL_MODULE)
+#if defined(INTERNAL_MODULE_MULTI)
   ITEM_MODEL_SETUP_INTERNAL_MODULE_AUTOBIND,
 #endif
 #if defined(INTERNAL_MODULE_PXX1) && defined(EXTERNAL_ANTENNA)
@@ -1057,29 +1057,29 @@ bool menuModelSetup(event_t event)
           }
         }
 #endif
-        if(attr && menuHorizontalPosition == 0) {
-          if (s_editMode > 0) {
-            if (moduleIdx == 0 )
-              INTERNAL_MODULE_OFF();
-            else
-              EXTERNAL_MODULE_OFF();
-          }
-          else {
-            if (moduleIdx == 0 )
-              INTERNAL_MODULE_ON();
-            else
-              EXTERNAL_MODULE_ON();
-          }
-        }
+        // if(attr && menuHorizontalPosition == 0) {
+        //   if (s_editMode > 0) {
+        //     if (moduleIdx == 0 )
+        //       INTERNAL_MODULE_OFF();
+        //     else
+        //       EXTERNAL_MODULE_OFF();
+        //   }
+        //   else {
+        //     if (moduleIdx == 0 )
+        //       INTERNAL_MODULE_ON();
+        //     else
+        //       EXTERNAL_MODULE_ON();
+        //   }
+        // }
         if (attr) {
           if (s_editMode > 0) {
             switch (menuHorizontalPosition) {
               case 0:
               {
-                if (moduleIdx == 0 )
-                  INTERNAL_MODULE_OFF();
-                else
-                  EXTERNAL_MODULE_OFF();
+                // if (moduleIdx == 0 )
+                //   INTERNAL_MODULE_OFF();
+                // else
+                //   EXTERNAL_MODULE_OFF();
 #if defined(HARDWARE_INTERNAL_MODULE)
                 IsValueAvailable checkFun = moduleIdx == 0 ? isInternalModuleAvailable : isExternalModuleAvailable;
 #else
