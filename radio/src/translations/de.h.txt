@@ -1245,3 +1245,7 @@
 #define ZSTR_GASSUIT_AVG_FLOW          "GAFl"
 #define ZSTR_SBEC_VOLTAGE              "BecV"
 #define ZSTR_SBEC_CURRENT              "BecA"
+#define ZSTR_PRES                      "Pres"
+#define ZSTR_ODO1                      "Odo1"
+#define ZSTR_ODO2                      "Odo2"
+#define ZSTR_TXV                       "TX_V"

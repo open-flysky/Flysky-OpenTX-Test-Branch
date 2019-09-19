@@ -26,6 +26,7 @@ void flySkySetDefault(int index, uint16_t id, uint8_t subId, uint8_t instance);
 
 // Used by multi protocol
 void processFlySkyPacket(const uint8_t *packet);
+void processFlySkyPacketAC(const uint8_t *packet);
 
 
 #endif

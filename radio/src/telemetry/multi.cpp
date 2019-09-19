@@ -30,8 +30,11 @@ enum MultiPacketTypes : uint8_t {
   FlyskyIBusTelemetry,
   ConfigCommand,
   InputSync,
-  FrskySportPolling
-};
+  FrskySportPolling,
+  HitecTelemetry,
+  SpectrumScannerPacket,
+  FlyskyIBusTelemetryAC
+  };
 
 enum MultiBufferState : uint8_t {
   NoProtocolDetected,
@@ -213,6 +216,13 @@ static void processMultiTelemetryPaket(const uint8_t *packet, uint8_t module)
         processFlySkyPacket(data);
       else
         TRACE("[MP] Received IBUS telemetry len %d < 28", len);
+      break;
+
+    case FlyskyIBusTelemetryAC:
+      if (len >= 28)
+        processFlySkyPacketAC(data);
+      else
+        TRACE("[MP] Received IBUS telemetry AC len %d < 28", len);
       break;
 
     case FrSkyHubTelemetry:
