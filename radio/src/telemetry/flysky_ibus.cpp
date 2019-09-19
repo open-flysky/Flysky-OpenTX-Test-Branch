@@ -228,8 +228,15 @@ void processFlySkyPacketAC(const uint8_t *packet)
 
 void processFlySkyTelemetryData(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBufferCount)
 {
-  if (rxBufferCount == 0 && (data != 0xAA || data != 0xAC)) {
+  if (rxBufferCount == 0)
+    return;
+
+  if (data == 0xAA || data == 0xAC) {
+    TRACE("[IBUS] Packet 0x%02X", data);
+  }
+  else {
     TRACE("[IBUS] invalid start byte 0x%02X", data);
+    rxBufferCount = 0;
     return;
   }
 
@@ -241,12 +248,10 @@ void processFlySkyTelemetryData(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBuff
     rxBufferCount = 0;
   }
 
-
   if (rxBufferCount >= FLYSKY_TELEMETRY_LENGTH) {
     // debug print the content of the packets
 #if 0
-    debugPrintf("[IBUS] Packet 0x%02X rssi 0x%02X: ",
-                rxBuffer[0], rxBuffer[1]);
+    debugPrintf(", rssi 0x%02X: ", rxBuffer[1]);
     for (int i=0; i<7; i++) {
       debugPrintf("[%02X %02X %02X%02X] ", rxBuffer[i*4+2], rxBuffer[i*4 + 3],
                   rxBuffer[i*4 + 4], rxBuffer[i*4 + 5]);

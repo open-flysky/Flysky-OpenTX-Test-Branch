@@ -172,6 +172,15 @@ const HitecSensor hitecSensors[] = {
   {0x00,                      NULL,                   UNIT_RAW,                    0},  // sentinel
 };
 
+const HitecSensor *getHitecSensor(uint16_t id)
+{
+  for (const HitecSensor * sensor = hitecSensors; sensor->id; sensor++) {
+    if (id == sensor->id)
+      return sensor;
+  }
+  return nullptr;
+}
+
 void processHitecPacket(const uint8_t *packet)
 {
   // Set TX RSSI Value, reverse MULTIs scaling
@@ -258,44 +267,48 @@ void processHitecPacket(const uint8_t *packet)
   setTelemetryValue(PROTOCOL_TELEMETRY_HITEC, packet[2], 0, 0, value, UNIT_RAW, 0);
 }
 
-void processHitecTelemetryData(uint8_t data, uint8_t* rxBuffer, uint8_t* rxBufferCount)
+void processHitecTelemetryData(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBufferCount)
 {
-  if ((*rxBufferCount) == 0 && (data != 0x00 || data < 0xAC)) {
+  if (rxBufferCount == 0)
+    return;
+
+  if (data != 0xAA) {
     TRACE("[HITEC] invalid start byte 0x%02X", data);
+    rxBufferCount = 0;
     return;
   }
 
-  if ((*rxBufferCount) < TELEMETRY_RX_PACKET_SIZE) {
-    rxBuffer[(*rxBufferCount)++] = data;
+  if (rxBuffer[3] == HITEC_FRAME_00 || (rxBuffer[3] >= HITEC_FRAME_11 && rxBuffer[3] <= HITEC_FRAME_18) ) {
+    TRACE("[HITEC] Frame 0x%02X", rxBuffer[3]);
   }
   else {
-    TRACE("[HITEC] array size %d error", (*rxBufferCount));
-    (*rxBufferCount) = 0;
+    TRACE("[HITEC] wrong frame 0x%02X", rxBuffer[3]);
+    rxBufferCount = 0;
+    return;
   }
 
+  if (rxBufferCount < TELEMETRY_RX_PACKET_SIZE) {
+    rxBuffer[rxBufferCount++] = data;
+  }
+  else {
+    TRACE("[HITEC] array size %d error", rxBufferCount);
+    rxBufferCount = 0;
+    return;
+  }
 
-  if ((*rxBufferCount) >= HITEC_TELEMETRY_LENGTH) {
+  if (rxBufferCount >= HITEC_TELEMETRY_LENGTH) {
     // debug print the content of the packets
 #if 0
-    debugPrintf("[HITEC] Packet rssi 0x%02X lqi 0x%02X frame 0x%02X: ",
-                rxBuffer[0], rxBuffer[1], rxBuffer[2]);
+    debugPrintf(" rssi 0x%02X lqi 0x%02X: ",
+                rxBuffer[1], rxBuffer[2]);
     for (int i=0; i<5; i++) {
-      debugPrintf("%02X ", rxBuffer[3+i]);
+      debugPrintf("%02X ", rxBuffer[4+i]);
     }
     debugPrintf("\r\n");
 #endif
-	processHitecPacket(rxBuffer);
-    (*rxBufferCount) = 0;
+	processHitecPacket(rxBuffer+1);
+    rxBufferCount = 0;
   }
-}
-
-const HitecSensor *getHitecSensor(uint16_t id)
-{
-  for (const HitecSensor * sensor = hitecSensors; sensor->id; sensor++) {
-    if (id == sensor->id)
-      return sensor;
-  }
-  return nullptr;
 }
 
 void hitecSetDefault(int index, uint16_t id, uint8_t subId, uint8_t instance)

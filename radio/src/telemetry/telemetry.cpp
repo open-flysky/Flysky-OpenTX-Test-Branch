@@ -54,7 +54,7 @@ void processTelemetryData(uint8_t data)
     return;
   }
   if (telemetryProtocol == PROTOCOL_TELEMETRY_HITEC) {
-    processHitecTelemetryData(data, telemetryRxBuffer, &telemetryRxBufferCount);
+    processHitecTelemetryData(data, telemetryRxBuffer, telemetryRxBufferCount);
     return;
   }
   if (telemetryProtocol == PROTOCOL_TELEMETRY_MULTIMODULE) {

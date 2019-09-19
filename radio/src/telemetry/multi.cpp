@@ -539,7 +539,7 @@ void processMultiTelemetryData(uint8_t data, uint8_t module)
 
     case HitecTelemetryFallback:
       processHitecTelemetryData(data, rxBuffer, rxBufferCount);
-      if ((*rxBufferCount) == 0) {
+      if (rxBufferCount == 0) {
         setMultiTelemetryBufferState(module, NoProtocolDetected);
       }
       break;
