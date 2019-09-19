@@ -220,7 +220,7 @@ bool menuModelTelemetry(event_t event)
         if (!IS_INTERNAL_MODULE_ON() &&
           g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_MULTIMODULE  &&
           g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(false) == MODULE_SUBTYPE_MULTI_FS_AFHDS2A)
-          lcdDrawText(MENUS_MARGIN_LEFT, y, "RSNR");
+          lcdDrawText(MENUS_MARGIN_LEFT, y, "RQLy");
         else
 #endif
         lcdDrawText(MENUS_MARGIN_LEFT, y, "RSSI");
