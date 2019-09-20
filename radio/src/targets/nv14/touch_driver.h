@@ -51,6 +51,7 @@
 
 #define READ_TOUCH_SDA()            GPIO_ReadInputDataBit( PORT_TOUCH_SDA, PIN_TOUCH_SDA )
 
+#define READ_TOUCH_INT()            GPIO_ReadInputDataBit( PORT_TOUCH_INT, PIN_TOUCH_INT )
 #define TOUCH_PANEL_ADDRESS         ( 0x38 )
 
 #define LCD_VERTICAL                ( 0x00 )

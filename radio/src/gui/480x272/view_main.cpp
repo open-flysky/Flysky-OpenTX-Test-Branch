@@ -127,8 +127,9 @@ void ViewMain::drawButton(BitmapBuffer * dc, coord_t x, uint8_t icon) {
 
 void ViewMain::drawFlightMode(coord_t y) {
   char* name = g_model.flightModeData[mixerCurrentFlightMode].name;
-  coord_t textW = getTextWidth(name,  sizeof(name), ZCHAR | SMLSIZE);
-  lcdDrawSizedText((LCD_W - textW) / 2,  y,  name,  sizeof(name), ZCHAR | SMLSIZE);
+  uint8_t length = LEN_FLIGHT_MODE_NAME;
+  coord_t textW = getTextWidth(name,  length, ZCHAR | SMLSIZE);
+  lcdDrawSizedText((LCD_W - textW) / 2,  y,  name,  length, ZCHAR | SMLSIZE);
 }
 
 bool ViewMain::onTouchStart(coord_t x, coord_t y)

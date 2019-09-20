@@ -116,6 +116,7 @@ void TabsGroup::removeTab(unsigned index)
   }
 
   tabs.erase(tabs.begin() + index);
+  g_model.view  = 0;
 }
 
 void TabsGroup::setCurrentTab(PageTab * tab)
