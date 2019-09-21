@@ -1272,3 +1272,5 @@
 #define ZSTR_ODO1              "Odo1"
 #define ZSTR_ODO2              "Odo2"
 #define ZSTR_TXV               "TX_V"
+#define ZSTR_DIST              "Dist"
+#define ZSTR_ARM               "Arm"
