@@ -274,7 +274,6 @@ class ModuleWindow : public Window {
                      moduleFlagBackNormal(moduleIndex);
                      onFlySkyReceiverSetPulse(INTERNAL_MODULE, newValue);
                    });
-        grid.nextLine();
       }
 
       if (isModuleXJT(moduleIndex)) {
@@ -378,11 +377,12 @@ class ModuleWindow : public Window {
                                       moduleFlagBackNormal(moduleIndex);
                                       SEND_FAILSAFE_NOW(moduleIndex);
                                     });
-        failSafeChoice->setAvailableHandler([=](int8_t newValue) {
-          if ( isModuleFlysky(moduleIndex) )
-            return (newValue == FAILSAFE_NOT_SET || newValue == FAILSAFE_CUSTOM);
-          else return true;
-        });
+        if(isModuleFlysky(moduleIndex)){
+          failSafeChoice->setAvailableHandler([=](int8_t newValue) {
+              return newValue != FAILSAFE_RECEIVER;
+          });
+        }
+
         if (g_model.moduleData[moduleIndex].failsafeMode == FAILSAFE_CUSTOM) {
           new TextButton(this, grid.getFieldSlot(2, 1), STR_SET,
                          [=]() -> uint8_t {
