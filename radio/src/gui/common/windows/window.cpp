@@ -284,12 +284,14 @@ bool Window::onTouchSlide(coord_t x, coord_t y, coord_t startX, coord_t startY, 
   }
 
   if (slideY && innerHeight > rect.h) {
-    setScrollPositionY(scrollPositionY - slideY);
+    if(abs(slideY)>6)
+      setScrollPositionY(scrollPositionY - slideY);
     return true;
   }
 
   if (slideX && innerWidth > rect.w) {
-    setScrollPositionX(scrollPositionX - slideX);
+    if(abs(slideX)>6)
+      setScrollPositionX(scrollPositionX - slideX);
     return true;
   }
 

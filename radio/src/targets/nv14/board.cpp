@@ -19,6 +19,7 @@
  */
 
 #include "opentx.h"
+#include "touch_driver.h"
 #if defined(__cplusplus) && !defined(SIMU)
 extern "C" {
 #endif
@@ -191,6 +192,7 @@ void boardInit()
   battery_charge_init();
   init2MhzTimer();
   init1msTimer();
+  SET_TOUCH_INT_IN();
   uint32_t press_start = 0;
   uint32_t press_end = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
@@ -211,8 +213,27 @@ void boardInit()
     else {
       press_start = 0;
       handle_battery_charge(press_end);
+     #if 0
       delay_ms(20);
       press_end = 0;
+     #else
+      volatile uint8_t ms = 20;
+      volatile uint8_t TouchCount = 0;
+      ms = 20;
+      while (ms--) {
+         delay_us(1000);
+         if(! READ_TOUCH_INT() ){
+            TouchCount++;
+         }
+         else{
+             press_end = 0;
+         }
+      }
+      if(TouchCount>5){
+       TouchCount = 0;
+       press_end = now;
+      }
+     #endif
     }
   }
 
