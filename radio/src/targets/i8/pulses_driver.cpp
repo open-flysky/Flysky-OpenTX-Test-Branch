@@ -53,7 +53,7 @@ void disable_pxx(uint32_t port)
     extmoduleStop();
 }
 
-#if defined(DSM2)
+
 void init_dsm2(uint32_t port)
 {
   if (port == EXTERNAL_MODULE) {
@@ -67,7 +67,6 @@ void disable_dsm2(uint32_t port)
     extmoduleStop();
   }
 }
-#endif
 
 void init_sbusOut(uint32_t port)
 {

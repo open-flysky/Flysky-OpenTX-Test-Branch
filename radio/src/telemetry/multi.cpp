@@ -269,6 +269,7 @@ static void prependSpaces(char * buf, int val)
 void MultiModuleSyncStatus::getRefreshString(char *statusText)
 {
   if (!isValid()) {
+    *statusText='\0';
     return;
   }
 
@@ -341,13 +342,18 @@ static void processMultiTelemetryByte(const uint8_t data)
   if (telemetryRxBufferCount >= 2 && telemetryRxBuffer[1] == telemetryRxBufferCount - 2) {
     // debug print the content of the packet
 #if 0
-    debugPrintf("[MP] Packet type %02X len 0x%02X: ",
-                telemetryRxBuffer[0], telemetryRxBuffer[1]);
-    for (int i=0; i<(telemetryRxBufferCount+3)/4; i++) {
-      debugPrintf("[%02X%02X %02X%02X] ", telemetryRxBuffer[i*4+2], telemetryRxBuffer[i*4 + 3],
-                  telemetryRxBuffer[i*4 + 4], telemetryRxBuffer[i*4 + 5]);
+    char buffer[160];
+    char* pos = buffer;
+    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "[MP] Packet type %02X len 0x%02X: ",  telemetryRxBuffer[0], telemetryRxBuffer[1]);
+    for (int i=0; i < telemetryRxBufferCount; i++) {
+      pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", telemetryRxBuffer[i]);
     }
-    debugPrintf("\r\n");
+    *pos = '\r';
+    pos+=1;
+    *pos = '\n';
+    pos+=1;
+    (*pos) = 0;
+    debugPrintf(buffer);
 #endif
     // Packet is complete, process it
     processMultiTelemetryPaket(telemetryRxBuffer);

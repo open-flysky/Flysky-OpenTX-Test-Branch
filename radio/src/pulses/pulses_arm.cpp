@@ -198,14 +198,12 @@ void setupPulses(uint8_t port)
       scheduleNextMixerCalculation(port, SBUS_PERIOD);
       break;
 
-#if defined(DSM2)
     case PROTO_DSM2_LP45:
     case PROTO_DSM2_DSM2:
     case PROTO_DSM2_DSMX:
       setupPulsesDSM2(port);
       scheduleNextMixerCalculation(port, DSM2_PERIOD);
       break;
-#endif
 
 #if defined(CROSSFIRE)
     case PROTO_CROSSFIRE:

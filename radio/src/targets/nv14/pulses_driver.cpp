@@ -34,46 +34,40 @@ void extmoduleDsm2Start(void);
 #endif
 void extmoduleCrossfireStart(void);
 
-void init_no_pulses(uint32_t port)
-{
+void init_no_pulses(uint32_t port) {
   if (port == INTERNAL_MODULE)
     intmoduleNoneStart();
   else
     extmoduleNoneStart();
 }
 
-void disable_no_pulses(uint32_t port)
-{
+void disable_no_pulses(uint32_t port) {
   if (port == INTERNAL_MODULE)
     intmoduleStop();
   else
     extmoduleStop();
 }
 
-void init_ppm(uint32_t port)
-{
+void init_ppm(uint32_t port) {
   if (port == EXTERNAL_MODULE) {
     extmodulePpmStart();
   }
 }
 
-void disable_ppm(uint32_t port)
-{
+void disable_ppm(uint32_t port) {
   if (port == EXTERNAL_MODULE) {
     extmoduleStop();
   }
 }
 
-void init_pxx(uint32_t port)
-{
+void init_pxx(uint32_t port) {
   if (port == INTERNAL_MODULE)
     intmodulePxxStart();
   else
     extmodulePxxStart();
 }
 
-void disable_pxx(uint32_t port)
-{
+void disable_pxx(uint32_t port) {
   if (port == INTERNAL_MODULE)
     intmoduleStop();
   else
@@ -96,25 +90,25 @@ void disable_dsm2(uint32_t port)
 }
 #endif
 
-void init_sbusOut(uint32_t port)
-{
-  init_dsm2(port);
+void init_sbusOut(uint32_t port) {
+  if (port == EXTERNAL_MODULE) {
+    extmoduleDsm2Start();
+  }
 }
 
-void disable_sbusOut(uint32_t port)
-{
-  disable_dsm2(port);
+void disable_sbusOut(uint32_t port) {
+  if (port == EXTERNAL_MODULE) {
+    extmoduleStop();
+  }
 }
 
-void init_crossfire(uint32_t port)
-{
+void init_crossfire(uint32_t port) {
   if (port == EXTERNAL_MODULE) {
     extmoduleCrossfireStart();
   }
 }
 
-void disable_crossfire(uint32_t port)
-{
+void disable_crossfire(uint32_t port) {
   if (port == EXTERNAL_MODULE) {
     extmoduleStop();
   }
