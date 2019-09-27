@@ -35,7 +35,10 @@ enum MultiPacketTypes : uint8_t {
   FlyskyIBusTelemetry,
   ConfigCommand,
   InputSync,
-  FrskySportPolling
+  FrskySportPolling,
+  HitecTelemetry,
+  SpectrumScannerPacket,
+  FlyskyIBusTelemetryAC
 };
 
 enum MultiBufferState : uint8_t {
@@ -126,6 +129,12 @@ static void processMultiTelemetryPaket(const uint8_t *packet)
         processFlySkyPacket(data);
       else
         TRACE("[MP] Received IBUS telemetry len %d < 28", len);
+      break;
+    case FlyskyIBusTelemetryAC:
+      if (len >= 28)
+        processFlySkyPacketAC(data);
+      else
+        TRACE("[MP] Received IBUS telemetry AC len %d < 28", len);
       break;
     case FrSkyHubTelemetry:
       if (len >= 4)
@@ -340,21 +349,6 @@ static void processMultiTelemetryByte(const uint8_t data)
 
   // Length field does not count the header
   if (telemetryRxBufferCount >= 2 && telemetryRxBuffer[1] == telemetryRxBufferCount - 2) {
-    // debug print the content of the packet
-#if 0
-    char buffer[160];
-    char* pos = buffer;
-    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "[MP] Packet type %02X len 0x%02X: ",  telemetryRxBuffer[0], telemetryRxBuffer[1]);
-    for (int i=0; i < telemetryRxBufferCount; i++) {
-      pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", telemetryRxBuffer[i]);
-    }
-    *pos = '\r';
-    pos+=1;
-    *pos = '\n';
-    pos+=1;
-    (*pos) = 0;
-    debugPrintf(buffer);
-#endif
     // Packet is complete, process it
     processMultiTelemetryPaket(telemetryRxBuffer);
     multiTelemetryBufferState = NoProtocolDetected;
@@ -405,7 +399,7 @@ void processMultiTelemetryData(const uint8_t data)
       break;
 
     case FlyskyTelemetryFallback:
-      processFlySkyTelemetryData(data);
+      processFlySkyTelemetryData(data, telemetryRxBuffer, telemetryRxBufferCount);
       if (telemetryRxBufferCount == 0)
         multiTelemetryBufferState = NoProtocolDetected;
       break;
