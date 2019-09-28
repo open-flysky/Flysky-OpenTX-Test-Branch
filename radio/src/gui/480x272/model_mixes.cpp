@@ -239,7 +239,7 @@ class MixLineButton : public Button {
       mixCount(mixCount)
     {
       const MixData & mix = g_model.mixData[mixIndex];
-      if (mix.swtch || mix.curve.value != 0 || mix.flightModes) {
+      if (mix.swtch || mix.curve.value != 0 || mix.flightModes || mix.delayDown || mix.delayUp || mix.speedDown || mix.speedUp) {
         setHeight(getHeight() + 20);
       }
     }
@@ -309,6 +309,12 @@ class MixLineButton : public Button {
       if (mix.flightModes) {
         paintFlightModes(dc, mix.flightModes);
       }
+
+      BitmapBuffer *delayslowbmp[] = {mixerSetupSlowBitmap, mixerSetupDelayBitmap, mixerSetupDelaySlowBitmap};
+      uint8_t delayslow = 0;
+      if (mix.speedDown || mix.speedUp) delayslow = 1;
+      if (mix.delayUp || mix.delayDown) delayslow += 2;
+      if (delayslow) dc->drawBitmap(width() - 16, line2 + 2, delayslowbmp[delayslow - 1]);
     }
 
     virtual void paint(BitmapBuffer * dc) override
