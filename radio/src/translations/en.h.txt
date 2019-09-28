@@ -52,9 +52,13 @@
 #define LEN_NCHANNELS                  "\004"
 #define TR_NCHANNELS                   "\0014CH\0016CH\0018CH10CH12CH14CH16CH"
 
+#if defined(PCBNV14)
+#define LEN_VBEEPMODE                  "\007"
+#define TR_VBEEPMODE                   "Quiet\0 ""Alarm\0 ""NoTouch""All\0   "
+#else 
 #define LEN_VBEEPMODE                  "\005"
 #define TR_VBEEPMODE                   "Quiet""Alarm""NoKey""All\0 "
-
+#endif
 #define LEN_VBEEPLEN                   "\005"
 #define TR_VBEEPLEN                    "0====""=0===""==0==""===0=""====0"
 
