@@ -279,7 +279,7 @@ void generalDefault()
   g_eeGeneral.stickMode = 0;
 #if defined(PCBTARANIS)
   g_eeGeneral.templateSetup = 17; /* TAER */
-#else defined( PCBNV14 )
+#else defined(PCBNV14)
   g_eeGeneral.templateSetup = 21; /* AETR */
 #endif
 
@@ -2780,7 +2780,7 @@ uint8_t UsbModeSelect( uint32_t index )
     lcd->clearClippingRect();
     if(!index)
     {
-        lcdOn();
+        BACKLIGHT_ENABLE();
         lcdDrawBlackOverlay();
         lcd->drawFilledRect(70, 195, 200, 120, SOLID, HEADER_BGCOLOR);
         const  char *s = STR_USBMODESELECT;

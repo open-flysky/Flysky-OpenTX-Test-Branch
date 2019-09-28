@@ -147,7 +147,7 @@ void debugIbus(const char* type, const uint8_t* rxBuffer, uint8_t rxBufferCount)
     pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
   }
   (*pos) = 0;
-  TRACE("%s %s", type,buffer);
+  TRACE("[%s] count [%d] data: %s", type, rxBufferCount, buffer);
 }
 
 static void processFlySkySensor(const uint8_t *packet, uint8_t type)
