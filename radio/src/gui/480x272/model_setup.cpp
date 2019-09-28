@@ -418,7 +418,7 @@ class ModuleWindow : public Window {
                                           channelEnd->invalidate();
                                         }
                                         SET_DIRTY();
-                                        update();
+                                        update();//reload fail safe and RX number
                                     });
         xjtChoice->setAvailableHandler([](int index) {
           return index != RF_PROTO_OFF;
@@ -614,11 +614,11 @@ class ModuleWindow : public Window {
           }
           if (moduleFlag[moduleIndex] != MODULE_RANGECHECK) {
             moduleFlag[moduleIndex] = MODULE_RANGECHECK;
-            if (isModuleFlysky(moduleIndex)) onFlySkyReceiverRange(moduleIndex);
+            if (isModuleFlysky(moduleIndex)) onFlySkyStartRangeTest(moduleIndex);
             MessageBox* mb = new MessageBox(WARNING_TYPE_INFO, DialogResult::Cancel, "Range check", "",
               [=](DialogResult result) {
                 moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
-                if (isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
+                if (isModuleFlysky(moduleIndex)) onFlySkyStopRangeTest(moduleIndex);
                 rangeButton->check(false);
               }
             );
@@ -634,8 +634,7 @@ class ModuleWindow : public Window {
             return 1;
           }
           moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
-          if (isModuleFlysky(moduleIndex))
-            resetPulsesFlySky(moduleIndex);
+          if (isModuleFlysky(moduleIndex)) onFlySkyStopRangeTest(moduleIndex);
           return 0;
         });
         rangeButton->setCheckHandler([=]() {
@@ -660,7 +659,17 @@ class ModuleWindow : public Window {
                    GET_DEFAULT(min<uint8_t>(g_model.moduleData[moduleIndex].pxx.power, R9M_LBT_POWER_MAX)),
                    SET_DEFAULT(g_model.moduleData[moduleIndex].pxx.power));
       }
-
+#if defined (DEBUG)
+      if (isModuleFlysky(moduleIndex)) {
+        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
+        new NumberEdit(this, grid.getFieldSlot(), 0, 170,
+                             GET_DEFAULT(tx_working_power),
+                             [=](int32_t newValue) -> void {
+                               tx_working_power = newValue;
+                               onFlySkyModuleSetPower(moduleIndex, true);
+                             });
+      }
+#endif
 #if defined (CROSSFIRE_NATIVE)
       if(isModuleCrossfire(moduleIndex)){
           new TextButton(this, grid.getFieldSlot(), STR_CROSSFIRE_SETUP, [=]() -> uint8_t {

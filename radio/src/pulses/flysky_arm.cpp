@@ -102,6 +102,8 @@ enum FlySkyModuleState_E {
   FLYSKY_MODULE_STATE_GET_RX_VERSION_INFO,
   FLYSKY_MODULE_STATE_GET_RF_VERSION_INFO,
   FLYSKY_MODULE_STATE_IDLE,
+  FLYSKY_MODULE_STATE_SET_RANGE_TEST,
+  FLYSKY_MODULE_STATE_RANGE_TEST_RUNNING,
   FLYSKY_MODULE_STATE_DEFAULT,
 };
 
@@ -169,7 +171,7 @@ typedef struct RX_INFO_S {
   fw_info_t fw_info;
 } rx_info_t;
 
-static uint8_t tx_working_power = 90;
+uint8_t tx_working_power = 90;
 static STRUCT_HALL rfProtocolRx = {0};
 static uint32_t rfRxCount = 0;
 static uint8_t lastState = FLYSKY_MODULE_STATE_IDLE;
@@ -436,11 +438,19 @@ void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn)
   }
 }
 
-void onFlySkyReceiverRange(uint8_t port)
+void onFlySkyStartRangeTest(uint8_t port)
 {
-    resetPulsesFlySky(port, 0);
-    moduleFlag[port] = MODULE_RANGECHECK;
+  moduleFlag[port] = MODULE_RANGECHECK;
+  //we need to set power to 0 - this command will trigger range check after all
+  modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_SET_TX_POWER;
 }
+void onFlySkyStopRangeTest(uint8_t port) {
+  moduleFlag[port] = MODULE_NORMAL_MODE;
+  modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_SET_RANGE_TEST;
+}
+
+
+
 
 void onFlySkyBindReceiver(uint8_t port)
 {
@@ -608,11 +618,19 @@ void putFlySkySetReceiverServoFreq(uint8_t port)
   putFlySkyFrameByte(port, gRomData.rx_freq[1]); // receiver servo freq bit[15:8]
 }
 
-void putFlySkySetPowerdBm(uint8_t port, uint8_t dBm)
+void putFlySkySetPowerdBm(uint8_t port)
 {
   putFlySkyFrameByte(port, FRAME_TYPE_REQUEST_ACK);
   putFlySkyFrameByte(port, COMMAND_ID0D_SET_TX_POWER);
-  putFlySkyFrameByte(port, dBm); // 0x00:RX firmware, 0x01:RF firmware
+  putFlySkyFrameByte(port, moduleFlag[port] == MODULE_RANGECHECK ? 0 : tx_working_power);
+}
+
+
+void putFlySkyRangeCheck(uint8_t port)
+{
+  putFlySkyFrameByte(port, FRAME_TYPE_REQUEST_ACK);
+  putFlySkyFrameByte(port, COMMAND_ID_TEST_RANGE);
+  putFlySkyFrameByte(port, moduleFlag[port] == MODULE_RANGECHECK);
 }
 
 void putFlySkyGetFirmwareVersion(uint8_t port, uint8_t fw_word)
@@ -802,9 +820,16 @@ void parseFlySkyFeedbackFrame(uint8_t port)
       modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_DEFAULT;
       return;
     }
-
+    case COMMAND_ID_TEST_RANGE: {
+      //this command must be send to start of stop range test
+      if(moduleFlag[port] != MODULE_RANGECHECK) resetPulsesFlySky(port);
+      else modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_RANGE_TEST_RUNNING;
+      break;
+    }
     case COMMAND_ID0D_SET_TX_POWER: {
-      modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_INIT;
+      //enter range test mode after power is reduced
+      if(moduleFlag[port] == MODULE_RANGECHECK) modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_SET_RANGE_TEST;
+      else modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_INIT;
       break;
     }
 
@@ -916,13 +941,12 @@ void checkFlySkyFeedback(uint8_t port)
 }
 #endif
 
-void resetPulsesFlySky(uint8_t port, int power)
+void resetPulsesFlySky(uint8_t port)
 {
   modulePulsesData[port].flysky.frame_index = 1;
   modulePulsesData[port].flysky.state = FLYSKY_MODULE_STATE_SET_TX_POWER;
   modulePulsesData[port].flysky.state_index = 0;
   modulePulsesData[port].flysky.esc_state = 0;
-  tx_working_power = (power >= 0 && power <= 90) ? (uint)power : 90; // 17dBm
   uint16_t rx_freq = g_model.moduleData[port].romData.rx_freq[0];
   rx_freq += (g_model.moduleData[port].romData.rx_freq[1] * 256);
   if (50 > rx_freq || 400 < rx_freq) {
@@ -966,7 +990,12 @@ void setupPulsesFlySky(uint8_t port)
           break;
 
         case FLYSKY_MODULE_STATE_SET_TX_POWER:
-          putFlySkySetPowerdBm(port, tx_working_power);
+          putFlySkySetPowerdBm(port);
+          break;
+        case FLYSKY_MODULE_STATE_SET_RANGE_TEST:
+          putFlySkyRangeCheck(port);
+          break;
+        case FLYSKY_MODULE_STATE_RANGE_TEST_RUNNING:
           break;
 
         case FLYSKY_MODULE_STATE_SET_RX_PWM_PPM:

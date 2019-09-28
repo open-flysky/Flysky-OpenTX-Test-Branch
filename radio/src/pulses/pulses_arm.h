@@ -177,13 +177,13 @@ union TrainerPulsesData {
 
 extern TrainerPulsesData trainerPulsesData;
 extern const uint16_t CRCTable[];
-
+extern uint8_t tx_working_power;
 void setupPulses(uint8_t port);
 void setupPulsesDSM2(uint8_t port);
 void setupPulsesMultimodule(uint8_t port);
 void setupPulsesSbus(uint8_t port);
 void setupPulsesPXX(uint8_t port);
-void resetPulsesFlySky(uint8_t port, int power = -1);
+void resetPulsesFlySky(uint8_t port);
 void setupPulsesFlySky(uint8_t port);
 void setupPulsesPPMModule(uint8_t port);
 void setupPulsesPPMTrainer();
@@ -192,7 +192,8 @@ void putDsm2Flush();
 void putDsm2SerialBit(uint8_t bit);
 void sendByteSbus(uint8_t byte);
 void onFlySkyBindReceiver(uint8_t port);
-void onFlySkyReceiverRange(uint8_t port);
+void onFlySkyStartRangeTest(uint8_t port);
+void onFlySkyStopRangeTest(uint8_t port);
 void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn);
 void onFlySkyReceiverSetFrequency(uint8_t port);
 void onFlySkyReceiverSetPulse(uint8_t port, uint8_t mode_and_port);
