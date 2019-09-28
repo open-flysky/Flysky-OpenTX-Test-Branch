@@ -200,6 +200,9 @@ class ModuleWindow : public Window {
     TextButton * rangeButton = nullptr;
     Choice * failSafeChoice = nullptr;
     TextButton * failSafeSetButton = nullptr;
+    NumberEdit * channelStart = nullptr;
+    NumberEdit * channelEnd = nullptr;
+
     bool isPPM(uint8_t moduleIndex){
       if(moduleIndex == TRAINER_MODULE) return g_model.trainerMode == TRAINER_MODE_SLAVE;
       return isModulePPM(moduleIndex);
@@ -207,10 +210,10 @@ class ModuleWindow : public Window {
     void addChannelRange(GridLayout &grid, uint8_t moduleIndex)
     {
       new StaticText(this, grid.getLabelSlot(true), STR_CHANNELRANGE);
-      auto channelStart = new NumberEdit(this, grid.getFieldSlot(2, 0), 1,
+      channelStart = new NumberEdit(this, grid.getFieldSlot(2, 0), 1,
                                          MAX_OUTPUT_CHANNELS - sentModuleChannels(moduleIndex) + 1,
                                          GET_DEFAULT(1 + g_model.moduleData[moduleIndex].channelsStart));
-      auto channelEnd = new NumberEdit(this, grid.getFieldSlot(2, 1),
+      channelEnd = new NumberEdit(this, grid.getFieldSlot(2, 1),
                                        g_model.moduleData[moduleIndex].channelsStart + minModuleChannels(moduleIndex),
                                        min<int8_t>(MAX_OUTPUT_CHANNELS, g_model.moduleData[moduleIndex].channelsStart + maxModuleChannels(moduleIndex)),
                                        GET_DEFAULT(g_model.moduleData[moduleIndex].channelsStart + 8 + g_model.moduleData[moduleIndex].channelsCount));
@@ -255,6 +258,8 @@ class ModuleWindow : public Window {
       rangeButton = nullptr;
       failSafeChoice = nullptr;
       failSafeSetButton = nullptr;
+      channelStart = nullptr;
+      channelEnd = nullptr;
 
       // Module Type
       new StaticText(this, grid.getLabelSlot(true), STR_MODE);
@@ -400,10 +405,25 @@ class ModuleWindow : public Window {
 
       if (isModuleXJT(moduleIndex)) {
         auto xjtChoice = new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_OFF, RF_PROTO_LAST,
-                                    GET_SET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol));
+                                    GET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol),
+                                    [=](int32_t newValue) {
+                                        g_model.moduleData[moduleIndex].rfProtocol = (int8_t)newValue;
+                                        int8_t chStart = g_model.moduleData[moduleIndex].channelsStart;
+                                        int8_t lastChannel = min<int8_t>(MAX_OUTPUT_CHANNELS, chStart + maxModuleChannels(moduleIndex));
+                                        if (chStart + g_model.moduleData[moduleIndex].channelsCount + 8 > lastChannel) {
+                                          g_model.moduleData[moduleIndex].channelsCount = lastChannel - chStart - 8;
+                                        }
+                                        if (channelEnd) {
+                                          channelEnd->setMax(lastChannel);
+                                          channelEnd->invalidate();
+                                        }
+                                        SET_DIRTY();
+                                        update();
+                                    });
         xjtChoice->setAvailableHandler([](int index) {
           return index != RF_PROTO_OFF;
         });
+
       }
 
       if (isModuleDSM2(moduleIndex)) {
