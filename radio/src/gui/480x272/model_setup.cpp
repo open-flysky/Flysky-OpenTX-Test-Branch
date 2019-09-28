@@ -106,8 +106,11 @@ class FailSafeBody : public Window {
       grid.spacer(8);
 
       const int lim = (g_model.extendedLimits ? (512 * LIMIT_EXT_PERCENT / 100) : 512) * 2;
+      int minChannel = g_model.moduleData[moduleIndex].channelsStart;
+      int maxChannel = minChannel + 8 + g_model.moduleData[moduleIndex].channelsCount;
 
-      for (int ch=0; ch < maxModuleChannels(moduleIndex); ch++) {
+      //MAX_OUTPUT_CHANNELS maxModuleChannels(moduleIndex)
+      for (int ch = minChannel; ch < maxChannel; ch++) {
         // Channel name
         // TODO if (g_model.limitData[ch].name[0] != '\0') { <= add channel name
         new StaticText(this, grid.getLabelSlot(), getSourceString(MIXSRC_CH1 + ch));
@@ -196,6 +199,7 @@ class ModuleWindow : public Window {
     TextButton * bindButton = nullptr;
     TextButton * rangeButton = nullptr;
     Choice * failSafeChoice = nullptr;
+    TextButton * failSafeSetButton = nullptr;
     bool isPPM(uint8_t moduleIndex){
       if(moduleIndex == TRAINER_MODULE) return g_model.trainerMode == TRAINER_MODE_SLAVE;
       return isModulePPM(moduleIndex);
@@ -215,6 +219,12 @@ class ModuleWindow : public Window {
       channelEnd->setPrefix(STR_CH);
       channelStart->setSetValueHandler([=](int32_t newValue) {
         g_model.moduleData[moduleIndex].channelsStart = newValue - 1;
+        if(g_model.moduleData[moduleIndex].failsafeMode == FAILSAFE_CUSTOM) {
+          //reset fail safe on channel range set - in custom mode it was set only for actual selection
+          g_model.moduleData[moduleIndex].failsafeMode = FAILSAFE_NOT_SET;
+          if(failSafeChoice) failSafeChoice->invalidate();
+          if(failSafeSetButton) failSafeSetButton->enable(false);
+        }
         SET_DIRTY();
         channelEnd->setMin(g_model.moduleData[moduleIndex].channelsStart + minModuleChannels(moduleIndex));
         channelEnd->setMax(min<int8_t>(MAX_OUTPUT_CHANNELS, g_model.moduleData[moduleIndex].channelsStart + maxModuleChannels(moduleIndex)));
@@ -222,6 +232,12 @@ class ModuleWindow : public Window {
       });
       channelEnd->setSetValueHandler([=](int32_t newValue) {
         g_model.moduleData[moduleIndex].channelsCount = newValue - g_model.moduleData[moduleIndex].channelsStart - 8;
+        if(g_model.moduleData[moduleIndex].failsafeMode == FAILSAFE_CUSTOM) {
+          //reset fail safe on channel range set - in custom mode it was set only for actual selection
+          g_model.moduleData[moduleIndex].failsafeMode = FAILSAFE_NOT_SET;
+          if(failSafeChoice) failSafeChoice->invalidate();
+          if(failSafeSetButton) failSafeSetButton->enable(false);
+        }
         SET_DIRTY();
         channelStart->setMax(MAX_OUTPUT_CHANNELS - sentModuleChannels(moduleIndex) + 1);
       });
@@ -234,6 +250,11 @@ class ModuleWindow : public Window {
       uint8_t moduleType = g_model.moduleData[moduleIndex].type;
 
       clear();
+      moduleChoice = nullptr;
+      bindButton = nullptr;
+      rangeButton = nullptr;
+      failSafeChoice = nullptr;
+      failSafeSetButton = nullptr;
 
       // Module Type
       new StaticText(this, grid.getLabelSlot(true), STR_MODE);
@@ -479,12 +500,15 @@ class ModuleWindow : public Window {
                                       SEND_FAILSAFE_NOW(moduleIndex);
                                     });
         failSafeChoice->setAvailableHandler([=](int8_t newValue) {
-          if ( isModuleFlysky(moduleIndex) )
-            return (newValue == FAILSAFE_NOT_SET || newValue == FAILSAFE_CUSTOM);
-          else return true;
+          if(isModuleFlysky(moduleIndex)){
+            failSafeChoice->setAvailableHandler([=](int8_t newValue) {
+                return newValue != FAILSAFE_RECEIVER;
+            });
+          }
+          return true;
         });
         if (g_model.moduleData[moduleIndex].failsafeMode == FAILSAFE_CUSTOM) {
-          new TextButton(this, grid.getFieldSlot(2, 1), STR_SET,
+          failSafeSetButton = new TextButton(this, grid.getFieldSlot(2, 1), STR_SET,
                          [=]() -> uint8_t {
                            new FailSafeMenu(moduleIndex);
                            return 1;

@@ -291,8 +291,11 @@ void setupPulses(uint8_t port)
 void setCustomFailsafe(uint8_t moduleIndex)
 {
   if (moduleIndex < NUM_MODULES) {
-    for (int ch=0; ch<MAX_OUTPUT_CHANNELS; ch++) {
-      if (ch < g_model.moduleData[moduleIndex].channelsStart || ch >= maxModuleChannels(moduleIndex) + g_model.moduleData[moduleIndex].channelsStart) {
+    int minChannel = g_model.moduleData[moduleIndex].channelsStart;
+    int maxChannel = minChannel + 8 + g_model.moduleData[moduleIndex].channelsCount;
+    //we should not set custom values for channels that are not selected!
+    for (int ch=0; ch < MAX_OUTPUT_CHANNELS; ch++) {
+      if (ch < minChannel || ch >= maxChannel) { //channel not configured
         g_model.moduleData[moduleIndex].failsafeChannels[ch] = 0;
       }
       else if (g_model.moduleData[moduleIndex].failsafeChannels[ch] < FAILSAFE_CHANNEL_HOLD) {
