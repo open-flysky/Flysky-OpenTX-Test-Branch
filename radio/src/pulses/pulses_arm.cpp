@@ -181,8 +181,7 @@ void setupPulses(uint8_t port)
   switch (required_protocol) {
 #if defined(PCBFLYSKY)
     case PROTO_FLYSKY:
-      if (init_needed)
-        resetPulsesFlySky(port);
+      if (init_needed) resetPulsesFlySky(port);
       setupPulsesFlySky(port);
       scheduleNextMixerCalculation(port, FLYSKY_PERIOD);
       break;

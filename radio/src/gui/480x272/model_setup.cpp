@@ -298,7 +298,7 @@ class ModuleWindow : public Window {
                      g_model.moduleData[moduleIndex].romData.mode = newValue;
                      SET_DIRTY();
                      moduleFlagBackNormal(moduleIndex);
-                     onFlySkyReceiverSetPulse(INTERNAL_MODULE, newValue);
+                     setFlyskyState(moduleIndex, STATE_SET_RX_PWM_PPM);
                    });
         grid.nextLine();
       }
@@ -501,7 +501,7 @@ class ModuleWindow : public Window {
                          g_model.moduleData[moduleIndex].romData.rx_freq[1] = newValue >> 8;
                          SET_DIRTY();
                          moduleFlagBackNormal(moduleIndex);
-                         onFlySkyReceiverSetFrequency(INTERNAL_MODULE);
+                         setFlyskyState(moduleIndex, STATE_SET_RX_FREQUENCY);
                        });
         grid.nextLine();
       }
@@ -547,8 +547,7 @@ class ModuleWindow : public Window {
           if (moduleFlag[moduleIndex] == MODULE_BIND) {
             bindButton->setText(STR_MODULE_BIND);
             moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
-            if (isModuleFlysky(moduleIndex))
-              resetPulsesFlySky(moduleIndex);
+            if (isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
             return 0;
           }
           else {
@@ -590,7 +589,8 @@ class ModuleWindow : public Window {
 #endif
             }
             if (isModuleFlysky(moduleIndex))
-              onFlySkyBindReceiver(moduleIndex);
+              resetPulsesFlySky(moduleIndex);
+              setFlyskyState(moduleIndex, STATE_INIT);
             return 1;
             }
         });
@@ -614,11 +614,10 @@ class ModuleWindow : public Window {
           }
           if (moduleFlag[moduleIndex] != MODULE_RANGECHECK) {
             moduleFlag[moduleIndex] = MODULE_RANGECHECK;
-            if (isModuleFlysky(moduleIndex)) onFlySkyStartRangeTest(moduleIndex);
+            if(isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
             MessageBox* mb = new MessageBox(WARNING_TYPE_INFO, DialogResult::Cancel, "Range check", "",
               [=](DialogResult result) {
                 moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
-                if (isModuleFlysky(moduleIndex)) onFlySkyStopRangeTest(moduleIndex);
                 rangeButton->check(false);
               }
             );
@@ -633,9 +632,11 @@ class ModuleWindow : public Window {
             });
             return 1;
           }
-          moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
-          if (isModuleFlysky(moduleIndex)) onFlySkyStopRangeTest(moduleIndex);
-          return 0;
+          else {
+            moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
+            if(isModuleFlysky(moduleIndex)) setFlyskyState(moduleIndex, STATE_SET_RANGE_TEST);
+            return 0;
+          }
         });
         rangeButton->setCheckHandler([=]() {
           if (moduleFlag[moduleIndex] != MODULE_RANGECHECK) {
