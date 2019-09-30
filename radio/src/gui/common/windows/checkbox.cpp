@@ -41,6 +41,7 @@ void CheckBox::paint(BitmapBuffer * dc)
       drawSolidRect(dc, 1, (g_eeGeneral.displayLargeLines) ? 13 : 7, 14, 14, 1, LINE_COLOR);
     }
   }
+  if(label) dc->drawSizedText(24, 2, label, strlen(label), 0);
 }
 
 bool CheckBox::onTouchEnd(coord_t x, coord_t y)

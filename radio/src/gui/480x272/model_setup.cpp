@@ -588,9 +588,10 @@ class ModuleWindow : public Window {
               multiBindStatus = MULTI_BIND_INITIATED;
 #endif
             }
-            if (isModuleFlysky(moduleIndex))
+            if (isModuleFlysky(moduleIndex)) {
               resetPulsesFlySky(moduleIndex);
               setFlyskyState(moduleIndex, STATE_INIT);
+            }
             return 1;
             }
         });

@@ -31,6 +31,7 @@ class CheckBox : public Window {
       getValue(getValue),
       setValue(setValue)
     {
+      label = nullptr;
     }
 
 #if defined(DEBUG_WINDOWS)
@@ -44,6 +45,9 @@ class CheckBox : public Window {
 
     bool onTouchEnd(coord_t x, coord_t y) override;
 
+    void setLabel(const char * text) {
+      label = text;
+    }
   protected:
     const char * label;
     std::function<uint8_t()> getValue;

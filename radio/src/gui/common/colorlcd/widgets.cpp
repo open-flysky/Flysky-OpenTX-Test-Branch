@@ -65,6 +65,17 @@ swsrc_t editSwitch(coord_t x, coord_t y, swsrc_t value, LcdFlags attr, event_t e
   return value;
 }
 
+
+void drawGVarValue(coord_t x, coord_t y, uint8_t gvar, gvar_t value, LcdFlags flags)
+{
+  uint8_t prec = g_model.gvars[gvar].prec;
+  if (prec > 0) {
+    flags |= (prec == 1 ? PREC1 : PREC2);
+  }
+  drawValueWithUnit(x, y, value, g_model.gvars[gvar].unit ? UNIT_PERCENT : UNIT_RAW, flags);
+}
+
+
 void drawFatalErrorScreen(const char * message)
 {
   static uint32_t updateTime = 0;
