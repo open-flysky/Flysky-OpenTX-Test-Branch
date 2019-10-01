@@ -337,13 +337,3 @@ void drawSlider(coord_t x, coord_t y, int len, int val, int min, int max, uint8_
   else
     drawHorizontalSlider(x, y, len, val, min, max, steps, options);
 }
-
-#if defined(GVARS)
-#error "GVARS are not currently supported on this platform"
-#else
-int16_t editGVarFieldValue(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr, event_t event)
-{
-  lcdDrawNumber(x, y, value, attr, 0, NULL, "%");
-  return value;
-}
-#endif

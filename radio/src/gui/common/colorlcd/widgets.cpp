@@ -75,6 +75,38 @@ void drawGVarValue(coord_t x, coord_t y, uint8_t gvar, gvar_t value, LcdFlags fl
   drawValueWithUnit(x, y, value, g_model.gvars[gvar].unit ? UNIT_PERCENT : UNIT_RAW, flags);
 }
 
+#if defined(GVARS)
+int16_t displayGVar(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr)
+{
+  uint16_t delta = GV_GET_GV1_VALUE(max);
+  TRACE("displayGVar(val=%d min=%d max=%d)", value, min, max);
+  if (GV_IS_GV_VALUE(value, min, max)) {
+    attr &= ~PREC1;
+
+    int8_t idx = (int16_t) GV_INDEX_CALC_DELTA(value, delta);
+    if (idx >= 0) ++idx;    // transform form idx=0=GV1 to idx=1=GV1 in order to handle double keys invert
+    if (idx < 0) {
+      value = (int16_t) GV_CALC_VALUE_IDX_NEG(idx, delta);
+      idx = -idx;
+      drawStringWithIndex(x, y, STR_GV, idx, attr, "-");
+    }
+    else {
+      drawStringWithIndex(x, y, STR_GV, idx, attr);
+      value = (int16_t) GV_CALC_VALUE_IDX_POS(idx-1, delta);
+    }
+  }
+  else {
+    lcdDrawNumber(x, y, value, attr, 0, NULL, "%");
+  }
+  return value;
+}
+#else
+int16_t displayGVar(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr)
+{
+  lcdDrawNumber(x, y, value, attr);
+  return value;
+}
+#endif
 
 void drawFatalErrorScreen(const char * message)
 {
