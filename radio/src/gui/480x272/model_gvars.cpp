@@ -33,8 +33,11 @@
 int zchar2str(char * dest, const char * src, int size);
 
 GVarButton::GVarButton(Window * parent, const rect_t & rect, uint8_t gvar) : Button(parent, rect), gvar(gvar) {
-  singleLine = width() > 400;
-  setHeight(LINE_HEIGHT*(singleLine?2:4) + TEXT_OFFSET_TOP * 2);
+
+  int perRow = (width() - GVAR_NAME_SIZE + TEXT_LEFT_MARGIN*2) / GVAR_NAME_SIZE;
+  lines = MAX_FLIGHT_MODES / perRow;
+  if(MAX_FLIGHT_MODES % perRow != 0) lines++;
+  setHeight(LINE_HEIGHT*(lines << 1) + TEXT_OFFSET_TOP * 2);
 }
 
 
@@ -49,7 +52,7 @@ void GVarButton::checkEvents() {
       FlightModeData * fmData = &g_model.flightModeData[flightMode];
       sum += fmData->gvars[gvar];
     }
-    if(sum!=currentFlightMode) invalidate();
+    if(sum!=gvarSum) invalidate();
   }
 }
 
@@ -59,13 +62,7 @@ void GVarButton::paint(BitmapBuffer * dc) {
   int nameRectW = TEXT_LEFT_MARGIN + GVAR_NAME_SIZE;
   coord_t x = TEXT_LEFT_MARGIN;
   coord_t y = TEXT_OFFSET_TOP;
-  if(singleLine) {
-    x += nameRectW;
-    nameRectW *= 2;
-  }
-  else{
-    y += LINE_HEIGHT;
-  }
+  y += LINE_HEIGHT;
   currentFlightMode = getFlightMode();
   gvarSum = 0;
 
@@ -168,7 +165,7 @@ void GVarEditWindow::setProperties(int onlyForFlightMode) {
   std::string suffix;
   LcdFlags prec = gvar->prec ? PREC1 : 0;
   if(gvar->unit) suffix = std::string("%");
-  if(onlyForFlightMode >= 0 && max && max) {
+  if(min && max) {
     min->setMax(maxValue);
     max->setMin(minValue);
 

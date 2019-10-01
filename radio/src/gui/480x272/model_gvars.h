@@ -33,7 +33,7 @@ class GVarButton : public Button {
   protected:
     void drawFlightMode(BitmapBuffer * dc, coord_t x, coord_t y, int fm, LcdFlags attr);
     uint8_t gvar;
-    bool singleLine;
+    int lines;
     int32_t gvarSum; //used for invalidation
     uint8_t currentFlightMode; //used for invalidation
 };
