@@ -79,12 +79,7 @@ set(BOOTLOADER_SRC
   boot.cpp
   bin_files.cpp
   )
-if(PCB STREQUAL NV14)
-  set(BOOTLOADER_SRC
-    ${BOOTLOADER_SRC}
-    ../../../../../targets/${TARGET_DIR}/touch_driver.cpp
-    )
-endif()
+
 if(NOT (PCB STREQUAL X10 OR PCB STREQUAL X12S OR PCB STREQUAL NV14))
   set(BOOTLOADER_SRC
     ${BOOTLOADER_SRC}

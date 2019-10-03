@@ -177,13 +177,13 @@ union TrainerPulsesData {
 
 extern TrainerPulsesData trainerPulsesData;
 extern const uint16_t CRCTable[];
-
+extern uint8_t tx_working_power;
 void setupPulses(uint8_t port);
 void setupPulsesDSM2(uint8_t port);
 void setupPulsesMultimodule(uint8_t port);
 void setupPulsesSbus(uint8_t port);
 void setupPulsesPXX(uint8_t port);
-void resetPulsesFlySky(uint8_t port, int power = -1);
+void resetPulsesFlySky(uint8_t port);
 void setupPulsesFlySky(uint8_t port);
 void setupPulsesPPMModule(uint8_t port);
 void setupPulsesPPMTrainer();
@@ -191,13 +191,10 @@ void sendByteDsm2(uint8_t b);
 void putDsm2Flush();
 void putDsm2SerialBit(uint8_t bit);
 void sendByteSbus(uint8_t byte);
+void setFlyskyState(uint8_t port, uint8_t state);
 void onFlySkyBindReceiver(uint8_t port);
-void onFlySkyReceiverRange(uint8_t port);
 void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn);
-void onFlySkyReceiverSetFrequency(uint8_t port);
-void onFlySkyReceiverSetPulse(uint8_t port, uint8_t mode_and_port);
 void intmoduleSendBufferDMA(uint8_t * data, uint8_t size);
-void onFlySkyUsbDownloadFirmware(uint8_t port, uint8_t isRfTransfer);
 void onFlySkyGetVersionInfoStart(uint8_t port, uint8_t isRfTransfer);
 void usbDownloadTransmit(uint8_t *buffer, uint32_t size);
 
@@ -256,6 +253,27 @@ enum R9MLBTPowerValues {
   R9M_LBT_POWER_25 = 0,
   R9M_LBT_POWER_500,
   R9M_LBT_POWER_MAX = R9M_LBT_POWER_500
+};
+
+enum FlySkyModuleState_E {
+  STATE_SET_TX_POWER = 0,
+  STATE_INIT = 1,
+  STATE_BIND = 2,
+  STATE_SET_RECEIVER_ID = 3,
+  STATE_SET_RX_PWM_PPM = 4,
+  STATE_SET_RX_IBUS_SBUS = 5,
+  STATE_SET_RX_FREQUENCY = 6,
+  STATE_UPDATE_RF_FIRMWARE = 7,
+  STATE_UPDATE_RX_FIRMWARE = 8,
+  STATE_UPDATE_HALL_FIRMWARE = 9,
+  STATE_UPDATE_RF_PROTOCOL = 10,
+  STATE_GET_RECEIVER_CONFIG = 11,
+  STATE_GET_RX_VERSION_INFO = 12,
+  STATE_GET_RF_VERSION_INFO = 13,
+  STATE_SET_RANGE_TEST = 14,
+  STATE_RANGE_TEST_RUNNING = 15,
+  STATE_IDLE = 16,
+  STATE_DEFAULT = 17,
 };
 
 #define BIND_TELEM_ALLOWED(idx)      (!isModuleR9M_LBT(idx) || g_model.moduleData[idx].pxx.power == R9M_LBT_POWER_25)

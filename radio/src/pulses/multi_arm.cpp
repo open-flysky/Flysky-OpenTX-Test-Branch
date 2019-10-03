@@ -56,8 +56,15 @@ static void sendFailsafeChannels(uint8_t port)
   uint32_t bits = 0;
   uint8_t bitsavailable = 0;
 
+  uint8_t channels_start = g_model.moduleData[port].channelsStart;
+  uint8_t channels_last = channels_start + 8 + g_model.moduleData[port].channelsCount;
+
   for (int i = 0; i < MULTI_CHANS; i++) {
-    int16_t failsafeValue = g_model.moduleData[port].failsafeChannels[i];
+
+    int16_t failsafeValue = 0;
+    if(channels_start + i < channels_last) failsafeValue = g_model.moduleData[port].failsafeChannels[i];
+
+
     int pulseValue;
     if (g_model.moduleData[port].failsafeMode == FAILSAFE_HOLD)
       failsafeValue = FAILSAFE_CHANNEL_HOLD;

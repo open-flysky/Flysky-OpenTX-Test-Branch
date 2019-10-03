@@ -31,6 +31,7 @@
 #include "special_functions.h"
 #include "model_custom_scripts.h"
 #include "model_telemetry.h"
+#include "model_gvars.h"
 
 ModelMenu::ModelMenu():
   TabsGroup()
@@ -44,6 +45,9 @@ ModelMenu::ModelMenu():
   addTab(new ModelMixesPage());
   addTab(new ModelOutputsPage());
   addTab(new ModelCurvesPage());
+#if defined(GVARS)
+  addTab(new ModelGVarsPage());
+#endif
   addTab(new ModelLogicalSwitchesPage());
   addTab(new SpecialFunctionsPage(g_model.customFn));
 #if defined(LUA_MODEL_SCRIPTS)

@@ -417,19 +417,8 @@ bool check_submenu_simple(event_t event, uint8_t maxrow);
   if (!check_submenu_simple(event, lines_count)) return false; \
   drawMenuTemplate(title, icon, NULL, options)
 
-#if defined(GVARS)
-  #define GVAR_MENU_ITEM(x, y, v, min, max, lcdattr, editflags, event) editGVarFieldValue(x, y, v, min, max, lcdattr, editflags, event)
-#else
-  #define GVAR_MENU_ITEM(x, y, v, min, max, lcdattr, editflags, event) editGVarFieldValue(x, y, v, min, max, lcdattr, event)
-#endif
-
-#if defined(GVARS)
-  int16_t editGVarFieldValue(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr, uint8_t editflags, event_t event);
-  #define displayGVar(x, y, v, min, max) GVAR_MENU_ITEM(x, y, v, min, max, 0, 0, 0)
-#else
-  int16_t editGVarFieldValue(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr, event_t event);
-  #define displayGVar(x, y, v, min, max) lcdDrawNumber(x, y, v)
-#endif
+#define GVAR_MENU_ITEM(x, y, v, min, max, lcdattr, editflags, event) displayGVar(x, y, v, min, max, lcdattr)
+int16_t displayGVar(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr = 0);
 
 extern uint8_t editNameCursorPos;
 void editName(coord_t x, coord_t y, char *name, uint8_t size, event_t event, uint8_t active, LcdFlags flags=ZCHAR);

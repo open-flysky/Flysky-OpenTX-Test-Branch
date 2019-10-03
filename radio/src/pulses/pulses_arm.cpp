@@ -181,8 +181,7 @@ void setupPulses(uint8_t port)
   switch (required_protocol) {
 #if defined(PCBFLYSKY)
     case PROTO_FLYSKY:
-      if (init_needed)
-        resetPulsesFlySky(port);
+      if (init_needed) resetPulsesFlySky(port);
       setupPulsesFlySky(port);
       scheduleNextMixerCalculation(port, FLYSKY_PERIOD);
       break;
@@ -198,14 +197,12 @@ void setupPulses(uint8_t port)
       scheduleNextMixerCalculation(port, SBUS_PERIOD);
       break;
 
-#if defined(DSM2)
     case PROTO_DSM2_LP45:
     case PROTO_DSM2_DSM2:
     case PROTO_DSM2_DSMX:
       setupPulsesDSM2(port);
       scheduleNextMixerCalculation(port, DSM2_PERIOD);
       break;
-#endif
 
 #if defined(CROSSFIRE)
     case PROTO_CROSSFIRE:
@@ -293,8 +290,11 @@ void setupPulses(uint8_t port)
 void setCustomFailsafe(uint8_t moduleIndex)
 {
   if (moduleIndex < NUM_MODULES) {
-    for (int ch=0; ch<MAX_OUTPUT_CHANNELS; ch++) {
-      if (ch < g_model.moduleData[moduleIndex].channelsStart || ch >= maxModuleChannels(moduleIndex) + g_model.moduleData[moduleIndex].channelsStart) {
+    int minChannel = g_model.moduleData[moduleIndex].channelsStart;
+    int maxChannel = minChannel + 8 + g_model.moduleData[moduleIndex].channelsCount;
+    //we should not set custom values for channels that are not selected!
+    for (int ch=0; ch < MAX_OUTPUT_CHANNELS; ch++) {
+      if (ch < minChannel || ch >= maxChannel) { //channel not configured
         g_model.moduleData[moduleIndex].failsafeChannels[ch] = 0;
       }
       else if (g_model.moduleData[moduleIndex].failsafeChannels[ch] < FAILSAFE_CHANNEL_HOLD) {

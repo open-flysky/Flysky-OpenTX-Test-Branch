@@ -70,7 +70,7 @@ void processTelemetryData(uint8_t data)
     return;
   }
   if (telemetryProtocol == PROTOCOL_FLYSKY_IBUS) {
-    processFlySkyTelemetryData(data);
+    processFlySkyTelemetryData(data, telemetryRxBuffer, telemetryRxBufferCount);
     return;
   }
   if (telemetryProtocol == PROTOCOL_MULTIMODULE) {

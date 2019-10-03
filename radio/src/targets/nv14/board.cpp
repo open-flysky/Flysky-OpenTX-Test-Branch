@@ -79,18 +79,11 @@ void interrupt1ms()
     DEBUG_TIMER_STOP(debugTimerHaptic);
   }
 #endif
-#if !defined(SIMU) && defined (FLYSKY_HALL_STICKS)
-    if (boardState == BOARD_STARTED)// && 0 == pre_scale%3)
-    {
-      hall_stick_loop();
-    }
-#endif
+
   if (pre_scale == 10) {
     pre_scale = 0;
 #if !defined(SIMU)
-    if (boardState == BOARD_STARTED) {
-        TouchDriver();
-    }
+    if (boardState == BOARD_STARTED) hall_stick_loop();
 #endif
     DEBUG_TIMER_START(debugTimerPer10ms);
     DEBUG_TIMER_SAMPLE(debugTimerPer10msPeriod);
@@ -164,6 +157,7 @@ void delay_self(int count)
                               )
 
 
+extern STRUCT_TOUCH touchState;
 
 void boardInit()
 {
@@ -191,6 +185,7 @@ void boardInit()
   battery_charge_init();
   init2MhzTimer();
   init1msTimer();
+  TouchInit();
   uint32_t press_start = 0;
   uint32_t press_end = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
@@ -209,8 +204,14 @@ void boardInit()
       }
     }
     else {
+      uint32_t press_end_touch = press_end;
+      if(touchState.Event == TE_UP)
+      {
+        touchState.Event = TE_NONE;
+        press_end_touch = touchState.Time;
+      }
       press_start = 0;
-      handle_battery_charge(press_end);
+      handle_battery_charge(press_end_touch);
       delay_ms(20);
       press_end = 0;
     }
@@ -230,7 +231,6 @@ void boardInit()
 #endif
   usbInit();
   hapticInit();
-  TouchInit();
   boardState = BOARD_STARTED;
 #if defined(DEBUG)
   DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP|DBGMCU_TIM1_STOP|DBGMCU_TIM2_STOP|DBGMCU_TIM3_STOP|DBGMCU_TIM4_STOP|DBGMCU_TIM5_STOP|DBGMCU_TIM6_STOP|DBGMCU_TIM7_STOP|DBGMCU_TIM8_STOP|DBGMCU_TIM9_STOP|DBGMCU_TIM10_STOP|DBGMCU_TIM11_STOP|DBGMCU_TIM12_STOP|DBGMCU_TIM13_STOP|DBGMCU_TIM14_STOP, ENABLE);

@@ -46,6 +46,7 @@ bool SwitchWarnDialog::warningInactive()
 
 void SwitchWarnDialog::paint(BitmapBuffer * dc)
 {
+    if(!running) return;
     Dialog::paint(dc);
     int x = ALERT_TITLE_LEFT;
     int y = ALERT_FRAME_TOP + ALERT_FRAME_PADDING + ALERT_TITLE_LINE_HEIGHT * 3;

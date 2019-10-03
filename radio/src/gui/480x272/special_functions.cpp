@@ -61,6 +61,20 @@ class SpecialFunctionEditWindow : public Page {
       headerSF = new StaticText(window, {70, 28, 100, 20}, (functions == g_model.customFn ? "SF" : "GF" ) + std::to_string(index), MENU_TITLE_COLOR);
     }
 
+    static const char* getGVarModeName(int32_t value) {
+      switch (value) {
+      case FUNC_ADJUST_GVAR_CONSTANT:
+        return STR_CONSTANT;
+      case FUNC_ADJUST_GVAR_SOURCE:
+        return STR_MIXSOURCE;
+      case FUNC_ADJUST_GVAR_GVAR:
+        return STR_GLOBALVAR;
+      case FUNC_ADJUST_GVAR_INCDEC:
+        return STR_INCDEC;
+      }
+      return "";
+    }
+
     void updateSpecialFunctionOneWindow()
     {
       // SF.one variable part
@@ -182,6 +196,62 @@ class SpecialFunctionEditWindow : public Page {
           grid.nextLine();
           break;
         }
+//#if defined(GVARS)
+        case FUNC_ADJUST_GVAR: {
+          new StaticText(specialFunctionOneWindow, grid.getLabelSlot(), STR_VALUE);
+          Choice * gvar = new Choice(specialFunctionOneWindow, grid.getFieldSlot(), nullptr, 0, MAX_GVARS-1, GET_SET_DEFAULT(CFN_GVAR_INDEX(cfn)));
+          gvar->setTextHandler(GvarNumberEdit::getGVarName);
+          grid.nextLine();
+          new StaticText(specialFunctionOneWindow, grid.getLabelSlot(), STR_MODE);
+          Choice * mode = new Choice(specialFunctionOneWindow, grid.getFieldSlot(), nullptr,
+              FUNC_ADJUST_GVAR_CONSTANT, FUNC_ADJUST_GVAR_INCDEC, GET_VALUE(CFN_GVAR_MODE(cfn)),
+              [=](int32_t newValue) {
+                CFN_GVAR_MODE(cfn) = newValue;
+                CFN_PARAM(cfn) = 0;
+                SET_DIRTY();
+                updateSpecialFunctionOneWindow();
+              });
+          mode->setTextHandler(SpecialFunctionEditWindow::getGVarModeName);
+          grid.nextLine();
+
+          switch(CFN_GVAR_MODE(cfn)) {
+          case FUNC_ADJUST_GVAR_CONSTANT:
+          {
+            int16_t val_min, val_max;
+            getMixSrcRange(CFN_GVAR_INDEX(cfn) + MIXSRC_FIRST_GVAR, val_min, val_max);
+            new NumberEdit(specialFunctionOneWindow, grid.getFieldSlot(), val_min, val_max, GET_SET_DEFAULT(CFN_PARAM(cfn)));
+            grid.nextLine();
+            break;
+          }
+          case FUNC_ADJUST_GVAR_SOURCE:
+          {
+            new SourceChoice(specialFunctionOneWindow, grid.getFieldSlot(), 0, MIXSRC_LAST_CH, GET_SET_DEFAULT(CFN_PARAM(cfn)));
+            grid.nextLine();
+            break;
+          }
+          case FUNC_ADJUST_GVAR_GVAR:
+          {
+            Choice* gvarSelect = new Choice(specialFunctionOneWindow, grid.getFieldSlot(), nullptr, 0, MAX_GVARS-1, GET_SET_DEFAULT(CFN_PARAM(cfn)));
+            gvarSelect->setTextHandler(GvarNumberEdit::getGVarName);
+            grid.nextLine();
+            break;
+          }
+          case FUNC_ADJUST_GVAR_INCDEC:
+            int16_t val_min, val_max;
+            getMixSrcRange(CFN_GVAR_INDEX(cfn) + MIXSRC_FIRST_GVAR, val_min, val_max);
+            getGVarIncDecRange(val_min, val_max);
+            NumberEdit* incDec = new NumberEdit(specialFunctionOneWindow, grid.getFieldSlot(), val_min, val_max, GET_SET_DEFAULT(CFN_PARAM(cfn)));
+            incDec->setDisplayHandler([=](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
+              dc->drawText(3, Y_ENLARGEABLE, value < 0 ? "-=" : "+=", flags);
+              drawGVarValue(25, Y_ENLARGEABLE, CFN_GVAR_INDEX(cfn), abs(value), flags);
+            });
+            grid.nextLine();
+            break;
+          }
+
+          break;
+        }
+//#endif
       }
 
       if (HAS_ENABLE_PARAM(func)) {

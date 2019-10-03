@@ -927,8 +927,8 @@ extern const pm_char STR_USER_MANUAL[];
   extern const pm_char STR_TELEMETRY_TYPE[];
   extern const pm_char STR_TELEMETRY_SENSORS[];
   extern const pm_char STR_VALUE[];
-extern const pm_char STR_REPEAT[];
-extern const pm_char STR_ENABLE[];
+  extern const pm_char STR_REPEAT[];
+  extern const pm_char STR_ENABLE[];
   extern const pm_char STR_TOPLCDTIMER[];
   extern const pm_char STR_UNIT[] PROGMEM;
   extern const pm_char STR_TELEMETRY_NEWSENSOR[];
@@ -969,6 +969,9 @@ extern const pm_char STR_ENABLE[];
   extern const pm_char STR_BACKGROUND_COLOR[];
   extern const pm_char STR_MAIN_COLOR[];
   extern const pm_char STR_MULTI_RFPOWER[];
+  extern const pm_char STR_RF_PROTOCOL[];
+  extern const pm_char STR_MODULE_OPTIONS[];
+  extern const pm_char STR_POWER[];
 #endif
 
 #if defined(CPUARM)

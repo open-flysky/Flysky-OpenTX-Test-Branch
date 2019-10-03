@@ -60,9 +60,23 @@ class StaticText : public Window {
       invalidate();
     }
 
+    void setCheckHandler(std::function<void(void)> handler)
+    {
+      onCheck = std::move(handler);
+    }
+
+    void checkEvents() override {
+      Window::checkEvents();
+      if (onCheck) onCheck();
+    }
+
+    bool isTextEqual(const char* newText){
+      return strcmp(text.c_str(), newText) == 0;
+    }
   protected:
     std::string text;
     LcdFlags flags;
+    std::function<void(void)> onCheck;
 };
 
 class Subtitle: public StaticText {

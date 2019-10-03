@@ -211,6 +211,9 @@ inline bool isModuleTypeAllowed(uint8_t idx, uint8_t type)
     return (type == MODULE_TYPE_NONE || type == MODULE_TYPE_FLYSKY);
   }
   else if (idx == EXTERNAL_MODULE) {
+#if defined(MULTIMODULE)
+    if(type == MODULE_TYPE_MULTIMODULE) return true;
+#endif  
     return (type == MODULE_TYPE_NONE || type == MODULE_TYPE_PPM
          || type == MODULE_TYPE_XJT || type == MODULE_TYPE_CROSSFIRE
          || type == MODULE_TYPE_R9M);
@@ -222,6 +225,9 @@ inline bool isModuleTypeAllowed(uint8_t idx, uint8_t type)
 
 inline bool isModuleNeedingReceiverNumber(uint8_t idx)
 {
+  if(isModuleXJT(idx)) {
+    return g_model.moduleData[idx].rfProtocol != RF_PROTO_D8;
+  }
   return isModulePXX(idx) || isModuleDSM2(idx) || isModuleMultimodule(idx);
 }
 
@@ -232,6 +238,9 @@ inline bool isModuleNeedingBindRangeButtons(uint8_t idx)
 
 inline bool isModuleNeedingFailsafeButton(uint8_t idx)
 {
+  if(isModuleXJT(idx)){
+    return g_model.moduleData[idx].rfProtocol == RF_PROTO_X16;
+  }
   return isModulePXX(idx) || isModuleR9M(idx) || isModuleFlysky(idx);
 }
 

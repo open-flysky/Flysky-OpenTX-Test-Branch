@@ -66,12 +66,6 @@ void drawSlider(coord_t x, coord_t y, int len, int val, int min, int max, uint8_
 
 void drawGVarValue(coord_t x, coord_t y, uint8_t gvar, gvar_t value, LcdFlags flags);
 
-#if defined(GVARS)
-int16_t editGVarFieldValue(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr, uint8_t editflags, event_t event);
-#else
-int16_t editGVarFieldValue(coord_t x, coord_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr, event_t event);
-#endif
-
 // Screen templates
 int drawMenuTemplate(const char * title, uint8_t icon, const uint8_t * icons=NULL, uint32_t options=0);
 void drawSplash();
