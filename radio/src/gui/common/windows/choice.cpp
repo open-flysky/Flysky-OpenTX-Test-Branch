@@ -50,10 +50,9 @@ void Choice::paint(BitmapBuffer * dc)
     textColor = TEXT_INVERTED_BGCOLOR;
     lineColor = TEXT_INVERTED_BGCOLOR;
   }
-  if (textHandler)
-    dc->drawText(3, Y_ENLARGEABLE, textHandler(getValue()).c_str());
-  else
-    drawTextAtIndex(dc, 3, Y_ENLARGEABLE, values, getValue() - vmin, flags | textColor);
+  if (textHandler) dc->drawText(3, Y_ENLARGEABLE, textHandler(getValue()).c_str(), flags | textColor);
+  else if(values) drawTextAtIndex(dc, 3, Y_ENLARGEABLE, values, getValue() - vmin, flags | textColor);
+  else drawNumber(dc, 3, Y_ENLARGEABLE, getValue(), flags | textColor);
   drawSolidRect(dc, 0, 0, rect.w, rect.h, 1, lineColor);
   dc->drawBitmapPattern(rect.w - 14, (rect.h - 5) / 2, LBM_DROPDOWN, lineColor);
 }
@@ -74,8 +73,15 @@ bool Choice::onTouchEnd(coord_t, coord_t)
         setValue(i);
       });
     }
-    else {
+    else if(values){
       menu->addLine(TEXT_AT_INDEX(values, i - vmin), [=]() {
+        setValue(i);
+      });
+    }
+    else {
+      char buffer[8];
+      sprintf(buffer, "%d", i);
+      menu->addLine(std::string(buffer), [=]() {
         setValue(i);
       });
     }

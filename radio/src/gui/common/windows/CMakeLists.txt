@@ -12,6 +12,7 @@ set(SRC
     ${WINDOWS_DIRECTORY}/checkbox.cpp
     ${WINDOWS_DIRECTORY}/textedit.cpp
     ${WINDOWS_DIRECTORY}/numberedit.cpp
+    ${WINDOWS_DIRECTORY}/numberedit2.cpp
     ${WINDOWS_DIRECTORY}/timeedit.cpp
     ${WINDOWS_DIRECTORY}/choice.cpp
     ${WINDOWS_DIRECTORY}/tabsgroup.cpp

@@ -27,6 +27,7 @@
 #include "button.h"
 #include "checkbox.h"
 #include "numberedit.h"
+#include "numberedit2.h"
 #include "timeedit.h"
 #include "choice.h"
 #include "sourcechoice.h"
