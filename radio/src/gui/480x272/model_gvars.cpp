@@ -67,7 +67,7 @@ void GVarButton::paint(BitmapBuffer * dc) {
   gvarSum = 0;
 
   dc->drawSolidFilledRect(0,0, nameRectW, rect.h, CURVE_AXIS_COLOR);
-  drawStringWithIndex(2, TEXT_OFFSET_TOP, TR_GV2, gvar+1, 0);
+  drawStringWithIndex(2, TEXT_OFFSET_TOP, TR_GV, gvar+1, 0);
   dc->drawSizedText(x, y, gvariable->name, LEN_GVAR_NAME, ZCHAR);
   //values are right aligned
   x += GVAR_NAME_SIZE;
@@ -130,7 +130,7 @@ void GVarRenderer::paint(BitmapBuffer * dc) {
   lastFlightMode = getFlightMode();
   FlightModeData * fmData = &g_model.flightModeData[lastFlightMode];
   lastGVar = fmData->gvars[index];
-  drawStringWithIndex(0, TEXT_OFFSET_TOP, TR_GV2, index+1, MENU_TITLE_COLOR);
+  drawStringWithIndex(0, TEXT_OFFSET_TOP, TR_GV, index+1, MENU_TITLE_COLOR);
   if (lastGVar > GVAR_MAX) {
     uint8_t fm = lastGVar - GVAR_MAX - 1;
     if (fm >= lastFlightMode) fm++;
@@ -151,6 +151,7 @@ void GVarRenderer::checkEvents() {
   }
 }
 
+const std::string GVarEditWindow::unitPercent = "%";
 
 void GVarEditWindow::buildHeader(Window * window)
 {
@@ -164,7 +165,7 @@ void GVarEditWindow::setProperties(int onlyForFlightMode) {
   int32_t maxValue = GVAR_MAX-gvar->max;
   std::string suffix;
   LcdFlags prec = gvar->prec ? PREC1 : 0;
-  if(gvar->unit) suffix = std::string("%");
+  if(gvar->unit) suffix = GVarEditWindow::unitPercent;
   if(min && max) {
     min->setMax(maxValue);
     max->setMin(minValue);

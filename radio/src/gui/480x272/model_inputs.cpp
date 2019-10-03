@@ -192,9 +192,7 @@ class InputEditWindow: public Page {
       switch (line->curve.type) {
         case CURVE_REF_DIFF:
         case CURVE_REF_EXPO: {
-          // TODO GVAR
-          NumberEdit * edit = new NumberEdit(updateCurvesWindow, grid.getFieldSlot(2, 1), -100, 100,
-                                             GET_SET_DEFAULT(line->curve.value));
+          GvarNumberEdit* edit = new GvarNumberEdit(updateCurvesWindow,  grid.getFieldSlot(2, 1), MIN_EXPO_WEIGHT, 100, GET_SET_DEFAULT(line->curve.value));
           edit->setSuffix("%");
           break;
         }
@@ -295,8 +293,7 @@ class InputEditWindow: public Page {
 
       // Weight
       new StaticText(window, grid.getLabelSlot(), STR_WEIGHT);
-      // TODO GVAR ?
-      edit = new NumberEdit(window, grid.getFieldSlot(), -100, 100, GET_SET_DEFAULT(line->weight));
+      edit = new GvarNumberEdit(window, grid.getFieldSlot(), -100, 100, GET_SET_DEFAULT(line->weight));
       edit->setDefault(100);
       edit->setSuffix("%");
       grid.nextLine();
@@ -386,8 +383,7 @@ class InputLineButton : public Button {
       const ExpoData & line = g_model.expoData[index];
 
       // first line ...
-      drawNumber(dc, 3, 2, line.weight, 0, 0, nullptr, "%");
-      // TODO gvarWeightItem(MIX_LINE_WEIGHT_POS, y, md, RIGHT | attr | (isMixActive(i) ? BOLD : 0), event);
+      displayGVar(3, 2, line.weight, -100, 100, 0);
 
       drawSource(dc, 60, 2, line.srcRaw);
 

@@ -85,7 +85,6 @@ class GVarEditWindow : public Page {
     NumberEdit* max;
     NumberEdit** values;
     GVarRenderer * gVarInHeader;
-
-    //StaticText* varValueHeader;
+    static const std::string unitPercent;
 };
 #endif

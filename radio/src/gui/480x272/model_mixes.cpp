@@ -95,8 +95,7 @@ class MixEditWindow : public Page {
       switch (line->curve.type) {
         case CURVE_REF_DIFF:
         case CURVE_REF_EXPO: {
-          // TODO GVAR
-          NumberEdit * edit = new NumberEdit(updateCurvesWindow, grid.getFieldSlot(2, 1), -100, 100,
+          NumberEdit * edit = new GvarNumberEdit(updateCurvesWindow, grid.getFieldSlot(2, 1), -100, 100,
                                              GET_SET_DEFAULT(line->curve.value));
           edit->setSuffix("%");
           break;
@@ -129,8 +128,7 @@ class MixEditWindow : public Page {
 
       // Weight
       new StaticText(window, grid.getLabelSlot(), STR_WEIGHT);
-      // TODO GVAR ?
-      NumberEdit * edit = new NumberEdit(window, grid.getFieldSlot(), -500, 500, GET_SET_DEFAULT(mix->weight));
+      NumberEdit * edit = new GvarNumberEdit(window, grid.getFieldSlot(), -500, 500, GET_SET_DEFAULT(mix->weight));
       edit->setSuffix("%");
       grid.nextLine();
 
@@ -283,9 +281,8 @@ class MixLineButton : public Button {
       if (mixCount == 0 && mix.mltpx == 1) {
         dc->drawSizedText(3, line1, "MULT!", 5, 0);
       }
-      else {
-        drawNumber(dc, 3, line1, mix.weight, 0, 0, nullptr, "%");
-        // TODO gvarWeightItem(MIX_LINE_WEIGHT_POS, y, md, RIGHT | attr | (isMixActive(i) ? BOLD : 0), 0);
+      else {;
+        displayGVar(3, line1, mix.weight, GV_RANGELARGE_WEIGHT_NEG, GV_RANGELARGE_WEIGHT, 0);
       }
 
       drawSource(dc, 60, line1, mix.srcRaw);

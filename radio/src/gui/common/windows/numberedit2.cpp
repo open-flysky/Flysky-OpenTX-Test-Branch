@@ -10,7 +10,6 @@ NumberEdit2::NumberEdit2(Window * parent, const rect_t & rect,
 
 }
 
-
 NumberEdit2::NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, int32_t minChoice, int32_t maxChoice,
     const char* label, const char * values, int buttonWidth,
     std::function<int32_t()> getValue, std::function<int32_t()> getValueChoice,
@@ -71,7 +70,7 @@ void NumberEdit2::setOutputType() {
 #if defined(GVARS)
 GvarNumberEdit::GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax,
     std::function<int32_t()> getValue, std::function<void(int32_t)> setValue, LcdFlags flags) :
-    NumberEdit2(parent, rect, vmin, vmax, -MAX_GVARS, MAX_GVARS-1, TR_GV2, nullptr, 40,
+    NumberEdit2(parent, rect, vmin, vmax, -MAX_GVARS, MAX_GVARS-1, TR_GV, nullptr, 40,
         getValue, std::bind(&GvarNumberEdit::getGVarIndex, this),
         setValue, std::bind(&GvarNumberEdit::setValueFromGVarIndex, this, std::placeholders::_1), flags),
     setValueDirect(std::move(setValue)),
@@ -111,7 +110,7 @@ std::string GvarNumberEdit::getGVarName(int32_t idx) {
   if (ZEXIST(g_model.gvars[idx].name))
     zchar2str(pos, g_model.gvars[idx].name, LEN_GVAR_NAME);
   else
-    strAppendStringWithIndex(pos, TR_GV2, idx+1);
+    strAppendStringWithIndex(pos, TR_GV, idx+1);
 
   return std::string(buffer);
 }
@@ -129,14 +128,13 @@ void GvarNumberEdit::setOutputType() {
     int32_t value = NumberEdit::getValue();
     //convert from GVAR to value represented by GVAR
     if(GV_IS_GV_VALUE(value, NumberEdit::vmin, NumberEdit::vmax)) {
-      value = GET_GVAR(value,NumberEdit::vmin, NumberEdit::vmax, mixerCurrentFlightMode);
+      value = GET_GVAR(value, NumberEdit::vmin, NumberEdit::vmax, mixerCurrentFlightMode);
       if(flags & PREC1) value*=10;
     }
     else {
       //in old implementation delta was used
       value = delta;
     }
-
     NumberEdit::setValue(value);
     NumberEdit::invalidate();
     NumberEdit::bringToTop();
