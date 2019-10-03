@@ -68,6 +68,9 @@
   #define GV1_LARGE       1024
   #define GV_RANGE_WEIGHT 500
   #define GV_RANGE_OFFSET 500
+  //this macro is incomplete because it requires min as well!
+  #define GV_GET_GV1_VALUE(max)        ((max<=GV_RANGESMALL && min>=GV_RANGESMALL_NEG) ? GV1_SMALL : GV1_LARGE)
+  #define GV_GET_GV1_VAL(min, max)     ((max<=GV_RANGESMALL && min>=GV_RANGESMALL_NEG) ? GV1_SMALL : GV1_LARGE)
   #define GV_GET_GV1_VALUE(max)        ((max<=GV_RANGESMALL && min>=GV_RANGESMALL_NEG) ? GV1_SMALL : GV1_LARGE)
   #define GV_INDEX_CALCULATION(x,max)  ((max<=GV_RANGESMALL && min>=GV_RANGESMALL_NEG) ? (uint8_t) x-GV1_SMALL : ((x&(GV1_LARGE*2-1))-GV1_LARGE))
   #define GV_IS_GV_VALUE(x,min,max)    ((max>GV1_SMALL || min<-GV1_SMALL) ? (x>GV_RANGELARGE || x<GV_RANGELARGE_NEG) : (x>max) || (x<min))

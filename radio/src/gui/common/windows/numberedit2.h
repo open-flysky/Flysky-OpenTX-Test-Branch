@@ -30,8 +30,11 @@
 
 class NumberEdit2 : public NumberEdit, public Choice {
 public:
-  NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, int32_t minSelect, int32_t maxSelect, const char* label, const char * values,
+  NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, const char* label, const char * values,
       int buttonWidth, std::function<int32_t()> getValue, std::function<void(int32_t)> setValue = nullptr, LcdFlags flags = 0);
+
+  NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, int32_t minChoice, int32_t maxChoice, const char* label, const char * values,
+      int buttonWidth, std::function<int32_t()> getValue, std::function<int32_t()> getValueChoice, std::function<void(int32_t)> setValue = nullptr, std::function<void(int32_t)> setValueChoice = nullptr, LcdFlags flags = 0);
 
   bool onTouchEnd(coord_t x, coord_t y) override;
   void paint(BitmapBuffer * dc) override;
@@ -55,6 +58,11 @@ protected:
   bool isGvarValue(int value);
   std::string getGVarName(int32_t value);
   void setOutputType() override;
+  int16_t getGVarIndex();
+  void setValueFromGVarIndex(int32_t idx);
+
+  std::function<void(int32_t)> setValueDirect;
+  int delta;
   LcdFlags flags;
 };
 #else

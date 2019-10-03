@@ -1,11 +1,24 @@
 #include "numberedit2.h"
 #include "strhelpers.h"
 
+
 NumberEdit2::NumberEdit2(Window * parent, const rect_t & rect,
-    int32_t vmin, int32_t vmax, int32_t minChoice, int32_t maxChoice, const char* label, const char * values, int buttonWidth,
+    int32_t vmin, int32_t vmax, const char* label, const char * values, int buttonWidth,
     std::function<int32_t()> getValue, std::function<void(int32_t)> setValue, LcdFlags flags) :
+    NumberEdit2(parent, rect, vmin, vmax, vmin, vmax, label, values, buttonWidth, getValue, getValue, setValue, setValue, flags)
+{
+
+}
+
+
+NumberEdit2::NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, int32_t minChoice, int32_t maxChoice,
+    const char* label, const char * values, int buttonWidth,
+    std::function<int32_t()> getValue, std::function<int32_t()> getValueChoice,
+    std::function<void(int32_t)> setValue, std::function<void(int32_t)> setValueChoice, LcdFlags flags  ) :
+
     NumberEdit(parent, { rect.x, rect.y, rect.w - buttonWidth, rect.h }, vmin, vmax, getValue, setValue, flags),
-    Choice(parent, { rect.x, rect.y, rect.w - buttonWidth, rect.h }, values, minChoice, maxChoice, getValue, setValue, flags) {
+    Choice(parent, { rect.x, rect.y, rect.w - buttonWidth, rect.h }, values, minChoice, maxChoice, getValueChoice, setValueChoice, flags)
+{
 
   textButton = new TextButton(parent, { rect.x + rect.w - buttonWidth, rect.y, buttonWidth, rect.h }, std::string(label));
   textButton->setPressHandler(std::bind(&NumberEdit2::onButtonCheck, this));
@@ -43,7 +56,7 @@ uint8_t NumberEdit2::onButtonCheck() {
 
 void NumberEdit2::setOutputType() {
   if (checked) {
-    Choice::setValue(Choice::vmin);
+    Choice::setValue((Choice::vmin + Choice::vmax)/2);
     Choice::invalidate();
     Choice::bringToTop();
   }
@@ -58,23 +71,38 @@ void NumberEdit2::setOutputType() {
 #if defined(GVARS)
 GvarNumberEdit::GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax,
     std::function<int32_t()> getValue, std::function<void(int32_t)> setValue, LcdFlags flags) :
-    NumberEdit2(parent, rect, vmin, vmax, vmin - MAX_GVARS, vmax + MAX_GVARS, TR_GV2, nullptr, 40, getValue, setValue, flags),
+    NumberEdit2(parent, rect, vmin, vmax, -MAX_GVARS, MAX_GVARS-1, TR_GV2, nullptr, 40,
+        getValue, std::bind(&GvarNumberEdit::getGVarIndex, this),
+        setValue, std::bind(&GvarNumberEdit::setValueFromGVarIndex, this, std::placeholders::_1), flags),
+    setValueDirect(std::move(setValue)),
+    delta(GV_GET_GV1_VAL(vmin, vmax)),
     flags(flags)
     {
-    Choice::setAvailableHandler(std::bind(&GvarNumberEdit::isGvarValue, this, std::placeholders::_1));
     Choice::setTextHandler(std::bind(&GvarNumberEdit::getGVarName, this, std::placeholders::_1));
 }
+
+int16_t GvarNumberEdit::getGVarIndex() {
+  return (int16_t)GV_INDEX_CALC_DELTA(NumberEdit::getValue(), delta);
+}
+
+//set value from GVAR index
+void GvarNumberEdit::setValueFromGVarIndex(int32_t idx) {
+  int16_t value = 0;
+  if (idx < 0) {
+    value = (int16_t) GV_CALC_VALUE_IDX_NEG(idx, delta);
+  } else {
+    value = (int16_t) GV_CALC_VALUE_IDX_POS(idx, delta);
+  }
+  setValueDirect(value);
+}
+
 bool GvarNumberEdit::isGvarValue(int value) {
   return (value > NumberEdit::vmax) || (value < NumberEdit::vmin);
 }
 
-std::string GvarNumberEdit::getGVarName(int32_t value) {
+std::string GvarNumberEdit::getGVarName(int32_t idx) {
   char buffer[16];
   char* pos = buffer;
-  int idx = value - NumberEdit::vmax - 1;
-  if (value <= NumberEdit::vmin) {
-    idx = value - NumberEdit::vmin;
-  }
   if (idx < 0) {
     *pos++ = '-';
     idx = -idx-1;
@@ -91,25 +119,25 @@ std::string GvarNumberEdit::getGVarName(int32_t value) {
 void GvarNumberEdit::setOutputType() {
 
   if (checked) {
-    Choice::setValue(NumberEdit::vmax+1);
+    //Set first GVAR
+    //use direct call because numedit is limiting setter to min max vale
+    setValueDirect(delta);
     Choice::invalidate();
     Choice::bringToTop();
   }
   else{
-    int value = Choice::getValue();
-    int idx = value - NumberEdit::vmax - 1;
-    int mul = 1;
-    if (value <= NumberEdit::vmin) {
-       idx = value - NumberEdit::vmin;
-       mul = -1;
+    int32_t value = NumberEdit::getValue();
+    //convert from GVAR to value represented by GVAR
+    if(GV_IS_GV_VALUE(value, NumberEdit::vmin, NumberEdit::vmax)) {
+      value = GET_GVAR(value,NumberEdit::vmin, NumberEdit::vmax, mixerCurrentFlightMode);
+      if(flags & PREC1) value*=10;
+    }
+    else {
+      //in old implementation delta was used
+      value = delta;
     }
 
-    if (flags & PREC1) {
-      mul *= 10;
-    }
-    value = getGVarValue(idx, mixerCurrentFlightMode);
-    TRACE("GVAR value %d = %d", value*mul);
-    NumberEdit::setValue(value*mul);
+    NumberEdit::setValue(value);
     NumberEdit::invalidate();
     NumberEdit::bringToTop();
   }
