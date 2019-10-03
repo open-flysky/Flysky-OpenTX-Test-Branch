@@ -23,6 +23,9 @@ bool NumberEdit2::onTouchEnd(coord_t x, coord_t y) {
 }
 
 void NumberEdit2::paint(BitmapBuffer * dc) {
+  //because we have 2 children at same position
+  //this method will be called twice
+  if(paintCount++ % 2 != 0) return;
   if(checked) Choice::paint(dc);
   else NumberEdit::paint(dc);
 }

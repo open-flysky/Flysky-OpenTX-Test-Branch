@@ -44,6 +44,7 @@ protected:
   std::function<std::string(int32_t)> textHandler;
   std::function<void(uint8_t)> checkBoxChangedHandler;
   TextButton* textButton;
+  uint paintCount;
 };
 
 #if defined(GVARS)
