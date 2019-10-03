@@ -56,10 +56,12 @@ class GVarRenderer : public Window {
   }
   void paint(BitmapBuffer * dc) override;
   void checkEvents() override;
+  bool isUpdated();
   protected:
     uint8_t index;
     gvar_t lastGVar;
     uint8_t lastFlightMode;
+    bool updated;
 };
 
 
@@ -70,12 +72,13 @@ class GVarEditWindow : public Page {
       index(gvarIndex)
   {
     values = new NumberEdit*[MAX_FLIGHT_MODES];
-    buildBody(&body);
     buildHeader(&header);
+    buildBody(&body);
   }
   ~GVarEditWindow() {
     delete[] values;
   }
+  void checkEvents() override;
   protected:
     uint8_t index;
     void buildHeader(Window * window);

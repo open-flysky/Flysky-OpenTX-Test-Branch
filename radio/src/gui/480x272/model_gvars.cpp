@@ -145,10 +145,17 @@ void GVarRenderer::paint(BitmapBuffer * dc) {
 void GVarRenderer::checkEvents() {
   if(lastFlightMode != getFlightMode()) {
     invalidate();
+    updated = true;
   }
   if(lastGVar != g_model.flightModeData[getFlightMode()].gvars[index]) {
     invalidate();
+    updated = true;
   }
+}
+bool GVarRenderer::isUpdated() {
+  if(!updated) return false;
+  updated = false;
+  return true;
 }
 
 const std::string GVarEditWindow::unitPercent = "%";
@@ -157,6 +164,15 @@ void GVarEditWindow::buildHeader(Window * window)
 {
   new StaticText(window, {70, 4, window->width() - 70, 20}, STR_GLOBAL_VAR, MENU_TITLE_COLOR);
   gVarInHeader = new GVarRenderer(window, {70, 28, window->width() - 70, 20}, index);
+}
+void GVarEditWindow::checkEvents() {
+ Page::checkEvents();
+ if(gVarInHeader && gVarInHeader->isUpdated()) {
+   for (int fm = 0; fm < MAX_FLIGHT_MODES; fm++) {
+     if (!values[fm]) continue;
+     values[fm]->invalidate();
+   }
+ }
 }
 
 void GVarEditWindow::setProperties(int onlyForFlightMode) {

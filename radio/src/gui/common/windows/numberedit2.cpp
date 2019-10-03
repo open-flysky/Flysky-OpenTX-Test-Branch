@@ -66,7 +66,6 @@ void NumberEdit2::setOutputType() {
   }
 }
 
-#define GVARS
 #if defined(GVARS)
 GvarNumberEdit::GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax,
     std::function<int32_t()> getValue, std::function<void(int32_t)> setValue, LcdFlags flags) :
@@ -77,7 +76,7 @@ GvarNumberEdit::GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmi
     delta(GV_GET_GV1_VAL(vmin, vmax)),
     flags(flags)
     {
-    Choice::setTextHandler(std::bind(&GvarNumberEdit::getGVarName, this, std::placeholders::_1));
+    Choice::setTextHandler(GvarNumberEdit::getGVarName);
 }
 
 int16_t GvarNumberEdit::getGVarIndex() {

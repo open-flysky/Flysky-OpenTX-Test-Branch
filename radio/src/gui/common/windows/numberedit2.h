@@ -54,9 +54,10 @@ protected:
 class GvarNumberEdit : public NumberEdit2 {
 public:
   GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, std::function<int32_t()> getValue, std::function<void(int32_t)> setValue = nullptr, LcdFlags flags = 0);
+  static std::string getGVarName(int32_t value);
 protected:
   bool isGvarValue(int value);
-  std::string getGVarName(int32_t value);
+
   void setOutputType() override;
   int16_t getGVarIndex();
   void setValueFromGVarIndex(int32_t idx);
