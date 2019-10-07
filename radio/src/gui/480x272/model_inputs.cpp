@@ -248,9 +248,9 @@ class InputEditWindow: public Page {
       // Source
       //fix source value if invalid one is used as default
       uint16_t source = line->srcRaw;
-      if(!isSourceAvailable(source)){
+      if(!isInputSourceAvailable(source)){
         for(source = INPUTSRC_FIRST; source < INPUTSRC_LAST; source++) {
-          if(!isSourceAvailable(source)) continue;
+          if(!isInputSourceAvailable(source)) continue;
           bool used = false;
           for(uint8_t input = 0; input < NUM_INPUTS; input++) {
             ExpoData * otherLine = expoAddress(input);
@@ -268,7 +268,7 @@ class InputEditWindow: public Page {
 
 
       new StaticText(window, grid.getLabelSlot(), STR_SOURCE);
-      new SourceChoice(window, grid.getFieldSlot(), INPUTSRC_FIRST, INPUTSRC_LAST,
+      SourceChoice * inputSourceChoice = new SourceChoice(window, grid.getFieldSlot(), INPUTSRC_FIRST, INPUTSRC_LAST,
                        GET_DEFAULT(line->srcRaw),
                        [=] (int32_t newValue) {
                          line->srcRaw = newValue;
@@ -280,7 +280,9 @@ class InputEditWindow: public Page {
                          SET_DIRTY();
                        }
       );
+      inputSourceChoice->setAvailableHandler(isInputSourceAvailable);
       grid.nextLine();
+
 
       /* TODO telemetry current value - verify */
       //Scale only displayed when source is telemetry + unfinished
