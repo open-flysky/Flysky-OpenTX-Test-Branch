@@ -47,7 +47,6 @@ void NumberEdit2::setOutputType() {
   else NumberEdit::setValue((NumberEdit::vmin + NumberEdit::vmax)/2);
   invalidate();
 }
-#define GVARS
 
 #if defined(GVARS)
 GvarNumberEdit::GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax,
