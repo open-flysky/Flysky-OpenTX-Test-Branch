@@ -814,7 +814,7 @@ void luaExec(const char * filename)
   }
 }
 
-void luaDoOneRunStandalone(event_lua_t evt)
+void luaDoOneRunStandalone(event_ext_t evt)
 {
   static uint8_t luaDisplayStatistics = false;
 
@@ -822,13 +822,15 @@ void luaDoOneRunStandalone(event_lua_t evt)
     luaSetInstructionsLimit(lsScripts, MANUAL_SCRIPTS_MAX_INSTRUCTIONS);
     lua_rawgeti(lsScripts, LUA_REGISTRYINDEX, standaloneScript.run);
     lua_pushunsigned(lsScripts, evt.evt);
-    lua_pushunsigned(lsScripts, evt.wParam);
-    lua_pushunsigned(lsScripts, evt.lParam);
+    for(int i=0; i<evt.paramsCount(); i++) {
+      //tbd check type and push it with correct type
+      lua_pushunsigned(lsScripts, evt.params[i]);
+    }
     //always work on copy to avoid flickering
     BitmapBuffer * previous = lcd;
     lcdNextLayer();
     DMACopy(previous->getData(), lcd->getData(), DISPLAY_BUFFER_SIZE);
-    if (lua_pcall(lsScripts, 3, 1, 0) == 0) {
+    if (lua_pcall(lsScripts, evt.paramsCount() + 1, 1, 0) == 0) {
       if (!lua_isnumber(lsScripts, -1)) {
         if (instructionsPercent > 100) {
           TRACE("Script killed");
@@ -902,7 +904,7 @@ void luaDoOneRunStandalone(event_lua_t evt)
   }
 }
 
-bool luaDoOneRunPermanentScript(event_lua_t evt, int i, uint32_t scriptType)
+bool luaDoOneRunPermanentScript(event_ext_t evt, int i, uint32_t scriptType)
 {
   ScriptInternalData & sid = scriptInternalData[i];
   if (sid.state != SCRIPT_OK) return false;
@@ -953,9 +955,11 @@ bool luaDoOneRunPermanentScript(event_lua_t evt, int i, uint32_t scriptType)
     if ((scriptType & RUN_TELEM_FG_SCRIPT) && (menuHandlers[0]==menuViewTelemetryFrsky && sid.reference==SCRIPT_TELEMETRY_FIRST+s_frsky_view)) {
       lua_rawgeti(lsScripts, LUA_REGISTRYINDEX, sid.run);
       lua_pushunsigned(lsScripts, evt.evt);
-      lua_pushunsigned(lsScripts, evt.wParam);
-      lua_pushunsigned(lsScripts, evt.lParam);
-      inputsCount = 3;
+      inputsCount = 1 + evt.paramsCount();
+      for(int i=0; i<evt.paramsCount(); i++) {
+        //tbd check type and push it with correct type
+        lua_pushunsigned(lsScripts, evt.params[i]);
+      }
     }
     else if ((scriptType & RUN_TELEM_BG_SCRIPT) && (sid.background)) {
       lua_rawgeti(lsScripts, LUA_REGISTRYINDEX, sid.background);
@@ -1006,7 +1010,7 @@ bool luaDoOneRunPermanentScript(event_lua_t evt, int i, uint32_t scriptType)
   return true;
 }
 
-bool luaTask(event_lua_t evt, uint8_t scriptType, bool allowLcdUsage)
+bool luaTask(event_ext_t evt, uint8_t scriptType, bool allowLcdUsage)
 {
   if (luaState == INTERPRETER_PANIC) return false;
   luaLcdAllowed = allowLcdUsage;

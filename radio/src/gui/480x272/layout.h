@@ -44,7 +44,7 @@ class Layout: public WidgetsContainer<MAX_LAYOUT_ZONES, MAX_LAYOUT_OPTIONS>
     }
 
     void create() override;
-    void refresh() override;
+    void refresh(event_ext_t event = event_ext_t()) override;
     Zone getZone(unsigned int index) const override;
 
     unsigned int getZonesCount() const override

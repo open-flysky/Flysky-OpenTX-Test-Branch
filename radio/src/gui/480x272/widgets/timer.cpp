@@ -28,7 +28,7 @@ class TimerWidget: public Widget
     {
     }
 
-    virtual void refresh();
+    virtual void refresh(event_ext_t event = event_ext_t());
 
     static const ZoneOption options[];
 };
@@ -40,7 +40,7 @@ const ZoneOption TimerWidget::options[] = {
   { NULL, ZoneOption::Bool }
 };
 
-void TimerWidget::refresh()
+void TimerWidget::refresh(event_ext_t event)
 {
   uint32_t index = persistentData->options[0].unsignedValue;
   uint16_t textcolor = persistentData->options[1].unsignedValue;

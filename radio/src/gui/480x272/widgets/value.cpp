@@ -28,7 +28,7 @@ class ValueWidget: public Widget
     {
     }
 
-    virtual void refresh();
+    virtual void refresh(event_ext_t event = event_ext_t());
 
     static const ZoneOption options[];
 };
@@ -40,7 +40,7 @@ const ZoneOption ValueWidget::options[] = {
   { NULL, ZoneOption::Bool }
 };
 
-void ValueWidget::refresh()
+void ValueWidget::refresh(event_ext_t event)
 {
   const int NUMBERS_PADDING = 4;
 

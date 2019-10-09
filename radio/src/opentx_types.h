@@ -21,6 +21,8 @@
 #ifndef _OTXTYPES_H_
 #define _OTXTYPES_H_
 
+#include <cstring>
+
 typedef int16_t gvar_t;
 
 #if defined(CPUARM)
@@ -46,12 +48,47 @@ typedef uint16_t event_t;
 #else
 typedef uint8_t event_t;
 #endif
-struct event_lua_t {
+#define EVENT_PARAMS_COUNT 2
+typedef int32_t event_param_t;
+
+struct event_ext_t {
   event_t evt;
-  uint32_t wParam;
-  uint32_t lParam;
+  //for now int32 but can be strut or union
+  //describing type to allow easier handling in LUA
+  event_param_t params[EVENT_PARAMS_COUNT];
+
+  event_ext_t() {
+    clear();
+  }
+  int paramsCount(){
+    return sizeof(params)/sizeof(params[0]);
+  }
+
+  void clear() {
+    evt = 0;
+    for(int i = 0; i < paramsCount(); i++){
+      params[i] = 0;
+    }
+  }
+  void set(event_t event, event_param_t* p = nullptr, int count = 0) {
+    clear();
+    evt = event;
+    if(p && count > 0) {
+      if(count > paramsCount()) {
+        count = paramsCount();
+      }
+      memcpy(static_cast<void*>(params), static_cast<void*>(p), count * sizeof(params[0]));
+    }
+  }
+  void set(event_ext_t* event) {
+    set(event->evt, event->params, paramsCount());
+  }
 };
-typedef struct event_lua_t event_lua_t;
+
+
+typedef struct event_ext_t event_ext_t;
+
+
 
 typedef int32_t putstime_t;
 typedef int32_t coord_t;

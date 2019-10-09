@@ -112,7 +112,11 @@ void MainWindow::checkEvents(bool luaActive) {
        touchState.lastX = touchState.X;
        touchState.lastY = touchState.Y;
     }
-    if (event && !handled) putEvent(EVT_TOUCH(event), touchState.X, touchState.Y);
+
+    if (event && !handled) {
+      int32_t args[2] = {touchState.X, touchState.Y};
+      putEvent(EVT_TOUCH(event), args, 2);
+    }
   }
 
 

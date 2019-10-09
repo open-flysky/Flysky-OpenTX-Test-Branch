@@ -133,9 +133,9 @@ Zone Layout::getZone(unsigned int index) const
   return zone;
 }
 
-void Layout::refresh()
+void Layout::refresh(event_ext_t event)
 {
-  WidgetsContainer::refresh();
+  WidgetsContainer::refresh(event);
 }
 
 uint16_t Layout::topBarHeight() const

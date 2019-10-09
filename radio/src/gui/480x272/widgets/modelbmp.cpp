@@ -60,7 +60,7 @@ class ModelBitmapWidget: public Widget
       }
     }
 
-    virtual void refresh()
+    virtual void refresh(event_ext_t event = event_ext_t())
     {
       uint32_t new_hash = MathUtil::hash(g_model.header.bitmap, sizeof(g_model.header.bitmap));
       new_hash ^= MathUtil::hash(g_model.header.name, sizeof(g_model.header.name));
