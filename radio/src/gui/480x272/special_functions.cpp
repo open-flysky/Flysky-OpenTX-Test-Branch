@@ -196,7 +196,7 @@ class SpecialFunctionEditWindow : public Page {
           grid.nextLine();
           break;
         }
-//#if defined(GVARS)
+#if defined(GVARS)
         case FUNC_ADJUST_GVAR: {
           new StaticText(specialFunctionOneWindow, grid.getLabelSlot(), STR_VALUE);
           Choice * gvar = new Choice(specialFunctionOneWindow, grid.getFieldSlot(), nullptr, 0, MAX_GVARS-1, GET_SET_DEFAULT(CFN_GVAR_INDEX(cfn)));
@@ -251,7 +251,7 @@ class SpecialFunctionEditWindow : public Page {
 
           break;
         }
-//#endif
+#endif
       }
 
       if (HAS_ENABLE_PARAM(func)) {
