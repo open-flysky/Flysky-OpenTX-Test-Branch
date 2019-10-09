@@ -43,7 +43,7 @@ void MainWindow::emptyTrash()
 }
 void MainWindow::checkEvents()
 {
-	this->checkEvents(false);
+	this->checkEvents(false, empty_event);
 }
 
 static uint32_t getSlideEvent() {
@@ -57,7 +57,7 @@ static uint32_t getSlideEvent() {
   return 0;
 }
 
-void MainWindow::checkEvents(bool luaActive) {
+void MainWindow::checkEvents(bool luaActive, event_ext_t event) {
   // Probably touch manager should be used
   // For now we use this simplified mapping
   // Checking if event is new is necessary
@@ -120,7 +120,10 @@ void MainWindow::checkEvents(bool luaActive) {
   }
 
 
-  if(!luaActive) Window::checkEvents();
+  if(!luaActive) {
+    Window::checkEvents();
+    if(event.evt) onEvent(event);
+  }
   else if(topMostWindow != nullptr) topMostWindow->checkEvents();
   emptyTrash();
 }
@@ -235,7 +238,7 @@ void MainWindow::showKeyboard(KeyboardType keybordType)
     }
 }
 
-void MainWindow::run(bool luaActive)
+void MainWindow::run(bool luaActive, event_ext_t event)
 {
   if(lastLuaState != luaActive) {
     resetDisplayRect();
@@ -245,7 +248,7 @@ void MainWindow::run(bool luaActive)
       invalidate();
     }
   }
-  checkEvents(luaActive);
+  checkEvents(luaActive, event);
   if (refresh(luaActive)) {
     lcdRefresh();
   }

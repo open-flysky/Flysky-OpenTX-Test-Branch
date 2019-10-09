@@ -231,7 +231,7 @@ void guiMain(event_ext_t evt)
   // LUA is active
   // prevent events from reaching the normal menus
   // so Lua telemetry script can fully use them
-  mainWindow.run(refreshNeeded);
+  mainWindow.run(refreshNeeded, evt);
 }
 #elif defined(GUI)
 

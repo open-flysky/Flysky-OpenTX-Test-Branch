@@ -37,6 +37,7 @@ class ViewMain: public Window {
     void paint(BitmapBuffer * dc) override;
 
     void checkEvents() override;
+    void onEvent(event_ext_t event) override;
   protected:
     uint8_t nextView();
     uint8_t prevView();
@@ -54,6 +55,7 @@ class ViewMain: public Window {
     const int buttonLeftRadio;
     const int buttonLeftTheme;
     SlideDirection slideDirection;
+    event_ext_t currentEvent;
 };
 
 #endif // _VIEW_MAIN_H_
