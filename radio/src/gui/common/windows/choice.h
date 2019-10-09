@@ -48,7 +48,34 @@ class CustomCurveChoice : public Window {
     LcdFlags flags;
 };
 
-class Choice : public Window {
+class ChoiceBase {
+public:
+  ChoiceBase(const char * values, int16_t vmin, int16_t vmax, std::function<int16_t()> getValue, std::function<void(int16_t)> setValue, LcdFlags flags = 0);
+  void setAvailableHandler(std::function<bool(int)> handler)
+  {
+    isValueAvailable = std::move(handler);
+  }
+
+  void setTextHandler(std::function<std::string(int32_t)> handler)
+  {
+    textHandler = std::move(handler);
+  }
+
+protected:
+  void paintChoice(BitmapBuffer * dc, bool hasFocus, const rect_t rect);
+  bool handleTouchEnd(coord_t x, coord_t y);
+
+  const char * values;
+  int16_t vmin;
+  int16_t vmax;
+  std::function<int16_t()> getValue;
+  std::function<void(int16_t)> setValue;
+  std::function<bool(int)> isValueAvailable;
+  std::function<std::string(int32_t)> textHandler;
+  LcdFlags flags;
+};
+
+class Choice : public Window, public ChoiceBase {
   public:
     Choice(Window * parent, const rect_t & rect, const char * values, int16_t vmin, int16_t vmax, std::function<int16_t()> getValue, std::function<void(int16_t)> setValue, LcdFlags flags = 0);
 
@@ -62,26 +89,6 @@ class Choice : public Window {
     void paint(BitmapBuffer * dc) override;
 
     bool onTouchEnd(coord_t x, coord_t y) override;
-
-    void setAvailableHandler(std::function<bool(int)> handler)
-    {
-      isValueAvailable = std::move(handler);
-    }
-
-    void setTextHandler(std::function<std::string(int32_t)> handler)
-    {
-      textHandler = std::move(handler);
-    }
-
-  protected:
-    const char * values;
-    int16_t vmin;
-    int16_t vmax;
-    std::function<int16_t()> getValue;
-    std::function<void(int16_t)> setValue;
-    std::function<bool(int)> isValueAvailable;
-    std::function<std::string(int32_t)> textHandler;
-    LcdFlags flags;
 };
 
 #endif // _CHOICE_H_
