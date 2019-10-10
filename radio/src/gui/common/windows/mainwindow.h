@@ -41,7 +41,7 @@ class MainWindow: public Window {
     }
 #endif
 
-    void checkEvents() override;
+    void checkEvents();
 
     void invalidate()
     {
@@ -52,7 +52,7 @@ class MainWindow: public Window {
 
     bool refresh();
 
-    void run(bool luaActive=false);
+    void run(bool luaActive=false, event_ext_t event = event_ext_t());
 
     void resetDisplayRect();
 
@@ -66,7 +66,7 @@ class MainWindow: public Window {
 
   protected:
 
-    void checkEvents(bool luaActive);
+    void checkEvents(bool luaActive, event_ext_t event);
     bool refresh(bool luaActive);
 
     void emptyTrash();

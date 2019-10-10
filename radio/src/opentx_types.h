@@ -83,6 +83,18 @@ struct event_ext_t {
   void set(event_ext_t* event) {
     set(event->evt, event->params, paramsCount());
   }
+  event_param_t x(){
+    return params[0];
+  }
+  event_param_t y(){
+    return params[1];
+  }
+  void setX(event_param_t x) {
+    params[0] = x;
+  }
+  void setY(event_param_t y) {
+    params[1] = y;
+  }
 };
 
 

@@ -209,6 +209,7 @@ bool ViewMain::onTouchEnd(coord_t x, coord_t y)
 
 void ViewMain::checkEvents()
 {
+  currentEvent.clear();
   // temporary for refreshing the trims
   invalidate();
 }
@@ -245,6 +246,12 @@ bool ViewMain::isNavigationVisible() {
   return layout->navigationHeight() > 0 || currentView() == 0;
 }
 
+void ViewMain::onEvent(event_ext_t event)
+{
+  if(!event.evt) return;
+  currentEvent.set(&event);
+}
+
 void ViewMain::paint(BitmapBuffer * dc)
 {
   uint8_t view = currentView();
@@ -269,7 +276,8 @@ void ViewMain::paint(BitmapBuffer * dc)
     y += layout->flightModeHeight();
     if(layout->trimHeight()) drawTrims(mixerCurrentFlightMode);
     if(layout->sliderHeight()) drawMainPots();
-    customScreens[view]->refresh();
+    customScreens[view]->refresh(currentEvent);
+    currentEvent.clear();
   }
 
 

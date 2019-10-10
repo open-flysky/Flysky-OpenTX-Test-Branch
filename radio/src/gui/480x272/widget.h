@@ -25,6 +25,7 @@
 #include <string.h>
 #include "zone.h"
 #include "debug.h"
+#include "keys.h"
 
 #define MAX_WIDGET_OPTIONS             5
 #if defined(PCBFLYSKY)
@@ -44,7 +45,8 @@ class Widget
     Widget(const WidgetFactory * factory, const Zone & zone, PersistentData * persistentData):
       factory(factory),
       zone(zone),
-      persistentData(persistentData)
+      persistentData(persistentData),
+      selected(false)
     {
     }
 
@@ -77,12 +79,29 @@ class Widget
 
     virtual void background()
     {
+      selected = false;
     }
 
+    bool isSelected() {
+      return selected;
+    }
+    void setSelected(bool isSelected) {
+      selected = isSelected;
+    }
+    bool isTouchTarget(event_ext_t event) {
+      return (event.evt & _MSK_TOUCH_EVENT) &&
+      event.x() >= zone.x && event.x() <= zone.right() &&
+      event.y() >= zone.y && event.y() <= zone.bottom();
+    }
+    void translateCoordinates(event_ext_t* event) {
+      event->setX(event->x() - zone.x);
+      event->setY(event->y() - zone.y);
+    }
   protected:
     const WidgetFactory * factory;
     Zone zone;
     PersistentData * persistentData;
+    bool selected;
 };
 
 void registerWidget(const WidgetFactory * factory);
