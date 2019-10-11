@@ -192,7 +192,7 @@ void boardInit()
 
   while (boardState == BOARD_POWER_OFF)
   {
-    uint16_t now = get_tmr10ms();
+    uint32_t now = get_tmr10ms();
     if (pwrPressed())
     {
       press_end = now;

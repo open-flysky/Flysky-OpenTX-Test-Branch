@@ -61,16 +61,32 @@ uint16_t get_battery_charge_state()
   chargeSamples[chargeSampleIndex++] = currentChargeState;
   //TRACE("CHARGE sample %d value %d", chargeSampleIndex -1, currentChargeState);
 #endif
-  for(int index = 0; index < maxSamples; index++) {
-    if(chargeState == CHARGE_UNKNOWN) {
-      //prevent entering to charged status from non charging state
-      if(chargeSamples[index] == CHARGE_FINISHED && lastChargeState != CHARGE_STARTED) continue;
-      chargeState = chargeSamples[index];
+    uint8_t temp1 = 0, temp2 = 0, temp3 = 0;
+   for(int index = 0; index < maxSamples; index++) {
+    if(chargeSamples[index] == CHARGE_FINISHED)
+    {
+        temp1++;
     }
-    else if(chargeState != chargeSamples[index]) {
-      //the only way to detect none state is searching for inconsistent state
-      //when battery is not charged finished pin is triggered periodically only
-      chargeState = CHARGE_NONE;
+    else if(chargeSamples[index] == CHARGE_STARTED)
+    {
+        temp2++;
+    }
+    else
+    {
+        temp3++;
+    }
+
+    if(temp1>=temp2&& temp1>temp3)
+    {
+        chargeState = CHARGE_FINISHED;
+    }
+    else if(temp2>=temp1&& temp2>temp3)
+    {
+        chargeState = CHARGE_STARTED;
+    }
+    else
+    {
+        chargeState = CHARGE_NONE;
     }
   }
   if(chargeState != CHARGE_UNKNOWN) lastChargeState = chargeState;
@@ -123,13 +139,13 @@ void drawChargingInfo(uint16_t chargeState){
 void handle_battery_charge(uint32_t last_press_time)
 {
 #if !defined(SIMU)
-  static uint16_t updateTime = 0;
+  static uint32_t updateTime = 0;
   static uint16_t lastState = CHARGE_UNKNOWN;
   static uint32_t info_until = 0;
   static bool lcdInited = false;
 
   if(boardState != BOARD_POWER_OFF) return;
-  uint16_t now = get_tmr10ms();
+  uint32_t now = get_tmr10ms();
   uint16_t chargeState = get_battery_charge_state();
   if(chargeState != CHARGE_UNKNOWN) {
 
