@@ -255,7 +255,6 @@ void Window::checkEvents()
 
 void Window::onEvent(event_ext_t event)
 {
-  TRACE("received event 0x%X", event.evt);
   for (auto child: children) {
     child->onEvent(event);
   }
