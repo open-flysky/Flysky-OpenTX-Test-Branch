@@ -19,6 +19,7 @@
  */
 
 #include "opentx.h"
+#include "CoOS.h"
 
 uint8_t   storageDirtyMsk;
 tmr10ms_t storageDirtyTime10ms;
@@ -50,7 +51,22 @@ void preModelLoad()
 #endif
 
   if (pulsesStarted()) {
+#if !defined(SIMU)
+    pulseFlag = CoCreateFlag(1,0);
+#endif
     pausePulses();
+#if !defined(SIMU)
+    //we need to ensure that no pulsed will be set so current mode will be deactivated
+    int tries = 10;
+    while(tries-- > 0) {
+      uint32_t result = CoWaitForSingleFlag(pulseFlag, 50);
+      if (result == E_OK) break;
+      wdt_reset();
+      TRACE("..");
+    }
+    TRACE("PAUSED");
+    pulseFlag = 0;
+#endif
   }
 
   pauseMixerCalculations();

@@ -21,6 +21,8 @@
 #ifndef _PULSES_ARM_H_
 #define _PULSES_ARM_H_
 
+#include "CoOS.h"
+
 #if NUM_MODULES == 2
   #define MODULES_INIT(...)            __VA_ARGS__, __VA_ARGS__
 #else
@@ -217,6 +219,7 @@ inline void startPulses()
 #endif
 }
 
+extern OS_FlagID pulseFlag;
 inline bool pulsesStarted() { return s_current_protocol[0] != 255; }
 inline void pausePulses() { s_pulses_paused = true; }
 inline void resumePulses() { s_pulses_paused = false; }
