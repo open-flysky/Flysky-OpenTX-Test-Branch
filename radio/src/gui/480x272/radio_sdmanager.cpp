@@ -21,6 +21,48 @@
 #include "radio_sdmanager.h"
 #include "opentx.h"
 #include "libwindows.h"
+#include "page.h"
+
+class FileNameEditWindow : public Page {
+  public:
+    FileNameEditWindow(const std::string name) :
+      Page(),
+      name(std::move(name))
+    {
+      buildBody(&body);
+      buildHeader(&header);
+    };
+
+  protected:
+    const std::string name;
+
+    void buildHeader(Window * window)
+    {
+      new StaticText(window, {70, 4, 180, 30}, STR_RENAME_FILE, MENU_TITLE_COLOR);
+    }
+
+    void buildBody(Window * window)
+    {
+      GridLayout grid;
+      grid.spacer(8);
+	  
+      const char * ext = getFileExtension(name.c_str());
+	  std::string extStr(ext);
+	  int nameLength = name.length() - extStr.length();
+	  if(nameLength > SD_SCREEN_FILE_LENGTH)
+		  nameLength = SD_SCREEN_FILE_LENGTH;
+
+	  strncpy(reusableBuffer.sdmanager.originalName, name.c_str(), nameLength);
+	  reusableBuffer.sdmanager.originalName[nameLength] = 0;
+
+	  new TextEdit(window, grid.getLineSlot(), reusableBuffer.sdmanager.originalName, SD_SCREEN_FILE_LENGTH, 0, [=](char* newValue) {
+		    std::string newName(newValue);
+			newName += extStr;
+			f_rename(name.c_str(), newName.c_str() );
+		}, 
+		false);	  
+	}
+};
 
 RadioSdManagerPage::RadioSdManagerPage():
   PageTab(SD_IS_HC() ? STR_SDHC_CARD : STR_SD_CARD, ICON_RADIO_SD_BROWSER)
@@ -136,11 +178,19 @@ void RadioSdManagerPage::build(Window * window)
           });
           if (clipboard.type == CLIPBOARD_TYPE_SD_FILE) {
             menu->addLine(STR_PASTE, [=]() {
-              // TODO
+              TCHAR lfn[_MAX_LFN+1];
+			        f_getcwd(lfn, _MAX_LFN);
+              
+			        if (strcmp(clipboard.data.sd.directory, lfn)) {  // prevent copying to the same directory
+				        POPUP_WARNING(sdCopyFile(clipboard.data.sd.filename, clipboard.data.sd.directory, clipboard.data.sd.filename, lfn));
+				        clipboard.type = CLIPBOARD_TYPE_NONE;
+			        }
+			        rebuild(window);
             });
           }
           menu->addLine(STR_RENAME_FILE, [=]() {
-            // TODO
+            new FileNameEditWindow(name);
+			      rebuild(window);
           });
           menu->addLine(STR_DELETE_FILE, [=]() {
             f_unlink(getFullPath(name));
