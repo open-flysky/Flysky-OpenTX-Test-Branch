@@ -36,15 +36,14 @@ void CurveEdit::update()
 {
   clearPoints();
   pointsPtr = curveAddress(index);
+
+  CurveInfo &curve = g_model.curves[index];
+  custom = curve.type == CURVE_TYPE_CUSTOM;
   uint8_t size = curveAddress(index+1) - pointsPtr;
-  if ((size & 1) == 0) {
-    pointsTotal = (size / 2) + 1;
-    custom = true;
-  }
-  else {
-    pointsTotal = size;
-    custom = false;
-  }
+
+  if(custom) pointsTotal = (size / 2) + 1;
+  else pointsTotal = size;
+
   for (uint8_t i = 0; i < pointsTotal; i++) {
     if (hasFocus() && current == i) {
       position = [=] () -> int {
