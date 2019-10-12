@@ -69,6 +69,7 @@ class Curve: public Window {
     void drawPoint(BitmapBuffer * dc, const CurvePoint & point);
     coord_t getPointX(int x);
     coord_t getPointY(int y);
+    virtual bool hasValidPosition();
 };
 
 #endif // _CURVE_H_
