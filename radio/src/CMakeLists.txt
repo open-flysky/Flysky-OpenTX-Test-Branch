@@ -478,14 +478,20 @@ use_cxx11()  # ensure gnu++11 in CXX_FLAGS with CMake < 3.1
 
 find_program(BASH bash HINTS "c:/cygwin/bin/" "c:/msys/bin/" DOC "bash shell for firmware size report (eg. c:/cygwin/bin/bash.exe on Windows).")
 
+set(ARM_NONE_EABI_GCC F:/qt_bare/gcc-arm-none-eabi-4_9/bin/arm-none-eabi-gcc)
+set(ARM_NONE_EABI_G++ F:/qt_bare/gcc-arm-none-eabi-4_9/bin/arm-none-eabi-g++)
+set(ARM_NONE_EABI_AS F:/qt_bare/gcc-arm-none-eabi-4_9/bin/arm-none-eabi-as)
+set(ARM_NONE_EABI_OBJCOPY F:/qt_bare/gcc-arm-none-eabi-4_9/bin/arm-none-eabi-objcopy)
+set(ARM_NONE_EABI_OBJSIZE F:/qt_bare/gcc-arm-none-eabi-4_9/bin/arm-none-eabi-size)
+
 if(NOT MSVC)
   set(OPT "0" CACHE STRING "Optimization mode (0/1/2/s")
 
   if(ARCH STREQUAL ARM)
     enable_language(ASM)
-    set(CMAKE_C_COMPILER arm-none-eabi-gcc)
-    set(CMAKE_CXX_COMPILER arm-none-eabi-g++)
-    set(CMAKE_ASM_COMPILER arm-none-eabi-as)
+    set(CMAKE_C_COMPILER ${ARM_NONE_EABI_GCC})
+    set(CMAKE_CXX_COMPILER ${ARM_NONE_EABI_G++})
+    set(CMAKE_ASM_COMPILER ${ARM_NONE_EABI_AS})
 
     set(CMAKE_SYSTEM_NAME Generic)
     set(CMAKE_SYSTEM_VERSION 1)
@@ -539,7 +545,7 @@ if(NOT MSVC)
 
     add_custom_command(
       TARGET firmware POST_BUILD
-      COMMAND arm-none-eabi-objcopy -O binary firmware.elf firmware.bin
+      COMMAND ${ARM_NONE_EABI_OBJCOPY} -O binary firmware.elf firmware.bin
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 
@@ -552,7 +558,7 @@ if(NOT MSVC)
         )
     else()
       add_custom_target(firmware-size
-        COMMAND arm-none-eabi-size -A firmware.elf
+        COMMAND ${ARM_NONE_EABI_OBJSIZE} -A firmware.elf
         DEPENDS firmware
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         )

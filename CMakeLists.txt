@@ -1,3 +1,7 @@
+SET (CMAKE_C_COMPILER_WORKS 1)
+SET (CMAKE_CXX_COMPILER_WORKS 1)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+
 project(OpenTX)
 
 set(VERSION_MAJOR "2")
@@ -45,6 +49,8 @@ now(TIME)
 git_id(GIT_STR)
 
 message(STATUS "OpenTX ${VERSION} @${GIT_STR}")
+
+
 
 # options shared by all targets
 
