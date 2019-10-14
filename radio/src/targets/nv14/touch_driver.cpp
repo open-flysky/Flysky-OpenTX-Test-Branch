@@ -306,14 +306,6 @@ static void touch_ft6236_debug_info(void) {
     TRACE("ft6x36: CHIP ID 0x%02X", TS_IO_Read(TOUCH_FT6236_REG_CIPHER));
     TRACE("ft6x36: CTPM ID 0x%02X", TS_IO_Read(TOUCH_FT6236_REG_FOCALTECH_ID));
     TRACE("ft6x36: rel code 0x%02X", TS_IO_Read(TOUCH_FT6236_REG_RELEASE_CODE_ID));
-/*
-    TRACE("ft6x36: RADIAN_VALUE 0x%02X", TS_IO_Read(0x91));
-    TRACE("ft6x36: OFFSET_LEFT_RIGHT 0x%02X", TS_IO_Read(0x92));
-    TRACE("ft6x36: OFFSET_UP_DOWN 0x%02X", TS_IO_Read(0x93));
-    TRACE("ft6x36: DISTANCE_LEFT_RIGHT 0x%02X", TS_IO_Read(0x94));
-    TRACE("ft6x36: DISTANCE_UP_DOWN 0x%02X", TS_IO_Read(0x95));
-    TRACE("ft6x36: DISTANCE_ZOOM 0x%02X", TS_IO_Read(0x96));
-*/
 #endif
 }
 
@@ -461,7 +453,7 @@ void TouchInit( void )
 {
   I2C_Init();
   TouchReset();
-
+  touch_ft6236_debug_info();
 
   /* INT generation for new touch available */
   /* Note TS_INT is active low */
@@ -476,8 +468,6 @@ void TouchInit( void )
   /*trigger reset */
   TouchReset();
 
-
-  touch_ft6236_debug_info();
   //Try to enable gesture
   /*
   TS_IO_Write(TOUCH_FT6236_I2C_ADDRESS, FT6206_GMODE_REG, regValue);
@@ -495,11 +485,9 @@ void TouchInit( void )
 
 void handleTouch()
 {
+  ft6x06_TS_GetXY(TOUCH_FT6236_I2C_ADDRESS, &Tx, &Ty, &TouchEvent);
   uint32_t gesture;
   ft6x06_TS_GetGestureID(TOUCH_FT6236_I2C_ADDRESS, &gesture);
-  if(gesture) TRACE("GESTURE %d", gesture);
-  ft6x06_TS_GetXY(TOUCH_FT6236_I2C_ADDRESS, &Tx, &Ty, &TouchEvent);
-
 #if defined( LCD_DIRECTION ) && ( LCD_DIRECTION == LCD_VERTICAL )
   Tx=LCD_WIDTH-Tx;
   Ty=LCD_HEIGHT-Ty;

@@ -132,7 +132,7 @@ add_dependencies(bootloader ${BITMAPS_TARGET} firmware_translations)
 
 add_custom_command(
   TARGET bootloader POST_BUILD
-  COMMAND ${ARM_NONE_EABI_OBJCOPY} -O binary bootloader.elf bootloader.bin
+  COMMAND arm-none-eabi-objcopy -O binary bootloader.elf bootloader.bin
 )
 if(PYTHONINTERP_FOUND)
   add_custom_command(
