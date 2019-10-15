@@ -28,7 +28,7 @@
 #include <string>
 
 
-class NumberEdit2 : public NumberEdit, public Choice {
+class NumberEdit2 : public NumberEdit, public ChoiceBase {
 public:
   NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, const char* label, const char * values,
       int buttonWidth, std::function<int32_t()> getValue, std::function<void(int32_t)> setValue = nullptr, LcdFlags flags = 0);
@@ -36,9 +36,18 @@ public:
   NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, int32_t minChoice, int32_t maxChoice, const char* label, const char * values,
       int buttonWidth, std::function<int32_t()> getValue, std::function<int32_t()> getValueChoice, std::function<void(int32_t)> setValue = nullptr, std::function<void(int32_t)> setValueChoice = nullptr, LcdFlags flags = 0);
 
+  ~NumberEdit2() override {
+    TRACE("DELETE num edit");
+  }
+#if defined(DEBUG_WINDOWS)
+    std::string getName() override
+    {
+      return "NumberEdit2";
+    }
+#endif
+
   bool onTouchEnd(coord_t x, coord_t y) override;
   void paint(BitmapBuffer * dc) override;
-  void checkEvents() override;
 protected:
   uint8_t onButtonCheck();
   virtual void setOutputType();
@@ -54,7 +63,16 @@ protected:
 class GvarNumberEdit : public NumberEdit2 {
 public:
   GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, std::function<int32_t()> getValue, std::function<void(int32_t)> setValue = nullptr, LcdFlags flags = 0);
+
+#if defined(DEBUG_WINDOWS)
+    std::string getName() override
+    {
+      return "GvarNumberEdit";
+    }
+#endif
+
   static std::string getGVarName(int32_t value);
+
 protected:
   bool isGvarValue(int value);
 

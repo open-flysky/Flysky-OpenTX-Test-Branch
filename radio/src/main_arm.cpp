@@ -189,7 +189,7 @@ void periodicTick()
 }
 
 #if defined(GUI) && defined(COLORLCD)
-void guiMain(event_lua_t evt)
+void guiMain(event_ext_t evt)
 {
   bool refreshNeeded = false;
 #if defined(LUA)
@@ -231,7 +231,7 @@ void guiMain(event_lua_t evt)
   // LUA is active
   // prevent events from reaching the normal menus
   // so Lua telemetry script can fully use them
-  mainWindow.run(refreshNeeded);
+  mainWindow.run(refreshNeeded, evt);
 }
 #elif defined(GUI)
 
@@ -274,7 +274,7 @@ void handleGui(event_t event) {
 
 bool inPopupMenu = false;
 
-void guiMain(event_lua_t evt)
+void guiMain(event_ext_t evt)
 {
 #if defined(LUA)
   // TODO better lua stopwatch
@@ -362,7 +362,7 @@ void perMain()
     flightReset();
     mainRequestFlags &= ~(1 << REQUEST_FLIGHT_RESET);
   }
-  event_lua_t evtStruct;
+  event_ext_t evtStruct;
   uint32_t evt = getEvent(false, evtStruct);
   if (evt && (g_eeGeneral.backlightMode & e_backlight_mode_keys)) {
     // on keypress turn the light on
@@ -372,9 +372,7 @@ void perMain()
 #if defined(NAVIGATION_STICKS)
   uint8_t sticks_evt = getSticksNavigationEvent();
   if (sticks_evt) {
-    evtStruct.evt = sticks_evt;
-    evtStruct.wParam = 0;
-    evtStruct.lParam = 0;
+    evtStruct.set(sticks_evt);
   }
 #endif
 

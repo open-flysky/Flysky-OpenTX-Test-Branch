@@ -55,7 +55,9 @@ class CurveEdit: public Curve {
     void right();
     void left();
     bool isCustomCurve();
-
+    bool hasValidPosition() override;
+    int getPos();
+    int getValue(int x);
     int8_t* pointsPtr;
     uint8_t pointsTotal;
     bool custom;

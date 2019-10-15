@@ -242,7 +242,24 @@ void Window::checkEvents()
       break;
     }
   }
+
+  //if (this == focusWindow) {
+  //  event_ext_t exentExt;
+  //  getEvent(false, exentExt);
+  //  if (exentExt.evt) {
+  //    TRACE("Event 0x%x received ...", exentExt.evt);
+  //    this->onEvent(exentExt.evt);
+  //  }
+  //}
 }
+
+void Window::onEvent(event_ext_t event)
+{
+  for (auto child: children) {
+    child->onEvent(event);
+  }
+}
+
 
 bool Window::onTouchStart(coord_t x, coord_t y)
 {

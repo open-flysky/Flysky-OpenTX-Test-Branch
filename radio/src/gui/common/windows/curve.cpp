@@ -83,7 +83,6 @@ void Curve::drawPosition(BitmapBuffer * dc)
 {
   int valueX = position();
   int valueY = function(valueX);
-
   coord_t x = getPointX(valueX);
   coord_t y = getPointY(valueY);
 
@@ -117,7 +116,7 @@ void Curve::paint(BitmapBuffer * dc)
   for (auto point: points) {
     drawPoint(dc, point);
   }
-  if (position) {
+  if (hasValidPosition() && position) {
     drawPosition(dc);
   }
 }
@@ -132,4 +131,9 @@ void Curve::clearPoints()
 {
   points.clear();
   invalidate();
+}
+
+bool Curve::hasValidPosition()
+{
+  return true;
 }

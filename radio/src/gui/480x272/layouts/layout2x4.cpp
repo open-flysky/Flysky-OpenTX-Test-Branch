@@ -67,10 +67,10 @@ class Layout2x4: public Layout
       return zone;
     }
 
-    void refresh() override;
+    void refresh(event_ext_t event = event_ext_t()) override;
 };
 
-void Layout2x4::refresh()
+void Layout2x4::refresh(event_ext_t event)
 {
   Zone fullScreen = Layout::getZone(0);
   fullScreen.w /=2;
@@ -84,7 +84,7 @@ void Layout2x4::refresh()
     lcdSetColor(getZoneOptionValue(Panel2BGC)->unsignedValue);
     lcdDrawSolidFilledRect(fullScreen.x, fullScreen.y, fullScreen.w, fullScreen.h, CUSTOM_COLOR);
   }
-  Layout::refresh();
+  Layout::refresh(event);
 }
 
 BaseLayoutFactory<Layout2x4> layout2x4("Layout2x4", LBM_LAYOUT_2x4, OPTIONS_LAYOUT_2x4);

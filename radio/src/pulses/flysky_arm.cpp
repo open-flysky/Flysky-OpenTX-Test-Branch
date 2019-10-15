@@ -375,7 +375,6 @@ void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn)
 
   if ( INTERNAL_MODULE == port )
   {
-      TRACE("SET MODULE POWER");
       if ( isPowerOn ) {
         INTERNAL_MODULE_ON();
         resetPulsesFlySky(port);
@@ -590,8 +589,7 @@ void parseResponse(uint8_t port)
     case CMD_RF_INIT: {
       if (first_para == 0x01) { // action only RF ready
           if (moduleFlag[port] == MODULE_BIND) setFlyskyState(port, STATE_BIND);
-          else if (moduleFlag[port] == MODULE_RANGECHECK) setFlyskyState(port, STATE_SET_RANGE_TEST);
-          else if (modulePulsesData[port].flysky.state == STATE_INIT) setFlyskyState(port, STATE_SET_RECEIVER_ID);
+          else setFlyskyState(port, STATE_SET_RECEIVER_ID);
       }
       else {
         //Try one more time;
@@ -632,11 +630,18 @@ void parseResponse(uint8_t port)
       break;
     }
     case CMD_SET_RECEIVER_ID: {
-      setFlyskyState(port, STATE_DEFAULT);
+      //range check seems to be not working
+      //it disconnects receiver
+      //if (moduleFlag[port] == MODULE_RANGECHECK) {
+      //  setFlyskyState(port, STATE_SET_RANGE_TEST);
+      //}
+      //else
+      {
+        setFlyskyState(port, STATE_DEFAULT);
+      }
       return;
     }
     case CMD_TEST_RANGE: {
-      //this command must be send to start or stop range test
       if(moduleFlag[port] != MODULE_RANGECHECK) resetPulsesFlySky(port);
       else setFlyskyState(port, STATE_RANGE_TEST_RUNNING);
       break;
@@ -817,9 +822,10 @@ void setupPulsesFlySky(uint8_t port)
         break;
         case STATE_SET_TX_POWER:
         {
+          uint8_t power = moduleFlag[port] == MODULE_RANGECHECK ? 0 : tx_working_power;
           putFlySkyFrameByte(port, FRAME_TYPE_REQUEST_ACK);
           putFlySkyFrameByte(port, CMD_SET_TX_POWER);
-          putFlySkyFrameByte(port, moduleFlag[port] == MODULE_RANGECHECK ? 0 : tx_working_power);
+          putFlySkyFrameByte(port, power);
         }
         break;
         case STATE_SET_RANGE_TEST:

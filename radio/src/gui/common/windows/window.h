@@ -259,6 +259,7 @@ class Window {
 
     virtual void checkEvents();
 
+    virtual void onEvent(event_ext_t event);
   protected:
     Window * parent;
     std::list<Window *> children;

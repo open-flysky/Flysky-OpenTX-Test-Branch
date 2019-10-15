@@ -7,7 +7,6 @@ NumberEdit2::NumberEdit2(Window * parent, const rect_t & rect,
     std::function<int32_t()> getValue, std::function<void(int32_t)> setValue, LcdFlags flags) :
     NumberEdit2(parent, rect, vmin, vmax, vmin, vmax, label, values, buttonWidth, getValue, getValue, setValue, setValue, flags)
 {
-
 }
 
 NumberEdit2::NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int32_t vmax, int32_t minChoice, int32_t maxChoice,
@@ -16,35 +15,25 @@ NumberEdit2::NumberEdit2(Window * parent, const rect_t & rect, int32_t vmin, int
     std::function<void(int32_t)> setValue, std::function<void(int32_t)> setValueChoice, LcdFlags flags  ) :
 
     NumberEdit(parent, { rect.x, rect.y, rect.w - buttonWidth, rect.h }, vmin, vmax, getValue, setValue, flags),
-    Choice(parent, { rect.x, rect.y, rect.w - buttonWidth, rect.h }, values, minChoice, maxChoice, getValueChoice, setValueChoice, flags)
+    ChoiceBase(values, minChoice, maxChoice, getValueChoice, setValueChoice, flags)
 {
 
   textButton = new TextButton(parent, { rect.x + rect.w - buttonWidth, rect.y, buttonWidth, rect.h }, std::string(label));
   textButton->setPressHandler(std::bind(&NumberEdit2::onButtonCheck, this));
   int32_t value = getValue();
-  //set checked if value out of numedit range
+  //set checked if value out of numberedit range
   checked = (value > NumberEdit::vmax) || (value < NumberEdit::vmin);
   textButton->check(checked);
-  if (checked) Choice::bringToTop();
-  else NumberEdit::bringToTop();
 }
 
 bool NumberEdit2::onTouchEnd(coord_t x, coord_t y) {
-  if(checked) return Choice::onTouchEnd(x,y);
+  if(checked) return ChoiceBase::handleTouchEnd(x,y);
   return NumberEdit::onTouchEnd(x,y);
 }
 
 void NumberEdit2::paint(BitmapBuffer * dc) {
-  //because we have 2 children at same position
-  //this method will be called twice
-  if(paintCount++ % 2 != 0) return;
-  if(checked) Choice::paint(dc);
+  if(checked) ChoiceBase::paintChoice(dc, this->hasFocus(), rect);
   else NumberEdit::paint(dc);
-}
-
-void NumberEdit2::checkEvents() {
-  if(checked) Choice::checkEvents();
-  else NumberEdit::checkEvents();
 }
 
 uint8_t NumberEdit2::onButtonCheck() {
@@ -54,16 +43,9 @@ uint8_t NumberEdit2::onButtonCheck() {
 }
 
 void NumberEdit2::setOutputType() {
-  if (checked) {
-    Choice::setValue((Choice::vmin + Choice::vmax)/2);
-    Choice::invalidate();
-    Choice::bringToTop();
-  }
-  else{
-    NumberEdit::setValue((NumberEdit::vmin + NumberEdit::vmax)/2);
-    NumberEdit::invalidate();
-    NumberEdit::bringToTop();
-  }
+  if (checked) ChoiceBase::setValue((ChoiceBase::vmin + ChoiceBase::vmax)/2);
+  else NumberEdit::setValue((NumberEdit::vmin + NumberEdit::vmax)/2);
+  invalidate();
 }
 
 #if defined(GVARS)
@@ -76,7 +58,7 @@ GvarNumberEdit::GvarNumberEdit(Window * parent, const rect_t & rect, int32_t vmi
     delta(GV_GET_GV1_VAL(vmin, vmax)),
     flags(flags)
     {
-    Choice::setTextHandler(GvarNumberEdit::getGVarName);
+    ChoiceBase::setTextHandler(GvarNumberEdit::getGVarName);
 }
 
 int16_t GvarNumberEdit::getGVarIndex() {
@@ -120,8 +102,6 @@ void GvarNumberEdit::setOutputType() {
     //Set first GVAR
     //use direct call because numedit is limiting setter to min max vale
     setValueDirect(delta);
-    Choice::invalidate();
-    Choice::bringToTop();
   }
   else{
     int32_t value = NumberEdit::getValue();
@@ -135,9 +115,8 @@ void GvarNumberEdit::setOutputType() {
       value = delta;
     }
     NumberEdit::setValue(value);
-    NumberEdit::invalidate();
-    NumberEdit::bringToTop();
   }
+  invalidate();
 }
 #endif
 

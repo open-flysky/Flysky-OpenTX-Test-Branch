@@ -97,18 +97,17 @@ class Key
 };
 
 extern Key keys[NUM_KEYS];
-extern event_t s_evt;
-extern event_lua_t empty_event;
+extern event_ext_t s_evt;
+extern event_ext_t empty_event;
 
-void putEvent(event_t evt);
-void putEvent(event_t evt, uint32_t wParam, uint32_t lParam);
+void putEvent(event_t evt, event_param_t* params = nullptr, int count = 0);
 void pauseEvents(event_t event);
 void killEvents(event_t event);
 
 #if defined(CPUARM)
   bool clearKeyEvents();
   event_t getEvent(bool trim=false);
-  event_t getEvent(bool trim, event_lua_t& event);
+  event_t getEvent(bool trim, event_ext_t& event);
 #else
   void clearKeyEvents();
   event_t getEvent();

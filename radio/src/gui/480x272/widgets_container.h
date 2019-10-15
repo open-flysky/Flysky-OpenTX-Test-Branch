@@ -127,15 +127,38 @@ class WidgetsContainer: public WidgetsContainerInterface
 
     virtual Zone getZone(unsigned int index) const = 0;
 
-    virtual void refresh()
-    {
-      if (widgets) {
-        for (int i=0; i<N; i++) {
-          if (widgets[i]) {
-            widgets[i]->refresh();
+    virtual void refresh(event_ext_t event = event_ext_t()) {
+      if (!widgets) return;
+      bool isTouchEvent = event.evt & _MSK_TOUCH_EVENT;
+      bool isTouchUp = (EVT_TOUCH(TOUCH_UP) == event.evt);
+      for (int i = 0; i < N; i++) {
+        if (!widgets[i]) continue;
+        bool isTouchTarget = widgets[i]->isTouchTarget(event);
+        event_ext_t localEvent = event_ext_t(event);
+        //pass event to selected widget
+        if (widgets[i]->isSelected()) {
+          if (isTouchEvent) {
+            if(!isTouchTarget && isTouchUp) {
+              widgets[i]->setSelected(false);
+              TRACE("DESELECT WIDGET %d", i);
+              localEvent.clear();
+            }
+            else widgets[i]->translateCoordinates(&localEvent);
           }
         }
+        else {
+          if (isTouchEvent && isTouchTarget) {
+            if(isTouchUp) {
+              widgets[i]->setSelected(true);
+              TRACE("SELECT WIDGET %d", i);
+            }
+            widgets[i]->translateCoordinates(&localEvent);
+          }
+          else localEvent.clear();
+        }
+        widgets[i]->refresh(localEvent);
       }
+      //TBD select with rotary event
     }
 
     virtual void background()

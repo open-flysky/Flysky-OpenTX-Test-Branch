@@ -23,37 +23,43 @@
 #include "opentx.h" // TODO for applyCustomCurve
 
 CurveEdit::CurveEdit(Window * parent, const rect_t &rect, uint8_t index) :
-  Curve(parent, rect, [=](int x) -> int {
-    return applyCustomCurve(x, index);
-  }),
+  Curve(parent, rect, std::bind(&CurveEdit::getValue, this, std::placeholders::_1)),
   index(index),
   current(-1)
 {
   update();
+  position = std::bind(&CurveEdit::getPos, this);
+}
+int CurveEdit::getValue(int x) {
+  return applyCustomCurve(x, index);
 }
 
+int CurveEdit::getPos() {
+  if(current != -1 && hasFocus()) {
+    return getPoint(index, current).x;
+  }
+  return 0;
+}
+
+bool CurveEdit::hasValidPosition()
+{
+  return current != -1 && hasFocus();
+}
 void CurveEdit::update()
 {
   clearPoints();
   pointsPtr = curveAddress(index);
+
+  CurveInfo &curve = g_model.curves[index];
+  custom = curve.type == CURVE_TYPE_CUSTOM;
   uint8_t size = curveAddress(index+1) - pointsPtr;
-  if ((size & 1) == 0) {
-    pointsTotal = (size / 2) + 1;
-    custom = true;
-  }
-  else {
-    pointsTotal = size;
-    custom = false;
-  }
+
+  if(custom) pointsTotal = (size / 2) + 1;
+  else pointsTotal = size;
+
   for (uint8_t i = 0; i < pointsTotal; i++) {
-    if (hasFocus() && current == i) {
-      position = [=] () -> int {
-        return getPoint(index, i).x;
-      };
-    }
-    else {
-      addPoint(getPoint(index, i), TEXT_COLOR);
-    }
+    if(i==current && hasFocus()) continue;
+    addPoint(getPoint(index, i), TEXT_COLOR);
   }
   invalidate();
 }
@@ -96,12 +102,13 @@ bool CurveEdit::onTouchEnd(coord_t x, coord_t y)
 
 void CurveEdit::onFocusLost()
 {
+  update();
   CurveKeyboard::instance()->disable(true);
 }
 
 void CurveEdit::next()
 {
-  if (++current > (int8_t)points.size()) {
+  if (++current >= pointsTotal) {
     current = 0;
   }
   update();
@@ -109,7 +116,7 @@ void CurveEdit::next()
 
 void CurveEdit::previous()
 {
-  if (current == 0) current = points.size();
+  if (current == 0) current = pointsTotal-1;
   else current--;
   update();
 }
@@ -142,7 +149,7 @@ void CurveEdit::right() {
 
   int targetOffset = pointsTotal + (current-1);
   int8_t* point = pointsPtr + targetOffset;
-  int8_t next = current == pointsTotal-2 ? 95 : *(point+1) - 5;
+  int8_t next = current == pointsTotal-2 ? 100 : *(point+1);
   if((*point)+1 < next) (*point)++;
   storageDirty(EE_MODEL);
   invalidate();
@@ -155,7 +162,7 @@ void CurveEdit::left()
 
   int targetOffset = pointsTotal + (current-1);
   int8_t* point = pointsPtr + targetOffset;
-  int8_t prev = current == 1 ? -95 : *(point-1) + 5;
+  int8_t prev = current == 1 ? -100 : *(point-1);
   if((*point)-1 > prev) (*point)--;
   storageDirty(EE_MODEL);
   invalidate();

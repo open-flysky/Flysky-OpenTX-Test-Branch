@@ -635,7 +635,6 @@ class ModuleWindow : public Window {
           }
           else {
             moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
-            if(isModuleFlysky(moduleIndex)) setFlyskyState(moduleIndex, STATE_SET_RANGE_TEST);
             return 0;
           }
         });

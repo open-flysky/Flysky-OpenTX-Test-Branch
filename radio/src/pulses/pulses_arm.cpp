@@ -27,6 +27,7 @@ uint8_t moduleFlag[NUM_MODULES] = { 0 };
 
 ModulePulsesData modulePulsesData[NUM_MODULES] __DMA;
 TrainerPulsesData trainerPulsesData __DMA;
+OS_FlagID pulseFlag = 0;
 
 #if defined(CROSSFIRE)
 uint8_t createCrossfireChannelsFrame(uint8_t * frame, int16_t * pulses);
@@ -285,6 +286,11 @@ void setupPulses(uint8_t port)
         break;
     }
   }
+#if !defined(SIMU)
+  if(pulseFlag && s_current_protocol[INTERNAL_MODULE] == PROTO_NONE && s_current_protocol[EXTERNAL_MODULE] == PROTO_NONE) {
+    CoSetFlag(pulseFlag);
+  }
+#endif
 }
 
 void setCustomFailsafe(uint8_t moduleIndex)

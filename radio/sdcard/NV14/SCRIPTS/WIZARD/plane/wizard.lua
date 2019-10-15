@@ -416,9 +416,6 @@ local function saveModel()
   -- motor
   if(MotorFields[1][5] == 1) then
     addMix(MotorFields[2][5], MIXSRC_FIRST_INPUT+defaultChannel(2), "Motor")
-  elseif (MotorFields[2][5] == 2) then
-    addMix(MotorFields[2][5], MIXSRC_FIRST_INPUT+defaultChannel(2), "Motor1")
-    addMix(MotorFields[3][5], MIXSRC_FIRST_INPUT+defaultChannel(2), "Motor2")
   end
   -- Ailerons
   if(AilFields[1][5] == 1) then
@@ -473,9 +470,6 @@ local function runConfigSummary(event, x, y)
   -- motors
   if(MotorFields[1][5] == 1) then
     drawNextLine("Motor channel:", MotorFields[2][5])
-  elseif (MotorFields[2][5] == 2) then
-    drawNextLine("Motor 1 channel:", MotorFields[2][5])
-    drawNextLine("Motor 2 channel:", MotorFields[3][5])
   end
   -- ail
   if(AilFields[1][5] == 1) then
