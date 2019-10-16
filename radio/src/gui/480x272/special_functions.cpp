@@ -97,10 +97,18 @@ class SpecialFunctionEditWindow : public Page {
           break;
 
         case FUNC_TRAINER:
-          new StaticText(specialFunctionOneWindow, grid.getLabelSlot(), STR_TIMER);
-          new NumberEdit(specialFunctionOneWindow, grid.getFieldSlot(), 1, 3, GET_SET_DEFAULT(CFN_TIMER_INDEX(cfn)));
+        {
+          new StaticText(specialFunctionOneWindow, grid.getLabelSlot(), STR_CH);
+          auto source = new SourceChoice(specialFunctionOneWindow, grid.getFieldSlot(), MIXSRC_NONE, MIXSRC_Ail,
+              [=] { return CFN_CH_INDEX(cfn)==0 ? 0 : MIXSRC_Rud+CFN_CH_INDEX(cfn)-1; },
+              [=](int32_t newValue) { CFN_CH_INDEX(cfn) = newValue == MIXSRC_NONE ? MIXSRC_NONE : newValue - MIXSRC_Rud+1; SET_DIRTY(); }
+          );
+          source->setAvailableHandler([=](int32_t value) {
+             return value == MIXSRC_NONE || (value>= MIXSRC_Rud && value <=MIXSRC_Ail);
+          });
           grid.nextLine();
-          break;
+        }
+        break;
 
         case FUNC_RESET:
           if (CFN_PARAM(cfn) < FUNC_RESET_PARAM_FIRST_TELEM) {
