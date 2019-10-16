@@ -235,6 +235,7 @@ enum VirtualKeys {
   VKEY_INC_LARGE,
   VKEY_DEC_LARGE,
   VKEY_DEFAULT,
+  VKEY_SIGN  
 };
 
 enum LUATouchEvent {
