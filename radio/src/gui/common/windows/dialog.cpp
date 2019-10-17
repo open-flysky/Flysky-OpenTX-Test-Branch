@@ -230,6 +230,16 @@ void MessageBox::checkEvents()
   if(onUpdate != nullptr) {
     onUpdate();
   }
+
+  if(closeCondition != nullptr) {
+    DialogResult result = closeCondition();
+    if(result) {
+      if (onClose != nullptr) onClose(result);
+      running = false;
+      return;
+    }
+  }
+
   for (auto child: children) {
       TextButton* button = reinterpret_cast<TextButton*>(child);
       if(button == nullptr) continue;
