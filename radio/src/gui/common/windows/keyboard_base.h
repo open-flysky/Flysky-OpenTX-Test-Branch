@@ -40,8 +40,10 @@ class Keyboard: public Window {
       this->field = field;
       attach(&mainWindow);
       Window * w = getPageBody();
-      w->setHeight(LCD_H - height() - w->top());
-      w->scrollTo(field);
+      if(w) {
+        w->setHeight(LCD_H - height() - w->top());
+        w->scrollTo(field);
+      }
       invalidate();
     }
 
@@ -50,7 +52,7 @@ class Keyboard: public Window {
       detach();
       if (field) {
         Window * w = getPageBody();
-        w->setHeight(LCD_H - 0 - w->top());
+        if(w) w->setHeight(LCD_H - 0 - w->top());
         field = nullptr;
       }
     }
@@ -69,13 +71,14 @@ class Keyboard: public Window {
     Window * getPageBody()
     {
       Window * parent = field;
-      while (1) {
+      while (parent) {
         Window * tmp = parent->getParent();
-        if ((tmp->getWindowFlags() & OPAQUE) && tmp->width() == LCD_W && tmp->height() == LCD_H) {
+        if (tmp && (tmp->getWindowFlags() & OPAQUE) && tmp->width() == LCD_W && tmp->height() == LCD_H) {
           return parent;
         }
         parent = tmp;
       }
+      return nullptr;
     }
 };
 
