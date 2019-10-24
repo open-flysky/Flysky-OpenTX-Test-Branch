@@ -633,6 +633,7 @@ extern const pm_char STR_FAS_OFFSET[];
 extern const pm_char STR_MODULE_BINDING[];
 #if defined(MULTIMODULE)
 extern const pm_char STR_MULTI_CUSTOM[];
+extern const pm_char STR_MULTI_FIXEDID[];
 extern const pm_char STR_MULTI_OPTION[];
 extern const pm_char STR_MULTI_VIDFREQ[];
 extern const pm_char STR_MULTI_RFTUNE[];
@@ -644,6 +645,7 @@ extern const pm_char STR_MODULE_NO_SERIAL_MODE[];
 extern const pm_char STR_MODULE_NO_INPUT[];
 extern const pm_char STR_MODULE_WAITFORBIND[];
 extern const pm_char STR_MODULE_NO_TELEMETRY[];
+extern const pm_char STR_MODULE_BINDING[];
 extern const pm_char STR_PROTOCOL_INVALID[];
 extern const pm_char STR_MODULE_STATUS[];
 extern const pm_char STR_MODULE_SYNC[];
