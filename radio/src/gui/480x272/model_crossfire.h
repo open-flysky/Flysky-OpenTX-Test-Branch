@@ -165,11 +165,17 @@ struct xfire_text_select {
   }
   void getItems(char* buffer, char** result, size_t& count) const {
     strcpy(buffer, text());
-    int index = 0;
-    result[index] = strtok(buffer, ";");
-    while (result[index]) {
-      count++;
-      result[++index] = strtok(NULL, ";");
+    count = 0;
+    result[count++] = strtok(buffer, ";"); //first item must be there
+
+    while (count < minVal()) {
+      result[count++] = 0; //fill the gap
+    }
+
+    while(true) {
+      char *token = strtok(NULL, ";");
+      if(token) result[count++] = token;
+      else break;
     }
   }
   uint8_t* selectedPtr() const {
@@ -297,6 +303,13 @@ public:
     return this->state;
   }
   void setState(crossfire_state state){
+#if defined(DEBUG)
+    if(this->state == X_LOADING && state == X_IDLE) {
+      char buffer[256];
+      sprintf(buffer, "XFIRE DONE [%d] size = %d ", number, dataPtr - data);
+      debug(buffer, data, dataPtr - data);
+    }
+#endif
     this->state = state;
   }
   crossfire_data_type dataType(){
@@ -413,6 +426,11 @@ public:
   }
   //data pointer to payload
   void parse(uint8_t *payload, size_t length, uint16_t now){
+#if defined(DEBUG)
+    char buffer[64];
+    sprintf(buffer, "[%d] RESPONSE %s size [%d] ", number, (state == X_SAVING ? "SAVING" : "LOADING"), length);
+    debug(buffer, payload, length);
+#endif
     //skip type,
     payload += 1;
     //skip crc
@@ -420,19 +438,28 @@ public:
     tries = 0;
     timeout = now + 200;
     chunksRemaining = payload[X_FIRE_CHUNKS_OFFSET];
+
+    if (data == NULL) {
+      int sizeTotal = X_FIRE_FRAME_LEN * (chunksRemaining + 1);
+      data = new uint8_t[sizeTotal];
+      memset(data, 0, sizeTotal);
+      dataPtr = data;
+    }
+
+    if(!chunkActual) dataPtr = data;
+    else {
+      length -= X_FIRE_NEXT_CHUNK_DATA;
+      payload += X_FIRE_NEXT_CHUNK_DATA;
+    }
+
+    chunkActual++;
+
+    memcpy(dataPtr, payload, length);
+    dataPtr += length;
+
     if (state == X_LOADING) {
-      if (data == NULL) {
-        data = new uint8_t[X_FIRE_FRAME_LEN * (chunksRemaining + 1)];
-        dataPtr = data;
-      } else {
-        length -= X_FIRE_NEXT_CHUNK_DATA;
-        payload += X_FIRE_NEXT_CHUNK_DATA;
-      }
-      memcpy(dataPtr, payload, length);
-      dataPtr += length;
       const char* nameptr = reinterpret_cast<const char*>(data + X_FIRE_HEADER_LEN);
-      if (!chunkActual && name.length() == 0) name = std::string(nameptr);
-      chunkActual++;
+      if (name.length() == 0) name = std::string(nameptr);
       if (chunksRemaining == 0) setState(X_IDLE);
     }
     if(state == X_SAVING) {
@@ -455,22 +482,44 @@ public:
           break;
         }
       }
-      else if (chunksRemaining == 0) setState(X_IDLE);
+      else if(chunksRemaining) setState(X_LOADING);
+      else setState(X_IDLE);
     }
   }
 
   void load(){
-    if(chunksRemaining <= 0) setState(X_IDLE);
+    if(chunksRemaining <= 0) {
+      setState(X_IDLE);
+    }
     else if(tries >= RETRY_COUNT) setState(X_RX_ERROR);
     //else if(timeout >= get_tmr10ms()) setState(X_TX_ERROR);
     else {
       setState(X_LOADING);
       tries++;
+#if defined(DEBUG)
+      char buffer[64];
+      sprintf(buffer, "[%d] LOAD ", number);
       uint8_t payload[] = { READ_SETTINGS_ID, devAddress, RADIO_ADDRESS, number, chunkActual };
+      debug(buffer, payload, sizeof(payload));
+#endif
       crossfireSend(payload, sizeof(payload));
     }
   }
-
+#if defined(DEBUG)
+  void debug(char* step, uint8_t* data, int length) {
+    char buffer[256];
+    TRACE("%s", step);
+    int count = 0;
+    for (int c =0; c < length; c++){
+      count += sprintf(buffer + count, "%02X", data[c]);
+      if(count >= 32) {
+        TRACE("%s", buffer);
+        count = 0;
+      }
+    }
+    if(count > 0) TRACE("%s", buffer);
+  }
+#endif
   template<typename Type>
   void save(Type data)
   {
@@ -488,16 +537,23 @@ public:
     else if(dataType() == TEXT_SELECTION){
       memcpy(const_cast<uint8_t*>(getValue()->TEXT_SELECTION.selectedPtr()), newData, length);
     }
-    timeout = get_tmr10ms() + (dataType() == COMMAND ? getValue()->COMMAND.timout / 10: 200);
+    timeout = get_tmr10ms() + (dataType() == COMMAND ? getValue()->COMMAND.timout / 10 : 200);
     reset(X_SAVING);
+#if defined(DEBUG)
+    char buffer[64];
+    sprintf(buffer, "[%d] SAVE ", number);
+    debug(buffer, payload, totalLength);
+#endif
     crossfireSend(payload, totalLength);
   }
 
-  void pool(){
-    if(state == X_SAVING && dataType() == COMMAND){
-      const xfire_data* val = getValue();
-      if(val->COMMAND.status == XFIRE_START || val->COMMAND.status == XFIRE_PROGRESS){
-        save(XFIRE_POLL);
+  void pool() {
+    if (state == X_SAVING) {
+      if (dataType() == COMMAND) {
+        const xfire_data* val = getValue();
+        if (val->COMMAND.status == XFIRE_START || val->COMMAND.status == XFIRE_PROGRESS) {
+          save(XFIRE_POLL);
+        }
       }
     }
   }

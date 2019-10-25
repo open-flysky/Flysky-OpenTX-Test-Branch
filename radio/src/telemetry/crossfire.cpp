@@ -267,8 +267,7 @@ void crossfireSetDefault(int index, uint8_t id, uint8_t subId)
 void crossfireSend(uint8_t* payload, size_t size)
 {
   if(!isCrossfireOutputBufferAvailable()) return;
-  if (luaInputTelemetryFifo == NULL) luaInputTelemetryFifo = new Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE>();
-  else if(luaInputTelemetryFifo) luaInputTelemetryFifo->clear();
+  luaInputTelemetryFifo->clear();
   //telemetryOutputPushByte(MODULE_ADDRESS);//MODULE ADDRESS
   telemetryOutputPushByte(SYNC_BYTE);//MODULE ADDRESS
   telemetryOutputPushByte(1 + size);

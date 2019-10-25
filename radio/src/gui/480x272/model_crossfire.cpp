@@ -41,11 +41,13 @@ CrossfireConfigPage::~CrossfireConfigPage() {
 void CrossfireConfigPage::rebuildPage() {
   GridLayout grid;
   grid.spacer(16);
+  coord_t scroll = window->getScrollPositionY();
   if (state == X_IDLE){
     window->clear();
     createControls(grid, 0);
   }
   window->setInnerHeight(grid.getWindowHeight());
+  window->setScrollPositionY(scroll);
 }
 
 
@@ -151,14 +153,28 @@ void CrossfireConfigPage::createControls(GridLayout& grid, uint8_t folder, uint8
           break;
           case TEXT_SELECTION:
           {
-            new Choice(window, grid.getFieldSlot(), p->getItemsList(),
-              (int16_t) val->TEXT_SELECTION.minVal(),
-              (int16_t) val->TEXT_SELECTION.maxVal(),
+            int16_t min = val->TEXT_SELECTION.minVal();
+            int16_t max = val->TEXT_SELECTION.maxVal();
+            //First item is always 0
+            //it looks 0 can be only displayed...
+            //according to docs first item is always 0
+            Choice* choice = new Choice(window, grid.getFieldSlot(), p->getItemsList(),
+              (int16_t) min > 0 ? 0 : min ,
+              (int16_t) max,
               [=]() -> int16_t {return val->TEXT_SELECTION.selected();},
               [=](int16_t newValue) {
                 state = X_SAVING;
                 p->save(newValue);
               });
+            //irregular list
+            if(min > 0){
+              choice->setAvailableHandler([=](int16_t value) {
+                if(value < 0) return false;
+                uint8_t v = (uint8_t) value;
+                return v >= min && v <= max;
+              });
+            }
+
           }
           break;
           case FLOAT:
