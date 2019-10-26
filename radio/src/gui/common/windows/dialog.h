@@ -110,6 +110,15 @@ public:
     this->message = message;
     invalidate();
   }
+  void close(){
+    running = false;
+  }
+  void setCloseCondition(std::function<DialogResult(void)> handler) {
+    closeCondition = std::move(handler);
+  }
+  uint8_t getType(){
+    return type;
+  }
   void setUpdateMethod(std::function<void(void)> update);
 protected:
   uint8_t type;
@@ -119,6 +128,7 @@ protected:
   bool running;
   std::function<void(void)> onUpdate;
   std::function<void(DialogResult)> onClose;
+  std::function<DialogResult(void)> closeCondition;
 };
 
 #endif // _CONFIRMATION_H_

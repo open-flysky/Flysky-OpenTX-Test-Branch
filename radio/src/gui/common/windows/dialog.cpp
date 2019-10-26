@@ -205,9 +205,42 @@ void MessageBox::paint(BitmapBuffer * dc) {
   dc->drawSolidFilledRect(0, 0, width(), MESSAGE_BOX_HEADER, HEADER_BGCOLOR);
   dc->drawSolidFilledRect(0, MESSAGE_BOX_HEADER, width(), height() - MESSAGE_BOX_HEADER, TEXT_BGCOLOR);
   dc->drawRect(0, 0, width(), height(), 1, SOLID, TEXT_COLOR);
-  if (icon != nullptr) dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon);
+  if (icon != nullptr) dc->drawBitmap(ALERT_BITMAP_PADDING, MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, icon, 0, 0, 0, 0, 0.5f);
   if (!title.empty()) dc->drawText(ALERT_BITMAP_PADDING, 5, title.c_str(), TEXT_INVERTED_COLOR | STDSIZE);
-  if (!message.empty()) dc->drawText(ALERT_BITMAP_PADDING + ((icon != nullptr) ? icon->getWidth() : 0), MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING, message.c_str(), STDSIZE);
+  if (!message.empty()) {
+    coord_t left = ALERT_BITMAP_PADDING + ((icon != nullptr) ? (icon->getWidth() / 2 + 5) : 0);
+    coord_t top = MESSAGE_BOX_HEADER + ALERT_BITMAP_PADDING;
+
+    coord_t allowed = width() - (left + ALERT_BITMAP_PADDING);
+    int space = -1;
+    unsigned pos = 0;
+    unsigned startPos = 0;
+    while(pos < message.length()) {
+      if(message.at(pos) == ' ') space = pos;
+      bool draw = false;
+      if(getTextWidth(message.substr(startPos, pos - startPos).c_str(), pos - startPos, STDSIZE) > allowed) {
+        pos--;
+        draw = true;
+      }
+      else if(pos == message.length()-1) {
+        pos++;
+        space = -1;
+        draw = true;
+      }
+      if(draw){
+        dc->drawText(left, top, message.substr(startPos, (space != -1 ? space : pos) - startPos).c_str(), STDSIZE);
+        if(space != -1)  {
+          pos = space;
+          startPos = pos + 1;
+        }
+        else startPos = pos;
+        space = -1;
+        top += getFontHeight(STDSIZE);
+      }
+      pos++;
+    }
+  }
+
 };
 
 void MessageBox::deleteLater()
@@ -230,6 +263,16 @@ void MessageBox::checkEvents()
   if(onUpdate != nullptr) {
     onUpdate();
   }
+
+  if(closeCondition != nullptr) {
+    DialogResult result = closeCondition();
+    if(result) {
+      if (onClose != nullptr) onClose(result);
+      running = false;
+      return;
+    }
+  }
+
   for (auto child: children) {
       TextButton* button = reinterpret_cast<TextButton*>(child);
       if(button == nullptr) continue;
