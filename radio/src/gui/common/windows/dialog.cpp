@@ -278,7 +278,7 @@ void MessageBox::checkEvents()
       if(button == nullptr) continue;
       event_t result = button->getResult();
       if(result) {
-        if(onClose != nullptr) onClose((DialogResult)result);
+        if(onClose != nullptr) onClose((DialogResult)(result & ~_MSK_VK_EVENT));
         running = false;
         return;
       }

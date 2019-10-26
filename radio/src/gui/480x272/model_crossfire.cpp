@@ -363,6 +363,7 @@ void CrossfireParameter::pool() {
                 "Confirmation",
                 val->COMMAND.info,
                 [=](DialogResult result) {
+                  TRACE("RESULT %d ", result);
                   save(result == DialogResult::OK ? XFIRE_CONFIRM : XFIRE_CANCEL);
                   mb = nullptr;
                 }
@@ -383,8 +384,9 @@ void CrossfireParameter::pool() {
   }
   if(state == X_SAVING && get_tmr10ms() > timeout) {
     TRACE("[%d] TIMEOUT", number);
-    save(XFIRE_CANCEL);
-    setState(X_TX_ERROR);
+    save(XFIRE_POLL);
+    //save(XFIRE_CANCEL);
+    //setState(X_TX_ERROR);
   }
 }
 
