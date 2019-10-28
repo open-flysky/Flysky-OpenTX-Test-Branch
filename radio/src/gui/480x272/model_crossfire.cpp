@@ -16,6 +16,390 @@
 
 #include "model_crossfire.h"
 
+CrossfireDevice::CrossfireDevice(uint8_t *data, uint16_t now) {
+  this->timeout = now + 300;
+  data++; //skip type
+  this->destAddress = *(data++);
+  this->devAddress = *(data++);
+  const char* str = reinterpret_cast<const char*>(data);
+  this->devName = std::string(str);
+  data += strlen(str) + 1;
+  this->serial = *reinterpret_cast<uint32_t*>(data);
+  data += 4;
+  this->hwID = *reinterpret_cast<uint32_t*>(data);
+  data += 4;
+  this->fwID = *reinterpret_cast<uint32_t*>(data);
+  data += 4;
+  this->paramsCount = *(data++);
+  this->paramVersion = *(data++);
+}
+
+CrossfireParameter::CrossfireParameter(uint8_t number, uint8_t devAddress) {
+  this->state = X_WAITING_FOR_LOAD;
+  this->devAddress = devAddress;
+  this->number = number;
+  this->data = NULL;
+  this->dataPtr = NULL;
+  this->chunkActual = 0;
+  this->timeout = 0;
+  this->tries = 0;
+  this->chunksRemaining = 1;
+  this->items_count = 0;
+  this->text_buffer = NULL;
+  this->itemsList = NULL;
+  this->items = NULL;
+  this->control = NULL;
+  this->mb = NULL;
+}
+
+CrossfireParameter::~CrossfireParameter() {
+  if (itemsList != NULL) {
+    delete[] itemsList;
+    itemsList = NULL;
+  }
+  if (text_buffer != NULL) {
+    delete[] text_buffer;
+    text_buffer = NULL;
+  }
+  if (items != NULL) {
+    for (int i = 0; i < items_count; i++) {
+      delete[] items[i];
+      items[i] = NULL;
+    }
+    delete[] items;
+    items = NULL;
+    items_count = 0;
+  }
+}
+
+uint8_t CrossfireParameter::getFolder() {
+  if (!data)
+    return 0;
+  return data[X_FIRE_FOLDER_OFFSET];
+}
+
+bool CrossfireParameter::isVisible() {
+  return data && (data[X_FIRE_TYPE_OFFSET] & 0x80) == 0;
+}
+
+crossfire_state CrossfireParameter::getState() {
+  return this->state;
+}
+
+void CrossfireParameter::setState(crossfire_state state) {
+#if defined(DEBUG)
+    if(this->state == X_LOADING && state == X_IDLE) {
+      sprintf(buffer, "XFIRE DONE [%d] size = %d ", number, dataPtr - data);
+      debug(buffer, data, dataPtr - data);
+    }
+#endif
+  this->state = state;
+}
+
+crossfire_data_type CrossfireParameter::dataType() {
+  if (!data)
+    return OUT_OF_RANGE;
+  return static_cast<crossfire_data_type>(data[X_FIRE_TYPE_OFFSET] & 0x7F);
+}
+
+uint8_t* CrossfireParameter::getDataOffset(uint8_t* dataPtr) {
+  uint8_t* result = dataPtr + X_FIRE_HEADER_LEN;
+  result += strlen(reinterpret_cast<char*>(result)) + 1;
+  return result;
+}
+
+char* CrossfireParameter::getEditableTextBuffer() {
+  if (!data)
+    return 0;
+  const xfire_data* xdata = getValue();
+  if (text_buffer == NULL) {
+    size_t size = strlen(xdata->STRING.text());
+    if (dataType() == STRING)
+      size = xdata->STRING.maxLength();
+    text_buffer = new char[size];
+  }
+  strcpy(text_buffer, xdata->STRING.text());
+  return text_buffer;
+}
+
+const xfire_data* CrossfireParameter::getValue() {
+  return reinterpret_cast<const xfire_data*>(getDataOffset(data));
+}
+
+  const char** CrossfireParameter::getItems(size_t& itemsCount) {
+    const xfire_data* xdata = getValue();
+    if (dataType() == TEXT_SELECTION) {
+      items_count = 0;
+      size_t len = strlen(xdata->STRING.text());
+      for (size_t i = 0; i < len+1; i++)
+        if (xdata->TEXT_SELECTION.text()[i] == ';' || xdata->TEXT_SELECTION.text()[i] == 0)
+          items_count++;
+      if (text_buffer == NULL) {
+        text_buffer = new char[len + 1];
+        items = new char*[items_count];
+      }
+      strcpy(text_buffer, xdata->TEXT_SELECTION.text());
+      for(size_t i= 0; i < len; i++){
+        if(text_buffer[i] < ' ' || text_buffer[i] > '~') text_buffer[i] = ' ';
+      }
+      xdata->TEXT_SELECTION.getItems(this->text_buffer, this->items, itemsCount);
+      return const_cast<const char**>(items);
+    }
+    return NULL;
+  }
+
+//return items in format [len][item1][item2]..[itemN] no null termination
+const char* CrossfireParameter::getItemsList() {
+  //if (itemsList != NULL)
+  //  return const_cast<const char*>(itemsList);
+  size_t count = 0;
+  size_t maxSize = 0;
+  const char** list = getItems(count);
+
+  for (size_t index = 0; index < count; index++) {
+    size_t s = strlen(list[index]);
+    if (s > maxSize)
+      maxSize = s;
+  }
+  if (itemsList != NULL)
+    delete[] itemsList;
+  itemsList = new char[count * maxSize + 2];
+
+  char* pos = itemsList;
+  *pos++ = (char) (maxSize);
+
+  for (size_t index = 0; index < count; index++) {
+    size_t length = strlen(list[index]);
+    size_t s = maxSize - length;
+    strcpy(pos, list[index]);
+    pos += length;
+    while (s-- > 0) {
+      *(pos++) = ' ';
+    }
+  }
+  return itemsList;
+
+}
+
+const char* CrossfireParameter::getUnit() {
+  uint8_t* unit = getDataOffset(data);
+  switch (dataType()) {
+  case UINT8:
+  case INT8:
+    unit += sizeof(xfire_value<uint8_t> );
+    break;
+  case UINT16:
+  case INT16:
+    unit += sizeof(xfire_value<uint16_t> );
+    break;
+  case FLOAT:
+    unit += sizeof(xfire_float);
+    break;
+  }
+  return reinterpret_cast<const char*>(getDataOffset(data));
+}
+
+void CrossfireParameter::reset(crossfire_state targetState) {
+  tries = 0;
+  chunksRemaining = 1;
+  chunkActual = 0;
+  state = targetState;
+  /*
+   if (data != NULL) {
+   delete[] data;
+   data = NULL;
+   dataPtr = NULL;
+   }
+   */
+}
+
+//data pointer to payload
+void CrossfireParameter::parse(uint8_t *payload, size_t length, uint16_t now) {
+#if defined(DEBUG)
+    sprintf(buffer, "[%d] RESPONSE %s size [%d] ", number, (state == X_SAVING ? "SAVING" : "LOADING"), length);
+    debug(buffer, payload, length);
+#endif
+  //skip type,
+  payload += 1;
+  //skip crc
+  length -= 2;
+  tries = 0;
+  timeout = now + 200;
+  chunksRemaining = payload[X_FIRE_CHUNKS_OFFSET];
+  if (data == NULL) {
+    int sizeTotal = X_FIRE_FRAME_LEN * (chunksRemaining + 1);
+    data = new uint8_t[sizeTotal];
+    memset(data, 0, sizeTotal);
+    dataPtr = data;
+  }
+
+  if(!chunkActual) dataPtr = data;
+  else {
+    length -= X_FIRE_NEXT_CHUNK_DATA;
+    payload += X_FIRE_NEXT_CHUNK_DATA;
+  }
+
+  chunkActual++;
+
+  memcpy(dataPtr, payload, length);
+  dataPtr += length;
+
+  if (state == X_LOADING) {
+    const char* nameptr = reinterpret_cast<const char*>(data + X_FIRE_HEADER_LEN);
+    if (name.length() == 0) name = std::string(nameptr);
+    if (chunksRemaining == 0) setState(X_IDLE);
+  }
+  if(state == X_SAVING) {
+    if (dataType() == COMMAND) {
+      //command will be handled in pool method
+      TRACE("COMMAND RESPONSE state %d", getValue()->COMMAND.status);
+    }
+    else if(chunksRemaining) setState(X_LOADING);
+    else setState(X_IDLE);
+  }
+}
+
+void CrossfireParameter::checkCommand() {
+  uint8_t dataSize = 0;
+  uint16_t now = get_tmr10ms();
+  if (crossfireGet(telemetryBuffer, dataSize)) {
+    if (telemetryBuffer[FRAME_TYPE_OFFSET] == ENTRY_SETTINGS_ID) {
+      if (number == telemetryBuffer[FRAME_PARAM_NUM_OFFSET]) {
+        parse(telemetryBuffer, dataSize, now);
+      }
+    }
+  }
+}
+
+void CrossfireParameter::load() {
+  if(chunksRemaining <= 0) {
+    setState(X_IDLE);
+  }
+  else if (tries >= RETRY_COUNT)
+    setState(X_RX_ERROR);
+  //else if(timeout >= get_tmr10ms()) setState(X_TX_ERROR);
+  else {
+    setState(X_LOADING);
+    tries++;
+    uint8_t payload[] = { READ_SETTINGS_ID, devAddress, RADIO_ADDRESS, number, chunkActual };
+#if defined(DEBUG)
+    sprintf(buffer, "[%d] LOAD ", number);
+    debug(buffer, payload, sizeof(payload));
+#endif
+    crossfireSend(payload, sizeof(payload));
+  }
+}
+#if defined(DEBUG)
+void CrossfireParameter::debug(char* step, uint8_t* data, int length) {
+  char buffer[256];
+  TRACE("%s", step);
+  int count = 0;
+  for (int c =0; c < length; c++) {
+    count += sprintf(buffer + count, "%02X", data[c]);
+    if(count >= 32) {
+      TRACE("%s", buffer);
+      count = 0;
+    }
+  }
+  if(count > 0) TRACE("%s", buffer);
+}
+#endif
+
+
+void CrossfireParameter::save(uint8_t* newData, size_t length) {
+  size_t totalLength = 4 + length;
+  uint8_t payload[64] = { WRITE_SETTINGS_ID, devAddress, RADIO_ADDRESS, number };
+  memcpy(payload + 4, newData, length);
+  if (dataType() <= FLOAT || dataType() == COMMAND) {
+    memcpy(getDataOffset(data), newData, length);
+  } else if (dataType() == TEXT_SELECTION) {
+    memcpy(const_cast<uint8_t*>(getValue()->TEXT_SELECTION.selectedPtr()), newData, length);
+  }
+  timeout = get_tmr10ms() + (dataType() == COMMAND ? getValue()->COMMAND.timout / 10 : 200);
+  reset(X_SAVING);
+#if defined(DEBUG)
+  sprintf(buffer, "[%d] SAVE ", number);
+  debug(buffer, payload, totalLength);
+#endif
+  crossfireSend(payload, totalLength);
+}
+
+
+void CrossfireParameter::pool() {
+  //update of action from idle state possible -> resume
+  if (dataType() == COMMAND) {
+      const xfire_data* val = getValue();
+      TRACE("[%d] COMMAND status %d name %s info %s", number, val->COMMAND.status, name.c_str(), val->COMMAND.info);
+      switch(val->COMMAND.status) {
+        case XFIRE_START:
+          save(XFIRE_POLL);
+          break;
+        case XFIRE_PROGRESS:
+          if(!mb) {
+            mb = new MessageBox(
+                WARNING_TYPE_INFO,
+                DialogResult::Abort,
+                "Progress",
+                val->COMMAND.info,
+                [=](DialogResult result) {
+                    if(result == DialogResult::Abort) save(XFIRE_CANCEL);
+                    mb = nullptr;
+                  }
+                );
+          }
+          else mb->setMessage(val->COMMAND.info);
+          save(XFIRE_POLL);
+          break;
+        case XFIRE_CONFIRMATION_NEEDED:
+          if(mb && mb->getType() != WARNING_TYPE_ASTERISK) {
+            mb->close();
+            mb = NULL;
+          }
+          if(!mb)
+          {
+            mb = new MessageBox(
+                WARNING_TYPE_ASTERISK,
+                (DialogResult) (DialogResult::OK | DialogResult::Cancel),
+                "Confirmation",
+                val->COMMAND.info,
+                [=](DialogResult result) {
+                  TRACE("RESULT %d ", result);
+                  save(result == DialogResult::OK ? XFIRE_CONFIRM : XFIRE_CANCEL);
+                  mb = nullptr;
+                }
+            );
+          }
+          timeout = get_tmr10ms() + getValue()->COMMAND.timout / 10;
+          break;
+        case XFIRE_READY:
+          if(mb) {
+            mb->close();
+            mb = NULL;
+          }
+          if (strlen(val->COMMAND.info) > 0) setText(val->COMMAND.info);
+          else setText(name.c_str());
+          setState(X_IDLE);
+        break;
+      }
+  }
+  if(state == X_SAVING && get_tmr10ms() > timeout) {
+    TRACE("[%d] TIMEOUT", number);
+    save(XFIRE_POLL);
+    //save(XFIRE_CANCEL);
+    //setState(X_TX_ERROR);
+  }
+}
+
+void CrossfireParameter::setText(const char* text) {
+  if (strlen(text) == 0)
+    return;
+  if (control == NULL)
+    return;
+  TextButton* t = dynamic_cast<TextButton*>(control);
+  if (t == NULL)
+    return;
+  t->setText(std::string(text));
+}
 
 CrossfireConfigPage::CrossfireConfigPage(CrossfireDevice* device, CrossfireMenu* menu) : PageTab(device->devName, ICON_RADIO_HARDWARE), xmenu(menu){
   this->device = device;
@@ -24,6 +408,7 @@ CrossfireConfigPage::CrossfireConfigPage(CrossfireDevice* device, CrossfireMenu*
   }
   this->device->configPage = this;
 }
+
 CrossfireConfigPage::~CrossfireConfigPage() {
   /*
   auto itr = parameters.begin();
@@ -41,16 +426,18 @@ CrossfireConfigPage::~CrossfireConfigPage() {
 void CrossfireConfigPage::rebuildPage() {
   GridLayout grid;
   grid.spacer(16);
+  coord_t scroll = window->getScrollPositionY();
   if (state == X_IDLE){
     window->clear();
     createControls(grid, 0);
   }
   window->setInnerHeight(grid.getWindowHeight());
+  window->setScrollPositionY(scroll);
 }
 
 
 void CrossfireConfigPage::createControls(GridLayout& grid, uint8_t folder, uint8_t level) {
-  grid.setMarginLeft(level ? 3 : 9);
+  grid.setMarginLeft(level ? 5 : 1);
 
   for (auto param = parameters.begin(); param != parameters.end(); param++) {
     CrossfireParameter* p = *param;
@@ -76,12 +463,16 @@ void CrossfireConfigPage::createControls(GridLayout& grid, uint8_t folder, uint8
           {
             TextButton* btn = new TextButton(window, grid.getLineSlot(), p->name);
             p->control = btn;
+            p->pool(); //ensure no action is pending
+            if(p->getState() == X_SAVING) {
+              state = X_SAVING;
+            }
             btn->setPressHandler(
               [=]() -> uint8_t {
                 state = X_SAVING;
                 crossfire_cmd_status status = val->COMMAND.status;
                 if(status == XFIRE_READY) p->save(XFIRE_START);
-                if(status == XFIRE_CONFIRMATION_NEEDED) p->save(XFIRE_CONFIRM);
+                //if(status == XFIRE_CONFIRMATION_NEEDED) p->save(XFIRE_CONFIRM);
                 return status == XFIRE_READY;
               });
             }
@@ -151,14 +542,28 @@ void CrossfireConfigPage::createControls(GridLayout& grid, uint8_t folder, uint8
           break;
           case TEXT_SELECTION:
           {
-            new Choice(window, grid.getFieldSlot(), p->getItemsList(),
-              (int16_t) val->TEXT_SELECTION.minVal(),
-              (int16_t) val->TEXT_SELECTION.maxVal(),
+            int16_t min = val->TEXT_SELECTION.minVal();
+            int16_t max = val->TEXT_SELECTION.maxVal();
+            //First item is always 0
+            //it looks 0 can be only displayed...
+            //according to docs first item is always 0
+            Choice* choice = new Choice(window, grid.getFieldSlot(), p->getItemsList(),
+              (int16_t) min > 0 ? 0 : min ,
+              (int16_t) max,
               [=]() -> int16_t {return val->TEXT_SELECTION.selected();},
               [=](int16_t newValue) {
                 state = X_SAVING;
                 p->save(newValue);
               });
+            //irregular list
+            if(min > 0){
+              choice->setAvailableHandler([=](int16_t value) {
+                if(value < 0) return false;
+                uint8_t v = (uint8_t) value;
+                return v >= min && v <= max;
+              });
+            }
+
           }
           break;
           case FLOAT:
@@ -353,6 +758,3 @@ void CrossfireMenu::update() {
     crossfireSend(pingCommand, sizeof(pingCommand));
   }
 }
-
-
-
