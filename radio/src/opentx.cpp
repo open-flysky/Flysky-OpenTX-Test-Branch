@@ -888,15 +888,23 @@ void checkBacklight()
     }
     if ((g_eeGeneral.backlightMode & e_backlight_mode_keys) && touchState.Time + 50 > get_tmr10ms()) {
       backlightOn();
+
     }
     bool backlightOn = (g_eeGeneral.backlightMode == e_backlight_mode_on || lightOffCounter || isFunctionActive(FUNCTION_BACKLIGHT));
 
     if (flashCounter) backlightOn = !backlightOn;
-    if (backlightOn)
+    if (backlightOn) {
+      if(!isBacklightEnabled()) {
+        //clear touch events
+        touchState.Event = TE_NONE;
+      }
       BACKLIGHT_ENABLE();
-    else
+    }
+    else {
+      //clear touch events
+      touchState.Event = TE_NONE;
       BACKLIGHT_DISABLE();
-
+    }
 #if defined(PCBSTD) && defined(VOICE) && !defined(SIMU)
     Voice.voice_process() ;
 #endif
