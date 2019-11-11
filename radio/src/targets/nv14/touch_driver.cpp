@@ -509,8 +509,6 @@ void handleTouch()
           TouchStartX = Tx;
           TouchStartY = Ty;
 
-          if (g_eeGeneral.backlightMode & e_backlight_mode_keys)
-            backlightOn(); // TODO is that the best place ?
       }
       else
       {

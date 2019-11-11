@@ -74,17 +74,20 @@ void MainWindow::checkEvents(bool luaActive, event_ext_t event) {
 
     bool handled = false;
     uint32_t event = 0;
-    bool screenOff = !isBacklightEnabled();
-    if (touchState.Event == TE_DOWN) {
-       if(screenOff) handled = true; //just ignore
-       else if(!luaActive) handled = onTouchStart(touchState.X, touchState.Y);
+
+    if(!isBacklightEnabled()){
+      //Ignore events when screen is inactive
+      //There is already handling in opentx.cpp but touch is asynchronous - the state can be changed outside of main loop
+      handled = true;
+    }
+    else if (touchState.Event == TE_DOWN) {
+       if(!luaActive) handled = onTouchStart(touchState.X, touchState.Y);
        else if(topMostWindow != nullptr) handled = onTouchStart(topMostWindow, touchState.X, touchState.Y);
        if(!handled) event = TOUCH_DOWN;
     }
     else if (touchState.Event == TE_UP) {
        touchState.Event = TE_NONE;
-       if(screenOff) handled = true; //just ignore
-       else if(!luaActive) handled = onTouchEnd(touchState.startX, touchState.startY);
+       if(!luaActive) handled = onTouchEnd(touchState.startX, touchState.startY);
        else if(topMostWindow != nullptr) handled = onTouchEnd(topMostWindow, touchState.startX, touchState.startY);
        if(!handled){
          //maybe it was long range slide
