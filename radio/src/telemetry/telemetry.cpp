@@ -19,7 +19,6 @@
  */
 
 #include "opentx.h"
-
 uint16_t telemetryStreaming = 0;
 uint8_t telemetryRxBuffer[TELEMETRY_RX_PACKET_SIZE];   // Receive buffer. 9 bytes (full packet), worst case 18 bytes with byte-stuffing (+1)
 uint8_t telemetryRxBufferCount = 0;
@@ -75,6 +74,12 @@ void processTelemetryData(uint8_t data)
   }
   if (telemetryProtocol == PROTOCOL_MULTIMODULE) {
     processMultiTelemetryData(data);
+    return;
+  }
+#endif
+#if defined(AFHDS3)
+  if (telemetryProtocol == PROTOCOL_AFHDS3) {
+    afhds3uart.onDataReceived(data, telemetryRxBuffer, telemetryRxBufferCount);
     return;
   }
 #endif
@@ -381,7 +386,11 @@ void telemetryInit(uint8_t protocol)
   if (protocol == PROTOCOL_FRSKY_D) {
     telemetryPortInit(FRSKY_D_BAUDRATE, TELEMETRY_SERIAL_DEFAULT);
   }
-
+#if defined(AFHDS3)
+  else if(protocol == PROTOCOL_AFHDS3){
+    telemetryPortInit(AFHDS_TELEMETRY_BAUDRATE, TELEMETRY_SERIAL_DEFAULT);
+  }
+#endif
 #if defined(MULTIMODULE)
   else if (protocol == PROTOCOL_MULTIMODULE || protocol == PROTOCOL_FLYSKY_IBUS) {
     // The DIY Multi module always speaks 100000 baud regardless of the telemetry protocol in use

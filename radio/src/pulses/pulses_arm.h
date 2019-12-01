@@ -22,6 +22,7 @@
 #define _PULSES_ARM_H_
 
 #include "CoOS.h"
+#include "afhds3.h"
 
 #if NUM_MODULES == 2
   #define MODULES_INIT(...)            __VA_ARGS__, __VA_ARGS__
@@ -104,17 +105,6 @@ PACK(struct PxxUartPulsesData {
   uint16_t pcmCrc;
   uint16_t _alignment;
 });
-PACK(struct FlySkySerialPulsesData {
-  uint8_t  pulses[64];
-  uint8_t  * ptr;
-  uint8_t  frame_index;
-  uint8_t  crc;
-  uint8_t  state;
-  uint8_t  state_index;
-  uint8_t  esc_state;
-  uint8_t  telemetry[64];
-  uint8_t  telemetry_index;
-});
 #endif
 
 #if defined(INTMODULE_PULSES) || defined(EXTMODULE_PULSES)
@@ -158,6 +148,8 @@ union ModulePulsesData {
 #endif
 #if defined(INTMODULE_USART)
   PxxUartPulsesData pxx_uart;
+#endif
+#if defined(INTMODULE_USART) || defined(AFHDS3)
   FlySkySerialPulsesData flysky;
 #endif
   PpmPulsesData<pulse_duration_t> ppm;
@@ -202,6 +194,10 @@ void usbDownloadTransmit(uint8_t *buffer, uint32_t size);
 
 #if defined(HUBSAN)
 void Hubsan_Init();
+#endif
+
+#if defined(AFHDS3)
+extern afhds3::afhds3 afhds3uart;
 #endif
 
 inline void startPulses()

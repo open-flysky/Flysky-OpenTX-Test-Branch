@@ -137,9 +137,13 @@ if(BOOTLOADER)
   )
 endif()
 
+
+add_definitions(-DAFHDS3)
 set(PULSES_SRC
   ${PULSES_SRC}
   flysky_arm.cpp
+  afhds2.cpp
+  afhds3.cpp
   )
 
 set(STM32LIB_SRC

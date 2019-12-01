@@ -32,6 +32,11 @@ OS_FlagID pulseFlag = 0;
 #if defined(CROSSFIRE)
 uint8_t createCrossfireChannelsFrame(uint8_t * frame, int16_t * pulses);
 #endif
+#if defined(AFHDS3)
+afhds3::afhds3 afhds3uart = afhds3::afhds3(
+  &modulePulsesData[EXTERNAL_MODULE].flysky, 
+  &g_model.moduleData[EXTERNAL_MODULE]);
+#endif
 
 uint8_t getRequiredProtocol(uint8_t port)
 {
@@ -108,6 +113,11 @@ uint8_t getRequiredProtocol(uint8_t port)
           required_protocol = PROTO_CROSSFIRE;
           break;
 #endif
+#if defined(AFHDS3)
+        case MODULE_TYPE_AFHDS3:
+          required_protocol = PROTO_AFHDS3;
+          break;
+#endif
         default:
           required_protocol = PROTO_NONE;
           break;
@@ -142,10 +152,15 @@ void setupPulses(uint8_t port)
 #if defined(PCBFLYSKY)
       case PROTO_FLYSKY:
 #endif
+
       case PROTO_PXX:
         disable_pxx(port);
         break;
-
+#if defined(AFHDS3)
+      case PROTO_AFHDS3:
+        disable_afhds3(port);
+        break;
+#endif
 #if defined(DSM2)
       case PROTO_DSM2_LP45:
       case PROTO_DSM2_DSM2:
@@ -187,7 +202,12 @@ void setupPulses(uint8_t port)
       scheduleNextMixerCalculation(port, FLYSKY_PERIOD);
       break;
 #endif
-
+#if defined(AFHDS3)
+      if (init_needed) afhds3uart.reset();
+      afhds3uart.setupPulses();
+      scheduleNextMixerCalculation(port, afhds3uart.commandTimout / 1000);
+      break;
+#endif
     case PROTO_PXX:
       setupPulsesPXX(port);
       scheduleNextMixerCalculation(port, PXX_PERIOD);
@@ -255,7 +275,11 @@ void setupPulses(uint8_t port)
       case PROTO_PXX:
         init_pxx(port);
         break;
-
+#if defined(AFHDS3)
+      case PROTO_AFHDS3:
+        init_afhds3(port);
+        break;
+#endif
 #if defined(DSM2)
       case PROTO_DSM2_LP45:
       case PROTO_DSM2_DSM2:

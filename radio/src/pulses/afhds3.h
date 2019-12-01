@@ -1,46 +1,42 @@
 #ifndef PULSES_AFHDS3_H_
 #define PULSES_AFHDS3_H_
 
-#include "pulses_arm.h"
 #include "afhds2.h"
-#include <functional>
-#include <map>
-#include <list>
-
+#include "../moduledata.h"
 namespace afhds3 {
 
+
+
 enum DeviceAddress {
-  TRANSMITTER = 0x01,
-  MODULE = 0x03,
+  TRANSMITTER = 0x01, MODULE = 0x03,
 };
 
 enum FRAME_TYPE {
-  REQUEST_GET_DATA                  = 0x01,  //Get data response: ACK + DATA
-  REQUEST_SET_EXPECT_DATA           = 0x02,  //Set data response: ACK + DATA
-  REQUEST_SET_EXPECT_ACK            = 0x03,  //Set data response: ACK
-  REQUEST_SET_NO_RESP               = 0x05,  //Set data response: none
-  RESPONSE_DATA                     = 0x10,  //Response ACK + DATA
-  RESPONSE_ACK                      = 0x20,  //Response ACK
-  NOT_USED                          = 0xff
+  REQUEST_GET_DATA = 0x01,  //Get data response: ACK + DATA
+  REQUEST_SET_EXPECT_DATA = 0x02,  //Set data response: ACK + DATA
+  REQUEST_SET_EXPECT_ACK = 0x03,  //Set data response: ACK
+  REQUEST_SET_NO_RESP = 0x05,  //Set data response: none
+  RESPONSE_DATA = 0x10,  //Response ACK + DATA
+  RESPONSE_ACK = 0x20,  //Response ACK
+  NOT_USED = 0xff
 };
 
 enum COMMAND {
-  MODULE_READY                      = 0x01,
-  MODULE_STATE                      = 0x02,
-  MODULE_MODE                       = 0x03,
-  MODULE_SET_CONFIG                 = 0x04,
-  MODULE_GET_CONFIG                 = 0x06,
-  CHANNELS_FAILSAFE_DATA            = 0x07,
-  TELEMETRY_DATA                    = 0x09,
-  SEND_COMMAND                      = 0x0C,
-  COMMAND_RESULT                    = 0x0D,
-  MODULE_POWER_STATUS               = 0x0F,
-  MODULE_VERSION                    = 0x1F,
+  MODULE_READY = 0x01,
+  MODULE_STATE = 0x02,
+  MODULE_MODE = 0x03,
+  MODULE_SET_CONFIG = 0x04,
+  MODULE_GET_CONFIG = 0x06,
+  CHANNELS_FAILSAFE_DATA = 0x07,
+  TELEMETRY_DATA = 0x09,
+  SEND_COMMAND = 0x0C,
+  COMMAND_RESULT = 0x0D,
+  MODULE_POWER_STATUS = 0x0F,
+  MODULE_VERSION = 0x1F,
 };
 
 enum COMMAND_DIRECTION {
-  RADIO_TO_MODULE = 0,
-  MODULE_TO_RADIO = 1
+  RADIO_TO_MODULE = 0, MODULE_TO_RADIO = 1
 };
 
 enum DATA_TYPE {
@@ -54,6 +50,11 @@ enum DATA_TYPE {
   MODULE_VERSION_DT,
   EMPTY_DT,
 };
+enum MODULE_READY {
+  MR_UNKNOWN = 0x00,
+  MR_NOT_READY = 0x01,
+  MR_READY = 0x02
+};
 
 enum MODULE_STATE {
   STATE_HW_ERROR = 0x01,
@@ -66,16 +67,15 @@ enum MODULE_STATE {
   STATE_UPDATING_RX = 0x08,
   STATE_UPDATING_RX_FAILED = 0x09,
   STATE_RF_TESTING = 0x0a,
+  STATE_NOT_READY = 0xe0, //virtual
   STATE_HW_TEST = 0xff,
 };
 
 enum MODULE_MODE {
-  STANDBY   = 0x01,
-  BIND      = 0x02,  //after bind module will enter run mode
-  RUN       = 0x03,
-  RX_UPDATE = 0x04,  //after successful update module will enter standby mode, otherwise hw error will be rised
+  STANDBY = 0x01, BIND = 0x02,  //after bind module will enter run mode
+  RUN = 0x03,
+  RX_UPDATE = 0x04, //after successful update module will enter standby mode, otherwise hw error will be rised
 };
-
 
 #define MIN_FREQ 50
 #define MAX_FREQ 400
@@ -101,23 +101,19 @@ enum RUN_POWER {
 };
 
 enum EMI_STANDARD {
-  FCC = 0x00,
-  CE = 0x01
+  FCC = 0x00, CE = 0x01
 };
 
 enum DIRECTION {
-  ONE_WAY = 0x00,
-  TWO_WAYS = 0x01
+  ONE_WAY = 0x00, TWO_WAYS = 0x01
 };
 
 enum PULSE_MODE {
-  PWM = 0x00,
-  PPM = 0x01,
+  PWM = 0x00, PPM = 0x01,
 };
 
 enum SERIAL_MODE {
-  IBUS = 0x01,
-  SBUS = 0x02
+  IBUS = 0x01, SBUS = 0x02
 };
 
 struct Config {
@@ -139,8 +135,7 @@ union Config_u {
 };
 
 enum CHANNELS_DATA_MODE {
-  CHANNELS = 0x01,
-  FAIL_SAFE = 0x02,
+  CHANNELS = 0x01, FAIL_SAFE = 0x02,
 };
 
 struct ChannelsData {
@@ -163,8 +158,7 @@ struct TelemetryData {
 };
 
 enum MODULE_POWER_SOURCE {
-  INTERNAL = 0x01,
-  EXTERNAL = 0x02,
+  INTERNAL = 0x01, EXTERNAL = 0x02,
 };
 
 struct ModuleVersion {
@@ -176,96 +170,57 @@ struct ModuleVersion {
 };
 
 struct CmdDesc {
-  COMMAND     Command;
-  FRAME_TYPE  RequestType;
-  DATA_TYPE   RequestDataType;
-  FRAME_TYPE  ResponseType;
-  DATA_TYPE   ResponseDataType;
+  COMMAND Command;
+  FRAME_TYPE RequestType;
+  DATA_TYPE RequestDataType;
+  FRAME_TYPE ResponseType;
+  DATA_TYPE ResponseDataType;
 };
 
-std::list<CmdDesc> Commands = {
-    {   //4.1
-        COMMAND::MODULE_READY,
-        FRAME_TYPE::REQUEST_GET_DATA,
-        DATA_TYPE::EMPTY_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::READY_DT,
-    },
-    {   //4.2
-        COMMAND::MODULE_STATE,
-        FRAME_TYPE::REQUEST_GET_DATA,
-        DATA_TYPE::EMPTY_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::STATE_DT,
-    },
-    {   //4.2
-        COMMAND::MODULE_STATE,
-        FRAME_TYPE::REQUEST_SET_EXPECT_ACK,
-        DATA_TYPE::STATE_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::EMPTY_DT,
-    },
-    {   //4.3
-        COMMAND::MODULE_MODE,
-        FRAME_TYPE::REQUEST_SET_EXPECT_DATA,
-        DATA_TYPE::MODE_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::READY_DT,
-    },
-    {   //4.4
-        COMMAND::MODULE_SET_CONFIG,
-        FRAME_TYPE::REQUEST_SET_EXPECT_DATA,
-        DATA_TYPE::MOD_CONFIG_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::READY_DT,
-    },
-    {   //4.5
-        COMMAND::MODULE_GET_CONFIG,
-        FRAME_TYPE::REQUEST_GET_DATA,
-        DATA_TYPE::EMPTY_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::MOD_CONFIG_DT,
-    },
-    {   //4.6
-        COMMAND::CHANNELS_FAILSAFE_DATA,
-        FRAME_TYPE::REQUEST_SET_NO_RESP,
-        DATA_TYPE::CHANNELS_DT,
-        FRAME_TYPE::NOT_USED,
-        DATA_TYPE::EMPTY_DT,
-    },
-    {   //4.7
-        COMMAND::TELEMETRY_DATA,
-        FRAME_TYPE::REQUEST_SET_NO_RESP,
-        DATA_TYPE::TELEMETRY_DT,
-        FRAME_TYPE::NOT_USED,
-        DATA_TYPE::EMPTY_DT,
-    },
-    {   //4.9
-        COMMAND::MODULE_POWER_STATUS,
-        FRAME_TYPE::REQUEST_GET_DATA,
-        DATA_TYPE::EMPTY_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::MODULE_POWER_DT,
-    },
-    {   //4.10
-        COMMAND::MODULE_VERSION,
-        FRAME_TYPE::REQUEST_GET_DATA,
-        DATA_TYPE::EMPTY_DT,
-        FRAME_TYPE::RESPONSE_DATA,
-        DATA_TYPE::MODULE_POWER_DT,
-    },
+enum State {
+  UNKNOWN = 0,
+  SENDING_COMMAND,
+  AWAITING_RESPONSE,
+  IDLE
 };
+
 class afhds3 {
 public:
-  afhds3(FlySkySerialPulsesData* data);
-  virtual ~afhds3();
+  afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData) {
+    this->data = data;
+    this->moduleData = moduleData;
+    reset();
+  }
+
+  virtual ~afhds3() {
+
+  }
+
   const uint32_t baudrate = 1500;
-  const uint16_t parity = 0;
-  const uint16_t stopBits;
-  const uint16_t wordLength;
+  const uint16_t parity = ((uint16_t)0x0000); //USART_Parity_No
+  const uint16_t stopBits = ((uint16_t)0x0000); //USART_StopBits_1
+  const uint16_t wordLength = ((uint16_t)0x0000); //USART_WordLength_8b
+  const uint16_t commandTimout = 5000; //ms
+  const uint16_t commandRepeatCount = 5;
+
+  const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
+
+  //Equivalent to setupPulses
+  void setupPulses();
+  void onDataReceived(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBufferCount);
+  void reset();
 
 private:
-  FlySkySerialPulsesData data;
+  void putByte(uint8_t byte);
+  void putBytes(uint8_t* data, int length);
+  void putHeader(COMMAND command, FRAME_TYPE frameType);
+  void putFooter();
+  void putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* data, uint8_t dataLength);
+
+  State operationState;
+  uint16_t repeatCount;
+  FlySkySerialPulsesData* data;
+  ModuleData* moduleData;
 };
 
 }
