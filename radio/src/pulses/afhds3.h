@@ -98,11 +98,11 @@ enum CMD_RESULT {
 #define MAX_CHANNELS 18
 #define FAILSAFE_KEEP_LAST 0x8000
 #define FAILSAFE_MIN -15000
-#define FAILSAFE_MAX -15000
+#define FAILSAFE_MAX 15000
 
 enum BIND_POWER {
-  MIN_16bBm = 0x00,
-  MIN_5bBm = 0x01,
+  MIN_16dBm = 0x00,
+  MIN_5dBm = 0x01,
   MIN_0dbm = 0x02,
   PLUS_5dBm = 0x03,
   PLUS_14dBm = 0x04

@@ -302,6 +302,18 @@ class ModuleWindow : public Window {
                    });
         grid.nextLine();
       }
+      if(isModuleAFHDS3(moduleIndex)) {
+        new Choice(this, grid.getFieldSlot(), STR_FLYSKY_PROTOCOLS, 0, 3,
+                   GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.mode),
+                   [=](int32_t newValue) -> void {
+                     g_model.moduleData[moduleIndex].afhds3.mode = newValue;
+                     SET_DIRTY();
+                     moduleFlagBackNormal(moduleIndex);
+                     //update config
+                     //setFlyskyState(moduleIndex, STATE_SET_RX_PWM_PPM);
+                   });
+        grid.nextLine();
+      }
 #if defined(MULTIMODULE)
       if (isModuleMultimodule(moduleIndex)) {
         grid.nextLine();
@@ -505,6 +517,18 @@ class ModuleWindow : public Window {
                        });
         grid.nextLine();
       }
+      if (isModuleAFHDS3(moduleIndex)) {
+             new StaticText(this, grid.getLabelSlot(true), STR_RXFREQUENCY);
+             new NumberEdit(this, grid.getFieldSlot(), 50, 400,
+                            GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.rxFreq),
+                            [=](int32_t newValue) -> void {
+                              g_model.moduleData[moduleIndex].afhds3.rxFreq = newValue;
+                              SET_DIRTY();
+                              moduleFlagBackNormal(moduleIndex);
+                              //setFlyskyState(moduleIndex, STATE_SET_RX_FREQUENCY);
+                            });
+             grid.nextLine();
+           }
 
       // Failsafe
       if (isModuleNeedingFailsafeButton(moduleIndex)) {
@@ -520,7 +544,7 @@ class ModuleWindow : public Window {
                                       SEND_FAILSAFE_NOW(moduleIndex);
                                     });
         failSafeChoice->setAvailableHandler([=](int8_t newValue) {
-          if(isModuleFlysky(moduleIndex)){
+          if(isModuleFlysky(moduleIndex) || isModuleAFHDS3(moduleIndex)){
             failSafeChoice->setAvailableHandler([=](int8_t newValue) {
                 return newValue != FAILSAFE_RECEIVER;
             });
@@ -671,6 +695,40 @@ class ModuleWindow : public Window {
                              });
       }
 #endif
+      if (isModuleAFHDS3(moduleIndex)) {
+        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
+        new Choice(this, grid.getFieldSlot(), "\00615 dBm20 dBm27 dBm30 dBm33 dBm", 0,
+            afhds3::RUN_POWER::PLUS_33dBm, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower),
+            [=](int32_t newValue) -> void {
+              g_model.moduleData[moduleIndex].afhds3.runPower = newValue;
+              //onFlySkyModuleSetPower(moduleIndex, true);
+            });
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), "Bind Power");
+        new Choice(this, grid.getFieldSlot(), "\007-16 dBm-5 dBm\00 dBm\0 5 dBm\0 16 dBm\0", 0,
+            afhds3::BIND_POWER::PLUS_14dBm, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.bindPower),
+            [=](int32_t newValue) -> void {
+              g_model.moduleData[moduleIndex].afhds3.bindPower = newValue;
+              //onFlySkyModuleSetPower(moduleIndex, true);
+            });
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), "EMI Standard");
+        new Choice(this, grid.getFieldSlot(), "\003FCC CE", 0,
+            afhds3::EMI_STANDARD::CE, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.emi),
+            [=](int32_t newValue) -> void {
+              g_model.moduleData[moduleIndex].afhds3.emi = newValue;
+              //onFlySkyModuleSetPower(moduleIndex, true);
+            });
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), "Mode");
+        new Choice(this, grid.getFieldSlot(), "\007One-wayTwo-way", 0,
+            afhds3::DIRECTION::TWO_WAYS, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.direction),
+            [=](int32_t newValue) -> void {
+              g_model.moduleData[moduleIndex].afhds3.direction = newValue;
+              //onFlySkyModuleSetPower(moduleIndex, true);
+            });
+        grid.nextLine();
+      }
 #if defined (CROSSFIRE_NATIVE)
       if(isModuleCrossfire(moduleIndex)){
           new TextButton(this, grid.getFieldSlot(), STR_CROSSFIRE_SETUP, [=]() -> uint8_t {

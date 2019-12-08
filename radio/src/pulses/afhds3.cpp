@@ -1,5 +1,7 @@
 #include "afhds3.h"
 #include "../debug.h"
+#include "../definitions.h"
+
 #include <cstring>
 #define FAILSAFE_HOLD 1
 #define FAILSAFE_CUSTOM 2
@@ -230,7 +232,6 @@ void afhds3::onDataReceived(uint8_t byte, uint8_t* rxBuffer, uint8_t& rxBufferCo
 }
 
 void afhds3::setupPulses() {
-  sendChannelsData();
   //TRACE("%d state %d repeatCount %d", (int)operationState, this->data->state, repeatCount);
   if(operationState == State::AWAITING_RESPONSE) {
     if(repeatCount++ < 5) return; //re-send
@@ -242,6 +243,10 @@ void afhds3::setupPulses() {
     putFrame(COMMAND::MODULE_READY, FRAME_TYPE::REQUEST_GET_DATA, nullptr, 0);
     return;
   }
+
+  //tbd
+  //check if last used config is same!
+
   switch(data->state) {
     case ModuleState::STATE_LOAD_INFO:
       putFrame(COMMAND::MODULE_VERSION, FRAME_TYPE::REQUEST_GET_DATA, nullptr, 0);
@@ -287,10 +292,10 @@ void afhds3::sendChannelsData() {
 
   for(uint8_t channel = channels_start; channel < channels_last; channel++) {
     int channelValue = channelOutputs[channel];// + 2*PPM_CH_CENTER(channel) - 2*PPM_CENTER;
-    //pulseValue = limit<uint16_t>(0, 988 + ((channelValue + 1024) / 2), 0xfff);
+    //precision lost!!
+    channelValue = ((channelValue + 1024) * 30000 / 2048) - 15000;
+    *((int16_t*)(channels + (channel * 2) + 2)) = limit<int16_t>(FAILSAFE_MIN, channelValue, FAILSAFE_MAX);
     TRACE("channel [%d] value %d (%d)", channelValue, channelOutputs[channel]);
-    //*((int16_t*)(channels[(channel * 2) + 2]) = (int16_t)channelValue;
-
   }
 
   putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, channels, sizeof(channels));
@@ -339,18 +344,17 @@ void afhds3::setConfigFromModelData() {
   //fix conversion to -15000 - +15000
   for (uint8_t channel = 0; channel < channelsCount; channel++) {
     if (moduleData->failsafeMode == FAILSAFE_CUSTOM) {
-      int16_t failsafeValue = moduleData->failsafeChannels[channel + channels_start];
-      //pulseValue = limit<uint16_t>(0, 988 + ((failsafeValue + 1024) / 2), 0xfff);
-      pulseValue = failsafeValue;
+      int failsafeValue = moduleData->failsafeChannels[channel + channels_start];
+      pulseValue = limit<int16_t>(FAILSAFE_MIN, ((failsafeValue + 1024) * 30000 / 2048) - 15000, FAILSAFE_MAX);
     }
     else if (moduleData->failsafeMode == FAILSAFE_HOLD) {
       //protocol uses hold by default
       pulseValue = FAILSAFE_KEEP_LAST;
     }
     else {
-      //int16_t failsafeValue = -1024 + 2 * PPM_CH_CENTER(channel) - 2 * PPM_CENTER;
-      //pulseValue = limit<uint16_t>(0, 988 + ((failsafeValue + 1024) / 2), 0xfff);
-      pulseValue =  channelOutputs[channel + channels_start];
+      int failsafeValue = channelOutputs[channel + channels_start];// + 2*PPM_CH_CENTER(channel) - 2*PPM_CENTER;
+      //precision lost!!
+      pulseValue = limit<int16_t>(FAILSAFE_MIN, ((failsafeValue + 1024) * 30000 / 2048) - 15000, FAILSAFE_MAX);
     }
     config.config.failSafeMode[channel] = pulseValue;
   }

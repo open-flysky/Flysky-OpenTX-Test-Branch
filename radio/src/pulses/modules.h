@@ -59,6 +59,12 @@ inline bool isModuleFlysky(uint8_t idx)
 }
 #endif
 
+inline bool isModuleAFHDS3(uint8_t idx)
+{
+  return g_model.moduleData[idx].type == MODULE_TYPE_AFHDS3;
+}
+
+
 #if defined(PCBFRSKY)
 inline bool isModuleXJT(uint8_t idx)
 {
@@ -233,7 +239,7 @@ inline bool isModuleNeedingReceiverNumber(uint8_t idx)
 
 inline bool isModuleNeedingBindRangeButtons(uint8_t idx)
 {
-  return isModulePXX(idx) || isModuleDSM2(idx) || isModuleMultimodule(idx) || isModuleFlysky(idx);
+  return isModulePXX(idx) || isModuleDSM2(idx) || isModuleMultimodule(idx) || isModuleFlysky(idx) || isModuleAFHDS3(idx);
 }
 
 inline bool isModuleNeedingFailsafeButton(uint8_t idx)
@@ -241,7 +247,7 @@ inline bool isModuleNeedingFailsafeButton(uint8_t idx)
   if(isModuleXJT(idx)){
     return g_model.moduleData[idx].rfProtocol == RF_PROTO_X16;
   }
-  return isModulePXX(idx) || isModuleR9M(idx) || isModuleFlysky(idx);
+  return isModulePXX(idx) || isModuleR9M(idx) || isModuleFlysky(idx) || isModuleAFHDS3(idx);
 }
 
 #endif // _MODULES_H_
