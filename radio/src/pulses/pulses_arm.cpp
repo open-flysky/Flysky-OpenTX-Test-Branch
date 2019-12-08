@@ -35,7 +35,8 @@ uint8_t createCrossfireChannelsFrame(uint8_t * frame, int16_t * pulses);
 #if defined(AFHDS3)
 afhds3::afhds3 afhds3uart = afhds3::afhds3(
   &modulePulsesData[EXTERNAL_MODULE].flysky, 
-  &g_model.moduleData[EXTERNAL_MODULE]);
+  &g_model.moduleData[EXTERNAL_MODULE],
+  channelOutputs);
 #endif
 
 uint8_t getRequiredProtocol(uint8_t port)
@@ -203,9 +204,10 @@ void setupPulses(uint8_t port)
       break;
 #endif
 #if defined(AFHDS3)
+    case PROTO_AFHDS3:
       if (init_needed) afhds3uart.reset();
       afhds3uart.setupPulses();
-      scheduleNextMixerCalculation(port, afhds3uart.commandTimout / 1000);
+      scheduleNextMixerCalculation(port, afhds3uart.commandTimout - 1);
       break;
 #endif
     case PROTO_PXX:

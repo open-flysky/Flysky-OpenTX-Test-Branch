@@ -3,9 +3,11 @@
 
 #include "afhds2.h"
 #include "../moduledata.h"
+
+#define AFHDS3_BAUDRATE 1500000
 namespace afhds3 {
 
-
+typedef void (*bindCallback_t) (bool);
 
 enum DeviceAddress {
   TRANSMITTER = 0x01, MODULE = 0x03,
@@ -50,13 +52,13 @@ enum DATA_TYPE {
   MODULE_VERSION_DT,
   EMPTY_DT,
 };
-enum MODULE_READY {
+enum MODULE_READY_E {
   MR_UNKNOWN = 0x00,
   MR_NOT_READY = 0x01,
   MR_READY = 0x02
 };
 
-enum MODULE_STATE {
+enum ModuleState {
   STATE_HW_ERROR = 0x01,
   STATE_BINDING = 0x02,
   STATE_SYNC_RUNNING = 0x03,
@@ -68,21 +70,35 @@ enum MODULE_STATE {
   STATE_UPDATING_RX_FAILED = 0x09,
   STATE_RF_TESTING = 0x0a,
   STATE_NOT_READY = 0xe0, //virtual
+  STATE_READY = 0xe1, //virtual
+  STATE_LOAD_INFO = 0xe2, //virtual
+  STATE_LOAD_INFO2 = 0xe3, //virtual
+  STATE_REQUEST = 0xe4, //virtual
+  STATE_BIND = 0xe5, //virtual
+  STATE_SET_BIND_CONFIG = 0xe6, //virtual
   STATE_HW_TEST = 0xff,
 };
 
-enum MODULE_MODE {
-  STANDBY = 0x01, BIND = 0x02,  //after bind module will enter run mode
+//used for set command
+enum MODULE_MODE_E {
+  STANDBY = 0x01,
+  BIND = 0x02,  //after bind module will enter run mode
   RUN = 0x03,
-  RX_UPDATE = 0x04, //after successful update module will enter standby mode, otherwise hw error will be rised
+  RX_UPDATE = 0x04, //after successful update module will enter standby mode, otherwise hw error will be raised
 };
+
+enum CMD_RESULT {
+  FAILURE = 0x01,
+  SUCCESS = 0x02,
+};
+
 
 #define MIN_FREQ 50
 #define MAX_FREQ 400
 #define MAX_CHANNELS 18
 #define FAILSAFE_KEEP_LAST 0x8000
-#define FAILSAFE_MIN -1500
-#define FAILSAFE_MAX -1500
+#define FAILSAFE_MIN -15000
+#define FAILSAFE_MAX -15000
 
 enum BIND_POWER {
   MIN_16bBm = 0x00,
@@ -116,7 +132,7 @@ enum SERIAL_MODE {
   IBUS = 0x01, SBUS = 0x02
 };
 
-struct Config {
+struct Config_s {
   uint8_t bindPower;
   uint8_t runPower;
   uint8_t emiStandard;
@@ -126,12 +142,12 @@ struct Config {
   uint8_t serialMode;
   uint8_t channelCount;
   uint16_t failSafeTimout;
-  int16_t failSafeMode;
+  int16_t failSafeMode[MAX_CHANNELS];
 };
 
 union Config_u {
-  Config config;
-  uint8_t buffer[sizeof(Config)];
+  Config_s config;
+  uint8_t buffer[sizeof(Config_s)];
 };
 
 enum CHANNELS_DATA_MODE {
@@ -169,6 +185,36 @@ struct ModuleVersion {
   uint32_t rfVersion;
 };
 
+
+/*
+template <typename T>
+struct xfire_value {
+  T value;
+  T minVal;
+  T maxVal;
+  T defVal;
+};
+*/
+
+union AfhdsFrameData {
+  uint8_t Result;
+  Config_s Config;
+  ChannelsData Channels;
+  TelemetryData Telemetry;
+  ModuleVersion Version;
+};
+
+struct AfhdsFrame {
+  uint8_t startByte;
+  uint8_t address;
+  uint8_t frameNumber;
+  uint8_t frameType;
+  uint8_t command;
+  AfhdsFrameData data;
+};
+
+
+
 struct CmdDesc {
   COMMAND Command;
   FRAME_TYPE RequestType;
@@ -186,41 +232,55 @@ enum State {
 
 class afhds3 {
 public:
-  afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData) {
+  afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData, int16_t* channelOutputs) {
     this->data = data;
     this->moduleData = moduleData;
+    this->channelOutputs = channelOutputs;
     reset();
   }
 
   virtual ~afhds3() {
 
   }
-
-  const uint32_t baudrate = 1500;
+  const uint32_t baudrate = AFHDS3_BAUDRATE;
   const uint16_t parity = ((uint16_t)0x0000); //USART_Parity_No
   const uint16_t stopBits = ((uint16_t)0x0000); //USART_StopBits_1
   const uint16_t wordLength = ((uint16_t)0x0000); //USART_WordLength_8b
-  const uint16_t commandTimout = 5000; //ms
+  const uint16_t commandTimout = 5; //ms
   const uint16_t commandRepeatCount = 5;
 
   const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
 
   //Equivalent to setupPulses
   void setupPulses();
-  void onDataReceived(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBufferCount);
+  void onDataReceived(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBufferCount, uint8_t maxSize);
   void reset();
-
+  void bind(bindCallback_t callback);
+  void cancelBind();
 private:
   void putByte(uint8_t byte);
   void putBytes(uint8_t* data, int length);
   void putHeader(COMMAND command, FRAME_TYPE frameType);
   void putFooter();
   void putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* data, uint8_t dataLength);
+  void parseData(uint8_t* rxBuffer, uint8_t rxBufferCount);
+  void onModuleSetModeResponse(bool success, uint8_t mode);
+  void onModuleStateReponse(uint8_t state);
+  void onModelSwitch();
+  void setConfigToDefault();
+  void setConfigFromModelData();
+  void sendChannelsData();
 
   State operationState;
   uint16_t repeatCount;
   FlySkySerialPulsesData* data;
   ModuleData* moduleData;
+  //buffer where the channels are
+  int16_t* channelOutputs;
+  bindCallback_t bindCallback;
+  Config_u config;
+  ModuleVersion version;
+  enum MODULE_POWER_SOURCE powerSource;
 };
 
 }

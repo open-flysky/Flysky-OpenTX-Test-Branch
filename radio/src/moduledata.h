@@ -47,6 +47,18 @@ struct ModuleData {
     } romData;
 
     NOBACKUP2(struct {
+      uint8_t bindPower:3;
+      uint8_t runPower:3;
+      uint8_t emi:1;
+      uint8_t spare:1;
+      uint8_t direction:1;
+      uint8_t mode:4;
+      uint8_t spare2:3;
+      uint16_t failsafeTimeout; //4
+      uint16_t rxFreq;
+      //one more free byte
+    } afhds3);
+    NOBACKUP2(struct {
       uint8_t power:2;                  // 0=10 mW, 1=100 mW, 2=500 mW, 3=1W
       uint8_t spare1:2;
       uint8_t receiver_telem_off:1;     // false = receiver telem enabled

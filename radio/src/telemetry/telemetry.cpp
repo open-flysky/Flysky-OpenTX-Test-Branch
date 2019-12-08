@@ -79,7 +79,7 @@ void processTelemetryData(uint8_t data)
 #endif
 #if defined(AFHDS3)
   if (telemetryProtocol == PROTOCOL_AFHDS3) {
-    afhds3uart.onDataReceived(data, telemetryRxBuffer, telemetryRxBufferCount);
+    afhds3uart.onDataReceived(data, telemetryRxBuffer, telemetryRxBufferCount, TELEMETRY_RX_PACKET_SIZE);
     return;
   }
 #endif
@@ -102,14 +102,21 @@ void telemetryWakeup()
 #endif
 
 #if defined(STM32)
+  char buffer[160];
+  char* pos = buffer;
   uint8_t data;
   if (telemetryGetByte(&data)) {
     LOG_TELEMETRY_WRITE_START();
     do {
       processTelemetryData(data);
+      pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", data);
       LOG_TELEMETRY_WRITE_BYTE(data);
     } while (telemetryGetByte(&data));
   }
+  int size = (buffer - pos) / 2;
+  (*pos) = 0;
+  //TRACE("count [%d] data: %s", size, buffer);
+
 #elif defined(PCBSKY9X)
   if (telemetryProtocol == PROTOCOL_FRSKY_D_SECONDARY) {
     uint8_t data;
@@ -388,7 +395,7 @@ void telemetryInit(uint8_t protocol)
   }
 #if defined(AFHDS3)
   else if(protocol == PROTOCOL_AFHDS3){
-    telemetryPortInit(AFHDS_TELEMETRY_BAUDRATE, TELEMETRY_SERIAL_DEFAULT);
+    telemetryPortInit(AFHDS3_BAUDRATE, TELEMETRY_SERIAL_DEFAULT | TELEMETRY_SERIAL_NOT_INVERTED);
   }
 #endif
 #if defined(MULTIMODULE)

@@ -216,7 +216,7 @@ inline bool isModuleTypeAllowed(uint8_t idx, uint8_t type)
 #endif  
     return (type == MODULE_TYPE_NONE || type == MODULE_TYPE_PPM
          || type == MODULE_TYPE_XJT || type == MODULE_TYPE_CROSSFIRE
-         || type == MODULE_TYPE_R9M);
+         || type == MODULE_TYPE_R9M || type == MODULE_TYPE_AFHDS3);
   }
 #endif
 

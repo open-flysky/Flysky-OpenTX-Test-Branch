@@ -25,6 +25,7 @@ struct FlySkySerialPulsesData {
 
 enum AfhdsSpecialChars {
   END = 0xC0,             //Frame end
+  START = END,
   ESC_END = 0xDC,         //Escaped frame end - in case END occurs in fame then ESC ESC_END must be used
   ESC = 0xDB,             //Escaping character
   ESC_ESC = 0xDD,         //Escaping character in case ESC occurs in fame then ESC ESC_ESC  must be used

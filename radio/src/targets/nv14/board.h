@@ -536,7 +536,7 @@ extern void audioKeyPress();
 
 
 // Second serial port driver
-#define AUX_SERIAL
+//#define AUX_SERIAL
 #define DEBUG_BAUDRATE                  115200
 extern uint8_t auxSerialMode;
 void auxSerialInit(unsigned int mode, unsigned int protocol);

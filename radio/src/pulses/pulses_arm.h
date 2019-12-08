@@ -65,6 +65,10 @@ template<class T> struct PpmPulsesData {
 #define PXX_PERIOD 9 /*ms*/
 #define PXX_PERIOD_HALF_US (PXX_PERIOD * PERIOD_LENGHT)
 
+#define AFHDS3_PERIOD 5 /*ms*/
+#define AFHDS3_PERIOD_HALF_US (AFHDS3_PERIOD * PERIOD_LENGHT)
+
+
 #define PPM_PERIOD_HALF_US(module) (g_model.moduleData[module].ppm.frameLength * 5 + 225) * HALF_US_MULTI)
 #define PPM_PERIOD(module) (PPM_PERIOD_HALF_US(module) / PERIOD_LENGHT)
 

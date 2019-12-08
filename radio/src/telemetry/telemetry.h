@@ -73,8 +73,9 @@ extern uint8_t telemetryState;
 #define TELEMETRY_SERIAL_DEFAULT       0
 #define TELEMETRY_SERIAL_8E2           1
 #define TELEMETRY_SERIAL_WITHOUT_DMA   2
+#define TELEMETRY_SERIAL_NOT_INVERTED  4
 
-#if defined(CROSSFIRE) || defined(MULTIMODULE)
+#if defined(CROSSFIRE) || defined(MULTIMODULE) || defined(AFHDS3)
 #define TELEMETRY_RX_PACKET_SIZE       128
 // multi module Spektrum telemetry is 18 bytes, FlySky is 37 bytes
 #else
@@ -172,7 +173,11 @@ inline uint8_t modelTelemetryProtocol()
     return PROTOCOL_MULTIMODULE;
   }
 #endif
-
+#if defined(AFHDS3)
+  if (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_AFHDS3) {
+    return PROTOCOL_AFHDS3;
+  }
+#endif
   // default choice
   return PROTOCOL_FRSKY_SPORT;
 }

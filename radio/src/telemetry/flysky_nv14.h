@@ -60,7 +60,4 @@ typedef struct FLYSKY_SENSOR_DATA_S {
 void flySkyNv14SetDefault(int index, uint8_t id, uint8_t subId, uint8_t instance);
 void flySkyNv14ProcessTelemetryPacket(const uint8_t * ptr, uint8_t SensorType );
 
-#define AFHDS_TELEMETRY_BAUDRATE 1500
-
-
 #endif
