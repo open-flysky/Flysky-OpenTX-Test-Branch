@@ -113,9 +113,8 @@ void telemetryWakeup()
       LOG_TELEMETRY_WRITE_BYTE(data);
     } while (telemetryGetByte(&data));
   }
-  int size = (buffer - pos) / 2;
   (*pos) = 0;
-  //TRACE("count [%d] data: %s", size, buffer);
+  if(buffer != pos) TRACE("data: %s", buffer);
 
 #elif defined(PCBSKY9X)
   if (telemetryProtocol == PROTOCOL_FRSKY_D_SECONDARY) {

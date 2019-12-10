@@ -39,6 +39,14 @@ afhds3::afhds3 afhds3uart = afhds3::afhds3(
   channelOutputs);
 #endif
 
+void setModuleFlag(uint8_t port, uint8_t value) {
+  if(moduleFlag[port] != value){
+    moduleFlag[port] = value;
+    if(value == MODULE_NORMAL_MODE && isModuleFlysky(port)) resetPulsesFlySky(port);
+  }
+
+}
+
 uint8_t getRequiredProtocol(uint8_t port)
 {
   uint8_t required_protocol;

@@ -20,6 +20,8 @@
 
 #include "opentx.h"
 
+DMAFifo<TELEMETRY_FIFO_SIZE> extTelemetryDMAFifo __DMA (EXTMODULE_USART_RX_DMA_STREAM);
+
 void extmoduleSendNextFrame();
 
 void EXTERNAL_MODULE_ON()
@@ -68,6 +70,14 @@ void extmoduleStop()
 
   USART_DeInit(EXTMODULE_USART);
 
+  DMA_Cmd(EXTMODULE_USART_RX_DMA_STREAM, DISABLE);
+  USART_DMACmd(EXTMODULE_USART, USART_DMAReq_Rx, DISABLE);
+  DMA_DeInit(EXTMODULE_USART_RX_DMA_STREAM);
+
+  DMA_Cmd(EXTMODULE_USART_TX_DMA_STREAM, DISABLE);
+  USART_DMACmd(EXTMODULE_USART, USART_DMAReq_Tx, DISABLE);
+  DMA_DeInit(EXTMODULE_USART_TX_DMA_STREAM);
+
   EXTMODULE_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
   EXTMODULE_USART_TX_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable UART DMA
 
@@ -81,7 +91,18 @@ void extmoduleNoneStart()
 
   USART_DeInit(EXTMODULE_USART);
 
+  DMA_Cmd(EXTMODULE_USART_RX_DMA_STREAM, DISABLE);
+  USART_DMACmd(EXTMODULE_USART, USART_DMAReq_Rx, DISABLE);
+  DMA_DeInit(EXTMODULE_USART_RX_DMA_STREAM);
+
+  DMA_Cmd(EXTMODULE_USART_TX_DMA_STREAM, DISABLE);
+  USART_DMACmd(EXTMODULE_USART, USART_DMAReq_Tx, DISABLE);
+  DMA_DeInit(EXTMODULE_USART_TX_DMA_STREAM);
+
   GPIO_PinAFConfig(EXTMODULE_TX_GPIO, EXTMODULE_TX_GPIO_PinSource, 0);
+  GPIO_PinAFConfig(EXTMODULE_RX_GPIO, EXTMODULE_RX_GPIO_PinSource, 0);
+
+  extTelemetryDMAFifo.clear();
 
   GPIO_InitTypeDef GPIO_InitStructure;
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_GPIO_PIN;
@@ -189,6 +210,39 @@ void extmodulePxxStart()
   NVIC_SetPriority(EXTMODULE_TIMER_IRQn, 7);
 }
 
+
+
+void ConfigureRxDMA(){
+  extTelemetryDMAFifo.clear();
+
+  DMA_Cmd(EXTMODULE_USART_RX_DMA_STREAM, DISABLE);
+  USART_DMACmd(EXTMODULE_USART, USART_DMAReq_Rx, DISABLE);
+  DMA_DeInit(EXTMODULE_USART_RX_DMA_STREAM);
+
+  DMA_InitTypeDef DMA_InitStructure;
+  DMA_InitStructure.DMA_Channel = EXTMODULE_USART_RX_DMA_CHANNEL;
+  DMA_InitStructure.DMA_PeripheralBaseAddr = CONVERT_PTR_UINT(&EXTMODULE_USART->DR);
+  DMA_InitStructure.DMA_Memory0BaseAddr = CONVERT_PTR_UINT(extTelemetryDMAFifo.buffer());
+  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
+  DMA_InitStructure.DMA_BufferSize = extTelemetryDMAFifo.size();
+  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+  DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
+  DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
+  DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_Full;
+  DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+  DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+
+  DMA_Init(EXTMODULE_USART_RX_DMA_STREAM, &DMA_InitStructure);
+  USART_DMACmd(EXTMODULE_USART, USART_DMAReq_Rx, ENABLE);
+  DMA_Cmd(EXTMODULE_USART_RX_DMA_STREAM, ENABLE);
+}
+
+
+
 void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopBits, uint16_t parity)
 {
   NVIC_InitTypeDef NVIC_InitStructure;
@@ -210,22 +264,15 @@ void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopB
   GPIO_InitStructure.GPIO_Speed = GPIO_High_Speed;
   GPIO_Init(EXTMODULE_TX_GPIO, &GPIO_InitStructure);
 
-
-#if defined(EXTMODULE_TX_INVERT_GPIO)
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_INVERT_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_Init(EXTMODULE_TX_INVERT_GPIO, &GPIO_InitStructure);
   GPIO_ResetBits(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN);
-  //GPIO_SetBits(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN);
-#endif
 
-#if defined(EXTMODULE_RX_INVERT_GPIO)
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_RX_INVERT_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_Init(EXTMODULE_RX_INVERT_GPIO, &GPIO_InitStructure);
   GPIO_ResetBits(EXTMODULE_RX_INVERT_GPIO, EXTMODULE_RX_INVERT_GPIO_PIN);
-  //GPIO_SetBits(EXTMODULE_RX_INVERT_GPIO, EXTMODULE_RX_INVERT_GPIO_PIN);
-#endif
 
   EXTERNAL_MODULE_ON();
 
@@ -238,6 +285,8 @@ void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopB
   USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
   USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
   USART_Init(EXTMODULE_USART, &USART_InitStructure);
+  ConfigureRxDMA();
+
   USART_Cmd(EXTMODULE_USART, ENABLE);
 
   // Timer
@@ -335,7 +384,7 @@ void debugIbus(uint8_t* rxBuffer, uint8_t rxBufferCount){
     pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
   }
   (*pos) = 0;
-  TRACE("count [%d] data: %s", rxBufferCount, buffer);
+  TRACE("count [%u] data: %s", rxBufferCount, buffer);
 }
 
 void extmoduleSendNextFrame()
@@ -386,7 +435,6 @@ void extmoduleSendNextFrame()
       EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;
     }
     else {
-      sportSendBuffer(modulePulsesData[EXTERNAL_MODULE].flysky.pulses, count);
       //debugIbus(modulePulsesData[EXTERNAL_MODULE].flysky.pulses, count);
       DMA_DeInit (EXTMODULE_USART_TX_DMA_STREAM);
       DMA_InitTypeDef DMA_InitStructure;
@@ -469,3 +517,10 @@ extern "C" void EXTMODULE_TIMER_IRQHandler()
   setupPulses(EXTERNAL_MODULE);
   extmoduleSendNextFrame();
 }
+
+
+uint8_t heartbeatTelemetryGetByte(uint8_t * byte)
+{
+  return extTelemetryDMAFifo.pop(*byte);
+}
+

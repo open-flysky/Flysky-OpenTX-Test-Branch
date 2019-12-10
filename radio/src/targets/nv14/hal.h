@@ -394,6 +394,16 @@
 #define EXTMODULE_USART_TX_DMA_IRQn        DMA2_Stream7_IRQn
 #define EXTMODULE_USART_TX_DMA_IRQHandler  DMA2_Stream7_IRQHandler
 #define EXTMODULE_USART_TX_DMA_FLAG_TC     DMA_IT_TCIF7
+
+#define EXTMODULE_USART_RX_DMA_CHANNEL     DMA_Channel_5
+#define EXTMODULE_USART_RX_DMA_STREAM      DMA2_Stream2
+#define EXTMODULE_USART_RX_DMA_IRQn        DMA2_Stream5_IRQn
+#define EXTMODULE_USART_RX_DMA_IRQHandler  DMA2_Stream5_IRQHandler
+#define EXTMODULE_USART_RX_DMA_FLAG_TC     DMA_IT_TCIF5
+
+#define EXTMODULE_USART_IRQHandler         USART6_IRQHandler
+#define EXTMODULE_USART_IRQn               USART6_IRQn
+
 //TIMER
 #define EXTMODULE_DMA_CHANNEL           DMA_Channel_7
 #define EXTMODULE_DMA_STREAM            DMA2_Stream1

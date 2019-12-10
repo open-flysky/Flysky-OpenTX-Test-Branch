@@ -3,6 +3,8 @@
 
 #include "afhds2.h"
 #include "../moduledata.h"
+#include <cstring>
+#include <queue>
 
 #define AFHDS3_BAUDRATE 1500000
 namespace afhds3 {
@@ -10,7 +12,7 @@ namespace afhds3 {
 typedef void (*bindCallback_t) (bool);
 
 enum DeviceAddress {
-  TRANSMITTER = 0x01, MODULE = 0x03,
+  TRANSMITTER = 0x01, MODULE = 0x02,
 };
 
 enum FRAME_TYPE {
@@ -52,10 +54,11 @@ enum DATA_TYPE {
   MODULE_VERSION_DT,
   EMPTY_DT,
 };
+//enum used by command response -> translate to ModuleState
 enum MODULE_READY_E {
-  MR_UNKNOWN = 0x00,
-  MR_NOT_READY = 0x01,
-  MR_READY = 0x02
+  MODULE_STATUS_UNKNOWN = 0x00,
+  MODULE_STATUS_NOT_READY = 0x01,
+  MODULE_STATUS_READY = 0x02
 };
 
 enum ModuleState {
@@ -70,12 +73,7 @@ enum ModuleState {
   STATE_UPDATING_RX_FAILED = 0x09,
   STATE_RF_TESTING = 0x0a,
   STATE_NOT_READY = 0xe0, //virtual
-  STATE_READY = 0xe1, //virtual
-  STATE_LOAD_INFO = 0xe2, //virtual
-  STATE_LOAD_INFO2 = 0xe3, //virtual
-  STATE_REQUEST = 0xe4, //virtual
-  STATE_BIND = 0xe5, //virtual
-  STATE_SET_BIND_CONFIG = 0xe6, //virtual
+  STATE_READY = 0xe1,     //virtual
   STATE_HW_TEST = 0xff,
 };
 
@@ -120,8 +118,8 @@ enum EMI_STANDARD {
   FCC = 0x00, CE = 0x01
 };
 
-enum DIRECTION {
-  ONE_WAY = 0x00, TWO_WAYS = 0x01
+enum TELEMETRY {
+  TELEMETRY_DISABLED = 0x00, TELEMETRY_ENABLED = 0x01
 };
 
 enum PULSE_MODE {
@@ -136,7 +134,7 @@ struct Config_s {
   uint8_t bindPower;
   uint8_t runPower;
   uint8_t emiStandard;
-  uint8_t direction;
+  uint8_t telemetry;
   uint16_t pwmFreq;
   uint8_t pulseMode;
   uint8_t serialMode;
@@ -186,18 +184,8 @@ struct ModuleVersion {
 };
 
 
-/*
-template <typename T>
-struct xfire_value {
-  T value;
-  T minVal;
-  T maxVal;
-  T defVal;
-};
-*/
-
 union AfhdsFrameData {
-  uint8_t Result;
+  uint8_t value;
   Config_s Config;
   ChannelsData Channels;
   TelemetryData Telemetry;
@@ -210,17 +198,11 @@ struct AfhdsFrame {
   uint8_t frameNumber;
   uint8_t frameType;
   uint8_t command;
-  AfhdsFrameData data;
-};
+  uint8_t value;
 
-
-
-struct CmdDesc {
-  COMMAND Command;
-  FRAME_TYPE RequestType;
-  DATA_TYPE RequestDataType;
-  FRAME_TYPE ResponseType;
-  DATA_TYPE ResponseDataType;
+  AfhdsFrameData* GetData() {
+    return reinterpret_cast<AfhdsFrameData*>(&value);
+  }
 };
 
 enum State {
@@ -228,6 +210,29 @@ enum State {
   SENDING_COMMAND,
   AWAITING_RESPONSE,
   IDLE
+};
+
+class request {
+  public:
+  request(COMMAND command, FRAME_TYPE frameType, const uint8_t* data, uint8_t length) {
+    this->command = command;
+    this->frameType = frameType;
+    if(data && length){
+      payload = new uint8_t[length];
+      std::memcpy(payload, data, length);
+    }
+    else payload = nullptr;
+  }
+  ~request() {
+    if(payload != nullptr) {
+      delete[] payload;
+      payload = nullptr;
+    }
+  }
+  enum COMMAND command;
+  enum FRAME_TYPE frameType;
+  uint8_t* payload;
+  uint8_t payloadSize;
 };
 
 class afhds3 {
@@ -240,47 +245,52 @@ public:
   }
 
   virtual ~afhds3() {
-
+    clearQueue();
   }
+
   const uint32_t baudrate = AFHDS3_BAUDRATE;
   const uint16_t parity = ((uint16_t)0x0000); //USART_Parity_No
   const uint16_t stopBits = ((uint16_t)0x0000); //USART_StopBits_1
   const uint16_t wordLength = ((uint16_t)0x0000); //USART_WordLength_8b
   const uint16_t commandTimout = 5; //ms
-  const uint16_t commandRepeatCount = 5;
 
-  const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
-
-  //Equivalent to setupPulses
   void setupPulses();
   void onDataReceived(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBufferCount, uint8_t maxSize);
   void reset();
   void bind(bindCallback_t callback);
   void cancelBind();
 private:
+  const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
+  const uint16_t commandRepeatCount = 5;
+
   void putByte(uint8_t byte);
   void putBytes(uint8_t* data, int length);
   void putHeader(COMMAND command, FRAME_TYPE frameType);
   void putFooter();
-  void putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* data, uint8_t dataLength);
+  void putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0);
+  void addToQueue(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0);
   void parseData(uint8_t* rxBuffer, uint8_t rxBufferCount);
-  void onModuleSetModeResponse(bool success, uint8_t mode);
-  void onModuleStateReponse(uint8_t state);
+  void setState(uint8_t state);
   void onModelSwitch();
   void setConfigToDefault();
   void setConfigFromModelData();
   void sendChannelsData();
-
-  State operationState;
-  uint16_t repeatCount;
+  void clearQueue();
+  //external data
   FlySkySerialPulsesData* data;
   ModuleData* moduleData;
-  //buffer where the channels are
   int16_t* channelOutputs;
   bindCallback_t bindCallback;
-  Config_u config;
+  //missing ppm center!
+
+  //local config
+  Config_u cfg;
   ModuleVersion version;
   enum MODULE_POWER_SOURCE powerSource;
+  //buffer where the channels are
+  State operationState;
+  uint16_t repeatCount;
+  std::queue<request*> commandQueue;
 };
 
 }

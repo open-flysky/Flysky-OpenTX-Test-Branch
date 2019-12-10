@@ -51,7 +51,7 @@ struct ModuleData {
       uint8_t runPower:3;
       uint8_t emi:1;
       uint8_t spare:1;
-      uint8_t direction:1;
+      uint8_t telemetry:1;
       uint8_t mode:4;
       uint8_t spare2:3;
       uint16_t failsafeTimeout; //4

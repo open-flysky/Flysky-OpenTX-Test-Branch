@@ -145,7 +145,8 @@ void delay_self(int count)
                                INTMODULE_RCC_APB1Periph |\
                                HALL_RCC_APB1Periph |\
                                EXTMODULE_RCC_APB1Periph |\
-                               INTMODULE_RCC_APB1Periph_TIM3 \
+                               INTMODULE_RCC_APB1Periph_TIM3 |\
+                               AUX_SERIAL_RCC_APB1Periph \
                               )
 #define RCC_APB2PeriphMinimum (LCD_RCC_APB2Periph)
 
@@ -188,7 +189,7 @@ void boardInit()
   TouchInit();
   uint32_t press_start = 0;
   uint32_t press_end = 0;
-  if(UNEXPECTED_SHUTDOWN()) pwrOn();
+  if(UNEXPECTED_SHUTDOWN() || true) pwrOn();
 
   while (boardState == BOARD_POWER_OFF)
   {

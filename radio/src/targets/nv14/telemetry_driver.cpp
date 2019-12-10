@@ -198,6 +198,13 @@ extern "C" void TELEMETRY_USART_IRQHandler(void)
 // TODO we should have telemetry in an higher layer, functions above should move to a sport_driver.cpp
 uint8_t telemetryGetByte(uint8_t * byte)
 {
+#if defined(AFHDS3)
+  //maybe telemetry protocol
+  if(s_current_protocol[EXTERNAL_MODULE] == PROTO_AFHDS3) {
+    return heartbeatTelemetryGetByte(byte);
+  }
+#endif
+
 #if defined(PCBX12S)
   if (telemetryFifoMode & TELEMETRY_SERIAL_WITHOUT_DMA)
     return telemetryNoDMAFifo.pop(*byte);

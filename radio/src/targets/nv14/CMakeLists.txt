@@ -69,6 +69,9 @@ if(NOT UNEXPECTED_SHUTDOWN)
   add_definitions(-DNO_UNEXPECTED_SHUTDOWN)
 endif()
 
+add_definitions(-DNO_UNEXPECTED_SHUTDOWN)
+
+
 include_directories(${RADIO_SRC_DIRECTORY}/fonts/480x272 gui/${GUI_DIR} gui/${GUI_DIR}/layouts)
 include_directories(${RADIO_SRC_DIRECTORY}/telemetry)
 

@@ -519,6 +519,7 @@ void telemetryPortInit(uint32_t baudrate, uint8_t mode);
 void telemetryPortSetDirectionOutput(void);
 void sportSendBuffer(uint8_t * buffer, uint32_t count);
 uint8_t telemetryGetByte(uint8_t * byte);
+uint8_t heartbeatTelemetryGetByte(uint8_t * byte);
 extern uint32_t telemetryErrors;
 
 // Sport update driver

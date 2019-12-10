@@ -26,14 +26,6 @@
 #define SET_DIRTY()     storageDirty(EE_MODEL)
 #define STR_4BIND(v)    ((moduleFlag[moduleIndex] == MODULE_BIND) ? STR_MODULE_BINDING : (v))
 
-void moduleFlagBackNormal(uint8_t moduleIndex)
-{
-  if (moduleFlag[moduleIndex] != MODULE_NORMAL_MODE) {
-    moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
-    if(isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
-  }
-}
-
 void resetModuleSettings(uint8_t module)
 {
   g_model.moduleData[module].channelsStart = 0;
@@ -42,7 +34,7 @@ void resetModuleSettings(uint8_t module)
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
   }
-  moduleFlagBackNormal(module);
+  setModuleFlag(module, MODULE_NORMAL_MODE);
 }
 
 class ChannelFailsafeBargraph: public Window {
@@ -291,26 +283,19 @@ class ModuleWindow : public Window {
       }
       grid.nextLine();
       // Module parameters
-      if (isModuleFlysky(moduleIndex)) {
+      if (isModuleFlysky(moduleIndex) || isModuleAFHDS3(moduleIndex)) {
         new Choice(this, grid.getFieldSlot(), STR_FLYSKY_PROTOCOLS, 0, 3,
-                   GET_DEFAULT(g_model.moduleData[moduleIndex].romData.mode),
+                   GET_DEFAULT(isModuleFlysky(moduleIndex) ? g_model.moduleData[moduleIndex].romData.mode : g_model.moduleData[moduleIndex].afhds3.mode),
                    [=](int32_t newValue) -> void {
-                     g_model.moduleData[moduleIndex].romData.mode = newValue;
+                     if(isModuleFlysky(moduleIndex)) {
+                       g_model.moduleData[moduleIndex].romData.mode = newValue;
+                     }
+                     else {
+                       g_model.moduleData[moduleIndex].afhds3.mode = newValue;
+                     }
                      SET_DIRTY();
-                     moduleFlagBackNormal(moduleIndex);
+                     setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
                      setFlyskyState(moduleIndex, STATE_SET_RX_PWM_PPM);
-                   });
-        grid.nextLine();
-      }
-      if(isModuleAFHDS3(moduleIndex)) {
-        new Choice(this, grid.getFieldSlot(), STR_FLYSKY_PROTOCOLS, 0, 3,
-                   GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.mode),
-                   [=](int32_t newValue) -> void {
-                     g_model.moduleData[moduleIndex].afhds3.mode = newValue;
-                     SET_DIRTY();
-                     moduleFlagBackNormal(moduleIndex);
-                     //update config
-                     //setFlyskyState(moduleIndex, STATE_SET_RX_PWM_PPM);
                    });
         grid.nextLine();
       }
@@ -512,7 +497,7 @@ class ModuleWindow : public Window {
                          g_model.moduleData[moduleIndex].romData.rx_freq[0] = newValue & 0xFF;
                          g_model.moduleData[moduleIndex].romData.rx_freq[1] = newValue >> 8;
                          SET_DIRTY();
-                         moduleFlagBackNormal(moduleIndex);
+                         setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
                          setFlyskyState(moduleIndex, STATE_SET_RX_FREQUENCY);
                        });
         grid.nextLine();
@@ -524,8 +509,7 @@ class ModuleWindow : public Window {
                             [=](int32_t newValue) -> void {
                               g_model.moduleData[moduleIndex].afhds3.rxFreq = newValue;
                               SET_DIRTY();
-                              moduleFlagBackNormal(moduleIndex);
-                              //setFlyskyState(moduleIndex, STATE_SET_RX_FREQUENCY);
+                              setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
                             });
              grid.nextLine();
            }
@@ -540,7 +524,7 @@ class ModuleWindow : public Window {
                                       SET_DIRTY();
                                       update();
                                       failSafeChoice->setFocus();
-                                      moduleFlagBackNormal(moduleIndex);
+                                      setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
                                       SEND_FAILSAFE_NOW(moduleIndex);
                                     });
         failSafeChoice->setAvailableHandler([=](int8_t newValue) {
@@ -570,7 +554,7 @@ class ModuleWindow : public Window {
           }
           if (moduleFlag[moduleIndex] == MODULE_BIND) {
             bindButton->setText(STR_MODULE_BIND);
-            moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
+            setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
             if (isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
             return 0;
           }
@@ -582,7 +566,7 @@ class ModuleWindow : public Window {
                   menu->setSelectHandler([=](const char* selected) {
                     onBindMenu(selected, moduleIndex);
                     bindButton->setText(STR_MODULE_BINDING);
-                    moduleFlag[moduleIndex] = MODULE_BIND;
+                    setModuleFlag(moduleIndex, MODULE_BIND);
                   });
                   if (isModuleR9M_LBT(moduleIndex)) {
                       menu->addLine(STR_BINDING_25MW_CH1_8_TELEM_OFF);
@@ -606,7 +590,7 @@ class ModuleWindow : public Window {
             }
             else {
               bindButton->setText(STR_MODULE_BINDING);
-              moduleFlag[moduleIndex] = MODULE_BIND;
+              setModuleFlag(moduleIndex, MODULE_BIND);
 #if defined(MULTIMODULE)
               //why not use moduleFlag directly
               multiBindStatus = MULTI_BIND_INITIATED;
@@ -623,7 +607,7 @@ class ModuleWindow : public Window {
 #if defined(MULTIMODULE)
           if (multiBindStatus == MULTI_BIND_FINISHED) {
             multiBindStatus = MULTI_NORMAL_OPERATION;
-            moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
+            setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
           }
 #endif
           if (moduleFlag[moduleIndex] != MODULE_BIND) {
@@ -638,11 +622,11 @@ class ModuleWindow : public Window {
             bindButton->check(false);
           }
           if (moduleFlag[moduleIndex] != MODULE_RANGECHECK) {
-            moduleFlag[moduleIndex] = MODULE_RANGECHECK;
+            setModuleFlag(moduleIndex, MODULE_RANGECHECK);
             if(isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
             MessageBox* mb = new MessageBox(WARNING_TYPE_INFO, DialogResult::Cancel, "Range check", "",
               [=](DialogResult result) {
-                moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
+                setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
                 rangeButton->check(false);
               }
             );
@@ -721,10 +705,9 @@ class ModuleWindow : public Window {
             });
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), "Mode");
-        new Choice(this, grid.getFieldSlot(), "\007One-wayTwo-way", 0,
-            afhds3::DIRECTION::TWO_WAYS, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.direction),
+        new CheckBox(this, grid.getFieldSlot(), GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry),
             [=](int32_t newValue) -> void {
-              g_model.moduleData[moduleIndex].afhds3.direction = newValue;
+              g_model.moduleData[moduleIndex].afhds3.telemetry = newValue;
               //onFlySkyModuleSetPower(moduleIndex, true);
             });
         grid.nextLine();
