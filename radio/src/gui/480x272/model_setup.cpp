@@ -287,18 +287,26 @@ class ModuleWindow : public Window {
         new Choice(this, grid.getFieldSlot(), STR_FLYSKY_PROTOCOLS, 0, 3,
                    GET_DEFAULT(isModuleFlysky(moduleIndex) ? g_model.moduleData[moduleIndex].romData.mode : g_model.moduleData[moduleIndex].afhds3.mode),
                    [=](int32_t newValue) -> void {
-                     if(isModuleFlysky(moduleIndex)) {
-                       g_model.moduleData[moduleIndex].romData.mode = newValue;
-                     }
-                     else {
-                       g_model.moduleData[moduleIndex].afhds3.mode = newValue;
-                     }
+                     if(isModuleFlysky(moduleIndex)) g_model.moduleData[moduleIndex].romData.mode = newValue;
+                     else g_model.moduleData[moduleIndex].afhds3.mode = newValue;
                      SET_DIRTY();
                      setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
                      setFlyskyState(moduleIndex, STATE_SET_RX_PWM_PPM);
                    });
-        grid.nextLine();
+        
       }
+#if defined(AFHDS3)
+      if(isModuleAFHDS3(moduleIndex)){
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), STR_MODULE_STATUS);
+        StaticText* status = new StaticText(this, grid.getFieldSlot());
+        status->setCheckHandler([=]() {
+          if(!status->isTextEqual(afhds3uart.getState())) {
+            status->setText(std::string(afhds3uart.getState()));
+          }
+        });
+      }
+#endif
 #if defined(MULTIMODULE)
       if (isModuleMultimodule(moduleIndex)) {
         grid.nextLine();
@@ -642,7 +650,7 @@ class ModuleWindow : public Window {
             return 1;
           }
           else {
-            moduleFlag[moduleIndex] = MODULE_NORMAL_MODE;
+            setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
             return 0;
           }
         });
@@ -681,35 +689,18 @@ class ModuleWindow : public Window {
 #endif
       if (isModuleAFHDS3(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new Choice(this, grid.getFieldSlot(), "\00615 dBm20 dBm27 dBm30 dBm33 dBm", 0,
-            afhds3::RUN_POWER::PLUS_33dBm, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower),
-            [=](int32_t newValue) -> void {
-              g_model.moduleData[moduleIndex].afhds3.runPower = newValue;
-              //onFlySkyModuleSetPower(moduleIndex, true);
-            });
+        new Choice(this, grid.getFieldSlot(), "\007 15 dBm 20 dBm 27 dBm 30 dBm 33 dBm", 0,
+            afhds3::RUN_POWER::PLUS_33dBm, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), "Bind Power");
-        new Choice(this, grid.getFieldSlot(), "\007-16 dBm-5 dBm\00 dBm\0 5 dBm\0 16 dBm\0", 0,
-            afhds3::BIND_POWER::PLUS_14dBm, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.bindPower),
-            [=](int32_t newValue) -> void {
-              g_model.moduleData[moduleIndex].afhds3.bindPower = newValue;
-              //onFlySkyModuleSetPower(moduleIndex, true);
-            });
+        new Choice(this, grid.getFieldSlot(), "\007-16 dBm -5 dBm  0 dBm  5 dBm 16 dBm", 0,
+            afhds3::BIND_POWER::PLUS_14dBm, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.bindPower));
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), "EMI Standard");
-        new Choice(this, grid.getFieldSlot(), "\003FCC CE", 0,
-            afhds3::EMI_STANDARD::CE, GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.emi),
-            [=](int32_t newValue) -> void {
-              g_model.moduleData[moduleIndex].afhds3.emi = newValue;
-              //onFlySkyModuleSetPower(moduleIndex, true);
-            });
+        new Choice(this, grid.getFieldSlot(), "\003FCC CE", 0, afhds3::EMI_STANDARD::CE, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.emi));
         grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(true), "Mode");
-        new CheckBox(this, grid.getFieldSlot(), GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry),
-            [=](int32_t newValue) -> void {
-              g_model.moduleData[moduleIndex].afhds3.telemetry = newValue;
-              //onFlySkyModuleSetPower(moduleIndex, true);
-            });
+        new StaticText(this, grid.getLabelSlot(true), "Telemetry");
+        new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
         grid.nextLine();
       }
 #if defined (CROSSFIRE_NATIVE)

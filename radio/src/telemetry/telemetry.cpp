@@ -102,19 +102,14 @@ void telemetryWakeup()
 #endif
 
 #if defined(STM32)
-  char buffer[160];
-  char* pos = buffer;
   uint8_t data;
   if (telemetryGetByte(&data)) {
     LOG_TELEMETRY_WRITE_START();
     do {
       processTelemetryData(data);
-      pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", data);
       LOG_TELEMETRY_WRITE_BYTE(data);
     } while (telemetryGetByte(&data));
   }
-  (*pos) = 0;
-  if(buffer != pos) TRACE("data: %s", buffer);
 
 #elif defined(PCBSKY9X)
   if (telemetryProtocol == PROTOCOL_FRSKY_D_SECONDARY) {

@@ -376,17 +376,6 @@ void extmoduleCrossfireStart()
 }
 
 
-void debugIbus(uint8_t* rxBuffer, uint8_t rxBufferCount){
-  // debug print the content of the packet
-  char buffer[160];
-  char* pos = buffer;
-  for (int i=0; i < rxBufferCount; i++) {
-    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
-  }
-  (*pos) = 0;
-  TRACE("count [%u] data: %s", rxBufferCount, buffer);
-}
-
 void extmoduleSendNextFrame()
 {
   uint32_t start = 0;
@@ -435,7 +424,6 @@ void extmoduleSendNextFrame()
       EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;
     }
     else {
-      //debugIbus(modulePulsesData[EXTERNAL_MODULE].flysky.pulses, count);
       DMA_DeInit (EXTMODULE_USART_TX_DMA_STREAM);
       DMA_InitTypeDef DMA_InitStructure;
       DMA_InitStructure.DMA_Channel = EXTMODULE_USART_TX_DMA_CHANNEL;

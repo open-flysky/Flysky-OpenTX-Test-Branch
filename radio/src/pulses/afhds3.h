@@ -12,7 +12,7 @@ namespace afhds3 {
 typedef void (*bindCallback_t) (bool);
 
 enum DeviceAddress {
-  TRANSMITTER = 0x01, MODULE = 0x02,
+  TRANSMITTER = 0x01, MODULE = 0x03,
 };
 
 enum FRAME_TYPE {
@@ -72,8 +72,8 @@ enum ModuleState {
   STATE_UPDATING_RX = 0x08,
   STATE_UPDATING_RX_FAILED = 0x09,
   STATE_RF_TESTING = 0x0a,
-  STATE_NOT_READY = 0xe0, //virtual
-  STATE_READY = 0xe1,     //virtual
+  STATE_NOT_READY = 0x0b, //virtual
+  STATE_READY = 0x0c,     //virtual
   STATE_HW_TEST = 0xff,
 };
 
@@ -214,7 +214,7 @@ enum State {
 
 class request {
   public:
-  request(COMMAND command, FRAME_TYPE frameType, const uint8_t* data, uint8_t length) {
+  request(COMMAND command, FRAME_TYPE frameType, const uint8_t* data = nullptr, uint8_t length = 0) {
     this->command = command;
     this->frameType = frameType;
     if(data && length){
@@ -222,6 +222,7 @@ class request {
       std::memcpy(payload, data, length);
     }
     else payload = nullptr;
+    payloadSize = length;
   }
   ~request() {
     if(payload != nullptr) {
@@ -256,9 +257,11 @@ public:
 
   void setupPulses();
   void onDataReceived(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBufferCount, uint8_t maxSize);
-  void reset();
+  void reset(bool resetFrameCount = true);
   void bind(bindCallback_t callback);
-  void cancelBind();
+  void range(bindCallback_t callback);
+  void cancelBindOrRangeCheck();
+  const char* getState();
 private:
   const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
   const uint16_t commandRepeatCount = 5;

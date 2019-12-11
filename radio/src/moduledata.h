@@ -57,6 +57,12 @@ struct ModuleData {
       uint16_t failsafeTimeout; //4
       uint16_t rxFreq;
       //one more free byte
+      bool isSbus() {
+        return (mode & 1);
+      }
+      bool isPWM() {
+        return mode < 2;
+      }
     } afhds3);
     NOBACKUP2(struct {
       uint8_t power:2;                  // 0=10 mW, 1=100 mW, 2=500 mW, 3=1W

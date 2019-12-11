@@ -38,14 +38,29 @@ afhds3::afhds3 afhds3uart = afhds3::afhds3(
   &g_model.moduleData[EXTERNAL_MODULE],
   channelOutputs);
 #endif
-
+//only valid for external
+void onBind(bool success) {
+  moduleFlag[EXTERNAL_MODULE] = MODULE_NORMAL_MODE;
+}
 void setModuleFlag(uint8_t port, uint8_t value) {
   if(moduleFlag[port] != value){
     moduleFlag[port] = value;
     if(value == MODULE_NORMAL_MODE && isModuleFlysky(port)) resetPulsesFlySky(port);
+    if(isModuleAFHDS3(port)) {
+      switch(value) {
+      case MODULE_NORMAL_MODE:
+        afhds3uart.cancelBindOrRangeCheck();
+        break;
+      case MODULE_BIND:
+        afhds3uart.bind(onBind);
+        break;
+      case MODULE_RANGECHECK:
+        afhds3uart.range(nullptr);
+      }
+    }
   }
-
 }
+
 
 uint8_t getRequiredProtocol(uint8_t port)
 {
