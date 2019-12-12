@@ -512,13 +512,7 @@ class ModuleWindow : public Window {
       }
       if (isModuleAFHDS3(moduleIndex)) {
              new StaticText(this, grid.getLabelSlot(true), STR_RXFREQUENCY);
-             new NumberEdit(this, grid.getFieldSlot(), 50, 400,
-                            GET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.rxFreq),
-                            [=](int32_t newValue) -> void {
-                              g_model.moduleData[moduleIndex].afhds3.rxFreq = newValue;
-                              SET_DIRTY();
-                              setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
-                            });
+             new NumberEdit(this, grid.getFieldSlot(), 50, 400, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.rxFreq));
              grid.nextLine();
            }
 

@@ -194,7 +194,7 @@ inline int8_t defaultModuleChannels_M8(uint8_t idx)
     return 0; // 8 channels
   else if (isModuleMultimoduleDSM2(idx))
     return -1; // 7 channels
-  else if (isModuleFlysky(idx))
+  else if (isModuleFlysky(idx) || isModuleAFHDS3(idx))
     return 6; // 14 channels
   else
     return 8; // 16 channels

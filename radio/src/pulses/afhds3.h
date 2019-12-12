@@ -10,7 +10,7 @@
 namespace afhds3 {
 
 typedef void (*bindCallback_t) (bool);
-
+typedef int32_t (*getChannelValue_t)(uint8_t);
 enum DeviceAddress {
   TRANSMITTER = 0x01, MODULE = 0x03,
 };
@@ -130,7 +130,7 @@ enum SERIAL_MODE {
   IBUS = 0x01, SBUS = 0x02
 };
 
-struct Config_s {
+struct __attribute__ ((packed)) Config_s {
   uint8_t bindPower;
   uint8_t runPower;
   uint8_t emiStandard;
@@ -152,7 +152,7 @@ enum CHANNELS_DATA_MODE {
   CHANNELS = 0x01, FAIL_SAFE = 0x02,
 };
 
-struct ChannelsData {
+struct __attribute__ ((packed)) ChannelsData {
   uint8_t mode;
   uint8_t channelsNumber;
   int16_t data[MAX_CHANNELS];
@@ -163,7 +163,7 @@ union ChannelsData_u {
   uint8_t buffer[sizeof(ChannelsData)];
 };
 
-struct TelemetryData {
+struct __attribute__ ((packed)) TelemetryData {
   uint8_t sensorType;
   uint8_t length;
   uint8_t type;
@@ -175,7 +175,7 @@ enum MODULE_POWER_SOURCE {
   INTERNAL = 0x01, EXTERNAL = 0x02,
 };
 
-struct ModuleVersion {
+struct __attribute__ ((packed)) ModuleVersion {
   uint32_t productNumber;
   uint32_t hardwereVersion;
   uint32_t bootloaderVersion;
@@ -192,7 +192,7 @@ union AfhdsFrameData {
   ModuleVersion Version;
 };
 
-struct AfhdsFrame {
+struct __attribute__ ((packed)) AfhdsFrame {
   uint8_t startByte;
   uint8_t address;
   uint8_t frameNumber;
@@ -238,10 +238,10 @@ class request {
 
 class afhds3 {
 public:
-  afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData, int16_t* channelOutputs) {
+  afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData, getChannelValue_t getChannelValue) {
     this->data = data;
     this->moduleData = moduleData;
-    this->channelOutputs = channelOutputs;
+    this->getChannelValue = getChannelValue;
     reset();
   }
 
@@ -260,8 +260,9 @@ public:
   void reset(bool resetFrameCount = true);
   void bind(bindCallback_t callback);
   void range(bindCallback_t callback);
-  void cancelBindOrRangeCheck();
+  void cancel();
   const char* getState();
+  void stop();
 private:
   const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
   const uint16_t commandRepeatCount = 5;
@@ -274,16 +275,22 @@ private:
   void addToQueue(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0);
   void parseData(uint8_t* rxBuffer, uint8_t rxBufferCount);
   void setState(uint8_t state);
+  bool syncSettings();
+  void trace(const char* message);
+  uint8_t setFailSafe(int16_t* target);
+  int16_t convert(int channelValue);
   void onModelSwitch();
-  void setConfigToDefault();
   void setConfigFromModelData();
+  void setConfigToDefault();
   void sendChannelsData();
   void clearQueue();
+
   //external data
   FlySkySerialPulsesData* data;
   ModuleData* moduleData;
   int16_t* channelOutputs;
-  bindCallback_t bindCallback;
+  bindCallback_t operationCallback;
+  getChannelValue_t getChannelValue;
   //missing ppm center!
 
   //local config
@@ -293,6 +300,7 @@ private:
   //buffer where the channels are
   State operationState;
   uint16_t repeatCount;
+  uint32_t idleCount;
   std::queue<request*> commandQueue;
 };
 
