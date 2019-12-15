@@ -61,6 +61,10 @@ void setModuleFlag(uint8_t port, uint8_t value) {
       break;
     case MODULE_RANGECHECK:
       afhds3uart.range(nullptr);
+      break;
+    case MODULE_RESET_SETTINGS:
+      afhds3uart.setToDefault();
+     break;
     }
   }
 }

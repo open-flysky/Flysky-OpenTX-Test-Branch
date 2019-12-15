@@ -263,10 +263,11 @@ public:
   void cancel();
   const char* getState();
   void stop();
+  void setToDefault();
+  void setModelData();
 private:
   const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
   const uint16_t commandRepeatCount = 5;
-
   void putByte(uint8_t byte);
   void putBytes(uint8_t* data, int length);
   void putHeader(COMMAND command, FRAME_TYPE frameType);
@@ -280,8 +281,6 @@ private:
   uint8_t setFailSafe(int16_t* target);
   int16_t convert(int channelValue);
   void onModelSwitch();
-  void setConfigFromModelData();
-  void setConfigToDefault();
   void sendChannelsData();
   void clearQueue();
 

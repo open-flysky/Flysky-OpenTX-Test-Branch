@@ -90,7 +90,6 @@ void afhds3::putFrame(COMMAND command, FRAME_TYPE frame, uint8_t* data, uint8_t 
   putHeader(command, frame);
   if(dataLength > 0) putBytes(data, dataLength);
   putFooter();
-  // trace("FRAME");
 }
 
 void afhds3::addToQueue(COMMAND command, FRAME_TYPE frameType, uint8_t* data, uint8_t dataLength) {
@@ -238,14 +237,13 @@ void afhds3::onDataReceived(uint8_t byte, uint8_t* rxBuffer, uint8_t& rxBufferCo
   rxBuffer[rxBufferCount++] = byte;
 }
 void afhds3::trace(const char* message) {
-  char buffer[128];
+  char buffer[256];
   char *pos = buffer;
   for (int i = 0; i < data->ptr - data->pulses; i++) {
-    pos += std::snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ",
-        data->pulses[i]);
+    pos += std::snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", data->pulses[i]);
   }
   (*pos) = 0;
-  TRACE("%s %s", message, buffer);
+  TRACE("%s size = %d data %s", message, data->ptr - data->pulses, buffer);
 }
 void afhds3::setupPulses() {
   //TRACE("%d state %d repeatCount %d", (int)operationState, this->data->state, repeatCount);
@@ -254,7 +252,7 @@ void afhds3::setupPulses() {
     else reset(false);
   }
   data->ptr = data->pulses;
-
+  repeatCount = 0;
   if (operationState == State::UNKNOWN || data->state == ModuleState::STATE_NOT_READY) {
     putFrame(COMMAND::MODULE_READY, FRAME_TYPE::REQUEST_GET_DATA);
     return;
@@ -275,9 +273,9 @@ void afhds3::setupPulses() {
   if(syncSettings()) return;
 
   switch(data->state) {
-  	case ModuleState::STATE_READY:
-  		reset();
-  		break;
+    case ModuleState::STATE_READY:
+        reset();
+        break;
     case ModuleState::STATE_HW_ERROR:
     case ModuleState::STATE_BINDING:
     case ModuleState::STATE_UPDATING_RX:
@@ -285,23 +283,17 @@ void afhds3::setupPulses() {
     case ModuleState::STATE_UPDATING_MOD:
     case ModuleState::STATE_SYNC_RUNNING:
     case ModuleState::STATE_HW_TEST:
-        if(idleCount++ % 100 == 0) {
-            putFrame(COMMAND::MODULE_STATE, FRAME_TYPE::REQUEST_GET_DATA);
-        }
+        if(idleCount++ % 100 == 0) putFrame(COMMAND::MODULE_STATE, FRAME_TYPE::REQUEST_GET_DATA);
         break;
      case ModuleState::STATE_SYNC_DONE:
-       /*
-       if(false && repeatCount++ % 200 == 0) {
-    	 uint8_t failSafe[3+ MAX_CHANNELS*2];
-         uint8_t channels = setFailSafe((int16_t*)failSafe + 3);
-         failSafe[0] = 0x60;
-         failSafe[1] = 0x12;
+       if(cfg.config.telemetry && idleCount++ % 800 == 0) {
+         uint8_t failSafe[3+MAX_CHANNELS*2] = {0x60, 0x12};
+         uint8_t channels = setFailSafe((int16_t*)(failSafe + 3));
          failSafe[2] = channels *2;
-         putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, channels*2 + 3);
-         trace("AFHDS3 [AFHDS3 SET FAILSAFE] data");
+         putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels*2);
+         //trace("AFHDS3 [AFHDS3 SET FAILSAFE] data");
        }
-	   */
-       sendChannelsData();
+       else sendChannelsData();
       break;
   }
 }
@@ -333,10 +325,10 @@ bool afhds3::syncSettings() {
   }
   if(moduleData->afhds3.failsafeTimeout != cfg.config.failSafeTimout) {
     moduleData->afhds3.failsafeTimeout = cfg.config.failSafeTimout;
-	uint8_t data[] = { 0x60, 0x12, 0x02, (uint8_t)(moduleData->afhds3.failsafeTimeout >> 8), (uint8_t)(moduleData->afhds3.failsafeTimeout & 0xFF) };
-	putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
-	TRACE("AFHDS3 TRACE FAILSAFE TMEOUT");
-	return true;
+    uint8_t data[] = { 0x60, 0x12, 0x02, (uint8_t)(moduleData->afhds3.failsafeTimeout >> 8), (uint8_t)(moduleData->afhds3.failsafeTimeout & 0xFF) };
+    putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
+    TRACE("AFHDS3 TRACE FAILSAFE TMEOUT");
+    return true;
   }
 
   return false;
@@ -356,17 +348,12 @@ void afhds3::sendChannelsData() {
     *((int16_t*)(channels + (channel * 2) + 2)) = channelValue;
   }
   putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, channels, sizeof(channels));
-  static uint32_t count = 0;
-  if(!(count++ % 200)) {
-
-  }
-
 }
 
 void afhds3::bind(bindCallback_t callback) {
   operationCallback = callback;
   TRACE("AFHDS3 [BIND]");
-  setConfigFromModelData();
+  setModelData();
   addToQueue(COMMAND::MODULE_SET_CONFIG, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, cfg.buffer, sizeof(cfg.buffer));
   uint8_t cmd = MODULE_MODE_E::BIND;
   addToQueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &cmd, 1);
@@ -388,7 +375,7 @@ void afhds3::stop() {
 }
 
 
-void afhds3::setConfigToDefault() {
+void afhds3::setToDefault() {
   moduleData->afhds3.bindPower = BIND_POWER::MIN_0dbm;
   moduleData->afhds3.runPower = RUN_POWER::PLUS_15bBm;
   moduleData->afhds3.emi = EMI_STANDARD::FCC;
@@ -406,7 +393,7 @@ void afhds3::setConfigToDefault() {
 int16_t afhds3::convert(int channelValue) {
   return limit<int16_t>(FAILSAFE_MIN, ((channelValue + 1024) * 30000 / 2048) - 15000, FAILSAFE_MAX);
 }
-void afhds3::setConfigFromModelData() {
+void afhds3::setModelData() {
   cfg.config.bindPower = moduleData->afhds3.bindPower;
   cfg.config.runPower = moduleData->afhds3.runPower;
   cfg.config.emiStandard = moduleData->afhds3.emi;
@@ -435,15 +422,16 @@ uint8_t afhds3::setFailSafe(int16_t* target) {
 
 
 void afhds3::onModelSwitch() {
-  uint8_t cmd = MODULE_MODE_E::STANDBY;
-  putFrame(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &cmd, 1);
-  setConfigFromModelData();
+  //uint8_t cmd = MODULE_MODE_E::STANDBY;
+  //putFrame(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &cmd, 1);
+  //setModelData();
 }
 
 void afhds3::reset(bool resetFrameCount) {
   TRACE("AFHDS3 RESET");
   clearQueue();
   repeatCount = 0;
+  idleCount = 0;
   this->data->state = ModuleState::STATE_NOT_READY;
   this->data->frame_index = 1;
   this->data->timeout = 0;

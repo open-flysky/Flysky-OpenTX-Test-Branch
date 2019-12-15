@@ -34,6 +34,7 @@ void resetModuleSettings(uint8_t module)
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
   }
+  setModuleFlag(module, MODULE_RESET_SETTINGS);
   setModuleFlag(module, MODULE_NORMAL_MODE);
 }
 

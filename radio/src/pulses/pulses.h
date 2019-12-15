@@ -27,6 +27,7 @@ enum ModuleFlag
   MODULE_RANGECHECK,
   MODULE_BIND,
   // MODULE_OFF, // will need an EEPROM conversion
+  MODULE_RESET_SETTINGS //I see no reason to perform any conversion for new value
 };
 
 #if defined(CPUARM) // (PXX) || defined(DSM2)
