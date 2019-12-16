@@ -37,10 +37,13 @@ int32_t GetChannelValue(uint8_t channel) {
 uint8_t createCrossfireChannelsFrame(uint8_t * frame, int16_t * pulses);
 #endif
 #if defined(AFHDS3)
+#include "telemetry.h"
 afhds3::afhds3 afhds3uart = afhds3::afhds3(
   &modulePulsesData[EXTERNAL_MODULE].flysky, 
   &g_model.moduleData[EXTERNAL_MODULE],
-  GetChannelValue);
+  GetChannelValue,
+  processFlySkySensor
+);
 #endif
 //only valid for external
 void onBind(bool success) {

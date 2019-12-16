@@ -10,6 +10,7 @@
 namespace afhds3 {
 
 typedef void (*bindCallback_t) (bool);
+typedef void (*processSensor_t) (const uint8_t *, uint8_t);
 typedef int32_t (*getChannelValue_t)(uint8_t);
 enum DeviceAddress {
   TRANSMITTER = 0x01, MODULE = 0x03,
@@ -127,7 +128,7 @@ enum PULSE_MODE {
 };
 
 enum SERIAL_MODE {
-  IBUS = 0x01, SBUS = 0x02
+  IBUS = 0x00, SBUS = 0x02
 };
 
 struct __attribute__ ((packed)) Config_s {
@@ -205,6 +206,8 @@ struct __attribute__ ((packed)) AfhdsFrame {
   }
 };
 
+#define FRM302_STATUS 0x56
+
 enum State {
   UNKNOWN = 0,
   SENDING_COMMAND,
@@ -238,10 +241,11 @@ class request {
 
 class afhds3 {
 public:
-  afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData, getChannelValue_t getChannelValue) {
+  afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData, getChannelValue_t getChannelValue, processSensor_t processSensor) {
     this->data = data;
     this->moduleData = moduleData;
     this->getChannelValue = getChannelValue;
+    this->processSensor = processSensor;
     reset();
   }
 
@@ -290,6 +294,7 @@ private:
   int16_t* channelOutputs;
   bindCallback_t operationCallback;
   getChannelValue_t getChannelValue;
+  processSensor_t processSensor;
   //missing ppm center!
 
   //local config

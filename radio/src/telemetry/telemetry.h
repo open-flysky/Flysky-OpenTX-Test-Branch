@@ -45,8 +45,10 @@
 #endif
 #if defined(MULTIMODULE)
   #include "spektrum.h"
-  #include "flysky_ibus.h"
   #include "multi.h"
+#endif
+#if defined(MULTIMODULE) || defined(AFHDS3)
+  #include "flysky_ibus.h"
 #endif
 #if defined(PCBNV14)
   #include "flysky_nv14.h"

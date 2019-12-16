@@ -157,8 +157,8 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
         }
         break;
       case COMMAND::MODULE_GET_CONFIG:
-          TRACE("AFHDS3 [MODULE_GET_CONFIG]");
           std::memcpy((void*)cfg.buffer, &responseFrame->value, sizeof(cfg.buffer));
+          TRACE("AFHDS3 [MODULE_GET_CONFIG] telemetry %d", cfg.config.telemetry);
           break;
       case COMMAND::MODULE_VERSION:
         std::memcpy((void*)&version, &responseFrame->value, sizeof(version));
@@ -187,7 +187,24 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
         TRACE("AFHDS3 [MODULE_SET_CONFIG], %02X", responseFrame->value);
         break;
       case COMMAND::TELEMETRY_DATA:
-        //parse telemetry
+        uint8_t* telemetry = &responseFrame->value;
+        uint8_t length = telemetry[1];
+        uint8_t id = telemetry[2];
+        TRACE("TELEMTRY data %02X", telemetry[0]);
+        if(telemetry[0] == 0x22) {
+          if(length == 2) processSensor(telemetry + 2, 0xAA);
+          else if(length == 4) processSensor(telemetry + 2, 0xAC);
+          else if(length == 6 && id == FRM302_STATUS) {
+            uint8_t dataTemp[] = { ++id, telemetry[3], telemetry[4], 0 };
+            processSensor(dataTemp, 0xAA);
+            uint8_t dataVoltage[] = { ++id, telemetry[3], telemetry[5], telemetry[6] };
+            processSensor(dataVoltage, 0xAA);
+            TRACE("PROCESS FR302 sens");
+          }
+          else {
+            TRACE("TELEMTRY invalid size %d sensor %02X ", data[1], data[2]);
+          }
+        }
         break;
     }
   }
@@ -313,16 +330,24 @@ bool afhds3::syncSettings() {
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
-  if(moduleData->afhds3.mode != cfg.config.pulseMode) {
-    cfg.config.pulseMode = moduleData->afhds3.mode;
-    uint8_t data[] = {0x70, 0x16, 0x01, (uint8_t)(moduleData->afhds3.mode < 2 ? PULSE_MODE::PWM: PULSE_MODE::PPM)};
-    TRACE("AFHDS3 SET PWM/PPM");
+  PULSE_MODE modelPulseMode = moduleData->afhds3.isPWM() ? PULSE_MODE::PWM: PULSE_MODE::PPM;
+  if(modelPulseMode != cfg.config.pulseMode) {
+    cfg.config.pulseMode = modelPulseMode;
+    TRACE("AFHDS3 PWM/PPM %d", modelPulseMode);
+    uint8_t data[] = {0x70, 0x16, 0x01, (uint8_t)(modelPulseMode)};
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
-    uint8_t data2[] = {0x70, 0x18, 0x01, (uint8_t)(moduleData->afhds3.mode & 1 ? SERIAL_MODE::SBUS : SERIAL_MODE::IBUS)};
-    TRACE("AFHDS3 QUEUE IBUS/SBUS");
-    addToQueue(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data2, sizeof(data2));
     return true;
   }
+
+  SERIAL_MODE modelSerialMode = moduleData->afhds3.isSbus() ? SERIAL_MODE::SBUS : SERIAL_MODE::IBUS;
+  if(modelSerialMode != cfg.config.serialMode) {
+    cfg.config.serialMode = modelSerialMode;
+    TRACE("AFHDS3 IBUS/SBUS %d", modelSerialMode);
+    uint8_t data[] = {0x70, 0x18, 0x01, (uint8_t)(modelSerialMode)};
+    putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
+    return true;
+  }
+
   if(moduleData->afhds3.failsafeTimeout != cfg.config.failSafeTimout) {
     moduleData->afhds3.failsafeTimeout = cfg.config.failSafeTimout;
     uint8_t data[] = { 0x60, 0x12, 0x02, (uint8_t)(moduleData->afhds3.failsafeTimeout >> 8), (uint8_t)(moduleData->afhds3.failsafeTimeout & 0xFF) };
