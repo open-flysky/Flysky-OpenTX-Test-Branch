@@ -117,7 +117,8 @@ bool checkCRC(const uint8_t* data, uint8_t size)
 
 bool containsData(enum FRAME_TYPE frameType) {
   return frameType == FRAME_TYPE::RESPONSE_DATA || frameType == FRAME_TYPE::REQUEST_SET_EXPECT_DATA ||
-      frameType == FRAME_TYPE::REQUEST_SET_EXPECT_ACK || frameType == FRAME_TYPE::REQUEST_SET_EXPECT_DATA;
+      frameType == FRAME_TYPE::REQUEST_SET_EXPECT_ACK || frameType == FRAME_TYPE::REQUEST_SET_EXPECT_DATA ||
+      frameType == FRAME_TYPE::REQUEST_SET_NO_RESP;
 }
 
 void afhds3::setState(uint8_t state) {
@@ -190,20 +191,20 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
         uint8_t* telemetry = &responseFrame->value;
         uint8_t length = telemetry[1];
         uint8_t id = telemetry[2];
-        TRACE("TELEMTRY data %02X", telemetry[0]);
         if(telemetry[0] == 0x22) {
-          if(length == 2) processSensor(telemetry + 2, 0xAA);
-          else if(length == 4) processSensor(telemetry + 2, 0xAC);
+          if(length == 5) {
+            if(id == 0xFA) telemetry[2] = 0xF8; //remap to afhds3 snr
+            processSensor(telemetry + 2, 0xAA);
+          }
           else if(length == 6 && id == FRM302_STATUS) {
-            uint8_t dataTemp[] = { ++id, telemetry[3], telemetry[4], 0 };
+            //convert to ibus
+            uint16_t t = (uint16_t)(((int16_t)telemetry[4] *10) + 400);
+            uint8_t dataTemp[] = { ++id, telemetry[3], (uint8_t)(t & 0xFF), (uint8_t)(t >> 8)};
             processSensor(dataTemp, 0xAA);
             uint8_t dataVoltage[] = { ++id, telemetry[3], telemetry[5], telemetry[6] };
             processSensor(dataVoltage, 0xAA);
-            TRACE("PROCESS FR302 sens");
           }
-          else {
-            TRACE("TELEMTRY invalid size %d sensor %02X ", data[1], data[2]);
-          }
+          else if(length == 7) processSensor(telemetry + 2, 0xAC);
         }
         break;
     }
@@ -325,7 +326,7 @@ bool afhds3::syncSettings() {
   }
   if(moduleData->afhds3.rxFreq != cfg.config.pwmFreq) {
     cfg.config.pwmFreq = moduleData->afhds3.rxFreq;
-    uint8_t data[] = {0x70, 0x17, 0x02, (uint8_t)(moduleData->afhds3.rxFreq >> 8), (uint8_t)(moduleData->afhds3.rxFreq & 0xFF)};
+    uint8_t data[] = {0x70, 0x17, 0x02, (uint8_t)(moduleData->afhds3.rxFreq & 0xFF), (uint8_t)(moduleData->afhds3.rxFreq >> 8)};
     TRACE("AFHDS3 SET RX FREQ");
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
@@ -350,7 +351,7 @@ bool afhds3::syncSettings() {
 
   if(moduleData->afhds3.failsafeTimeout != cfg.config.failSafeTimout) {
     moduleData->afhds3.failsafeTimeout = cfg.config.failSafeTimout;
-    uint8_t data[] = { 0x60, 0x12, 0x02, (uint8_t)(moduleData->afhds3.failsafeTimeout >> 8), (uint8_t)(moduleData->afhds3.failsafeTimeout & 0xFF) };
+    uint8_t data[] = { 0x60, 0x12, 0x02, (uint8_t)(moduleData->afhds3.failsafeTimeout & 0xFF), (uint8_t)(moduleData->afhds3.failsafeTimeout >> 8) };
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     TRACE("AFHDS3 TRACE FAILSAFE TMEOUT");
     return true;

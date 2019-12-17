@@ -78,7 +78,7 @@ enum{
     AFHDS2A_ID_S88            = 0x88,
     AFHDS2A_ID_S89            = 0x89,
     AFHDS2A_ID_S8a            = 0x8A,
-
+    AFHDS2A_ID_RX_SNR_AFHDS3  = 0xF8,    // SNR
     AFHDS2A_ID_ALT_FLYSKY     = 0xF9,    // Altitude 2 bytes signed in m - used in FlySky native TX
     AFHDS2A_ID_RX_SNR         = 0xFA,    // SNR
     AFHDS2A_ID_RX_NOISE       = 0xFB,    // Noise
@@ -119,7 +119,7 @@ const FlySkySensor flySkySensors[] = {
   {AFHDS2A_ID_FLIGHT_MODE,      ZSTR_FLIGHT_MODE,       UNIT_RAW,                    0},  // 2 bytes index
   {AFHDS2A_ID_PRES,             ZSTR_PRES,              UNIT_RAW,                    2},  // 4 bytes In fact Temperature + Pressure -> Altitude
   {AFHDS2A_ID_PRES|0x100,       ZSTR_TEMP2,             UNIT_CELSIUS,                1},  // 2 bytes Temperature
-  {AFHDS3_FRM_TEMP,             ZSTR_TEMP2,             UNIT_CELSIUS,                0},  // 2 bytes temperature
+  {AFHDS3_FRM_TEMP,             ZSTR_TEMP2,             UNIT_CELSIUS,                1},  // 2 bytes temperature
   {AFHDS3_FRM_EXT_V,            ZSTR_TXV,               UNIT_VOLTS,                  2},  // 2 bytes voltage
   {AFHDS2A_ID_ODO1,             ZSTR_ODO1,              UNIT_METERS,                 2},  // 2 bytes Odometer1 -- some magic with 330 needed
   {AFHDS2A_ID_ODO2,             ZSTR_ODO2,              UNIT_METERS,                 2},  // 2 bytes Odometer2 -- some magic with 330 needed
@@ -129,7 +129,7 @@ const FlySkySensor flySkySensors[] = {
   {AFHDS2A_ID_GPS_LON,          ZSTR_GPS,               UNIT_RAW,                    7},  // 4 bytes signed WGS84 in degrees * 1E7
   {AFHDS2A_ID_GPS_ALT,          ZSTR_GPSALT,            UNIT_METERS,                 2},  // 4 bytes signed GPS alt m*100
   {AFHDS2A_ID_ALT,              ZSTR_ALT,               UNIT_METERS,                 2},  // 4 bytes signed Alt m*100
-
+  {AFHDS2A_ID_RX_SNR_AFHDS3,    ZSTR_RX_SNR,            UNIT_DB,                     1},  // RX SNR
   {AFHDS2A_ID_RX_SNR,           ZSTR_RX_SNR,            UNIT_DB,                     0},  // RX SNR
   {AFHDS2A_ID_RX_NOISE,         ZSTR_RX_NOISE,          UNIT_DB,                     0},  // RX Noise
   {AFHDS2A_ID_RX_RSSI,          ZSTR_RSSI,              UNIT_DB,                     0},  // RX RSSI (0xfc)
