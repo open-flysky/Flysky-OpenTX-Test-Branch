@@ -417,7 +417,15 @@ void afhds3::setToDefault() {
   }
 }
 int16_t afhds3::convert(int channelValue) {
-  return limit<int16_t>(FAILSAFE_MIN, ((channelValue + 1024) * 30000 / 2048) - 15000, FAILSAFE_MAX);
+  //pulseValue = limit<uint16_t>(0, 988 + ((channelValue + 1024) / 2), 0xfff);
+  //988 - 750 = 238
+  //238 * 20 = 4760
+  //2250 - 2012 = 238
+  //238 * 20 = 4760
+  // 988   ---- 2012
+  //-10240 ---- 10240
+  //-1024  ---- 1024
+  return limit<int16_t>(FAILSAFE_MIN, channelValue*10, FAILSAFE_MAX);
 }
 void afhds3::setModelData() {
   cfg.config.bindPower = moduleData->afhds3.bindPower;
