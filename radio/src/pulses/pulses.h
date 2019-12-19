@@ -27,10 +27,12 @@ enum ModuleFlag
   MODULE_RANGECHECK,
   MODULE_BIND,
   // MODULE_OFF, // will need an EEPROM conversion
+  MODULE_RESET_SETTINGS //I see no reason to perform any conversion for new value
 };
 
 #if defined(CPUARM) // (PXX) || defined(DSM2)
   extern uint8_t moduleFlag[NUM_MODULES];
+  void setModuleFlag(uint8_t port, uint8_t value);
 #endif
 
 #if NUM_MODULES > 1

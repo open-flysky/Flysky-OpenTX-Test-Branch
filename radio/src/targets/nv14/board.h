@@ -182,6 +182,8 @@ void disable_no_pulses(uint32_t port);
 void init_ppm(uint32_t module_index);
 void disable_ppm(uint32_t module_index);
 void init_pxx(uint32_t module_index);
+void init_afhds3(uint32_t module_index);
+void disable_afhds3(uint32_t module_index);
 void disable_pxx(uint32_t module_index);
 void init_dsm2(uint32_t module_index);
 void disable_dsm2(uint32_t module_index);
@@ -517,6 +519,7 @@ void telemetryPortInit(uint32_t baudrate, uint8_t mode);
 void telemetryPortSetDirectionOutput(void);
 void sportSendBuffer(uint8_t * buffer, uint32_t count);
 uint8_t telemetryGetByte(uint8_t * byte);
+uint8_t heartbeatTelemetryGetByte(uint8_t * byte);
 extern uint32_t telemetryErrors;
 
 // Sport update driver
@@ -534,7 +537,7 @@ extern void audioKeyPress();
 
 
 // Second serial port driver
-#define AUX_SERIAL
+//#define AUX_SERIAL
 #define DEBUG_BAUDRATE                  115200
 extern uint8_t auxSerialMode;
 void auxSerialInit(unsigned int mode, unsigned int protocol);

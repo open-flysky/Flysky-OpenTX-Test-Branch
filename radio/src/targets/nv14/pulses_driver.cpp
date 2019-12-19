@@ -33,6 +33,9 @@ void extmodulePxxStart(void);
 void extmoduleDsm2Start(void);
 #endif
 void extmoduleCrossfireStart(void);
+#if defined(AFHDS3)
+void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
+#endif
 
 void init_no_pulses(uint32_t port) {
   if (port == INTERNAL_MODULE)
@@ -65,6 +68,13 @@ void init_pxx(uint32_t port) {
     intmodulePxxStart();
   else
     extmodulePxxStart();
+}
+
+void init_afhds3(uint32_t port) {
+  if (port == EXTERNAL_MODULE) extmoduleAFHDS3Start(afhds3uart.baudrate, afhds3uart.wordLength, afhds3uart.stopBits, afhds3uart.parity);
+}
+void disable_afhds3(uint32_t port) {
+  if (port == EXTERNAL_MODULE) extmoduleStop();
 }
 
 void disable_pxx(uint32_t port) {
