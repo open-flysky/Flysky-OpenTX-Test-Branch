@@ -115,7 +115,7 @@
 
 #if defined(COLORLCD)
 #define LEN_MODULE_PROTOCOLS           "\006"
-#define TR_MODULE_PROTOCOLS            "Off\0  ""PPM\0  ""XJT\0  ""FlySky""DSM2\0 ""CRSF\0 ""MULTI\0""R9M\0  ""SBUS"
+#define TR_MODULE_PROTOCOLS            "Off\0  ""PPM\0  ""XJT\0  ""FlySky""DSM2\0 ""CRSF\0 ""MULTI\0""R9M\0  ""SBUS\0 ""AFHDS3"
 #else
 #define LEN_MODULE_PROTOCOLS           "\004"
 #define TR_MODULE_PROTOCOLS            "Off\0""PPM\0""XJT\0""FLY\0""DSM2""CRSF""MULT""R9M\0""SBUS"

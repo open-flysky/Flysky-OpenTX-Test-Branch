@@ -480,6 +480,8 @@ int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
       case TELEM_PROTO_SPEKTRUM:
         spektrumSetDefault(index, id, subId, instance);
         break;
+#endif
+#if defined(MULTIMODULE) || defined(AFHDS3)
       case TELEM_PROTO_FLYSKY_IBUS:
         flySkySetDefault(index,id, subId, instance);
         break;

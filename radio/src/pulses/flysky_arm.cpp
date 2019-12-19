@@ -618,7 +618,7 @@ void parseResponse(uint8_t port)
     }
     case CMD_RF_GET_CONFIG: {
       setFlyskyState(port, STATE_GET_RECEIVER_CONFIG);
-      modulePulsesData[port].flysky.state_index = FLYSKY_MODULE_TIMEOUT;
+      modulePulsesData[port].flysky.timeout = FLYSKY_MODULE_TIMEOUT;
       break;
     }
 
@@ -762,7 +762,7 @@ void resetPulsesFlySky(uint8_t port)
 {
   modulePulsesData[port].flysky.frame_index = 1;
   setFlyskyState(port, STATE_SET_TX_POWER);
-  modulePulsesData[port].flysky.state_index = 0;
+  modulePulsesData[port].flysky.timeout = 0;
   modulePulsesData[port].flysky.esc_state = 0;
   uint16_t rx_freq = g_model.moduleData[port].romData.rx_freq[0];
   rx_freq += (g_model.moduleData[port].romData.rx_freq[1] * 256);
@@ -783,9 +783,9 @@ void setupPulsesFlySky(uint8_t port)
 
   if (modulePulsesData[port].flysky.state < STATE_DEFAULT) {
 
-    if (++modulePulsesData[port].flysky.state_index >= FLYSKY_MODULE_TIMEOUT / PXX_PERIOD) {
+    if (++modulePulsesData[port].flysky.timeout >= FLYSKY_MODULE_TIMEOUT / PXX_PERIOD) {
 
-      modulePulsesData[port].flysky.state_index = 0;
+      modulePulsesData[port].flysky.timeout = 0;
       switch (modulePulsesData[port].flysky.state) {
         case STATE_INIT:
         {

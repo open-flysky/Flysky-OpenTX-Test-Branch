@@ -166,22 +166,23 @@
 
 // Serial Port (DEBUG)
 // We will temporarily used the PPM and the HEARTBEAT PINS
-#define AUX_SERIAL_RCC_AHB1Periph       (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOE)
-#define AUX_SERIAL_RCC_APB1Periph       0
-#define AUX_SERIAL_RCC_APB2Periph       RCC_APB2Periph_USART6
-#define AUX_SERIAL_GPIO                 GPIOC
-#define AUX_SERIAL_TX_GPIO_PIN          GPIO_Pin_6  // PC.06
-#define AUX_SERIAL_RX_GPIO_PIN          GPIO_Pin_7  // PC.07
-#define AUX_SERIAL_TX_GPIO_PinSource    GPIO_PinSource6
-#define AUX_SERIAL_RX_GPIO_PinSource    GPIO_PinSource7
-#define AUX_SERIAL_GPIO_AF              GPIO_AF_USART6
-#define AUX_SERIAL_USART                USART6
-#define AUX_SERIAL_USART_IRQHandler     USART6_IRQHandler
-#define AUX_SERIAL_USART_IRQn           USART6_IRQn
-#define AUX_SERIAL_TX_INVERT_GPIO       GPIOE
-#define AUX_SERIAL_TX_INVERT_GPIO_PIN   GPIO_Pin_3  // PE.03
-#define AUX_SERIAL_RX_INVERT_GPIO       GPIOI
-#define AUX_SERIAL_RX_INVERT_GPIO_PIN   GPIO_Pin_15 // PI.15
+//#define AUX_SERIAL_RCC_AHB1Periph       (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOE)
+#define AUX_SERIAL_RCC_AHB1Periph       (RCC_AHB1Periph_GPIOB)
+#define AUX_SERIAL_RCC_APB1Periph       (RCC_APB1Periph_USART3)
+#define AUX_SERIAL_RCC_APB2Periph       0
+#define AUX_SERIAL_GPIO                 GPIOB
+#define AUX_SERIAL_TX_GPIO_PIN          GPIO_Pin_10  // PB.10
+#define AUX_SERIAL_RX_GPIO_PIN          GPIO_Pin_11  // PB.11
+#define AUX_SERIAL_TX_GPIO_PinSource    GPIO_PinSource10
+#define AUX_SERIAL_RX_GPIO_PinSource    GPIO_PinSource11
+#define AUX_SERIAL_GPIO_AF              GPIO_AF_USART3
+#define AUX_SERIAL_USART                USART3
+#define AUX_SERIAL_USART_IRQHandler     USART3_IRQHandler
+#define AUX_SERIAL_USART_IRQn           USART3_IRQn
+//#define AUX_SERIAL_TX_INVERT_GPIO       GPIOE
+//#define AUX_SERIAL_TX_INVERT_GPIO_PIN   GPIO_Pin_3  // PE.03
+//#define AUX_SERIAL_RX_INVERT_GPIO       GPIOI
+//#define AUX_SERIAL_RX_INVERT_GPIO_PIN   GPIO_Pin_15 // PI.15
 
 //used in BOOTLOADER
 #define SERIAL_RCC_AHB1Periph 0
@@ -371,27 +372,51 @@
 #define EXTMODULE_PWR_GPIO_PIN          GPIO_Pin_11
 #define EXTMODULE_PWR_FIX_GPIO          GPIOA
 #define EXTMODULE_PWR_FIX_GPIO_PIN      GPIO_Pin_2      // PA.02
-#define EXTMODULE_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA2)
+#define EXTMODULE_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOI | RCC_AHB1Periph_GPIOE | RCC_AHB1Periph_DMA2)
 #define EXTMODULE_RCC_APB1Periph        0
-#define EXTMODULE_RCC_APB2Periph        RCC_APB2Periph_TIM8
+#define EXTMODULE_RCC_APB2Periph        (RCC_APB2Periph_TIM8 | RCC_APB2Periph_USART6)
 #define EXTMODULE_TX_GPIO               GPIOC
 #define EXTMODULE_TX_GPIO_PIN           GPIO_Pin_6 // PC.06
 #define EXTMODULE_TX_GPIO_PinSource     GPIO_PinSource6
 #define EXTMODULE_TX_GPIO_AF            GPIO_AF_TIM8
+#define EXTMODULE_TX_GPIO_AF_USART      GPIO_AF_USART6
 #define EXTMODULE_RX_GPIO               GPIOC
 #define EXTMODULE_RX_GPIO_PIN           GPIO_Pin_7 // PC.07
 #define EXTMODULE_RX_GPIO_PinSource     GPIO_PinSource7
-#define EXTMODULE_RX_GPIO_AF            GPIO_AF_USART6
+#define EXTMODULE_RX_GPIO_AF_USART      GPIO_AF_USART6
 #define EXTMODULE_TIMER                 TIM8
 #define EXTMODULE_TIMER_IRQn            TIM8_CC_IRQn
 #define EXTMODULE_TIMER_IRQHandler      TIM8_CC_IRQHandler
 #define EXTMODULE_TIMER_FREQ            (PERI2_FREQUENCY * TIMER_MULT_APB2)
+//USART
+#define EXTMODULE_USART_TX_DMA_CHANNEL     DMA_Channel_5
+#define EXTMODULE_USART_TX_DMA_STREAM      DMA2_Stream7
+#define EXTMODULE_USART_TX_DMA_IRQn        DMA2_Stream7_IRQn
+#define EXTMODULE_USART_TX_DMA_IRQHandler  DMA2_Stream7_IRQHandler
+#define EXTMODULE_USART_TX_DMA_FLAG_TC     DMA_IT_TCIF7
+
+#define EXTMODULE_USART_RX_DMA_CHANNEL     DMA_Channel_5
+#define EXTMODULE_USART_RX_DMA_STREAM      DMA2_Stream2
+#define EXTMODULE_USART_RX_DMA_IRQn        DMA2_Stream5_IRQn
+#define EXTMODULE_USART_RX_DMA_IRQHandler  DMA2_Stream5_IRQHandler
+#define EXTMODULE_USART_RX_DMA_FLAG_TC     DMA_IT_TCIF5
+
+#define EXTMODULE_USART_IRQHandler         USART6_IRQHandler
+#define EXTMODULE_USART_IRQn               USART6_IRQn
+
+//TIMER
 #define EXTMODULE_DMA_CHANNEL           DMA_Channel_7
 #define EXTMODULE_DMA_STREAM            DMA2_Stream1
 #define EXTMODULE_DMA_IRQn              DMA2_Stream1_IRQn
 #define EXTMODULE_DMA_IRQHandler        DMA2_Stream1_IRQHandler
 #define EXTMODULE_DMA_FLAG_TC           DMA_IT_TCIF1
-#define EXTMODULE_USART                 USART6 // TODO
+#define EXTMODULE_USART                 USART6
+
+#define EXTMODULE_TX_INVERT_GPIO       GPIOE
+#define EXTMODULE_TX_INVERT_GPIO_PIN   GPIO_Pin_3  // PE.03
+#define EXTMODULE_RX_INVERT_GPIO       GPIOI
+#define EXTMODULE_RX_INVERT_GPIO_PIN   GPIO_Pin_15 // PI.15
+
 
 // Heartbeat (not used)
 #define HEARTBEAT_RCC_AHB1Periph        RCC_AHB1Periph_GPIOD

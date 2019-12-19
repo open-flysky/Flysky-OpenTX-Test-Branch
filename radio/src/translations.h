@@ -630,7 +630,9 @@ extern const pm_char STR_GF[];
 extern const pm_char STR_FAS_OFFSET[];
 #endif
 
+extern const pm_char STR_MODULE_STATUS[];
 extern const pm_char STR_MODULE_BINDING[];
+
 #if defined(MULTIMODULE)
 extern const pm_char STR_MULTI_CUSTOM[];
 extern const pm_char STR_MULTI_OPTION[];
@@ -645,7 +647,7 @@ extern const pm_char STR_MODULE_NO_INPUT[];
 extern const pm_char STR_MODULE_WAITFORBIND[];
 extern const pm_char STR_MODULE_NO_TELEMETRY[];
 extern const pm_char STR_PROTOCOL_INVALID[];
-extern const pm_char STR_MODULE_STATUS[];
+
 extern const pm_char STR_MODULE_SYNC[];
 extern const pm_char STR_MULTI_SERVOFREQ[];
 #if LCD_W < 212

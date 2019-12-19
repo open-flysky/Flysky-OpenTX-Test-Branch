@@ -19,6 +19,7 @@
  */
 
 #include "opentx.h"
+#include "../../pulses/afhds3.h"
 
 Fifo<uint8_t, TELEMETRY_FIFO_SIZE> telemetryNoDMAFifo;
 uint32_t telemetryErrors = 0;
@@ -52,7 +53,7 @@ void telemetryPortInit(uint32_t baudrate, uint8_t mode)
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_InitStructure.GPIO_Speed = GPIO_High_Speed;
   GPIO_Init(TELEMETRY_GPIO, &GPIO_InitStructure);
 
   GPIO_InitStructure.GPIO_Pin = TELEMETRY_DIR_GPIO_PIN;
@@ -65,8 +66,21 @@ void telemetryPortInit(uint32_t baudrate, uint8_t mode)
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(TELEMETRY_REV_GPIO, &GPIO_InitStructure);
-  TELEMETRY_TX_POL_INV();
-  TELEMETRY_RX_POL_INV();
+
+  if(mode & TELEMETRY_SERIAL_NOT_INVERTED) {
+    TELEMETRY_TX_POL_NORM();
+    TELEMETRY_RX_POL_NORM();
+  }
+  else {
+    TELEMETRY_TX_POL_INV();
+    TELEMETRY_RX_POL_INV();
+  }
+
+  //TELEMETRY_TX_POL_INV();
+  //TELEMETRY_RX_POL_INV();
+  //working
+  //TELEMETRY_TX_POL_NORM();
+  //TELEMETRY_RX_POL_NORM();
 
   USART_InitStructure.USART_BaudRate = baudrate;
   if (mode & TELEMETRY_SERIAL_8E2) {
@@ -184,6 +198,13 @@ extern "C" void TELEMETRY_USART_IRQHandler(void)
 // TODO we should have telemetry in an higher layer, functions above should move to a sport_driver.cpp
 uint8_t telemetryGetByte(uint8_t * byte)
 {
+#if defined(AFHDS3)
+  //maybe telemetry protocol
+  if(s_current_protocol[EXTERNAL_MODULE] == PROTO_AFHDS3) {
+    return heartbeatTelemetryGetByte(byte);
+  }
+#endif
+
 #if defined(PCBX12S)
   if (telemetryFifoMode & TELEMETRY_SERIAL_WITHOUT_DMA)
     return telemetryNoDMAFifo.pop(*byte);
