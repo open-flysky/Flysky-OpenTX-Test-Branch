@@ -113,7 +113,14 @@ void afhds3::putFrame(COMMAND command, FRAME_TYPE frame, uint8_t* data, uint8_t 
   putFooter();
 }
 
+void afhds3::addAckToQueue(COMMAND command, uint8_t frameNumber) {
+  request* r = new request(command, FRAME_TYPE::RESPONSE_ACK, nullptr, 0);
+  r->frameNumber = frameNumber;
+  commandQueue.push(r);
+}
+
 void afhds3::addToQueue(COMMAND command, FRAME_TYPE frameType, uint8_t* data, uint8_t dataLength) {
+
   request* r = new request(command, frameType, data, dataLength);
   commandQueue.push(r);
 }
@@ -231,11 +238,11 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
       }
       break;
       case COMMAND::COMMAND_RESULT:
-		{
-          AfhdsFrameData* respData = responseFrame->GetData();
-          TRACE("COMMAND RESULT %02X result %d datalen %d", respData->CommandResult.command, respData->CommandResult.result, respData->CommandResult.respLen);
-        }
-        break;
+      {
+          //AfhdsFrameData* respData = responseFrame->GetData();
+          //TRACE("COMMAND RESULT %02X result %d datalen %d", respData->CommandResult.command, respData->CommandResult.result, respData->CommandResult.respLen);
+      }
+      break;
     }
   }
 
@@ -250,7 +257,7 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
       //if(r->command == (enum COMMAND)responseFrame->command && r->frameType == FRAME_TYPE::RESPONSE_ACK) return;
     //}
     TRACE("SEND ACK cmd %02X type %02X", responseFrame->command, responseFrame->frameType);
-    addToQueue((enum COMMAND)responseFrame->command, FRAME_TYPE::RESPONSE_ACK);
+    addAckToQueue((enum COMMAND)responseFrame->command, responseFrame->frameNumber);
     //not tested danger function
     //::sendExtModuleNow();
   }
@@ -318,8 +325,15 @@ void afhds3::setupPulses() {
   if(!commandQueue.empty()) {
     request* r = commandQueue.front();
     commandQueue.pop();
+    uint8_t frameIndexBackup = data->frame_index;
+    if(r->frameNumber >= 0) {
+      data->frame_index = r->frameNumber;
+    }
     putFrame(r->command, r->frameType, r->payload, r->payloadSize);
     trace("AFHDS3 [CMD QUEUE] data");
+    if(r->frameNumber >= 0) {
+      data->frame_index = frameIndexBackup;
+    }
     delete r;
     return;
   }

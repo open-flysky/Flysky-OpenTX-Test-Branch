@@ -256,6 +256,7 @@ class request {
     }
     else payload = nullptr;
     payloadSize = length;
+    frameNumber = -1;
   }
   ~request() {
     if(payload != nullptr) {
@@ -267,6 +268,7 @@ class request {
   enum FRAME_TYPE frameType;
   uint8_t* payload;
   uint8_t payloadSize;
+  int frameNumber;
 };
 
 class afhds3 {
@@ -307,6 +309,7 @@ private:
   void putHeader(COMMAND command, FRAME_TYPE frameType);
   void putFooter();
   void putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0);
+  void addAckToQueue(COMMAND command, uint8_t frameNumber);
   void addToQueue(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0);
   void parseData(uint8_t* rxBuffer, uint8_t rxBufferCount);
   void setState(uint8_t state);
