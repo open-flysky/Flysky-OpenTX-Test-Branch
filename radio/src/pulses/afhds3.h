@@ -28,6 +28,9 @@
 #include <queue>
 
 #define AFHDS3_BAUDRATE 1500000
+
+extern uint16_t failsafeCounter[NUM_MODULES];
+
 namespace afhds3 {
 
 typedef void (*bindCallback_t) (bool);

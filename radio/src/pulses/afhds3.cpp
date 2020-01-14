@@ -325,7 +325,9 @@ void afhds3::setupPulses() {
         if(idleCount++ % 100 == 0) putFrame(COMMAND::MODULE_STATE, FRAME_TYPE::REQUEST_GET_DATA);
         break;
      case ModuleState::STATE_SYNC_DONE:
-       if(cfg.config.telemetry && idleCount++ % 800 == 0) {
+       if(cfg.config.telemetry && !(::failsafeCounter[EXTERNAL_MODULE]--)) { //tbd 2.4 used better access to module index
+         failsafeCounter[EXTERNAL_MODULE] = 100;
+         TRACE("AFHDS FAILSAFE");
          uint8_t failSafe[3+MAX_CHANNELS*2] = {0x60, 0x12};
          uint8_t channels = setFailSafe((int16_t*)(failSafe + 3));
          failSafe[2] = channels *2;
