@@ -521,7 +521,10 @@ extern "C" void EXTMODULE_TIMER_IRQHandler()
   setupPulses(EXTERNAL_MODULE);
   extmoduleSendNextFrame();
 }
-
+//hack for afhds3
+void sendExtModuleNow() {
+  NVIC_SetPendingIRQ(EXTMODULE_TIMER_IRQn);
+}
 
 uint8_t heartbeatTelemetryGetByte(uint8_t * byte)
 {

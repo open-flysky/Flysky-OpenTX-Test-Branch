@@ -30,6 +30,7 @@
 #define AFHDS3_BAUDRATE 1500000
 
 extern uint16_t failsafeCounter[NUM_MODULES];
+extern void sendExtModuleNow();
 
 namespace afhds3 {
 
@@ -207,7 +208,11 @@ struct __attribute__ ((packed)) ModuleVersion {
   uint32_t firmwareVersion;
   uint32_t rfVersion;
 };
-
+struct __attribute__ ((packed)) CommandResult_s {
+  uint16_t command;
+  uint8_t result;
+  uint8_t respLen;
+};
 
 union AfhdsFrameData {
   uint8_t value;
@@ -215,6 +220,7 @@ union AfhdsFrameData {
   ChannelsData Channels;
   TelemetryData Telemetry;
   ModuleVersion Version;
+  CommandResult_s CommandResult;
 };
 
 struct __attribute__ ((packed)) AfhdsFrame {

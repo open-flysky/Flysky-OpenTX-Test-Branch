@@ -209,6 +209,7 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
         TRACE("AFHDS3 [MODULE_SET_CONFIG], %02X", responseFrame->value);
         break;
       case COMMAND::TELEMETRY_DATA:
+      {
         uint8_t* telemetry = &responseFrame->value;
         uint8_t length = telemetry[1];
         uint8_t id = telemetry[2];
@@ -227,6 +228,13 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
           }
           else if(length == 7) processSensor(telemetry + 2, 0xAC);
         }
+      }
+      break;
+      case COMMAND::COMMAND_RESULT:
+		{
+          AfhdsFrameData* respData = responseFrame->GetData();
+          TRACE("COMMAND RESULT %02X result %d datalen %d", respData->CommandResult.command, respData->CommandResult.result, respData->CommandResult.respLen);
+        }
         break;
     }
   }
@@ -236,7 +244,15 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
     TRACE("Command %02X NOT IMPLEMENTED!", responseFrame->command);
   }
   else if (responseFrame->frameType == FRAME_TYPE::REQUEST_SET_EXPECT_ACK) {
+    //we need to respond now - it may break messaging context
+    //if(!commandQueue.empty()) { //check if such request is not queued
+      //request* r = commandQueue.front();
+      //if(r->command == (enum COMMAND)responseFrame->command && r->frameType == FRAME_TYPE::RESPONSE_ACK) return;
+    //}
+    TRACE("SEND ACK cmd %02X type %02X", responseFrame->command, responseFrame->frameType);
     addToQueue((enum COMMAND)responseFrame->command, FRAME_TYPE::RESPONSE_ACK);
+    //not tested danger function
+    //::sendExtModuleNow();
   }
   else if(responseFrame->frameType == FRAME_TYPE::RESPONSE_DATA || responseFrame->frameType == FRAME_TYPE::RESPONSE_ACK) {
     if(operationState == State::AWAITING_RESPONSE /* && requestFrame->command == responseFrame->command*/) {
@@ -326,9 +342,9 @@ void afhds3::setupPulses() {
         break;
      case ModuleState::STATE_SYNC_DONE:
        if(cfg.config.telemetry && !(::failsafeCounter[EXTERNAL_MODULE]--)) { //tbd 2.4 used better access to module index
-         failsafeCounter[EXTERNAL_MODULE] = 100;
+         failsafeCounter[EXTERNAL_MODULE] = 250;
          TRACE("AFHDS FAILSAFE");
-         uint8_t failSafe[3+MAX_CHANNELS*2] = {0x60, 0x12};
+         uint8_t failSafe[3+MAX_CHANNELS*2] = {0x11, 0x60 };
          uint8_t channels = setFailSafe((int16_t*)(failSafe + 3));
          failSafe[2] = channels *2;
          putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels*2);
@@ -342,14 +358,14 @@ void afhds3::setupPulses() {
 bool afhds3::syncSettings() {
   if (moduleData->afhds3.runPower != cfg.config.runPower) {
     cfg.config.runPower = moduleData->afhds3.runPower;
-    uint8_t data[] = { 0x20, 0x13, 0x01, moduleData->afhds3.runPower };
+    uint8_t data[] = { 0x13, 0x20, 0x01, moduleData->afhds3.runPower };
     TRACE("AFHDS3 SET TX POWER %d", moduleData->afhds3.runPower);
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
   if(moduleData->afhds3.rxFreq != cfg.config.pwmFreq) {
     cfg.config.pwmFreq = moduleData->afhds3.rxFreq;
-    uint8_t data[] = {0x70, 0x17, 0x02, (uint8_t)(moduleData->afhds3.rxFreq & 0xFF), (uint8_t)(moduleData->afhds3.rxFreq >> 8)};
+    uint8_t data[] = {0x17, 0x70, 0x02, (uint8_t)(moduleData->afhds3.rxFreq & 0xFF), (uint8_t)(moduleData->afhds3.rxFreq >> 8)};
     TRACE("AFHDS3 SET RX FREQ");
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
@@ -358,7 +374,7 @@ bool afhds3::syncSettings() {
   if(modelPulseMode != cfg.config.pulseMode) {
     cfg.config.pulseMode = modelPulseMode;
     TRACE("AFHDS3 PWM/PPM %d", modelPulseMode);
-    uint8_t data[] = {0x70, 0x16, 0x01, (uint8_t)(modelPulseMode)};
+    uint8_t data[] = {0x16, 0x70, 0x01, (uint8_t)(modelPulseMode)};
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
@@ -367,14 +383,14 @@ bool afhds3::syncSettings() {
   if(modelSerialMode != cfg.config.serialMode) {
     cfg.config.serialMode = modelSerialMode;
     TRACE("AFHDS3 IBUS/SBUS %d", modelSerialMode);
-    uint8_t data[] = {0x70, 0x18, 0x01, (uint8_t)(modelSerialMode)};
+    uint8_t data[] = {0x18, 0x70, 0x01, (uint8_t)(modelSerialMode)};
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
 
   if(moduleData->afhds3.failsafeTimeout != cfg.config.failSafeTimout) {
     moduleData->afhds3.failsafeTimeout = cfg.config.failSafeTimout;
-    uint8_t data[] = { 0x60, 0x12, 0x02, (uint8_t)(moduleData->afhds3.failsafeTimeout & 0xFF), (uint8_t)(moduleData->afhds3.failsafeTimeout >> 8) };
+    uint8_t data[] = {0x12,  0x60, 0x02, (uint8_t)(moduleData->afhds3.failsafeTimeout & 0xFF), (uint8_t)(moduleData->afhds3.failsafeTimeout >> 8) };
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     TRACE("AFHDS3 TRACE FAILSAFE TMEOUT");
     return true;
