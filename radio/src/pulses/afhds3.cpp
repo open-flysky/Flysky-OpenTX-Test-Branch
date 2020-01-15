@@ -218,22 +218,33 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
       case COMMAND::TELEMETRY_DATA:
       {
         uint8_t* telemetry = &responseFrame->value;
-        uint8_t length = telemetry[1];
-        uint8_t id = telemetry[2];
+
         if(telemetry[0] == 0x22) {
-          if(length == 5) {
-            if(id == 0xFA) telemetry[2] = 0xF8; //remap to afhds3 snr
-            processSensor(telemetry + 2, 0xAA);
+          telemetry++;
+          while(telemetry < rxBuffer + rxBufferCount) {
+            uint8_t length = telemetry[0];
+            uint8_t id = telemetry[1];
+            if(id == 0xFE) id = 0xF7;  //use new id because format is different
+            if(length == 0 || telemetry + length > rxBuffer + rxBufferCount) break;
+            if(length == 4) { //one byte value fill missing byte
+              uint8_t data[] = { id, telemetry[2], telemetry[3], 0};
+              processSensor(data, 0xAA);
+            }
+            if(length == 5) {
+              if(id == 0xFA) telemetry[1] = 0xF8; //remap to afhds3 snr
+              processSensor(telemetry + 1, 0xAA);
+            }
+            else if(length == 6 && id == FRM302_STATUS) {
+              //convert to ibus
+              uint16_t t = (uint16_t)(((int16_t)telemetry[3] *10) + 400);
+              uint8_t dataTemp[] = { ++id, telemetry[2], (uint8_t)(t & 0xFF), (uint8_t)(t >> 8)};
+              processSensor(dataTemp, 0xAA);
+              uint8_t dataVoltage[] = { ++id, telemetry[2], telemetry[4], telemetry[5] };
+              processSensor(dataVoltage, 0xAA);
+            }
+            else if(length == 7) processSensor(telemetry + 1, 0xAC);
+            telemetry += length;
           }
-          else if(length == 6 && id == FRM302_STATUS) {
-            //convert to ibus
-            uint16_t t = (uint16_t)(((int16_t)telemetry[4] *10) + 400);
-            uint8_t dataTemp[] = { ++id, telemetry[3], (uint8_t)(t & 0xFF), (uint8_t)(t >> 8)};
-            processSensor(dataTemp, 0xAA);
-            uint8_t dataVoltage[] = { ++id, telemetry[3], telemetry[5], telemetry[6] };
-            processSensor(dataVoltage, 0xAA);
-          }
-          else if(length == 7) processSensor(telemetry + 2, 0xAC);
         }
       }
       break;
