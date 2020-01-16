@@ -383,7 +383,7 @@ void afhds3::setupPulses() {
 bool afhds3::syncSettings() {
   if (moduleData->afhds3.runPower != cfg.config.runPower) {
     cfg.config.runPower = moduleData->afhds3.runPower;
-    uint8_t data[] = { 0x13, 0x20, 0x01, moduleData->afhds3.runPower };
+    uint8_t data[] = { 0x13, 0x20, 0x02, moduleData->afhds3.runPower, 0 };
     TRACE("AFHDS3 SET TX POWER %d", moduleData->afhds3.runPower);
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
