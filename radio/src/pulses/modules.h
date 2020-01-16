@@ -242,6 +242,11 @@ inline bool isModuleNeedingBindRangeButtons(uint8_t idx)
   return isModulePXX(idx) || isModuleDSM2(idx) || isModuleMultimodule(idx) || isModuleFlysky(idx) || isModuleAFHDS3(idx);
 }
 
+inline bool isModuleNeedingRangeButtons(uint8_t idx)
+{
+  return isModuleNeedingBindRangeButtons(idx) && !isModuleAFHDS3(idx);
+}
+
 inline bool isModuleNeedingFailsafeButton(uint8_t idx)
 {
   if(isModuleXJT(idx)){

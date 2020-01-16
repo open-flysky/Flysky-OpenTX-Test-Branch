@@ -88,6 +88,7 @@ enum MODULE_READY_E {
 };
 
 enum ModuleState {
+  STATE_NOT_READY = 0x00, //virtual
   STATE_HW_ERROR = 0x01,
   STATE_BINDING = 0x02,
   STATE_SYNC_RUNNING = 0x03,
@@ -98,8 +99,7 @@ enum ModuleState {
   STATE_UPDATING_RX = 0x08,
   STATE_UPDATING_RX_FAILED = 0x09,
   STATE_RF_TESTING = 0x0a,
-  STATE_NOT_READY = 0x0b, //virtual
-  STATE_READY = 0x0c,     //virtual
+  STATE_READY = 0x0b,     //virtual
   STATE_HW_TEST = 0xff,
 };
 
@@ -109,6 +109,7 @@ enum MODULE_MODE_E {
   BIND = 0x02,  //after bind module will enter run mode
   RUN = 0x03,
   RX_UPDATE = 0x04, //after successful update module will enter standby mode, otherwise hw error will be raised
+  MODULE_MODE_UNKNOWN = 0xFF
 };
 
 enum CMD_RESULT {
@@ -278,6 +279,7 @@ public:
     this->moduleData = moduleData;
     this->getChannelValue = getChannelValue;
     this->processSensor = processSensor;
+    this->requestedModuleMode = MODULE_MODE_E::MODULE_MODE_UNKNOWN;
     reset();
   }
 
@@ -333,6 +335,7 @@ private:
   //local config
   Config_u cfg;
   ModuleVersion version;
+  uint8_t requestedModuleMode;
   enum MODULE_POWER_SOURCE powerSource;
   //buffer where the channels are
   State operationState;

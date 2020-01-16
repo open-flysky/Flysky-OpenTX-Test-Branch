@@ -618,6 +618,8 @@ class ModuleWindow : public Window {
             bindButton->check(false);
           }
         });
+      }
+      if(isModuleNeedingRangeButtons(moduleIndex)) {
         rangeButton = new TextButton(this, grid.getFieldSlot(2, 1), STR_MODULE_RANGE);
         rangeButton->setPressHandler([=]() -> uint8_t {
           if (moduleFlag[moduleIndex] == MODULE_BIND) {
@@ -654,7 +656,8 @@ class ModuleWindow : public Window {
             rangeButton->check(false);
           }
         });
-
+      }
+      if(isModuleNeedingBindRangeButtons(moduleIndex) || isModuleNeedingRangeButtons(moduleIndex)){
         grid.nextLine();
       }
 
@@ -694,9 +697,9 @@ class ModuleWindow : public Window {
         new StaticText(this, grid.getLabelSlot(true), "EMI Standard");
         new Choice(this, grid.getFieldSlot(), "\003FCC CE", 0, afhds3::EMI_STANDARD::CE, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.emi));
         grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(true), "Telemetry");
-        new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
-        grid.nextLine();
+        //new StaticText(this, grid.getLabelSlot(true), "Telemetry");
+        //new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
+        //grid.nextLine();
       }
 #if defined (CROSSFIRE_NATIVE)
       if(isModuleCrossfire(moduleIndex)){
