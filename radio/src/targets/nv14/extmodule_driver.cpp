@@ -21,7 +21,6 @@
 #include "opentx.h"
 
 DMAFifo<TELEMETRY_FIFO_SIZE> extTelemetryDMAFifo __DMA (EXTMODULE_USART_RX_DMA_STREAM);
-bool stopOnTxDone = false;
 
 void extmoduleSendNextFrame();
 
@@ -63,15 +62,6 @@ void extModuleInit()
 
 void extmoduleStop()
 {
-  if (s_current_protocol[EXTERNAL_MODULE] == PROTO_AFHDS3) {
-      uint32_t count = modulePulsesData[EXTERNAL_MODULE].flysky.ptr - modulePulsesData[EXTERNAL_MODULE].flysky.pulses;
-      if(count > 0) {
-        //send last frame then stop
-        stopOnTxDone = true;
-        extmoduleSendNextFrame();
-        return;
-      }
-  }
   EXTERNAL_MODULE_OFF();
 
   NVIC_DisableIRQ(EXTMODULE_DMA_IRQn);
@@ -484,12 +474,6 @@ extern "C" void EXTMODULE_USART_TX_DMA_IRQHandler(void)
     EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
     EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE; // Enable this interrupt
   }
-  if(stopOnTxDone) {
-    TRACE("STOP EXT MODULE AFTER SEND");
-    stopOnTxDone = false;
-    extmoduleStop();
-  }
-
 }
 
 extern "C" void EXTMODULE_DMA_IRQHandler()
