@@ -172,6 +172,9 @@ FailSafeMenu::FailSafeMenu(uint8_t moduleIndex) :
 }
 void onBindMenu(const char * result, uint8_t moduleIndex);
 
+
+
+
 class ModuleWindow : public Window {
   public:
     ModuleWindow(Window * parent, const rect_t &rect, uint8_t moduleIndex) :
@@ -195,6 +198,8 @@ class ModuleWindow : public Window {
     TextButton * failSafeSetButton = nullptr;
     NumberEdit * channelStart = nullptr;
     NumberEdit * channelEnd = nullptr;
+    Choice* afhds3RxPower = nullptr;
+    Choice* afhds3BindPower = nullptr;
 
     bool isPPM(uint8_t moduleIndex){
       if(moduleIndex == TRAINER_MODULE) return g_model.trainerMode == TRAINER_MODE_SLAVE;
@@ -253,7 +258,8 @@ class ModuleWindow : public Window {
       failSafeSetButton = nullptr;
       channelStart = nullptr;
       channelEnd = nullptr;
-
+      afhds3RxPower = nullptr;
+      afhds3BindPower = nullptr;
       // Module Type
       new StaticText(this, grid.getLabelSlot(true), STR_MODE);
       if (moduleIndex == TRAINER_MODULE) {
@@ -304,6 +310,9 @@ class ModuleWindow : public Window {
         status->setCheckHandler([=]() {
           if(!status->isTextEqual(afhds3uart.getState())) {
             status->setText(std::string(afhds3uart.getState()));
+            bool connected = afhds3uart.getStateEnum() == afhds3::ModuleState::STATE_SYNC_DONE;
+            if(afhds3RxPower) afhds3RxPower->setReadOnly(connected);
+            if(afhds3BindPower) afhds3BindPower->setReadOnly(connected);
           }
         });
       }
@@ -686,20 +695,25 @@ class ModuleWindow : public Window {
       }
 #endif
       if (isModuleAFHDS3(moduleIndex)) {
+        bool connected = afhds3uart.getStateEnum() == afhds3::ModuleState::STATE_SYNC_DONE;
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new Choice(this, grid.getFieldSlot(), "\007 15 dBm 20 dBm 27 dBm 30 dBm 33 dBm", 0,
+        afhds3RxPower = new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0,
             afhds3::RUN_POWER::PLUS_33dBm, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));
         grid.nextLine();
+        afhds3RxPower->setReadOnly(connected);
         new StaticText(this, grid.getLabelSlot(true), "Bind Power");
-        new Choice(this, grid.getFieldSlot(), "\007-16 dBm -5 dBm  0 dBm  5 dBm 16 dBm", 0,
+        afhds3BindPower = new Choice(this, grid.getFieldSlot(), STR_BIND_POWER_AFHDS3, 0,
             afhds3::BIND_POWER::PLUS_14dBm, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.bindPower));
         grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(true), "EMI Standard");
-        new Choice(this, grid.getFieldSlot(), "\003FCC CE", 0, afhds3::EMI_STANDARD::CE, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.emi));
+        afhds3BindPower->setReadOnly(connected);
+        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_TELEMETRY);
+        if(connected) {
+          new StaticText(this, grid.getFieldSlot(), g_model.moduleData[moduleIndex].afhds3.telemetry ? STR_DIALOG_YES : TR_DIALOG_NO);
+        }
+        else {
+          new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
+        }
         grid.nextLine();
-        //new StaticText(this, grid.getLabelSlot(true), "Telemetry");
-        //new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
-        //grid.nextLine();
       }
 #if defined (CROSSFIRE_NATIVE)
       if(isModuleCrossfire(moduleIndex)){

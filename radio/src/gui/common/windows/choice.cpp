@@ -36,7 +36,8 @@ ChoiceBase::ChoiceBase(const char * values, int16_t vmin, int16_t vmax, std::fun
       vmax(vmax),
       getValue(std::move(getValue)),
       setValue(std::move(setValue)),
-      flags(flags)
+      flags(flags),
+      readOnly(0)
 {
 
 }
@@ -56,6 +57,10 @@ void ChoiceBase::paintChoice(BitmapBuffer * dc, bool hasFocus, const rect_t rect
     textColor = TEXT_INVERTED_BGCOLOR;
     lineColor = TEXT_INVERTED_BGCOLOR;
   }
+  if(readOnly) {
+    textColor = 0;
+    lineColor = TEXT_BGCOLOR;
+  }
   if (textHandler) dc->drawText(3, Y_ENLARGEABLE, textHandler(getValue()).c_str(), flags | textColor);
   else if (values) drawTextAtIndex(dc, 3, Y_ENLARGEABLE, values, getValue() - vmin, flags | textColor);
   else drawNumber(dc, 3, Y_ENLARGEABLE, getValue(), flags | textColor);
@@ -65,6 +70,7 @@ void ChoiceBase::paintChoice(BitmapBuffer * dc, bool hasFocus, const rect_t rect
 
 bool ChoiceBase::handleTouchEnd(coord_t x, coord_t y)
 {
+  if(readOnly) return false;
   AUDIO_KEY_PRESS();
   auto menu = new Menu();
   auto value = getValue();

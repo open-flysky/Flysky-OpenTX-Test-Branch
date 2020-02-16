@@ -300,6 +300,7 @@ public:
   void range(bindCallback_t callback);
   void cancel();
   const char* getState();
+  ModuleState getStateEnum();
   void stop();
   void setToDefault();
   void setModelData();

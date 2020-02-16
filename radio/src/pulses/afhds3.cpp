@@ -43,6 +43,9 @@ static const char* const moduleStateText[] = {
    "HW test"
 };
 
+ModuleState afhds3::getStateEnum() {
+  return (ModuleState)data->state;
+}
 const char* afhds3::getState() {
   if(data->state <= ModuleState::STATE_READY) return moduleStateText[data->state];
   return "Unknown";

@@ -512,7 +512,10 @@ const pm_char STR_MULTI_SERVOFREQ[] PROGMEM = TR_MULTI_SERVOFREQ;
 const pm_char STR_SUBTYPE[] PROGMEM = TR_SUBTYPE;
 #endif
 #endif
-
+#if defined(AFHDS3)
+const pm_char STR_RFPOWER_AFHDS3[] PROGMEM = TR_RFPOWER_AFHDS3;
+const pm_char STR_BIND_POWER_AFHDS3[] PROGMEM = TR_RFPOWER_AFHDS3;
+#endif
 const pm_char STR_RESET_BTN[] PROGMEM = TR_RESET_BTN;
 
 #if defined(SDCARD)

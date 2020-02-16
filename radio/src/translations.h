@@ -654,6 +654,10 @@ extern const pm_char STR_MULTI_SERVOFREQ[];
 extern const pm_char STR_SUBTYPE[];
 #endif
 #endif
+#if defined(AFHDS3)
+extern const pm_char STR_RFPOWER_AFHDS3[];
+extern const pm_char STR_BIND_POWER_AFHDS3[];
+#endif
 #if defined(DSM2) || defined(PXX)
 extern const pm_char STR_RECEIVER_NUM[];
 extern const pm_char STR_RECEIVER[];
