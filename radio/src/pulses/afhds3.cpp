@@ -434,11 +434,12 @@ bool afhds3::syncSettings() {
 }
 
 void afhds3::sendChannelsData() {
+
   uint8_t channels_start = moduleData->channelsStart;
   uint8_t channelsCount = 8 + moduleData->channelsCount;
   uint8_t channels_last = channels_start + channelsCount;
 
-  uint8_t channels[2*((8 + moduleData->channelsCount) + 1)];
+  uint8_t channels[2*((channelsCount) + 1)];
   channels[0] = 0x01;
   channels[1] = channelsCount;
 
