@@ -100,9 +100,9 @@ void afhds3::putFooter() {
   }
 }
 
-void afhds3::putFrame(COMMAND command, FRAME_TYPE frame, uint8_t* data, uint8_t dataLength){
+void afhds3::putFrame(COMMAND command, FRAME_TYPE frame, uint8_t* payload, uint8_t dataLength){
   putHeader(command, frame);
-  if(dataLength > 0) putBytes(data, dataLength);
+  if(dataLength > 0) putBytes(payload, dataLength);
   putFooter();
 }
 
@@ -375,8 +375,8 @@ void afhds3::setupPulses() {
        if((::failsafeCounter[EXTERNAL_MODULE]--) == 0) { //tbd 2.4 used better access to module index
          failsafeCounter[EXTERNAL_MODULE] = 250;
          TRACE("AFHDS FAILSAFE");
-         uint8_t failSafe[3+MAX_CHANNELS*2] = {0x11, 0x60 };
-         uint8_t channels = setFailSafe((int16_t*)(failSafe + 3));
+         uint8_t failSafe[3+MAX_CHANNELS*2] = { 0x11, 0x60 };
+         uint8_t channels = setFailSafe((int16_t*)(failSafe + 3)); //M0 has problem with such alignment
          failSafe[2] = channels *2;
          putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels*2);
          //trace("AFHDS3 [AFHDS3 SET FAILSAFE] data");
@@ -434,20 +434,19 @@ bool afhds3::syncSettings() {
 }
 
 void afhds3::sendChannelsData() {
+  uint16_t channels_start = moduleData->channelsStart;
+  uint16_t channelsCount = 8 + moduleData->channelsCount;
+  uint16_t channels_last = channels_start + channelsCount;
 
-  uint8_t channels_start = moduleData->channelsStart;
-  uint8_t channelsCount = 8 + moduleData->channelsCount;
-  uint8_t channels_last = channels_start + channelsCount;
+  int16_t buffer[channelsCount + 1];
 
-  uint8_t channels[2*((channelsCount) + 1)];
-  channels[0] = 0x01;
-  channels[1] = channelsCount;
+  buffer[0] = (int16_t)((channelsCount << 8) | 0x01);
 
-  for(uint8_t channel = channels_start; channel < channels_last; channel++) {
+  for(uint8_t channel = channels_start, index = 1; channel < channels_last; channel++, index++) {
     int16_t channelValue = convert(getChannelValue(channel));
-    *((int16_t*)(channels + (channel * 2) + 2)) = channelValue;
+    buffer[index] = channelValue;
   }
-  putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, channels, sizeof(channels));
+  putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, (uint8_t*)buffer, sizeof(buffer));
 }
 
 void afhds3::bind(bindCallback_t callback) {
