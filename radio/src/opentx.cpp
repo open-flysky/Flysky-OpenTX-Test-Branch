@@ -279,7 +279,7 @@ void generalDefault()
   g_eeGeneral.stickMode = 0;
 #if defined(PCBTARANIS)
   g_eeGeneral.templateSetup = 17; /* TAER */
-#else defined(PCBNV14)
+#elif defined(PCBNV14)
   g_eeGeneral.templateSetup = 21; /* AETR */
 #endif
 
@@ -888,8 +888,12 @@ void checkBacklight()
     }
     if ((g_eeGeneral.backlightMode & e_backlight_mode_keys) && touchState.Time + 50 > get_tmr10ms()) {
       backlightOn();
-
     }
+#if defined(PWR_BUTTON_PRESS)
+    if (pwrPressed()) {
+      backlightOn();
+    }
+#endif
     bool backlightOn = (g_eeGeneral.backlightMode == e_backlight_mode_on || lightOffCounter || isFunctionActive(FUNCTION_BACKLIGHT));
 
     if (flashCounter) backlightOn = !backlightOn;
@@ -982,22 +986,17 @@ void doSplash()
 #if defined(FSPLASH)
       }
 #endif
-
-#if defined(PWR_BUTTON_PRESS)
       uint32_t pwr_check = pwrCheck();
       if (pwr_check == e_power_off) {
         break;
       }
+#if defined(PWR_BUTTON_PRESS)
       else if (pwr_check == e_power_press) {
         refresh = true;
       }
       else if (pwr_check == e_power_on && refresh) {
         drawSplash();
         refresh = false;
-      }
-#else
-      if (pwrCheck() == e_power_off) {
-        return;
       }
 #endif
 
@@ -1209,22 +1208,17 @@ void checkTHR()
     if (!isThrottleWarningAlertNeeded()) {
       return;
     }
-
-#if defined(PWR_BUTTON_PRESS)
     uint32_t pwr_check = pwrCheck();
     if (pwr_check == e_power_off) {
       break;
     }
+#if defined(PWR_BUTTON_PRESS)
     else if (pwr_check == e_power_press) {
       refresh = true;
     }
     else if (pwr_check == e_power_on && refresh) {
       RAISE_ALERT(STR_THROTTLEWARN, STR_THROTTLENOTIDLE, STR_PRESSANYKEYTOSKIP, AU_NONE);
       refresh = false;
-    }
-#else
-    if (pwrCheck() == e_power_off) {
-      break;
     }
 #endif
 
@@ -1277,22 +1271,18 @@ void alert(const pm_char * title, const pm_char * msg ALERT_SOUND_ARG)
     doLoopCommonActions();
 
     wdt_reset();
-
-#if defined(PWR_BUTTON_PRESS)
+	
     uint32_t pwr_check = pwrCheck();
     if (pwr_check == e_power_off) {
       boardOff();
     }
+#if defined(PWR_BUTTON_PRESS)
     else if (pwr_check == e_power_press) {
       refresh = true;
     }
     else if (pwr_check == e_power_on && refresh) {
       RAISE_ALERT(title, msg, STR_PRESSANYKEY, AU_NONE);
       refresh = false;
-    }
-#else
-    if (pwrCheck() == e_power_off) {
-      boardOff(); // turn power off now
     }
 #endif
   }
@@ -2845,91 +2835,62 @@ uint32_t pwrPressedDuration()
 uint32_t pwrCheck()
 {
   const char * message = NULL;
-
-  enum PwrCheckState {
-    PWR_CHECK_ON,
-    PWR_CHECK_OFF,
-    PWR_CHECK_PAUSED,
-  };
-
-  static uint8_t pwr_check_state = PWR_CHECK_ON;
-
-  if (pwr_check_state == PWR_CHECK_OFF) {
-    return e_power_off;
-  }
-  else if (pwrPressed()) {
+  if (pwrPressed()) {
     if (TELEMETRY_STREAMING()) {
       message = STR_MODEL_STILL_POWERED;
     }
-    if (pwr_check_state == PWR_CHECK_PAUSED) {
-      // nothing
-    }
-    else if (pwr_press_time == 0) {
+
+    if (pwr_press_time == 0) {
       pwr_press_time = get_tmr10ms();
       if (message && !g_eeGeneral.disableRssiPoweroffAlarm) {
         audioEvent(AU_MODEL_STILL_POWERED);
       }
     }
     else {
-      inactivity.counter = 0;
-      if (g_eeGeneral.backlightMode != e_backlight_mode_off) {
-        BACKLIGHT_ENABLE();
-      }
-      if (get_tmr10ms() - pwr_press_time > PWR_PRESS_SHUTDOWN_DELAY) {
-
-#if defined(SHUTDOWN_CONFIRMATION)
-        while (1) {
-#else
-        while ((TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm)) {
-#endif
-#if defined(COLORLCD)
-          POPUP_CONFIRMATION("Confirm Shutdown");
-          event_t evt = getEvent(false);
-          DISPLAY_WARNING(evt);
-          if (warningResult) {
-            pwr_check_state = PWR_CHECK_OFF;
-            return e_power_off;
-          }
-          else if (!warningText) {
-             // shutdown has been cancelled
-             pwr_check_state = PWR_CHECK_PAUSED;
-             return e_power_on;
-          }
-          checkBacklight();
-          wdt_reset();
-
-          RTOS_WAIT_MS(20);
-          mainWindow.run();
-#else
-          lcdRefreshWait();
-          lcdClear();
-          POPUP_CONFIRMATION("Confirm Shutdown");
-          event_t evt = getEvent(false);
-          DISPLAY_WARNING(evt);
-          lcdRefresh();
-          if (warningResult) {
-            pwr_check_state = PWR_CHECK_OFF;
-            return e_power_off;
-          }
-          else if (!warningText) {
-            // shutdown has been cancelled
-            pwr_check_state = PWR_CHECK_PAUSED;
-            return e_power_on;
-          }
-#endif
-        }
-        haptic.play(15, 3, PLAY_NOW);
-        pwr_check_state = PWR_CHECK_OFF;
-        return e_power_off;
-      }
-      else {
+      if (get_tmr10ms() - pwr_press_time < PWR_PRESS_SHUTDOWN_DELAY) {
         drawShutdownAnimation(pwrPressedDuration(), message);
         return e_power_press;
       }
+#if defined(SHUTDOWN_CONFIRMATION)
+      while (1) {
+#else
+      while ((TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm)) {
+#endif
+#if defined(COLORLCD)
+        POPUP_CONFIRMATION("Confirm Shutdown");
+        event_t evt = getEvent(false);
+        DISPLAY_WARNING(evt);
+        if (warningResult) {
+          return e_power_off;
+        }
+        else if (!warningText) {
+           return e_power_on;
+        }
+        checkBacklight();
+        wdt_reset();
+
+        RTOS_WAIT_MS(20);
+        mainWindow.run();
+#else
+        lcdRefreshWait();
+        lcdClear();
+        POPUP_CONFIRMATION("Confirm Shutdown");
+        event_t evt = getEvent(false);
+        DISPLAY_WARNING(evt);
+        lcdRefresh();
+        if (warningResult) {
+          return e_power_off;
+        }
+        else if (!warningText) {
+          return e_power_on;
+        }
+#endif
+      }
+      haptic.play(15, 3, PLAY_NOW);
+      return e_power_off;
     }
   }
   else {
-    pwr_check_state = PWR_CHECK_ON;
     pwr_press_time = 0;
   }
 
