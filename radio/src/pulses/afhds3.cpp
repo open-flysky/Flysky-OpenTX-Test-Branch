@@ -182,6 +182,7 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
           moduleData->afhds3.bindPower = cfg.config.bindPower;
           moduleData->afhds3.runPower = cfg.config.runPower;
           moduleData->afhds3.telemetry = cfg.config.telemetry;
+          moduleData->afhds3.setMode(cfg.config.pulseMode == PULSE_MODE::PWM, cfg.config.serialMode == SERIAL_MODE::SBUS);
           break;
       case COMMAND::MODULE_VERSION:
         std::memcpy((void*)&version, &responseFrame->value, sizeof(version));
@@ -358,6 +359,14 @@ void afhds3::setupPulses() {
   //config should be loaded already
   if(syncSettings()) return;
 
+  static uint32_t commandIndex = 0;
+  static const COMMAND commandsIDLE[] = {
+      COMMAND::MODULE_STATE,
+      COMMAND::MODULE_POWER_STATUS,
+      COMMAND::MODULE_GET_CONFIG
+  };
+  if(commandIndex == sizeof(commandsIDLE)) commandIndex = 0;
+
   switch(data->state) {
     case ModuleState::STATE_READY:
         reset();
@@ -368,7 +377,7 @@ void afhds3::setupPulses() {
     case ModuleState::STATE_UPDATING_WAIT:
     case ModuleState::STATE_UPDATING_MOD:
     case ModuleState::STATE_HW_TEST:
-        if(idleCount++ % 100 == 0) putFrame(COMMAND::MODULE_STATE, FRAME_TYPE::REQUEST_GET_DATA);
+        if(idleCount++ % 128 == 0) putFrame(commandsIDLE[commandIndex++], FRAME_TYPE::REQUEST_GET_DATA);
         break;
     case ModuleState::STATE_SYNC_RUNNING:
     case ModuleState::STATE_SYNC_DONE:
@@ -382,7 +391,9 @@ void afhds3::setupPulses() {
          //trace("AFHDS3 [AFHDS3 SET FAILSAFE] data");
        }
        else{
-         if(idleCount++ % 512 == 0) putFrame(COMMAND::MODULE_STATE, FRAME_TYPE::REQUEST_GET_DATA);
+         if(idleCount++ % 512 == 0) {
+           putFrame(commandsIDLE[commandIndex++], FRAME_TYPE::REQUEST_GET_DATA);
+         }
          else sendChannelsData();
        }
       break;
@@ -390,7 +401,14 @@ void afhds3::setupPulses() {
 }
 
 bool afhds3::syncSettings() {
-  if (moduleData->afhds3.runPower != cfg.config.runPower) {
+  uint8_t power = moduleData->afhds3.runPower;
+  if(power > getMaxRunPower()){
+    power = getMaxRunPower();
+    //do not save
+    moduleData->afhds3.runPower = power;
+  }
+
+  if (power != cfg.config.runPower) {
     cfg.config.runPower = moduleData->afhds3.runPower;
     uint8_t data[] = { 0x13, 0x20, 0x02, moduleData->afhds3.runPower, 0 };
     TRACE("AFHDS3 SET TX POWER %d", moduleData->afhds3.runPower);
@@ -495,6 +513,12 @@ void afhds3::setToDefault() {
     moduleData->failsafeChannels[channel] = 0;
   }
 }
+
+RUN_POWER afhds3::getMaxRunPower(){
+  if(powerSource == MODULE_POWER_SOURCE::EXTERNAL) return RUN_POWER::PLUS_33dBm;
+  return RUN_POWER::PLUS_20bBm;
+}
+
 int16_t afhds3::convert(int channelValue) {
   //pulseValue = limit<uint16_t>(0, 988 + ((channelValue + 1024) / 2), 0xfff);
   //988 - 750 = 238

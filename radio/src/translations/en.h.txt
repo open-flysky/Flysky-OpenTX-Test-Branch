@@ -127,8 +127,8 @@
 #define LEN_XJT_PROTOCOLS              "\004"
 #define TR_XJT_PROTOCOLS               "Off\0""D16\0""D8\0 ""LR12"
 
-#define LEN_FLYSKY_PROTOCOLS           "\006"
-#define TR_FLYSKY_PROTOCOLS            " PWM+i"" PWM+s"" PPM+i"" PPM+s"
+#define LEN_FLYSKY_PROTOCOLS           "\x008"
+#define TR_FLYSKY_PROTOCOLS            "PWM+iBUS""PWM+sBUS""PPM+iBUS""PPM+sBUS"
 
 #define LEN_FLYSKY_PMODE               "\004"
 #define TR_FLYSKY_PMODE                "PWM\0""PWM"
@@ -934,7 +934,7 @@
 #define TR_MODULE_NO_TELEMETRY         TR3("No telemetry", "No MULTI_TELEMETRY", "No MULTI_TELEMETRY detected")
 #define TR_MODULE_WAITFORBIND          "Bind to load protocol"
 #define TR_MODULE_BINDING              TR("Bind...", "Binding")
-#define TR_RFPOWER_AFHDS3              "\007 15 dBm 20 dBm 27 dBm 30 dBm 33 dBm"
+#define TR_RFPOWER_AFHDS3              "\00725 mW  100 mW 500 mW 1 W    2 W    "
 #define TR_BIND_POWER_AFHDS3           "\007-16 dBm -5 dBm  0 dBm  5 dBm 16 dBm"
 #define TR_BINDING_CH1_8_TELEM_ON      "Ch1-8 Telem ON"
 #define TR_BINDING_CH1_8_TELEM_OFF     "Ch1-8 Telem OFF"

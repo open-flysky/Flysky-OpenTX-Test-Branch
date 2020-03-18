@@ -63,7 +63,8 @@ public:
   void setReadOnly(bool readOnly) {
     this->readOnly = readOnly;
   }
-
+  int16_t getMax() {return vmax;}
+  void setMax(int16_t value) {vmax = value;}
 protected:
   void paintChoice(BitmapBuffer * dc, bool hasFocus, const rect_t rect);
   bool handleTouchEnd(coord_t x, coord_t y);

@@ -301,6 +301,8 @@ public:
   void cancel();
   const char* getState();
   ModuleState getStateEnum();
+  RUN_POWER getMaxRunPower();
+
   void stop();
   void setToDefault();
   void setModelData();

@@ -83,6 +83,10 @@ struct ModuleData {
       bool isPWM() {
         return mode < 2;
       }
+      void setMode(bool pwm, bool sBus) {
+        mode = (sBus ? 1 : 0) | (pwm ? 0 : 2);
+      }
+
     } afhds3);
     NOBACKUP2(struct {
       uint8_t power:2;                  // 0=10 mW, 1=100 mW, 2=500 mW, 3=1W

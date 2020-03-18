@@ -199,7 +199,6 @@ class ModuleWindow : public Window {
     NumberEdit * channelStart = nullptr;
     NumberEdit * channelEnd = nullptr;
     Choice* afhds3RxPower = nullptr;
-    Choice* afhds3BindPower = nullptr;
 
     bool isPPM(uint8_t moduleIndex){
       if(moduleIndex == TRAINER_MODULE) return g_model.trainerMode == TRAINER_MODE_SLAVE;
@@ -259,7 +258,6 @@ class ModuleWindow : public Window {
       channelStart = nullptr;
       channelEnd = nullptr;
       afhds3RxPower = nullptr;
-      afhds3BindPower = nullptr;
       // Module Type
       new StaticText(this, grid.getLabelSlot(true), STR_MODE);
       if (moduleIndex == TRAINER_MODULE) {
@@ -311,6 +309,9 @@ class ModuleWindow : public Window {
           if(!status->isTextEqual(afhds3uart.getState())) {
             status->setText(std::string(afhds3uart.getState()));
           }
+          //if(afhds3RxPower->getMax() != afhds3uart.getMaxRunPower()) {
+          //  afhds3RxPower->setMax(afhds3uart.getMaxRunPower());
+          //}
         });
       }
 #endif
@@ -694,11 +695,7 @@ class ModuleWindow : public Window {
       if (isModuleAFHDS3(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
         afhds3RxPower = new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0,
-            afhds3::RUN_POWER::PLUS_33dBm, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));
-        grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(true), "Bind Power");
-        afhds3BindPower = new Choice(this, grid.getFieldSlot(), STR_BIND_POWER_AFHDS3, 0,
-            afhds3::BIND_POWER::PLUS_14dBm, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.bindPower));
+            afhds3uart.getMaxRunPower(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_TELEMETRY);
         new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
