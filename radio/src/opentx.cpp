@@ -2657,6 +2657,7 @@ int main()
   wdt_disable();
 
   boardInit();
+  haptic.play(15, 3, PLAY_NOW);  // short hum to signal that radio is on
 
 #if defined(PCBX7)
   bluetoothInit(BLUETOOTH_DEFAULT_BAUDRATE);   //BT is turn on for a brief period to differentiate X7 and X7S
