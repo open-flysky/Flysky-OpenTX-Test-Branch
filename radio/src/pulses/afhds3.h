@@ -299,7 +299,8 @@ public:
   void bind(bindCallback_t callback);
   void range(bindCallback_t callback);
   void cancel();
-  const char* getState();
+  void getState(char* buffer);
+  void getPowerSource(char* buffer);
   ModuleState getStateEnum();
   RUN_POWER getMaxRunPower();
 

@@ -306,12 +306,19 @@ class ModuleWindow : public Window {
         new StaticText(this, grid.getLabelSlot(true), STR_MODULE_STATUS);
         StaticText* status = new StaticText(this, grid.getFieldSlot());
         status->setCheckHandler([=]() {
-          if(!status->isTextEqual(afhds3uart.getState())) {
-            status->setText(std::string(afhds3uart.getState()));
+          afhds3uart.getState(reusableBuffer.msgbuf.msg);
+          if(!status->isTextEqual(reusableBuffer.msgbuf.msg)) {
+            status->setText(std::string(reusableBuffer.msgbuf.msg));
           }
-          //if(afhds3RxPower->getMax() != afhds3uart.getMaxRunPower()) {
-          //  afhds3RxPower->setMax(afhds3uart.getMaxRunPower());
-          //}
+        });
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), "Power source");
+        StaticText* powerSource = new StaticText(this, grid.getFieldSlot());
+        powerSource->setCheckHandler([=]() {
+          afhds3uart.getPowerSource(reusableBuffer.msgbuf.msg);
+          if(!powerSource->isTextEqual(reusableBuffer.msgbuf.msg)) {
+            powerSource->setText(std::string(reusableBuffer.msgbuf.msg));
+          }
         });
       }
 #endif
@@ -694,9 +701,15 @@ class ModuleWindow : public Window {
 #endif
       if (isModuleAFHDS3(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        afhds3RxPower = new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0,
+        new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0,
             afhds3uart.getMaxRunPower(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));
         grid.nextLine();
+		/*
+        new StaticText(this, grid.getLabelSlot(true), "Actual RF Power");
+        afhds3RxPower = new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0, 4, GET_SET_DEFAULT(afhds3uart.cfg.config.runPower));
+        afhds3RxPower->setReadOnly(true);
+		grid.nextLine();
+		*/
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_TELEMETRY);
         new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
         grid.nextLine();

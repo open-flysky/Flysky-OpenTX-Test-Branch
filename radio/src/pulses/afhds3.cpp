@@ -42,13 +42,22 @@ static const char* const moduleStateText[] = {
    "Ready",
    "HW test"
 };
-
+static const char* const powerSourceText[] = {
+   "Unknown",
+   "Internal",
+   "External"
+};
 ModuleState afhds3::getStateEnum() {
   return (ModuleState)data->state;
 }
-const char* afhds3::getState() {
-  if(data->state <= ModuleState::STATE_READY) return moduleStateText[data->state];
-  return "Unknown";
+void afhds3::getState(char* buffer) {
+  strcpy(buffer, "Unknown");
+  if(data->state <= ModuleState::STATE_READY) strcpy(buffer, moduleStateText[data->state]);
+}
+
+void afhds3::getPowerSource(char* buffer) {
+   strcpy(buffer, "Unknown");
+   if(powerSource <= MODULE_POWER_SOURCE::EXTERNAL) strcpy(buffer, powerSourceText[powerSource]);
 }
 
 void afhds3::putByte(uint8_t byte) {
@@ -399,17 +408,13 @@ void afhds3::setupPulses() {
 }
 
 bool afhds3::syncSettings() {
-  uint8_t power = moduleData->afhds3.runPower;
-  if(power > getMaxRunPower()){
-    power = getMaxRunPower();
-    //do not save
-    moduleData->afhds3.runPower = power;
-  }
-
-  if (power != cfg.config.runPower) {
-    cfg.config.runPower = moduleData->afhds3.runPower;
-    uint8_t data[] = { 0x13, 0x20, 0x02, moduleData->afhds3.runPower, 0 };
-    TRACE("AFHDS3 SET TX POWER %d", moduleData->afhds3.runPower);
+  auto targetPower = moduleData->afhds3.runPower;
+  if(getMaxRunPower() < targetPower) 
+    targetPower = getMaxRunPower();
+  if (targetPower != cfg.config.runPower) {
+    cfg.config.runPower = targetPower;
+    uint8_t data[] = { 0x13, 0x20, 0x02, targetPower, 0 };
+    TRACE("AFHDS3 SET TX POWER %d", targetPower);
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
