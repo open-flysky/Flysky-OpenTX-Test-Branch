@@ -312,7 +312,7 @@ class ModuleWindow : public Window {
           }
         });
         grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(true), "Power source");
+        new StaticText(this, grid.getLabelSlot(true), STR_POWER_SOURCE);
         StaticText* powerSource = new StaticText(this, grid.getFieldSlot());
         powerSource->setCheckHandler([=]() {
           afhds3uart.getPowerSource(reusableBuffer.msgbuf.msg);
@@ -701,15 +701,12 @@ class ModuleWindow : public Window {
 #endif
       if (isModuleAFHDS3(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0,
-            afhds3uart.getMaxRunPower(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));
+        new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0, 4, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));
         grid.nextLine();
-		/*
-        new StaticText(this, grid.getLabelSlot(true), "Actual RF Power");
-        afhds3RxPower = new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0, 4, GET_SET_DEFAULT(afhds3uart.cfg.config.runPower));
-        afhds3RxPower->setReadOnly(true);
-		grid.nextLine();
-		*/
+        new StaticText(this, grid.getLabelSlot(true), STR_ACTUAL_RF_POWER);
+        auto actualRFPower = new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0, 4, [=] { return afhds3uart.actualRunPower(); }, [=](int32_t newValue) { } );
+        actualRFPower->setReadOnly(true);
+        grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_TELEMETRY);
         new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
         grid.nextLine();

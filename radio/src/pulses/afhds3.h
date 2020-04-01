@@ -303,7 +303,7 @@ public:
   void getPowerSource(char* buffer);
   ModuleState getStateEnum();
   RUN_POWER getMaxRunPower();
-
+  RUN_POWER actualRunPower();
   void stop();
   void setToDefault();
   void setModelData();
@@ -320,6 +320,7 @@ private:
   void parseData(uint8_t* rxBuffer, uint8_t rxBufferCount);
   void setState(uint8_t state);
   bool syncSettings();
+  void requestInfoAndRun(bool send = false);
   void trace(const char* message);
   uint8_t setFailSafe(int16_t* target);
   int16_t convert(int channelValue);
@@ -344,8 +345,9 @@ private:
   //buffer where the channels are
   State operationState;
   uint16_t repeatCount;
-  uint32_t idleCount;
+  uint32_t cmdCount;
   std::queue<request*> commandQueue;
+  uint32_t commandIndex;
 };
 
 }

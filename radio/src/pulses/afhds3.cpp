@@ -42,11 +42,19 @@ static const char* const moduleStateText[] = {
    "Ready",
    "HW test"
 };
+
 static const char* const powerSourceText[] = {
    "Unknown",
    "Internal",
    "External"
 };
+
+static const COMMAND periodicRequestCommands[] = {
+    COMMAND::MODULE_STATE,
+    COMMAND::MODULE_POWER_STATUS,
+    COMMAND::MODULE_GET_CONFIG
+};
+
 ModuleState afhds3::getStateEnum() {
   return (ModuleState)data->state;
 }
@@ -163,6 +171,14 @@ void afhds3::setState(uint8_t state) {
   }
 }
 
+void afhds3::requestInfoAndRun(bool send) {
+  if(!send) addToQueue(COMMAND::MODULE_VERSION, FRAME_TYPE::REQUEST_GET_DATA);
+  addToQueue(COMMAND::MODULE_POWER_STATUS, FRAME_TYPE::REQUEST_GET_DATA);
+  requestedModuleMode = MODULE_MODE_E::RUN;
+  addToQueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &requestedModuleMode, 1);
+  if(send) putFrame(COMMAND::MODULE_VERSION, FRAME_TYPE::REQUEST_GET_DATA);
+}
+
 void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
 
   if(!checkCRC(rxBuffer, rxBufferCount - 2)) {
@@ -179,10 +195,7 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
         TRACE("AFHDS3 [MODULE_READY] %02X", responseFrame->value);
         if(responseFrame->value == MODULE_STATUS_READY) {
           setState(ModuleState::STATE_READY);
-          addToQueue(COMMAND::MODULE_VERSION, FRAME_TYPE::REQUEST_GET_DATA);
-          addToQueue(COMMAND::MODULE_POWER_STATUS, FRAME_TYPE::REQUEST_GET_DATA);
-          requestedModuleMode = MODULE_MODE_E::RUN;
-          addToQueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &requestedModuleMode, 1);
+          requestInfoAndRun();
         }
         break;
       case COMMAND::MODULE_GET_CONFIG:
@@ -328,7 +341,7 @@ void afhds3::setupPulses() {
   if(operationState == State::AWAITING_RESPONSE) {
     if(repeatCount++ < 5) return; //re-send
     else {
-        TRACE("AFHDS3 [NO RESP]");
+        TRACE("AFHDS3 [NO RESP] Frame %02X", data->pulses[3]);
         reset(false);
     }
   }
@@ -365,43 +378,36 @@ void afhds3::setupPulses() {
     return;
   }
   
-  static uint32_t commandIndex = 0;
-  static const COMMAND commandsIDLE[] = {
-      COMMAND::MODULE_STATE,
-      COMMAND::MODULE_POWER_STATUS,
-      COMMAND::MODULE_GET_CONFIG
-  };
+  if(syncSettings()) return;
 
-  if(data->state == ModuleState::STATE_READY)
+  if(data->state == ModuleState::STATE_READY) {
+    cmdCount = 0;
+    repeatCount = 0;
+    requestInfoAndRun(true);
+    return;
+  }
+
+  cmdCount++;
+  bool every128 = (cmdCount & 0x7F) == 0x7F;
+  bool every512 = (cmdCount & 0x1FF) == 0x1FF;
+
+  if(every128 && !every512)
   {
-     reset();
-     return;
-  }
-  bool sync = data->state == ModuleState::STATE_SYNC_RUNNING || data->state == ModuleState::STATE_SYNC_DONE;
-
-  if(idleCount-- == 0) {
-    idleCount = 250;
-    uint32_t max = sizeof(commandsIDLE);
-    //if we are binding we can not store settings
-    //so requesting settings will result in overriding user input
-    if(data->state == ModuleState::STATE_BINDING) {
-      max -= 1;
-    }
+    uint32_t max = sizeof(periodicRequestCommands);
     if(commandIndex == max) commandIndex = 0;
-    putFrame(commandsIDLE[commandIndex++], FRAME_TYPE::REQUEST_GET_DATA);
+    putFrame(periodicRequestCommands[commandIndex++], FRAME_TYPE::REQUEST_GET_DATA);
   }
-  else if(sync) {
-    //config should be loaded already
-    if(syncSettings()) return;
-    if((::failsafeCounter[EXTERNAL_MODULE]--) == 0) { //tbd 2.4 used better access to module index
-     failsafeCounter[EXTERNAL_MODULE] = 250;
-     TRACE("AFHDS FAILSAFE");
-     uint8_t failSafe[3+MAX_CHANNELS*2] = { 0x11, 0x60 };
-     uint8_t channels = setFailSafe((int16_t*)(failSafe + 3)); //M0 has problem with such alignment
-     failSafe[2] = channels *2;
-     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels*2);
+  else if (data->state == ModuleState::STATE_SYNC_DONE) {
+    if(every512)
+    {
+      TRACE("AFHDS FAILSAFE");
+      uint8_t failSafe[3+MAX_CHANNELS*2] = {0x11, 0x60 };
+      uint8_t channels = setFailSafe((int16_t*)(failSafe + 3));
+      failSafe[2] = channels *2;
+      putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels*2);
     }
-    else {
+    else
+    {
       sendChannelsData();
     }
   }
@@ -517,9 +523,18 @@ void afhds3::setToDefault() {
   }
 }
 
-RUN_POWER afhds3::getMaxRunPower(){
+RUN_POWER afhds3::getMaxRunPower()
+{
   if(powerSource == MODULE_POWER_SOURCE::EXTERNAL) return RUN_POWER::PLUS_33dBm;
   return RUN_POWER::PLUS_20bBm;
+}
+
+RUN_POWER afhds3::actualRunPower()
+{
+  uint8_t actualRfPower = cfg.config.runPower;
+  if(getMaxRunPower() < actualRfPower)
+    actualRfPower = getMaxRunPower();
+  return (RUN_POWER)actualRfPower;
 }
 
 int16_t afhds3::convert(int channelValue) {
@@ -572,7 +587,7 @@ void afhds3::reset(bool resetFrameCount) {
   TRACE("AFHDS3 RESET");
   clearQueue();
   repeatCount = 0;
-  idleCount = 0;
+  cmdCount = 0;
   setState(ModuleState::STATE_NOT_READY);
   this->data->frame_index = 1;
   this->data->timeout = 0;

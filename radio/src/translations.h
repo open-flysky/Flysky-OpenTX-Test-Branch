@@ -657,6 +657,8 @@ extern const pm_char STR_SUBTYPE[];
 #if defined(AFHDS3)
 extern const pm_char STR_RFPOWER_AFHDS3[];
 extern const pm_char STR_BIND_POWER_AFHDS3[];
+extern const pm_char STR_ACTUAL_RF_POWER[];
+extern const pm_char STR_POWER_SOURCE[];
 #endif
 #if defined(DSM2) || defined(PXX)
 extern const pm_char STR_RECEIVER_NUM[];

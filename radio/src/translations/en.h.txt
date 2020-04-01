@@ -948,6 +948,8 @@
 #define TR_MODULE_STATUS               TR(INDENT "Status", INDENT "Module Status")
 #define TR_MODULE_SYNC                 TR(INDENT "Sync", INDENT "Module Sync")
 #define TR_MULTI_SERVOFREQ             TR(INDENT "Servo rate", INDENT "Servo update rate")
+#define TR_POWER_SOURCE                "Power source"
+#define TR_ACTUAL_RF_POWER             TR("Actual", "Actual RF Power")
 #define TR_SYNCMENU                    "[Sync]"
 #define TR_LIMIT                       INDENT "Limit"
 #define TR_MINRSSI                     "Min Rssi"
