@@ -397,8 +397,9 @@ void afhds3::setupPulses() {
     if(commandIndex == max) commandIndex = 0;
     putFrame(periodicRequestCommands[commandIndex++], FRAME_TYPE::REQUEST_GET_DATA);
   }
-  else if (data->state == ModuleState::STATE_SYNC_DONE) {
-    if(every512)
+  else if (data->state == ModuleState::STATE_SYNC_DONE )
+  {
+    if(every512)//only two-way(syncSettings())
     {
       TRACE("AFHDS FAILSAFE");
       uint8_t failSafe[3+MAX_CHANNELS*2] = {0x11, 0x60 };
@@ -410,6 +411,17 @@ void afhds3::setupPulses() {
     {
       sendChannelsData();
     }
+  }
+  else if(data->state == ModuleState::STATE_SYNC_RUNNING)
+  {
+      if(every512)
+      {
+        sendFailsafeData();//only one-way
+      }
+      else
+      {
+        sendChannelsData();
+      }
   }
 }
 
@@ -424,6 +436,7 @@ bool afhds3::syncSettings() {
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
+  if(data->state != ModuleState::STATE_SYNC_DONE) return false;
   if(moduleData->afhds3.rxFreq != cfg.config.pwmFreq) {
     cfg.config.pwmFreq = moduleData->afhds3.rxFreq;
     uint8_t data[] = {0x17, 0x70, 0x02, (uint8_t)(moduleData->afhds3.rxFreq & 0xFF), (uint8_t)(moduleData->afhds3.rxFreq >> 8)};
@@ -467,13 +480,21 @@ void afhds3::sendChannelsData() {
 
   int16_t buffer[channelsCount + 1];
 
-  buffer[0] = (int16_t)((channelsCount << 8) | 0x01);
+  buffer[0] = (int16_t)((channelsCount << 8) | CHANNELDATA);
 
   for(uint8_t channel = channels_start, index = 1; channel < channels_last; channel++, index++) {
     int16_t channelValue = convert(getChannelValue(channel));
     buffer[index] = channelValue;
   }
   putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, (uint8_t*)buffer, sizeof(buffer));
+}
+
+void afhds3::sendFailsafeData() {//just to no telemetry
+
+    uint16_t failSafe[MAX_CHANNELS+1] = {0};
+    uint8_t channels = setFailSafe((int16_t*)(&failSafe[1]));
+    failSafe[0] = (int16_t)((channels << 8) | CHANNELDATA_FAILESAFE);
+    putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, (uint8_t*)failSafe, channels*2+2);
 }
 
 void afhds3::bind(bindCallback_t callback) {

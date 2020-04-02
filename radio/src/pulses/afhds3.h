@@ -112,6 +112,11 @@ enum MODULE_MODE_E {
   MODULE_MODE_UNKNOWN = 0xFF
 };
 
+enum CHANNELDATA_TYPE{
+    CHANNELDATA = 1,
+    CHANNELDATA_FAILESAFE = 2,//only one-way
+};
+
 enum CMD_RESULT {
   FAILURE = 0x01,
   SUCCESS = 0x02,
@@ -326,6 +331,7 @@ private:
   int16_t convert(int channelValue);
   void onModelSwitch();
   void sendChannelsData();
+  void sendFailsafeData();
   void clearQueue();
 
   //external data
