@@ -307,6 +307,7 @@ public:
   void getState(char* buffer);
   void getPowerSource(char* buffer);
   ModuleState getStateEnum();
+  RUN_POWER getRunPower();
   RUN_POWER getMaxRunPower();
   RUN_POWER actualRunPower();
   void stop();
@@ -331,7 +332,6 @@ private:
   int16_t convert(int channelValue);
   void onModelSwitch();
   void sendChannelsData();
-  void sendFailsafeData();
   void clearQueue();
 
   //external data
