@@ -306,6 +306,8 @@ public:
   void cancel();
   void getState(char* buffer);
   void getPowerSource(char* buffer);
+  void getOpMode(char* buffer);
+  void getHwFw(char* buffer);
   ModuleState getStateEnum();
   RUN_POWER getRunPower();
   RUN_POWER getMaxRunPower();

@@ -659,6 +659,8 @@ extern const pm_char STR_RFPOWER_AFHDS3[];
 extern const pm_char STR_BIND_POWER_AFHDS3[];
 extern const pm_char STR_ACTUAL_RF_POWER[];
 extern const pm_char STR_POWER_SOURCE[];
+extern const pm_char STR_AFHDS3_ONE_TO_ONE_TELEMETRY[];
+extern const pm_char STR_AFHDS3_ONE_TO_MANY[];
 #endif
 #if defined(DSM2) || defined(PXX)
 extern const pm_char STR_RECEIVER_NUM[];

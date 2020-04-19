@@ -22,7 +22,7 @@
 #include "afhds3.h"
 #include "../debug.h"
 #include "../definitions.h"
-
+#include "../translations.h"
 #define FAILSAFE_HOLD 1
 #define FAILSAFE_CUSTOM 2
 namespace afhds3 {
@@ -61,6 +61,14 @@ ModuleState afhds3::getStateEnum() {
 void afhds3::getState(char* buffer) {
   strcpy(buffer, "Unknown");
   if(data->state <= ModuleState::STATE_READY) strcpy(buffer, moduleStateText[data->state]);
+}
+
+void afhds3::getOpMode(char* buffer) {
+  strcpy(buffer, cfg.config.telemetry ? STR_AFHDS3_ONE_TO_ONE_TELEMETRY : STR_AFHDS3_ONE_TO_MANY);
+}
+
+void afhds3::getHwFw(char* buffer) {
+
 }
 
 void afhds3::getPowerSource(char* buffer) {
@@ -587,6 +595,7 @@ uint8_t afhds3::setFailSafe(int16_t* target) {
      if (moduleData->failsafeMode == FAILSAFE_CUSTOM) pulseValue = convert(moduleData->failsafeChannels[channel]);
      else if (moduleData->failsafeMode == FAILSAFE_HOLD) pulseValue = FAILSAFE_KEEP_LAST;
      else pulseValue = convert(getChannelValue(channel));
+     TRACE("%d : %d", channel, pulseValue);
      target[channel-channels_start] = pulseValue;
    }
   return (uint8_t)(channels_last - channels_start);

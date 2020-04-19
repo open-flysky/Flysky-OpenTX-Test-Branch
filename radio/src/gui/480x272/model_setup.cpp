@@ -320,6 +320,15 @@ class ModuleWindow : public Window {
             powerSource->setText(std::string(reusableBuffer.msgbuf.msg));
           }
         });
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), TR_MODE);
+        StaticText* afhds3Mode = new StaticText(this, grid.getFieldSlot());
+        afhds3Mode->setCheckHandler([=]() {
+          afhds3uart.getOpMode(reusableBuffer.msgbuf.msg);
+          if(!afhds3Mode->isTextEqual(reusableBuffer.msgbuf.msg)) {
+            afhds3Mode->setText(std::string(reusableBuffer.msgbuf.msg));
+          }
+        });
       }
 #endif
 #if defined(MULTIMODULE)
@@ -605,6 +614,16 @@ class ModuleWindow : public Window {
                   }
                   return 1;
             }
+            else if(isModuleAFHDS3(moduleIndex)) {
+              Menu * menu = new Menu();
+              menu->setSelectHandler([=](const char* selected) {
+                g_model.moduleData[moduleIndex].afhds3.telemetry = strcmp(selected, STR_AFHDS3_ONE_TO_ONE_TELEMETRY) == 0;
+                bindButton->setText(STR_MODULE_BINDING);
+                setModuleFlag(moduleIndex, MODULE_BIND);
+              });
+              menu->addLine(STR_AFHDS3_ONE_TO_ONE_TELEMETRY);
+              menu->addLine(STR_AFHDS3_ONE_TO_MANY);
+            }
             else {
               bindButton->setText(STR_MODULE_BINDING);
               setModuleFlag(moduleIndex, MODULE_BIND);
@@ -706,9 +725,6 @@ class ModuleWindow : public Window {
         new StaticText(this, grid.getLabelSlot(true), STR_ACTUAL_RF_POWER);
         auto actualRFPower = new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0, 4, [=] { return afhds3uart.actualRunPower(); }, [=](int32_t newValue) { } );
         actualRFPower->setReadOnly(true);
-        grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_TELEMETRY);
-        new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.telemetry));
         grid.nextLine();
       }
 #if defined (CROSSFIRE_NATIVE)
