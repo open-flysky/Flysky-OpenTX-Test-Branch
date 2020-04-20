@@ -63,6 +63,7 @@ enum COMMAND {
   COMMAND_RESULT = 0x0D,
   MODULE_POWER_STATUS = 0x0F,
   MODULE_VERSION = 0x1F,
+  VIRTUAL_FAILSAFE = 0x99 // virtual command used to trigger failsafe
 };
 
 enum COMMAND_DIRECTION {
@@ -315,6 +316,8 @@ public:
   void stop();
   void setToDefault();
   void setModelData();
+  bool isConnectedUnicast();
+  bool isConnectedMulticast();
 private:
   const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
   const uint16_t commandRepeatCount = 5;
@@ -343,8 +346,6 @@ private:
   bindCallback_t operationCallback;
   getChannelValue_t getChannelValue;
   processSensor_t processSensor;
-  //missing ppm center!
-
   //local config
   Config_u cfg;
   ModuleVersion version;

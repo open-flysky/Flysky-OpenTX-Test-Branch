@@ -52,7 +52,8 @@ static const char* const powerSourceText[] = {
 static const COMMAND periodicRequestCommands[] = {
     COMMAND::MODULE_STATE,
     COMMAND::MODULE_POWER_STATUS,
-    COMMAND::MODULE_GET_CONFIG
+    COMMAND::MODULE_GET_CONFIG,
+    COMMAND::VIRTUAL_FAILSAFE
 };
 
 ModuleState afhds3::getStateEnum() {
@@ -289,11 +290,15 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
   }
   else if (responseFrame->frameType == FRAME_TYPE::REQUEST_SET_EXPECT_ACK) {
     //we need to respond now - it may break messaging context
-    //if(!commandQueue.empty()) { //check if such request is not queued
-      //request* r = commandQueue.front();
-      //if(r->command == (enum COMMAND)responseFrame->command && r->frameType == FRAME_TYPE::RESPONSE_ACK) return;
-    //}
+    if(!commandQueue.empty()) { //check if such request is not queued
+      request* r = commandQueue.front();
+      if(r->command == (enum COMMAND)responseFrame->command &&
+          r->frameType == FRAME_TYPE::RESPONSE_ACK &&
+          r->frameNumber == responseFrame->frameNumber) return;
+    }
+
     TRACE("SEND ACK cmd %02X type %02X %02X %02X result %02X", responseFrame->command, responseFrame->frameType, responseFrame->value, (*((&responseFrame->value)+1)), (*((&responseFrame->value)+2)));
+
     addAckToQueue((enum COMMAND)responseFrame->command, responseFrame->frameNumber);
     //not tested danger function
     //::sendExtModuleNow();
@@ -344,10 +349,21 @@ void afhds3::trace(const char* message) {
   (*pos) = 0;
   TRACE("%s size = %d data %s", message, data->ptr - data->pulses, buffer);
 }
+
+bool afhds3::isConnectedUnicast() {
+  return cfg.config.telemetry == TELEMETRY::TELEMETRY_ENABLED && data->state == ModuleState::STATE_SYNC_DONE;
+}
+bool afhds3::isConnectedMulticast(){
+  return cfg.config.telemetry == TELEMETRY::TELEMETRY_DISABLED && data->state == ModuleState::STATE_SYNC_RUNNING;
+}
+
 void afhds3::setupPulses() {
   //TRACE("%d state %d repeatCount %d", (int)operationState, this->data->state, repeatCount);
   if(operationState == State::AWAITING_RESPONSE) {
-    if(repeatCount++ < 5) return; //re-send
+    if(repeatCount++ < 5) {
+      TRACE("AFHDS3 [RESEND]");
+      return; //re-send
+    }
     else {
         TRACE("AFHDS3 [NO RESP] Frame %02X", data->pulses[3]);
         reset(false);
@@ -395,40 +411,43 @@ void afhds3::setupPulses() {
     return;
   }
 
-  cmdCount++;
-  bool every128 = (cmdCount & 0x7F) == 0x7F;
-  bool every512 = (cmdCount & 0x1FF) == 0x1FF;
-
-  if(every128 && !every512)
+  bool isConnected = isConnectedUnicast() || isConnectedMulticast();
+  if(cmdCount++ == 150)
   {
+    cmdCount = 0;
     uint32_t max = sizeof(periodicRequestCommands);
     if(commandIndex == max) commandIndex = 0;
-    putFrame(periodicRequestCommands[commandIndex++], FRAME_TYPE::REQUEST_GET_DATA);
-  }
-  else if (data->state == ModuleState::STATE_SYNC_DONE || data->state == ModuleState::STATE_SYNC_RUNNING)
-  {
-    if(every512)
+    COMMAND cmd = periodicRequestCommands[commandIndex];
+    if(cmd == COMMAND::VIRTUAL_FAILSAFE)
     {
-      if(data->state == ModuleState::STATE_SYNC_RUNNING) {
-        //one-way state is not synchronized
-        TRACE("AFHDS ONE WAY FAILSAFE");
-        uint16_t failSafe[MAX_CHANNELS+1] = {0};
-        uint8_t channels = setFailSafe((int16_t*)(&failSafe[1]));
-        failSafe[0] = (int16_t)((channels << 8) | CHANNELS_DATA_MODE::FAIL_SAFE);
-        putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, (uint8_t*)failSafe, channels*2+2);
-      }
-      else {
-        TRACE("AFHDS TWO WAYS FAILSAFE");
-        uint8_t failSafe[3+MAX_CHANNELS*2] = {0x11, 0x60 };
-        uint8_t channels = setFailSafe((int16_t*)(failSafe + 3));
-        failSafe[2] = channels *2;
-        putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels*2);
+      if(isConnected) {
+        if (isConnectedMulticast()) {
+          TRACE("AFHDS ONE WAY FAILSAFE");
+          uint16_t failSafe[MAX_CHANNELS + 1] = { 0 };
+          uint8_t channels = setFailSafe((int16_t*) (&failSafe[1]));
+          failSafe[0] = (int16_t) ((channels << 8) | CHANNELS_DATA_MODE::FAIL_SAFE);
+          putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, (uint8_t*) failSafe, channels * 2 + 2);
+        }
+        else {
+          TRACE("AFHDS TWO WAYS FAILSAFE");
+          uint8_t failSafe[3 + MAX_CHANNELS * 2] = { 0x11, 0x60 };
+          uint8_t channels = setFailSafe((int16_t*) (failSafe + 3));
+          failSafe[2] = channels * 2;
+          putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels * 2);
+        }
       }
     }
     else
     {
-      sendChannelsData();
+      putFrame(cmd, FRAME_TYPE::REQUEST_GET_DATA);
     }
+    //ensure commands will not be resend
+    operationState = cmd == COMMAND::MODULE_STATE ? State::AWAITING_RESPONSE : State::IDLE;
+    commandIndex++;
+  }
+  else if (isConnected)
+  {
+    sendChannelsData();
   }
 }
 RUN_POWER afhds3::getRunPower() {
@@ -590,12 +609,10 @@ uint8_t afhds3::setFailSafe(int16_t* target) {
   int16_t pulseValue = 0;
   uint8_t channels_start = moduleData->channelsStart;
   uint8_t channels_last = channels_start + 8 + moduleData->channelsCount;;
-
   for (uint8_t channel = channels_start; channel < channels_last; channel++) {
      if (moduleData->failsafeMode == FAILSAFE_CUSTOM) pulseValue = convert(moduleData->failsafeChannels[channel]);
      else if (moduleData->failsafeMode == FAILSAFE_HOLD) pulseValue = FAILSAFE_KEEP_LAST;
      else pulseValue = convert(getChannelValue(channel));
-     TRACE("%d : %d", channel, pulseValue);
      target[channel-channels_start] = pulseValue;
    }
   return (uint8_t)(channels_last - channels_start);

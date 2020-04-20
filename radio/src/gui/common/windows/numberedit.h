@@ -41,10 +41,12 @@ class NumberEdit : public BaseNumberEdit {
     void enable(bool enabled)
     {
       this->enabled = enabled;
+      invalidate();
     }
     void setReadonly(bool readonly)
     {
       this->readonly = readonly;
+      invalidate();
     }
 
     void setPrefix(std::string value)
