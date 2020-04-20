@@ -276,8 +276,8 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
       break;
       case COMMAND::COMMAND_RESULT:
       {
-          //AfhdsFrameData* respData = responseFrame->GetData();
-          //TRACE("COMMAND RESULT %02X result %d datalen %d", respData->CommandResult.command, respData->CommandResult.result, respData->CommandResult.respLen);
+          AfhdsFrameData* respData = responseFrame->GetData();
+          TRACE("COMMAND RESULT %02X result %d datalen %d", respData->CommandResult.command, respData->CommandResult.result, respData->CommandResult.respLen);
       }
       break;
     }
