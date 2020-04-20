@@ -54,7 +54,11 @@
   * @{
   */
 
+#ifdef PCBNV14
+#define USBD_VID                            0x284e
+#else
 #define USBD_VID                            0x0483
+#endif
 
 #define USBD_LANGID_STRING                  0x409
 // #define USBD_MANUFACTURER_STRING            "FrSky"
