@@ -306,9 +306,6 @@ class ModuleWindow : public Window {
         new StaticText(this, grid.getLabelSlot(true), STR_MODULE_STATUS);
         StaticText* status = new StaticText(this, grid.getFieldSlot());
         status->setCheckHandler([=]() {
-          bool connected = afhds3uart.isConnectedUnicast() || afhds3uart.isConnectedMulticast();
-          if(channelStart) channelStart->setReadonly(connected);
-          if(channelEnd) channelEnd->setReadonly(connected);
           afhds3uart.getState(reusableBuffer.msgbuf.msg);
           if(!status->isTextEqual(reusableBuffer.msgbuf.msg)) {
             status->setText(std::string(reusableBuffer.msgbuf.msg));
