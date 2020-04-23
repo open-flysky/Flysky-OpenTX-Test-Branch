@@ -423,17 +423,15 @@ void afhds3::setupPulses() {
       if(isConnected) {
         if (isConnectedMulticast()) {
           TRACE("AFHDS ONE WAY FAILSAFE");
-          uint16_t failSafe[MAX_CHANNELS + 1] = { 0 };
-          uint8_t channels = setFailSafe((int16_t*) (&failSafe[1]));
-          failSafe[0] = (int16_t) ((channels << 8) | CHANNELS_DATA_MODE::FAIL_SAFE);
-          putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, (uint8_t*) failSafe, channels * 2 + 2);
+          uint16_t failSafe[MAX_CHANNELS + 1] = { ((MAX_CHANNELS << 8) | CHANNELS_DATA_MODE::FAIL_SAFE), 0 };
+          setFailSafe((int16_t*) (&failSafe[1]));
+          putFrame(COMMAND::CHANNELS_FAILSAFE_DATA, FRAME_TYPE::REQUEST_SET_NO_RESP, (uint8_t*) failSafe, MAX_CHANNELS * 2 + 2);
         }
         else {
           TRACE("AFHDS TWO WAYS FAILSAFE");
-          uint8_t failSafe[3 + MAX_CHANNELS * 2] = { 0x11, 0x60 };
-          uint8_t channels = setFailSafe((int16_t*) (failSafe + 3));
-          failSafe[2] = channels * 2;
-          putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + channels * 2);
+          uint8_t failSafe[3 + MAX_CHANNELS * 2] = { 0x11, 0x60, MAX_CHANNELS * 2 };
+          setFailSafe((int16_t*) (failSafe + 3));
+          putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, failSafe, 3 + MAX_CHANNELS * 2);
         }
       }
     }
@@ -510,9 +508,7 @@ void afhds3::sendChannelsData() {
   uint16_t channelsCount = 8 + moduleData->channelsCount;
   uint16_t channels_last = channels_start + channelsCount;
 
-  int16_t buffer[channelsCount + 1];
-
-  buffer[0] = (int16_t)((channelsCount << 8) | CHANNELS_DATA_MODE::CHANNELS);
+  int16_t buffer[MAX_CHANNELS + 1] = { ((MAX_CHANNELS << 8) | CHANNELS_DATA_MODE::CHANNELS), 0 };
 
   for(uint8_t channel = channels_start, index = 1; channel < channels_last; channel++, index++) {
     int16_t channelValue = convert(getChannelValue(channel));
@@ -601,21 +597,24 @@ void afhds3::setModelData() {
   cfg.config.pwmFreq = moduleData->afhds3.rxFreq;
   cfg.config.serialMode = moduleData->afhds3.isSbus() ? SERIAL_MODE::SBUS: SERIAL_MODE::IBUS;
   cfg.config.pulseMode = moduleData->afhds3.isPWM() ? PULSE_MODE::PWM: PULSE_MODE::PPM;
-  cfg.config.channelCount = 8 + moduleData->channelsCount;
+  //use max channels - because channel count can not be changed after bind
+  cfg.config.channelCount = MAX_CHANNELS;
   cfg.config.failSafeTimout = moduleData->afhds3.failsafeTimeout;
   setFailSafe(cfg.config.failSafeMode);
 }
 uint8_t afhds3::setFailSafe(int16_t* target) {
   int16_t pulseValue = 0;
   uint8_t channels_start = moduleData->channelsStart;
-  uint8_t channels_last = channels_start + 8 + moduleData->channelsCount;;
+  uint8_t channels_last = channels_start + 8 + moduleData->channelsCount;
+
   for (uint8_t channel = channels_start; channel < channels_last; channel++) {
      if (moduleData->failsafeMode == FAILSAFE_CUSTOM) pulseValue = convert(moduleData->failsafeChannels[channel]);
      else if (moduleData->failsafeMode == FAILSAFE_HOLD) pulseValue = FAILSAFE_KEEP_LAST;
      else pulseValue = convert(getChannelValue(channel));
      target[channel-channels_start] = pulseValue;
    }
-  return (uint8_t)(channels_last - channels_start);
+  //return max channels because channel count can not be change after bind
+  return (uint8_t)(MAX_CHANNELS);
 }
 
 
