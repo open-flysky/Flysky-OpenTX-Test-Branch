@@ -209,7 +209,7 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
           setState(ModuleState::STATE_READY);
           requestInfoAndRun();
         }
-        else setState(ModuleState::STATE_NOT_READY)
+        else setState(ModuleState::STATE_NOT_READY);
         break;
       case COMMAND::MODULE_GET_CONFIG:
           std::memcpy((void*)cfg.buffer, &responseFrame->value, sizeof(cfg.buffer));
