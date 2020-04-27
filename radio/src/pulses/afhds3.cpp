@@ -178,6 +178,9 @@ void afhds3::setState(uint8_t state) {
       operationCallback = nullptr;
     }
   }
+  if(state == ModuleState::STATE_NOT_READY) {
+    operationState = State::UNKNOWN;
+  }
 }
 
 void afhds3::requestInfoAndRun(bool send) {
@@ -206,6 +209,7 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
           setState(ModuleState::STATE_READY);
           requestInfoAndRun();
         }
+        else setState(ModuleState::STATE_NOT_READY)
         break;
       case COMMAND::MODULE_GET_CONFIG:
           std::memcpy((void*)cfg.buffer, &responseFrame->value, sizeof(cfg.buffer));
@@ -404,7 +408,7 @@ void afhds3::setupPulses() {
   
   if(syncSettings()) return;
 
-  if(data->state == ModuleState::STATE_READY) {
+  if(data->state == ModuleState::STATE_READY || data->state == ModuleState::STATE_STANDBY) {
     cmdCount = 0;
     repeatCount = 0;
     requestInfoAndRun(true);
