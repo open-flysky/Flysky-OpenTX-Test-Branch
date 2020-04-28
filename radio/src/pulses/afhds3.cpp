@@ -24,9 +24,9 @@
 #include "../definitions.h"
 #include "../translations.h"
 #define FAILSAFE_HOLD 1
-#define FAILSAFE_CUSTOM 2
 namespace afhds3 {
 
+#define FAILSAFE_CUSTOM 2
 static const char* const moduleStateText[] = {
    "Not ready",
    "HW Error",
@@ -362,6 +362,8 @@ bool afhds3::isConnectedMulticast(){
 }
 
 void afhds3::setupPulses() {
+  //telemetry is not synchronized ensure last response is reflected before sending anything
+
   //TRACE("%d state %d repeatCount %d", (int)operationState, this->data->state, repeatCount);
   if(operationState == State::AWAITING_RESPONSE) {
     if(repeatCount++ < 5) {
@@ -416,6 +418,7 @@ void afhds3::setupPulses() {
   }
 
   bool isConnected = isConnectedUnicast() || isConnectedMulticast();
+
   if(cmdCount++ == 150)
   {
     cmdCount = 0;
@@ -445,7 +448,6 @@ void afhds3::setupPulses() {
     }
     //ensure commands will not be resend
     operationState = cmd == COMMAND::MODULE_STATE ? State::AWAITING_RESPONSE : State::IDLE;
-    commandIndex++;
   }
   else if (isConnected)
   {
