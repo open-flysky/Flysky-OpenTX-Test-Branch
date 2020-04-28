@@ -418,7 +418,6 @@ void afhds3::setupPulses() {
   }
 
   bool isConnected = isConnectedUnicast() || isConnectedMulticast();
-
   if(cmdCount++ == 150)
   {
     cmdCount = 0;
@@ -448,6 +447,7 @@ void afhds3::setupPulses() {
     }
     //ensure commands will not be resend
     operationState = cmd == COMMAND::MODULE_STATE ? State::AWAITING_RESPONSE : State::IDLE;
+    commandIndex++;
   }
   else if (isConnected)
   {
