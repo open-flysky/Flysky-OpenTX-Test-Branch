@@ -934,6 +934,7 @@
 #define TR_MODULE_NO_TELEMETRY         TR3("No telemetry", "No MULTI_TELEMETRY", "No MULTI_TELEMETRY detected")
 #define TR_MODULE_WAITFORBIND          "Bind to load protocol"
 #define TR_MODULE_BINDING              TR("Bind...", "Binding")
+#define TR_RFPOWER_AFHDS2              "\007""Default""High"
 #define TR_RFPOWER_AFHDS3              "\00725 mW  100 mW 500 mW 1 W    2 W    "
 #define TR_BIND_POWER_AFHDS3           "\007-16 dBm -5 dBm  0 dBm  5 dBm 16 dBm"
 #define TR_AFHDS3_ONE_TO_ONE_TELEMETRY "Unicast/Telemetry"

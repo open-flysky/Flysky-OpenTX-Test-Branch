@@ -62,7 +62,9 @@ struct ModuleData {
 
     struct {
       uint8_t rx_id[4];
-      uint8_t mode;
+      uint8_t mode:3;
+      uint8_t rfPower:1;
+      uint8_t reserved:4;
       uint8_t rx_freq[2];
     } romData;
 

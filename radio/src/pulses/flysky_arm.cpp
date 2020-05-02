@@ -136,7 +136,6 @@ typedef struct RX_INFO_S {
   fw_info_t fw_info;
 } rx_info_t;
 
-uint8_t tx_working_power = 90;
 static STRUCT_HALL rfProtocolRx = {0};
 static uint32_t rfRxCount = 0;
 static uint8_t lastState = STATE_IDLE;
@@ -822,7 +821,7 @@ void setupPulsesFlySky(uint8_t port)
         break;
         case STATE_SET_TX_POWER:
         {
-          uint8_t power = moduleFlag[port] == MODULE_RANGECHECK ? 0 : tx_working_power;
+          uint8_t power = moduleFlag[port] == MODULE_RANGECHECK ? 0 : gRomData.rfPower ? 170 : 90;
           putFlySkyFrameByte(port, FRAME_TYPE_REQUEST_ACK);
           putFlySkyFrameByte(port, CMD_SET_TX_POWER);
           putFlySkyFrameByte(port, power);

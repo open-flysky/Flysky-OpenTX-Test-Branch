@@ -654,6 +654,8 @@ extern const pm_char STR_MULTI_SERVOFREQ[];
 extern const pm_char STR_SUBTYPE[];
 #endif
 #endif
+
+extern const pm_char STR_RFPOWER_AFHDS2[];
 #if defined(AFHDS3)
 extern const pm_char STR_RFPOWER_AFHDS3[];
 extern const pm_char STR_BIND_POWER_AFHDS3[];

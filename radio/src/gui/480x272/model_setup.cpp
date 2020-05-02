@@ -707,17 +707,16 @@ class ModuleWindow : public Window {
                    GET_DEFAULT(min<uint8_t>(g_model.moduleData[moduleIndex].pxx.power, R9M_LBT_POWER_MAX)),
                    SET_DEFAULT(g_model.moduleData[moduleIndex].pxx.power));
       }
-#if defined (DEBUG)
+
       if (isModuleFlysky(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new NumberEdit(this, grid.getFieldSlot(), 0, 170,
-                             GET_DEFAULT(tx_working_power),
-                             [=](int32_t newValue) -> void {
-                               tx_working_power = newValue;
-                               onFlySkyModuleSetPower(moduleIndex, true);
-                             });
+        new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS2, 0, 1,
+            GET_DEFAULT(g_model.moduleData[moduleIndex].romData.rfPower),
+            [=](int32_t newValue) -> void {
+          g_model.moduleData[moduleIndex].romData.rfPower = newValue;
+          onFlySkyModuleSetPower(moduleIndex, true);
+        });
       }
-#endif
       if (isModuleAFHDS3(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
         new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS3, 0, 4, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].afhds3.runPower));

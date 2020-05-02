@@ -175,7 +175,6 @@ union TrainerPulsesData {
 
 extern TrainerPulsesData trainerPulsesData;
 extern const uint16_t CRCTable[];
-extern uint8_t tx_working_power;
 void setupPulses(uint8_t port);
 void setupPulsesDSM2(uint8_t port);
 void setupPulsesMultimodule(uint8_t port);
