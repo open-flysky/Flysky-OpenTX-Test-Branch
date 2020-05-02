@@ -423,7 +423,7 @@ void afhds3::setupPulses() {
     cmdCount = 0;
     uint32_t max = sizeof(periodicRequestCommands);
     if(commandIndex == max) commandIndex = 0;
-    COMMAND cmd = periodicRequestCommands[commandIndex];
+    COMMAND cmd = periodicRequestCommands[commandIndex++];
     if(cmd == COMMAND::VIRTUAL_FAILSAFE)
     {
       if(isConnected) {
@@ -447,7 +447,6 @@ void afhds3::setupPulses() {
     }
     //ensure commands will not be resend
     operationState = cmd == COMMAND::MODULE_STATE ? State::AWAITING_RESPONSE : State::IDLE;
-    commandIndex++;
   }
   else if (isConnected)
   {
