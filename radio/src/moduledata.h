@@ -31,11 +31,16 @@
 #else
   #define NOBACKUP2(...)                __VA_ARGS__
 #endif
+#if __GNUC__
+  #define PACK2( __Declaration__ )      __Declaration__ __attribute__((__packed__))
+#else
+  #define PACK2( __Declaration__ )      __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#endif
 
 #include "dataconstants.h"
 #define MM_RF_CUSTOM_SELECTED 0xff
 
-struct ModuleData {
+PACK2(struct ModuleData {
   uint8_t type:4;
   int8_t  rfProtocol:4;
   uint8_t channelsStart;
@@ -44,7 +49,7 @@ struct ModuleData {
   uint8_t subType:3;
   uint8_t invertedSerial:1; // telemetry serial inverted from standard
   int16_t failsafeChannels[MAX_OUTPUT_CHANNELS];
-  union {
+  PACK2(union {
     NOBACKUP2(struct {
       int8_t  delay:6;
       uint8_t pulsePol:1;
@@ -78,7 +83,6 @@ struct ModuleData {
       uint8_t spare2:3;
       uint16_t failsafeTimeout; //4
       uint16_t rxFreq;
-      //one more free byte
       bool isSbus() {
         return (mode & 1);
       }
@@ -105,7 +109,7 @@ struct ModuleData {
       uint8_t spare2:1;
       int8_t refreshRate;  // definition as framelength for ppm (* 5 + 225 = time in 1/10 ms)
     } sbus);
-  };
+  });
 
   // Helper functions to set both of the rfProto protocol at the same time
   NOBACKUP2(inline uint8_t getMultiProtocol(bool returnCustom) {
@@ -119,6 +123,6 @@ struct ModuleData {
     rfProtocol = (uint8_t) (proto & 0x0f);
     multi.rfProtocolExtra = (proto & 0x30) >> 4;
   })
-} __attribute__((__packed__));
+});
 
 #endif /* _MODULEDATA_H_ */

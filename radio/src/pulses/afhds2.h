@@ -26,7 +26,7 @@
 #include <list>
 
 struct FlySkySerialPulsesData {
-  uint8_t  pulses[64];
+  uint8_t  pulses[72];
   uint8_t  * ptr;
   uint8_t  frame_index;
   uint8_t  crc;
