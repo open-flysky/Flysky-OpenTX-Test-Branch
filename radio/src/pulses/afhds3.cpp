@@ -56,6 +56,36 @@ static const COMMAND periodicRequestCommands[] = {
     COMMAND::VIRTUAL_FAILSAFE
 };
 
+void CommandFifo::clearCommandFifo(){
+  memset(commandFifo, 0, sizeof(commandFifo));
+  setIndex = getIndex = 0;
+}
+
+void CommandFifo::enqueueACK(COMMAND command, uint8_t frameNumber) {
+  uint32_t next = nextIndex(setIndex);
+  if (next != getIndex) {
+    commandFifo[setIndex].command = command;
+    commandFifo[setIndex].frameType = FRAME_TYPE::RESPONSE_ACK;
+    commandFifo[setIndex].payload = 0;
+    commandFifo[setIndex].payloadSize = 0;
+    commandFifo[setIndex].frameNumber = frameNumber;
+    commandFifo[setIndex].useFrameNumber = true;
+    setIndex = next;
+  }
+}
+void CommandFifo::enqueue(COMMAND command, FRAME_TYPE frameType, bool useData, uint8_t byteContent) {
+  uint32_t next = nextIndex(setIndex);
+  if (next != getIndex) {
+    commandFifo[setIndex].command = command;
+    commandFifo[setIndex].frameType = frameType;
+    commandFifo[setIndex].payload = byteContent;
+    commandFifo[setIndex].payloadSize = useData ? 1 : 0;
+    commandFifo[setIndex].frameNumber = 0;
+    commandFifo[setIndex].useFrameNumber = false;
+    setIndex = next;
+  }
+}
+
 ModuleState afhds3::getStateEnum() {
   return (ModuleState)data->state;
 }
@@ -99,12 +129,12 @@ void afhds3::putBytes(uint8_t* data, int length) {
   }
 }
 
-void afhds3::putHeader(COMMAND command, FRAME_TYPE frame) {
+void afhds3::putHeader(COMMAND command, FRAME_TYPE frame, uint8_t frameIndex) {
   operationState = State::SENDING_COMMAND;
   data->ptr = this->data->pulses;
   data->crc = 0;
   *data->ptr++ = END;
-  uint8_t buffer[] = { FrameAddress, data->frame_index, frame, command};
+  uint8_t buffer[] = { FrameAddress, frameIndex, frame, command};
   putBytes(buffer, 4);
 }
 
@@ -112,8 +142,6 @@ void afhds3::putHeader(COMMAND command, FRAME_TYPE frame) {
 void afhds3::putFooter() {
   putByte(data->crc ^ 0xff);
   *data->ptr++ = END;
-  data->frame_index++;
-
   switch((FRAME_TYPE)data->pulses[3])
   {
     case FRAME_TYPE::REQUEST_GET_DATA:
@@ -126,30 +154,15 @@ void afhds3::putFooter() {
   }
 }
 
-void afhds3::putFrame(COMMAND command, FRAME_TYPE frame, uint8_t* payload, uint8_t dataLength){
-  putHeader(command, frame);
-  if(dataLength > 0) putBytes(payload, dataLength);
-  putFooter();
-}
-
-void afhds3::addAckToQueue(COMMAND command, uint8_t frameNumber) {
-  request* r = new request(command, FRAME_TYPE::RESPONSE_ACK, nullptr, 0);
-  r->frameNumber = frameNumber;
-  commandQueue.push(r);
-}
-
-void afhds3::addToQueue(COMMAND command, FRAME_TYPE frameType, uint8_t* data, uint8_t dataLength) {
-
-  request* r = new request(command, frameType, data, dataLength);
-  commandQueue.push(r);
-}
-
-void afhds3::clearQueue() {
-  while(!commandQueue.empty()) {
-    request* r = commandQueue.front();
-    delete r;
-    commandQueue.pop();
+void afhds3::putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* payload, uint8_t dataLength, uint8_t* frameIndex)
+{
+  if (frameIndex == nullptr) {
+    frameIndex = &data->frame_index;
   }
+  putHeader(command, frameType, *frameIndex);
+  if(dataLength > 0) putBytes(payload, dataLength);
+  *frameIndex = *frameIndex + 1;
+  putFooter();
 }
 
 bool checkCRC(const uint8_t* data, uint8_t size)
@@ -184,10 +197,10 @@ void afhds3::setState(uint8_t state) {
 }
 
 void afhds3::requestInfoAndRun(bool send) {
-  if(!send) addToQueue(COMMAND::MODULE_VERSION, FRAME_TYPE::REQUEST_GET_DATA);
-  addToQueue(COMMAND::MODULE_POWER_STATUS, FRAME_TYPE::REQUEST_GET_DATA);
+  if(!send) enqueue(COMMAND::MODULE_VERSION, FRAME_TYPE::REQUEST_GET_DATA);
+  enqueue(COMMAND::MODULE_POWER_STATUS, FRAME_TYPE::REQUEST_GET_DATA);
   requestedModuleMode = MODULE_MODE_E::RUN;
-  addToQueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &requestedModuleMode, 1);
+  enqueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, true, requestedModuleMode);
   if(send) putFrame(COMMAND::MODULE_VERSION, FRAME_TYPE::REQUEST_GET_DATA);
 }
 
@@ -234,8 +247,8 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
         }
         else {
           if(requestedModuleMode == MODULE_MODE_E::RUN) {
-            addToQueue(COMMAND::MODULE_GET_CONFIG, FRAME_TYPE::REQUEST_GET_DATA);
-            addToQueue(COMMAND::MODULE_STATE, FRAME_TYPE::REQUEST_GET_DATA);
+            enqueue(COMMAND::MODULE_GET_CONFIG, FRAME_TYPE::REQUEST_GET_DATA);
+            enqueue(COMMAND::MODULE_STATE, FRAME_TYPE::REQUEST_GET_DATA);
           }
           requestedModuleMode = MODULE_MODE_UNKNOWN;
         }
@@ -294,18 +307,15 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
   }
   else if (responseFrame->frameType == FRAME_TYPE::REQUEST_SET_EXPECT_ACK) {
     //we need to respond now - it may break messaging context
-    if(!commandQueue.empty()) { //check if such request is not queued
-      request* r = commandQueue.front();
-      if(r->command == (enum COMMAND)responseFrame->command &&
-          r->frameType == FRAME_TYPE::RESPONSE_ACK &&
-          r->frameNumber == responseFrame->frameNumber) return;
+    if(!isEmpty()) {
+      Frame f = commandFifo[getIndex];
+      if(f.frameType == FRAME_TYPE::RESPONSE_ACK && f.frameNumber == responseFrame->frameNumber) {
+        TRACE("ACK for frame %02X already queued", responseFrame->frameNumber);
+        return;
+      }
     }
-
     TRACE("SEND ACK cmd %02X type %02X %02X %02X result %02X", responseFrame->command, responseFrame->frameType, responseFrame->value, (*((&responseFrame->value)+1)), (*((&responseFrame->value)+2)));
-
-    addAckToQueue((enum COMMAND)responseFrame->command, responseFrame->frameNumber);
-    //not tested danger function
-    //::sendExtModuleNow();
+    enqueueACK((enum COMMAND)responseFrame->command, responseFrame->frameNumber);
   }
   else if(responseFrame->frameType == FRAME_TYPE::RESPONSE_DATA || responseFrame->frameType == FRAME_TYPE::RESPONSE_ACK) {
     if(operationState == State::AWAITING_RESPONSE /* && requestFrame->command == responseFrame->command*/) {
@@ -367,8 +377,8 @@ void afhds3::setupPulses() {
   //TRACE("%d state %d repeatCount %d", (int)operationState, this->data->state, repeatCount);
   if(operationState == State::AWAITING_RESPONSE) {
     if(repeatCount++ < 5) {
-      TRACE("AFHDS3 [RESEND]");
-      return; //re-send
+      TRACE("AFHDS3 [AWAITING_RESPONSE]");
+      return;
     }
     else {
         TRACE("AFHDS3 [NO RESP] Frame %02X", data->pulses[3]);
@@ -386,25 +396,23 @@ void afhds3::setupPulses() {
     return;
   }
 
-  //not allow more than 10 commands
-  if(commandQueue.size() > 10) {
-    clearQueue();
-  }
-
   //check waiting commands
-  if(!commandQueue.empty()) {
-    request* r = commandQueue.front();
-    commandQueue.pop();
-    uint8_t frameIndexBackup = data->frame_index;
-    if(r->frameNumber >= 0) {
-      data->frame_index = r->frameNumber;
+  if (!isEmpty()) {
+    Frame f = commandFifo[getIndex];
+    uint8_t* payload = &f.payload;
+    uint8_t payloadSize = f.payloadSize;
+    uint8_t* frameIndex = &data->frame_index;
+    if(f.command == COMMAND::MODULE_SET_CONFIG) {
+      payload = cfg.buffer;
+      payloadSize = sizeof(cfg.buffer);
     }
-    putFrame(r->command, r->frameType, r->payload, r->payloadSize);
-    trace("AFHDS3 [CMD QUEUE] data");
-    if(r->frameNumber >= 0) {
-      data->frame_index = frameIndexBackup;
+    if(f.useFrameNumber) {
+      frameIndex = &f.frameNumber;
     }
-    delete r;
+
+    putFrame(f.command, f.frameType, payload, payloadSize, frameIndex);
+    getIndex = nextIndex(getIndex);
+    TRACE("AFHDS3 [CMD QUEUE] cmd: %d frameType %d, frame Number %d size %d", f.command, f.frameType, *frameIndex, payloadSize);
     return;
   }
   
@@ -526,9 +534,9 @@ void afhds3::bind(bindCallback_t callback) {
   operationCallback = callback;
   TRACE("AFHDS3 [BIND]");
   setModelData();
-  addToQueue(COMMAND::MODULE_SET_CONFIG, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, cfg.buffer, sizeof(cfg.buffer));
+  enqueue(COMMAND::MODULE_SET_CONFIG, FRAME_TYPE::REQUEST_SET_EXPECT_DATA);
   requestedModuleMode = MODULE_MODE_E::BIND;
-  addToQueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &requestedModuleMode, 1);
+  enqueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, true, requestedModuleMode);
 }
 
 void afhds3::range(bindCallback_t callback) {
@@ -540,7 +548,7 @@ void afhds3::cancel() {
   if(data->state == ModuleState::STATE_BINDING && !cfg.config.telemetry) {
     setState(ModuleState::STATE_SYNC_DONE);
     requestedModuleMode = MODULE_MODE_E::RUN;
-    addToQueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, &requestedModuleMode, 1);
+    enqueue(COMMAND::MODULE_MODE, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, true, requestedModuleMode);
   }
   else reset(false);
 }
@@ -633,9 +641,10 @@ void afhds3::onModelSwitch() {
 
 void afhds3::reset(bool resetFrameCount) {
   TRACE("AFHDS3 RESET");
-  clearQueue();
+  clearCommandFifo();
   repeatCount = 0;
   cmdCount = 0;
+  commandIndex = 0;
   setState(ModuleState::STATE_NOT_READY);
   this->data->frame_index = 1;
   this->data->timeout = 0;

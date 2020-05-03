@@ -252,33 +252,47 @@ enum State {
   IDLE
 };
 
-class request {
-  public:
-  request(COMMAND command, FRAME_TYPE frameType, const uint8_t* data = nullptr, uint8_t length = 0) {
-    this->command = command;
-    this->frameType = frameType;
-    if(data && length){
-      payload = new uint8_t[length];
-      std::memcpy(payload, data, length);
-    }
-    else payload = nullptr;
-    payloadSize = length;
-    frameNumber = -1;
-  }
-  ~request() {
-    if(payload != nullptr) {
-      delete[] payload;
-      payload = nullptr;
-    }
-  }
+//one byte frames for request queue
+
+struct Frame {
   enum COMMAND command;
   enum FRAME_TYPE frameType;
-  uint8_t* payload;
+  uint8_t payload;
+  uint8_t frameNumber;
+  bool useFrameNumber;
   uint8_t payloadSize;
-  int frameNumber;
 };
 
-class afhds3 {
+
+struct CommandFifo {
+  Frame commandFifo[8];
+  volatile uint32_t setIndex;
+  volatile uint32_t getIndex;
+
+  void clearCommandFifo();
+  inline uint32_t nextIndex(uint32_t idx)
+  {
+    return (idx + 1) & (sizeof(commandFifo)/sizeof(commandFifo[0]) - 1);
+  }
+  inline uint32_t prevIndex(uint32_t idx)
+  {
+    if(0) return (sizeof(commandFifo)/sizeof(commandFifo[0]) - 1);
+    return (idx -1);
+  }
+  inline bool isEmpty() const
+  {
+    return (getIndex == setIndex);
+  }
+  inline void skip()
+  {
+    getIndex = nextIndex(getIndex);
+  }
+
+  void enqueueACK(COMMAND command, uint8_t frameNumber);
+  void enqueue(COMMAND command, FRAME_TYPE frameType, bool useData = false, uint8_t byteContent = 0);
+};
+
+class afhds3 : public CommandFifo  {
 public:
   afhds3(FlySkySerialPulsesData* data, ModuleData* moduleData, getChannelValue_t getChannelValue, processSensor_t processSensor) {
     this->data = data;
@@ -287,10 +301,6 @@ public:
     this->processSensor = processSensor;
     this->requestedModuleMode = MODULE_MODE_E::MODULE_MODE_UNKNOWN;
     reset();
-  }
-
-  virtual ~afhds3() {
-    clearQueue();
   }
 
   const uint32_t baudrate = AFHDS3_BAUDRATE;
@@ -321,13 +331,11 @@ public:
 private:
   const uint8_t FrameAddress = DeviceAddress::TRANSMITTER | (DeviceAddress::MODULE << 4);
   const uint16_t commandRepeatCount = 5;
-  void putByte(uint8_t byte);
-  void putBytes(uint8_t* data, int length);
-  void putHeader(COMMAND command, FRAME_TYPE frameType);
-  void putFooter();
-  void putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0);
-  void addAckToQueue(COMMAND command, uint8_t frameNumber);
-  void addToQueue(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0);
+  inline void putByte(uint8_t byte);
+  inline void putBytes(uint8_t* data, int length);
+  inline void putHeader(COMMAND command, FRAME_TYPE frameType, uint8_t frameIndex);
+  inline void putFooter();
+  inline void putFrame(COMMAND command, FRAME_TYPE frameType, uint8_t* data = nullptr, uint8_t dataLength = 0, uint8_t* frame_index = nullptr);
   void parseData(uint8_t* rxBuffer, uint8_t rxBufferCount);
   void setState(uint8_t state);
   bool syncSettings();
@@ -337,7 +345,6 @@ private:
   int16_t convert(int channelValue);
   void onModelSwitch();
   void sendChannelsData();
-  void clearQueue();
 
   //external data
   FlySkySerialPulsesData* data;
@@ -355,7 +362,6 @@ private:
   State operationState;
   uint16_t repeatCount;
   uint32_t cmdCount;
-  std::queue<request*> commandQueue;
   uint32_t commandIndex;
 };
 
