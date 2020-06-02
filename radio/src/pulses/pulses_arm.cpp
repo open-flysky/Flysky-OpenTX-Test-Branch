@@ -52,9 +52,10 @@ void onBind(bool success) {
 void setModuleFlag(uint8_t port, uint8_t value) {
   if(moduleFlag[port] == value) return;
   moduleFlag[port] = value;
-  if (value == MODULE_NORMAL_MODE && isModuleFlysky(port))
+  if (value == MODULE_NORMAL_MODE && isModuleFlysky(port) && s_current_protocol[port] == PROTO_FLYSKY)
     resetPulsesFlySky(port);
-  if (isModuleAFHDS3(port)) {
+#if defined(AFHDS3)
+  if (isModuleAFHDS3(port) && s_current_protocol[port] == PROTO_AFHDS3) {
     switch (value) {
     case MODULE_NORMAL_MODE:
       afhds3uart.cancel();
@@ -70,6 +71,7 @@ void setModuleFlag(uint8_t port, uint8_t value) {
      break;
     }
   }
+#endif
 }
 
 
