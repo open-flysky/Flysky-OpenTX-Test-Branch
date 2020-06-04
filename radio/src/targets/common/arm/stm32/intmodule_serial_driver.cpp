@@ -228,8 +228,17 @@ void intmoduleSendBufferDMA(uint8_t * data, uint8_t size)
 
 void intmoduleSendNextFrame()
 {
-    uint8_t * data = modulePulsesData[INTERNAL_MODULE].pxx_uart.pulses;
-    uint8_t size = modulePulsesData[INTERNAL_MODULE].pxx_uart.ptr - data;
+    uint8_t * data;
+    uint8_t size;
+
+    if (s_current_protocol[INTERNAL_MODULE] == PROTO_FLYSKY) {
+      data = modulePulsesData[INTERNAL_MODULE].flysky.pulses;
+      size = modulePulsesData[INTERNAL_MODULE].flysky.ptr - data;
+    }
+    else {
+      data = modulePulsesData[INTERNAL_MODULE].pxx_uart.pulses;
+      size = modulePulsesData[INTERNAL_MODULE].pxx_uart.ptr - data;
+    }
     intmoduleSendBufferDMA(data, size);
 }
 

@@ -927,9 +927,9 @@ void setupPulsesFlySky(uint8_t port)
 
   if ((DEBUG_RF_FRAME_PRINT & TX_FRAME_ONLY)) {
     /* print each command, except channel data by interval */
-    uint8_t * data = modulePulsesData[port].pxx_uart.pulses;
+    uint8_t * data = modulePulsesData[port].flysky.pulses;
     if (data[3] != CMD_SEND_CHANNEL_DATA || (set_loop_cnt++ % 100 == 0)) {
-      uint8_t size = modulePulsesData[port].pxx_uart.ptr - data;
+      uint8_t size = modulePulsesData[port].flysky.ptr - data;
       TRACE_NOCRLF("TX(State%0d)%0dB:", modulePulsesData[port].flysky.state, size);
       for (int idx = 0; idx < size; idx++) {
         TRACE_NOCRLF(" %02X", data[idx]);
