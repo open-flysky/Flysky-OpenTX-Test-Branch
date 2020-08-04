@@ -315,14 +315,14 @@ void drawComboOutputBar(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t chan
 
   if (ld && ld->revert) {
     drawOutputBarLimits(x + posOnBar(-100 - ld->max / 10), x + posOnBar(100 - ld->min / 10), y + Y_OUTBAR);
-    lcd->drawBitmap(x - X_OFFSET + 7, y + 25, chanMonInvertedBitmap);
+    lcd->drawBitmap(x + X_OFFSET*2, y-1, chanMonInvertedBitmap);
   }
   else if (ld) {
     drawOutputBarLimits(x + posOnBar(-100 + ld->min / 10), x + posOnBar(100 + ld->max / 10), y + Y_OUTBAR);
   }
 #if defined(OVERRIDE_CHANNEL_FUNCTION)
-  if (safetyCh[channel] != OVERRIDE_CHANNEL_UNDEFINED)
-    lcd->drawBitmap(x - X_OFFSET + 7, y + 7, chanMonLockedBitmap);
+  if (true|| safetyCh[channel] != OVERRIDE_CHANNEL_UNDEFINED)
+    lcd->drawBitmap(x + X_OFFSET*2 + 16, y-1, chanMonLockedBitmap);
 #endif
   lcd->drawSolidVerticalLine(x + w / 2, y + Y_OUTBAR, h, TEXT_COLOR);
   if (chanVal > calcRESXto100((ld && ld->revert) ? -ld->offset : ld->offset))
