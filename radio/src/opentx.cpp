@@ -1237,17 +1237,6 @@ void checkTHR()
 }
 #endif
 
-void checkAlarm() // added by Gohst
-{
-  if (g_eeGeneral.disableAlarmWarning) {
-    return;
-  }
-
-  if (IS_SOUND_OFF()) {
-    ALERT(STR_ALARMSWARN, STR_ALARMSDISABLED, AU_ERROR);
-  }
-}
-
 void alert(const pm_char * title, const pm_char * msg ALERT_SOUND_ARG)
 {
   LED_ERROR_BEGIN();
@@ -1947,7 +1936,9 @@ void opentxStart(OPENTX_START_ARGS)
 #endif
   }
   else {
-    checkAlarm();
+    if (!g_eeGeneral.disableAlarmWarning && IS_SOUND_OFF()) {
+      ALERT(STR_ALARMSWARN, STR_ALARMSDISABLED, AU_ERROR);
+    }
     checkAll();
     PLAY_MODEL_NAME();
   }
@@ -2163,8 +2154,7 @@ void checkBattery()
       }
       else
 #endif
-      //use check against 25 instead 50 because of NV14
-      if (IS_TXBATT_WARNING() && g_vbat100mV > 25) {
+      if (IS_TXBATT_WARNING()) {
         AUDIO_TX_BATTERY_LOW();
       }
     }

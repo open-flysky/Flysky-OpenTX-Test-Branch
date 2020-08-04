@@ -858,7 +858,7 @@ extern uint8_t g_vbat100mV;
 #else
   #define GET_TXBATT_BARS() (limit<int8_t>(2, 20 * (g_vbat100mV - g_eeGeneral.vBatMin - 90) / (30 + g_eeGeneral.vBatMax - g_eeGeneral.vBatMin), 20))
 #endif
-#define IS_TXBATT_WARNING() (g_vbat100mV <= g_eeGeneral.vBatWarn)
+#define IS_TXBATT_WARNING() (g_vbat100mV <= g_eeGeneral.vBatWarn && g_vbat100mV > 25)
 
 
 #define g_blinkTmr10ms    (*(uint8_t*)&g_tmr10ms)
