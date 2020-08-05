@@ -142,19 +142,19 @@ void checkBattery()
   static uint32_t batSum;
   static uint8_t sampleCount;
   // filter battery voltage by averaging it
-  if (g_vbat100mV == 0) {
-    g_vbat100mV = (getBatteryVoltage() + 5) / 10;
-    batSum = 0;
-    sampleCount = 0;
+  uint16_t voltage = getBatteryVoltage();
+  if (g_vbat10mV == 0) {
+    g_vbat10mV = voltage;
+    g_vbat100mV = voltage / 10;
+    batSum = sampleCount = 0;
   }
   else {
-    batSum += getBatteryVoltage();
-    // TRACE("checkBattery(): sampled = %d", getBatteryVoltage());
+    batSum += voltage;
     if (++sampleCount >= BAT_AVG_SAMPLES) {
-      g_vbat100mV = (batSum + BAT_AVG_SAMPLES * 5 ) / (BAT_AVG_SAMPLES * 10);
+      g_vbat10mV = batSum / BAT_AVG_SAMPLES;
+      g_vbat100mV = (g_vbat10mV + 5)/ 10;
       batSum = 0;
       sampleCount = 0;
-      // TRACE("checkBattery(): g_vbat100mV = %d", g_vbat100mV);
     }
   }
 }

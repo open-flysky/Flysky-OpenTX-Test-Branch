@@ -1576,7 +1576,8 @@ void getADC()
 
 #endif // SIMU
 
-uint8_t g_vbat100mV = 0;
+uint16_t g_vbat10mV;
+uint8_t g_vbat100mV;
 uint16_t lightOffCounter;
 uint8_t flashCounter = 0;
 
@@ -1790,8 +1791,8 @@ void doMixerCalculations()
         struct t_inactivity *ptrInactivity = &inactivity;
         FORCE_INDIRECT(ptrInactivity) ;
         ptrInactivity->counter++;
-        //use check against 25 instead 50 because of NV14
-        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && g_vbat100mV > 25 && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
+        //use check against 250 instead 500 because of NV14
+        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && g_vbat10mV > 250 && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
           AUDIO_INACTIVITY();
 
 #if defined(AUDIO)
@@ -2104,64 +2105,6 @@ uint8_t getSticksNavigationEvent()
   return evt;
 }
 #endif
-
-#if !defined(CPUARM)
-void checkBattery()
-{
-  static uint8_t counter = 0;
-#if defined(GUI) && !defined(COLORLCD)
-  // TODO not the right menu I think ...
-  if (menuHandlers[menuLevel] == menuRadioDiagAnalogs) {
-    g_vbat100mV = 0;
-    counter = 0;
-  }
-#endif
-  if (counter-- == 0) {
-    counter = 10;
-    int32_t instant_vbat = anaIn(TX_VOLTAGE);
-#if defined(CPUM2560)
-    instant_vbat = (instant_vbat*1112 + instant_vbat*g_eeGeneral.txVoltageCalibration + (BandGap<<2)) / (BandGap<<3);
-#else
-    instant_vbat = (instant_vbat*16 + instant_vbat*g_eeGeneral.txVoltageCalibration/8) / BandGap;
-#endif
-
-    static uint8_t  s_batCheck;
-    static uint16_t s_batSum;
-
-#if defined(VOICE)
-    s_batCheck += 8;
-#else
-    s_batCheck += 32;
-#endif
-
-    s_batSum += instant_vbat;
-
-    if (g_vbat100mV == 0) {
-      g_vbat100mV = instant_vbat;
-      s_batSum = 0;
-      s_batCheck = 0;
-    }
-#if defined(VOICE)
-    else if (!(s_batCheck & 0x3f)) {
-#else
-    else if (s_batCheck == 0) {
-#endif
-      g_vbat100mV = s_batSum / 8;
-      s_batSum = 0;
-#if defined(VOICE)
-      if (s_batCheck != 0) {
-        // no alarms
-      }
-      else
-#endif
-      if (IS_TXBATT_WARNING()) {
-        AUDIO_TX_BATTERY_LOW();
-      }
-    }
-  }
-}
-#endif // #if !defined(CPUARM)
-
 
 #if !defined(SIMU) && !defined(CPUARM)
 
@@ -2918,7 +2861,7 @@ uint32_t lowPowerCheck()
   if (low_pwr_state == PWR_CHECK_OFF) {
     return e_power_off;
   }
-  else if (g_vbat100mV < LOW_POWER_DOWN_VOLT) {
+  else if (g_vbat10mV < LOW_POWER_DOWN_10MILI_VOLT) {
 
     if (TELEMETRY_STREAMING()) {
       message = STR_MODEL_STILL_POWERED;

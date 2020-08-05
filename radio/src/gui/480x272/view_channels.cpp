@@ -321,7 +321,7 @@ void drawComboOutputBar(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t chan
     drawOutputBarLimits(x + posOnBar(-100 + ld->min / 10), x + posOnBar(100 + ld->max / 10), y + Y_OUTBAR);
   }
 #if defined(OVERRIDE_CHANNEL_FUNCTION)
-  if (true|| safetyCh[channel] != OVERRIDE_CHANNEL_UNDEFINED)
+  if (safetyCh[channel] != OVERRIDE_CHANNEL_UNDEFINED)
     lcd->drawBitmap(x + X_OFFSET*2 + 16, y-1, chanMonLockedBitmap);
 #endif
   lcd->drawSolidVerticalLine(x + w / 2, y + Y_OUTBAR, h, TEXT_COLOR);

@@ -345,7 +345,7 @@ void memswap(void * a, void * b, uint8_t size);
 #define PWR_PRESS_SHUTDOWN_DELAY       300 // 3s
 
 #if defined (PCBFLYSKY)
-  #define LOW_POWER_DOWN_VOLT          36  // 3.6v power down
+  #define LOW_POWER_DOWN_10MILI_VOLT   360  // 3.6v power down
 
   #define POWER_ON_DELAY               100 // 3s
   #define LOW_POWER_SHUTDOWN_DELAY     300 // 3s
@@ -852,13 +852,15 @@ extern const char vers_stamp[];
  */
 const char* getOtherVersion(char* buffer);
 
+extern uint16_t g_vbat10mV;
 extern uint8_t g_vbat100mV;
+
 #if LCD_W > 128
   #define GET_TXBATT_BARS() (limit<int8_t>(0, div_and_round(10 * (g_vbat100mV - g_eeGeneral.vBatMin - 90), 30 + g_eeGeneral.vBatMax - g_eeGeneral.vBatMin), 10))
 #else
   #define GET_TXBATT_BARS() (limit<int8_t>(2, 20 * (g_vbat100mV - g_eeGeneral.vBatMin - 90) / (30 + g_eeGeneral.vBatMax - g_eeGeneral.vBatMin), 20))
 #endif
-#define IS_TXBATT_WARNING() (g_vbat100mV <= g_eeGeneral.vBatWarn && g_vbat100mV > 25)
+#define IS_TXBATT_WARNING() (g_vbat10mV <= (g_eeGeneral.vBatWarn * 10) && g_vbat10mV > 250)
 
 
 #define g_blinkTmr10ms    (*(uint8_t*)&g_tmr10ms)
