@@ -534,12 +534,11 @@ bool isInputRecursive(int index)
 #endif
 
 #if defined(AUTOSOURCE)
-int8_t getMovedSource(GET_MOVED_SOURCE_PARAMS)
+int8_t getMovedSource(uint8_t min)
 {
   int8_t result = 0;
   static tmr10ms_t s_move_last_time = 0;
 
-#if defined(VIRTUAL_INPUTS)
   static int16_t inputsStates[MAX_INPUTS];
   if (min <= MIXSRC_FIRST_INPUT) {
     for (uint8_t i=0; i<MAX_INPUTS; i++) {
@@ -551,14 +550,21 @@ int8_t getMovedSource(GET_MOVED_SOURCE_PARAMS)
       }
     }
   }
-#endif
 
   static int16_t sourcesStates[NUM_STICKS+NUM_POTS+NUM_SLIDERS+NUM_MOUSE_ANALOGS];
+  static int16_t switchesStates[NUM_SWITCHES];
   if (result == 0) {
     for (uint8_t i=0; i<NUM_STICKS+NUM_POTS+NUM_SLIDERS; i++) {
       if (abs(calibratedAnalogs[i] - sourcesStates[i]) > 512) {
         result = MIXSRC_Rud+i;
         break;
+      }
+    }
+    for (uint8_t i=0; i<NUM_SWITCHES; i++) {
+      int16_t oldVal = switchesStates[i];
+      switchesStates[i] = getValue(MIXSRC_FIRST_SWITCH+i);
+      if(abs(oldVal - switchesStates[i]) > 512) {
+        result = MIXSRC_FIRST_SWITCH + i;
       }
     }
   }
@@ -569,9 +575,7 @@ int8_t getMovedSource(GET_MOVED_SOURCE_PARAMS)
   }
 
   if (result || recent) {
-#if defined(VIRTUAL_INPUTS)
     memcpy(inputsStates, anas, sizeof(inputsStates));
-#endif
     memcpy(sourcesStates, calibratedAnalogs, sizeof(sourcesStates));
   }
 
