@@ -890,7 +890,7 @@ void checkBacklight()
         backlightOn();
       }
     }
-    if ((g_eeGeneral.backlightMode & e_backlight_mode_keys) && touchState.Time + 50 > get_tmr10ms()) {
+    if ((g_eeGeneral.backlightMode & e_backlight_mode_keys) && touchState.LastEvent + 50 > get_tmr10ms()) {
       backlightOn();
     }
 #if defined(PWR_BUTTON_PRESS)
