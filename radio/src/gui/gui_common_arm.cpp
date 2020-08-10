@@ -246,6 +246,11 @@ bool isInputSourceAvailable(int source)
   if (source >= MIXSRC_FIRST_SWITCH && source <= MIXSRC_LAST_SWITCH)
     return SWITCH_EXISTS(source - MIXSRC_FIRST_SWITCH);
 
+#if !defined(HELI)
+  if (source >= MIXSRC_CYC1 && source <= MIXSRC_CYC3)
+    return false;
+#endif
+
   if (source >= MIXSRC_FIRST_CH && source <= MIXSRC_LAST_CH)
     return true;
 
