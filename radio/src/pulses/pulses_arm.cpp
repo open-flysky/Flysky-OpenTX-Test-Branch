@@ -244,7 +244,7 @@ void setupPulses(uint8_t port)
     case PROTO_AFHDS3:
       if (init_needed) afhds3uart.reset();
       afhds3uart.setupPulses();
-      scheduleNextMixerCalculation(port, afhds3uart.commandTimout - 1);
+      scheduleNextMixerCalculation(port, AFHDS3_PERIOD);
       break;
 #endif
     case PROTO_PXX:
@@ -310,6 +310,8 @@ void setupPulses(uint8_t port)
     switch (required_protocol) { // Start new protocol hardware here
 #if defined(PCBFLYSKY)
       case PROTO_FLYSKY:
+        init_serial(port, INTMODULE_USART_AFHDS2_BAUDRATE, FLYSKY_PERIOD);
+        break;
 #endif
       case PROTO_PXX:
         init_pxx(port);

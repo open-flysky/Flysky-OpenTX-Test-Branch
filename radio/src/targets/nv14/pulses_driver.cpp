@@ -20,11 +20,17 @@
 
 #include "opentx.h"
 
+const uint16_t Parity_No = ((uint16_t)0x0000); //USART_Parity_No
+const uint16_t StopBits_1 = ((uint16_t)0x0000); //USART_StopBits_1
+const uint16_t WordLength_8b = ((uint16_t)0x0000); //USART_WordLength_8b
+
+
 void intmoduleStop(void);
 void extmoduleStop(void);
 
 void intmoduleNoneStart(void);
 void intmodulePxxStart(void);
+void intmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us);
 
 void extmoduleNoneStart(void);
 void extmodulePpmStart(void);
@@ -33,9 +39,8 @@ void extmodulePxxStart(void);
 void extmoduleDsm2Start(void);
 #endif
 void extmoduleCrossfireStart(void);
-#if defined(AFHDS3)
-void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
-#endif
+void extmoduleSerialStart(uint32_t baudRate, uint32_t period_half_us, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
+
 
 void init_no_pulses(uint32_t port) {
   if (port == INTERNAL_MODULE)
@@ -69,19 +74,31 @@ void init_pxx(uint32_t port) {
   else
     extmodulePxxStart();
 }
-
-void init_afhds3(uint32_t port) {
-  if (port == EXTERNAL_MODULE) extmoduleAFHDS3Start(afhds3uart.baudrate, afhds3uart.wordLength, afhds3uart.stopBits, afhds3uart.parity);
-}
-void disable_afhds3(uint32_t port) {
-  if (port == EXTERNAL_MODULE) extmoduleStop();
-}
-
 void disable_pxx(uint32_t port) {
   if (port == INTERNAL_MODULE)
     intmoduleStop();
   else
     extmoduleStop();
+}
+
+void init_afhds3(uint32_t port) {
+  if (port == EXTERNAL_MODULE) {
+    extmoduleSerialStart(afhds3uart.baudrate, AFHDS3_PERIOD_HALF_US, afhds3uart.wordLength, afhds3uart.stopBits, afhds3uart.parity);
+  }
+}
+void disable_afhds3(uint32_t port) {
+  if (port == EXTERNAL_MODULE) extmoduleStop();
+}
+
+
+void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us)
+{
+  if (port == INTERNAL_MODULE) {
+    intmoduleSerialStart(baudrate, period_half_us);
+  }
+  else if (port == EXTERNAL_MODULE) {
+    extmoduleSerialStart(baudrate, period_half_us, WordLength_8b, StopBits_1, Parity_No);
+  }
 }
 
 #if defined(DSM2)

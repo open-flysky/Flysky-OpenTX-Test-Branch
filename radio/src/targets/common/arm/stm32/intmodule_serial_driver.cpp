@@ -62,7 +62,7 @@ void intmoduleNoneStart()
 
 //#define INTMODULE_RX_INT
 static uint8_t intmodule_hal_inited = 0;
-void intmodulePxxStart()
+void intmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us)
 {
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = INTMODULE_TX_DMA_Stream_IRQn;
@@ -94,7 +94,7 @@ void intmodulePxxStart()
 
   USART_DeInit(INTMODULE_USART);
   USART_InitTypeDef USART_InitStructure;
-  USART_InitStructure.USART_BaudRate = INTERNAL_MODULE_BAUDRATE;
+  USART_InitStructure.USART_BaudRate = baudrate;
   USART_InitStructure.USART_WordLength = USART_WordLength_8b;
   USART_InitStructure.USART_StopBits = USART_StopBits_1;
   USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -141,8 +141,8 @@ void intmodulePxxStart()
   // Timer
   INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
   INTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
-  INTMODULE_TIMER->ARR = 18000; // 9mS
-  INTMODULE_TIMER->CCR2 = 15000; // Update time
+  INTMODULE_TIMER->ARR = period_half_us;
+  INTMODULE_TIMER->CCR2 = period_half_us - 2000; // Update time
   INTMODULE_TIMER->CCER |= TIM_CCER_CC2E;
   INTMODULE_TIMER->EGR |= TIM_EGR_CC2G; //
   INTMODULE_TIMER->CCMR1 |= TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_0; // Toggle CC1 o/p
@@ -154,6 +154,10 @@ void intmodulePxxStart()
 
   intmodule_hal_inited = 1;
 
+}
+void intmodulePxxStart()
+{
+  intmoduleSerialStart(INTMODULE_USART_PXX_BAUDRATE, 18000);
 }
 
 extern "C" void INTMODULE_USART_IRQHandler(void)

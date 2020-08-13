@@ -139,8 +139,6 @@ typedef struct RX_INFO_S {
 static STRUCT_HALL rfProtocolRx = {0};
 static uint32_t rfRxCount = 0;
 static uint8_t lastState = STATE_IDLE;
-extern uint8_t intmoduleGetByte(uint8_t * byte);
-
 static rf_info_t rf_info = {
   .id               = {8, 8, 8, 8},
   .bind_power       = BIND_LOW_POWER,
@@ -384,7 +382,7 @@ void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn)
       }
   }
 }
-void setFlyskyState(uint8_t port, uint8_t state) {
+inline void setFlyskyState(uint8_t port, uint8_t state) {
   modulePulsesData[port].flysky.state = state;
 }
 
@@ -401,7 +399,7 @@ void onFlySkyGetVersionInfoStart(uint8_t port, uint8_t isRfTransfer)
   else setFlyskyState(port, STATE_GET_RX_VERSION_INFO);
 }
 
-void initFlySkyArray(uint8_t port)
+inline void initFlySkyArray(uint8_t port)
 {
   modulePulsesData[port].flysky.ptr = modulePulsesData[port].flysky.pulses;
   modulePulsesData[port].flysky.crc = 0;
@@ -422,13 +420,13 @@ inline void putFlySkyByte(uint8_t port, uint8_t byte)
   }
 }
 
-void putFlySkyFrameByte(uint8_t port, uint8_t byte)
+inline void putFlySkyFrameByte(uint8_t port, uint8_t byte)
 {
   modulePulsesData[port].flysky.crc += byte;
   putFlySkyByte(port, byte);
 }
 
-void putFlySkyFrameBytes(uint8_t port, uint8_t* data, int length)
+inline void putFlySkyFrameBytes(uint8_t port, uint8_t* data, int length)
 {
   for(int i = 0; i < length; i++) {
     modulePulsesData[port].flysky.crc += data[i];
@@ -437,22 +435,22 @@ void putFlySkyFrameBytes(uint8_t port, uint8_t* data, int length)
 }
 
 
-void putFlySkyFrameHead(uint8_t port)
+inline void putFlySkyFrameHead(uint8_t port)
 {
   *modulePulsesData[port].flysky.ptr++ = END;
 }
 
-void putFlySkyFrameIndex(uint8_t port)
+inline void putFlySkyFrameIndex(uint8_t port)
 {
   putFlySkyFrameByte(port, modulePulsesData[port].flysky.frame_index);
 }
 
-void putFlySkyFrameCrc(uint8_t port)
+inline void putFlySkyFrameCrc(uint8_t port)
 {
   putFlySkyByte(port, modulePulsesData[port].flysky.crc ^ 0xff);
 }
 
-void putFlySkyFrameTail(uint8_t port)
+inline void putFlySkyFrameTail(uint8_t port)
 {
   *modulePulsesData[port].flysky.ptr++ = END;
 }
@@ -464,7 +462,7 @@ void putFlySkyGetFirmwareVersion(uint8_t port, uint8_t fw_word)
   putFlySkyFrameByte(port, fw_word); // 0x00:RX firmware, 0x01:RF firmware
 }
 
-void putFlySkySendChannelData(uint8_t port)
+inline void putFlySkySendChannelData(uint8_t port)
 {
   uint16_t pulseValue = 0;
   uint8_t channels_start = g_model.moduleData[port].channelsStart;
@@ -519,7 +517,7 @@ void putFlySkyUpdateFirmwareStart(uint8_t port, uint8_t fw_word)
   putFlySkyFrameByte(port, fw_word);
 }
 
-void incrFlySkyFrame(uint8_t port)
+inline void incrFlySkyFrame(uint8_t port)
 {
   if (++modulePulsesData[port].flysky.frame_index == 0)
     modulePulsesData[port].flysky.frame_index = 1;
@@ -535,7 +533,7 @@ bool checkFlySkyFrameCrc(const uint8_t * ptr, uint8_t size)
 
   if (DEBUG_RF_FRAME_PRINT & RF_FRAME_ONLY) {
     if (ptr[2] != 0x06 || (set_loop_cnt++ % 50 == 0)) {
-      TRACE_NOCRLF("RF(%0d): C0", INTERNAL_MODULE_BAUDRATE);
+      TRACE_NOCRLF("RF(%0d): C0", INTMODULE_USART_AFHDS2_BAUDRATE);
       for (int idx = 0; idx <= size; idx++) {
         TRACE_NOCRLF(" %02X", ptr[idx]);
       }
@@ -551,7 +549,7 @@ bool checkFlySkyFrameCrc(const uint8_t * ptr, uint8_t size)
 }
 
 
-void parseResponse(uint8_t port)
+inline void parseResponse(uint8_t port)
 {
   const uint8_t * ptr = modulePulsesData[port].flysky.telemetry;
   uint8_t dataLen = modulePulsesData[port].flysky.telemetry_index;
@@ -692,14 +690,10 @@ bool isRfProtocolRxMsgOK(void)
 }
 
 #if !defined(SIMU)
-void checkResponse(uint8_t port)
-{
-  uint8_t byte;
 
-  while (intmoduleGetByte(&byte)) {
-    //if ( modulePulsesData[port].flysky.state == STATE_IDLE
-    //  && rf_info.fw_state == STATE_UPDATE_RF_FIRMWARE )
-    {
+void processInternalFlySkyTelemetryData(uint8_t byte)
+{
+        uint8_t port = INTERNAL_MODULE;
         Parse_Character(&rfProtocolRx, byte );
         if ( rfProtocolRx.msg_OK )
         {
@@ -727,8 +721,7 @@ void checkResponse(uint8_t port)
             usbDownloadTransmit(pt, rfProtocolRx.length + 5);
 #endif
         }
-        //continue;
-    }
+
 
     if (byte == END && modulePulsesData[port].flysky.telemetry_index > 0) {
       parseResponse(port);
@@ -753,7 +746,6 @@ void checkResponse(uint8_t port)
         }
       }
     }
-  }
 }
 #endif
 
@@ -772,10 +764,6 @@ void resetPulsesFlySky(uint8_t port)
 
 void setupPulsesFlySky(uint8_t port)
 {
-#if !defined(SIMU)
-  checkResponse(port);
-#endif
-
   initFlySkyArray(port);
   putFlySkyFrameHead(port);
   putFlySkyFrameIndex(port);

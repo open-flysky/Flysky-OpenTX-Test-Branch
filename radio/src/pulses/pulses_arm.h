@@ -56,7 +56,6 @@ template<class T> struct PpmPulsesData {
 #define EXTMODULE_USART_PXX_BAUDRATE 115200
 #define INTMODULE_USART_PXX_BAUDRATE 115200
 
-#define FLYSKY_PERIOD 9 /*ms*/
 #endif
 
 #define HALF_US_MULTI 200
@@ -65,7 +64,9 @@ template<class T> struct PpmPulsesData {
 #define PXX_PERIOD 9 /*ms*/
 #define PXX_PERIOD_HALF_US (PXX_PERIOD * PERIOD_LENGHT)
 
-#define AFHDS3_PERIOD 5 /*ms*/
+#define FLYSKY_PERIOD 3 /*ms*/
+#define FLYSKY_PERIOD_HALF_US (AFHDS3_PERIOD * PERIOD_LENGHT)
+#define AFHDS3_PERIOD 3 /*ms*/
 #define AFHDS3_PERIOD_HALF_US (AFHDS3_PERIOD * PERIOD_LENGHT)
 
 

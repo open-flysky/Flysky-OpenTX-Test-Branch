@@ -243,7 +243,7 @@ void ConfigureRxDMA(){
 
 
 
-void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopBits, uint16_t parity)
+void extmoduleSerialStart(uint32_t baudRate, uint32_t period_half_us, uint16_t wordLength, uint16_t stopBits, uint16_t parity)
 {
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = EXTMODULE_USART_TX_DMA_IRQn;
@@ -292,8 +292,8 @@ void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopB
   // Timer
   EXTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
   EXTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
-  EXTMODULE_TIMER->ARR = AFHDS3_PERIOD_HALF_US * 2;// + 2000;
-  EXTMODULE_TIMER->CCR2 = AFHDS3_PERIOD_HALF_US * 2 - 1000; // Update time
+  EXTMODULE_TIMER->ARR = period_half_us;
+  EXTMODULE_TIMER->CCR2 = period_half_us - 2000; // Update time
   EXTMODULE_TIMER->CCER = TIM_CCER_CC3E;
   EXTMODULE_TIMER->CCMR2 = 0;
   EXTMODULE_TIMER->EGR = 1; // Restart
@@ -309,7 +309,6 @@ void extmoduleAFHDS3Start(uint32_t baudRate, uint16_t wordLength, uint16_t stopB
   NVIC_SetPriority(EXTMODULE_USART_TX_DMA_IRQn, 7);
   NVIC_EnableIRQ(EXTMODULE_TIMER_IRQn);
   NVIC_SetPriority(EXTMODULE_TIMER_IRQn, 7);
-
 }
 
 void extmoduleDsm2Start()

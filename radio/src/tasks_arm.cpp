@@ -113,11 +113,11 @@ TASK_FUNCTION(mixerTask)
 #endif
       run = true;
     }
-    else if (now == nextMixerTime[0]) {
+    else if (now >= nextMixerTime[0]) {
       run = true;
     }
 #if NUM_MODULES >= 2
-    else if (now == nextMixerTime[1]) {
+    else if (now >= nextMixerTime[1]) {
       run = true;
     }
 #endif
@@ -128,7 +128,7 @@ TASK_FUNCTION(mixerTask)
     lastRunTime = now;
 
     if (!s_pulses_paused) {
-      uint16_t t0 = getTmr2MHz();
+    uint16_t t0 = getTmr2MHz();
 
       DEBUG_TIMER_START(debugTimerMixer);
       RTOS_LOCK_MUTEX(mixerMutex);
@@ -160,7 +160,7 @@ TASK_FUNCTION(mixerTask)
       }
 
       t0 = getTmr2MHz() - t0;
-      if (t0 > maxMixerDuration) maxMixerDuration = t0 ;
+      if (t0 > maxMixerDuration) maxMixerDuration = t0;
     }
   }
 }

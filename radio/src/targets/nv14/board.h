@@ -191,6 +191,7 @@ void init_crossfire(uint32_t module_index);
 void disable_crossfire(uint32_t module_index);
 void init_sbusOut(uint32_t module_index);
 void disable_sbusOut(uint32_t module_index);
+void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us);
 
 // Trainer driver
 void init_trainer_ppm(void);
