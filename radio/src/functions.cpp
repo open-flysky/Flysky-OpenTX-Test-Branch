@@ -81,7 +81,7 @@ PLAY_FUNCTION(playValue, source_t idx)
     PLAY_DURATION(val*60, PLAY_TIME);
   }
   else if (idx == MIXSRC_TX_VOLTAGE) {
-    PLAY_NUMBER(val, UNIT_VOLTS, PREC1);
+    PLAY_NUMBER(val, UNIT_VOLTS, PREC2);
   }
   else {
     if (idx <= MIXSRC_LAST_CH) {

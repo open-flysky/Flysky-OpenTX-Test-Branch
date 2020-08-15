@@ -89,10 +89,15 @@ void ValueWidget::refresh(event_ext_t event)
       attrValue = LEFT | MIDSIZE | EXPANDED;
     }
 #endif
+    else if (field == MIXSRC_TX_VOLTAGE && zone.w <= 60) {
+      attrValue = LEFT | NO_UNIT | MIDSIZE;
+    }
     else {
       attrValue = LEFT | DBLSIZE;
     }
   }
+
+   
 
   if (field >= MIXSRC_FIRST_TIMER && field <= MIXSRC_LAST_TIMER) {
     TimerState & timerState = timersStates[field-MIXSRC_FIRST_TIMER];

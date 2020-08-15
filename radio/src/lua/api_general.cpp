@@ -260,7 +260,7 @@ void luaGetValueAndPush(lua_State* L, int src)
     }
   }
   else if (src == MIXSRC_TX_VOLTAGE) {
-    lua_pushnumber(L, float(value) * 0.1f);
+    lua_pushnumber(L, float(value) * 0.01f);
   }
   else {
     lua_pushinteger(L, value);

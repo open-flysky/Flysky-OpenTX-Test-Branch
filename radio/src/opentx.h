@@ -917,7 +917,7 @@ inline void getMixSrcRange(const int source, int16_t & valMin, int16_t & valMax,
     valMax =  255;
     valMin = 0;
     if (flags)
-      *flags |= PREC1;
+      *flags |= PREC2;
   }
   else if (source == MIXSRC_TX_TIME) {
     valMax =  23 * 60 + 59;
