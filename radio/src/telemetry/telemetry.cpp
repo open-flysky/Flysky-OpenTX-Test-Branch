@@ -110,6 +110,15 @@ void telemetryWakeup()
       LOG_TELEMETRY_WRITE_BYTE(data);
     } while (telemetryGetByte(&data));
   }
+#if defined(PCBNV14)
+  if(s_current_protocol[INTERNAL_MODULE] == PROTO_FLYSKY && intmoduleGetByte(&data)) {
+    do {
+      processInternalFlySkyTelemetryData(data);
+      LOG_TELEMETRY_WRITE_BYTE(data);
+    } while (intmoduleGetByte(&data));
+  }
+ #endif
+  
 
 #elif defined(PCBSKY9X)
   if (telemetryProtocol == PROTOCOL_FRSKY_D_SECONDARY) {

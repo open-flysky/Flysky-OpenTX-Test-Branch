@@ -37,6 +37,7 @@
     #include <windows.h>
     #define msleep(x) Sleep(x)
   #endif
+  #define RTOS_MS_PER_TICK              1
   #define RTOS_INIT()
   #define RTOS_WAIT_MS(x)               msleep(x)
   #define RTOS_WAIT_TICKS(x)            msleep((x)*2)
@@ -95,6 +96,8 @@
   extern "C" {
     #include <CoOS.h>
   }
+  #define RTOS_MS_PER_TICK              ((CFG_CPU_FREQ / CFG_SYSTICK_FREQ) / (CFG_CPU_FREQ / 1000))  // RTOS timer tick length in ms (currently 2)
+
   #define RTOS_INIT()                   CoInitOS()
   #define RTOS_WAIT_MS(x)               CoTickDelay((x)/2)
   #define RTOS_WAIT_TICKS(x)            CoTickDelay(x)

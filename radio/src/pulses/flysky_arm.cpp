@@ -382,7 +382,7 @@ void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn)
       }
   }
 }
-inline void setFlyskyState(uint8_t port, uint8_t state) {
+void setFlyskyState(uint8_t port, uint8_t state) {
   modulePulsesData[port].flysky.state = state;
 }
 
@@ -689,10 +689,10 @@ bool isRfProtocolRxMsgOK(void)
   return isMsgOK && isFlySkyUsbDownload();
 }
 
-#if !defined(SIMU)
-
 void processInternalFlySkyTelemetryData(uint8_t byte)
 {
+#if !defined(SIMU)
+
         uint8_t port = INTERNAL_MODULE;
         Parse_Character(&rfProtocolRx, byte );
         if ( rfProtocolRx.msg_OK )
@@ -746,8 +746,9 @@ void processInternalFlySkyTelemetryData(uint8_t byte)
         }
       }
     }
+    #endif
 }
-#endif
+
 
 void resetPulsesFlySky(uint8_t port)
 {

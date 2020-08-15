@@ -9,3 +9,6 @@ build*/
 cmake-build-*/
 /debian/
 /Debug/
+*.bak
+/fw/
+
