@@ -150,7 +150,7 @@ void CurveEdit::right() {
   int targetOffset = pointsTotal + (current-1);
   int8_t* point = pointsPtr + targetOffset;
   int8_t next = current == pointsTotal-2 ? 100 : *(point+1);
-  if((*point)+1 < next) (*point)++;
+  if((*point)+1 <= next) (*point)++;
   storageDirty(EE_MODEL);
   invalidate();
 }
@@ -163,7 +163,7 @@ void CurveEdit::left()
   int targetOffset = pointsTotal + (current-1);
   int8_t* point = pointsPtr + targetOffset;
   int8_t prev = current == 1 ? -100 : *(point-1);
-  if((*point)-1 > prev) (*point)--;
+  if((*point)-1 >= prev) (*point)--;
   storageDirty(EE_MODEL);
   invalidate();
 }
