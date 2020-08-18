@@ -310,7 +310,7 @@ void setupPulses(uint8_t port)
     switch (required_protocol) { // Start new protocol hardware here
 #if defined(PCBFLYSKY)
       case PROTO_FLYSKY:
-        init_serial(port, INTMODULE_USART_AFHDS2_BAUDRATE, FLYSKY_PERIOD);
+        init_serial(port, INTMODULE_USART_AFHDS2_BAUDRATE, FLYSKY_PERIOD_HALF_US);
         break;
 #endif
       case PROTO_PXX:
