@@ -17,12 +17,13 @@
 local VALUE = 0
 local COMBO = 1
 
-local COLUMN_2 = 200
 
-local NAV_BUTTON_TOP = 235
-local NAV_BUTTON_BOTTOM = 300
-local NAV_BUTTON_NEXT_LEFT = 285
-local NAV_BUTTON_PREV_RIGHT = 35
+local COLUMN_1 = 5
+local COLUMN_2 = 230
+local MAX_W = 320
+local MAX_ROWS = 18
+local MARGIN_TOP = 30
+local ROW_H = 22
 
 local edit = false
 local page = 1
@@ -38,6 +39,9 @@ local modifications = {}
 local wingBitmaps = {}
 local mountBitmaps = {}
 
+local ImgPrev = Bitmap.open("img/pageup.png")
+local ImgNext = Bitmap.open("img/pagedn.png")
+
 local configFields = {
   {"Wing type:", COMBO, 0x80, nil, { "Normal", "Delta", "VTail" } },
   {"Mounting type:", COMBO, 0x81, nil, { "Horz", "Horz rev.", "Vert", "Vert rev." } },
@@ -46,9 +50,9 @@ local wingBitmapsFile = {"img/plane_b.png", "img/delta_b.png", "img/planev_b.png
 local mountBitmapsFile = {"img/up.png", "img/down.png", "img/vert.png", "img/vert-r.png"}
 
 local settingsFields = {
-  {"SxR functions:", COMBO, 0x9C, nil, { "Disable", "Enable" } },
-  {"Quick Mode:", COMBO, 0xAA, nil, { "Disable", "Enable" } },
-  {"CH5 mode:", COMBO, 0xA8, nil, { "AIL2", "AUX1" } },
+  {"SxR functions:", COMBO, 0x9C, 0, { "Disable", "Enable" } },
+  {"Quick Mode:", COMBO, 0xAA, 0, { "Disable", "Enable" } },
+  {"CH5 mode:", COMBO, 0xA8, 0, { "AIL2", "AUX1" } },
   {"CH6 mode:", COMBO, 0xA9, nil, { "ELE2", "AUX2" } },
   {"AIL direction:", COMBO, 0x82, nil, { "Normal", "Invers" }, { 255, 0 } },
   {"ELE direction:", COMBO, 0x83, nil, { "Normal", "Invers" }, { 255, 0 } },
@@ -87,6 +91,9 @@ end
 -- Change display attribute to current field
 local function addField(step)
   local field = fields[current]
+  if field == nil then
+    return
+  end
   local min, max
   if field[2] == VALUE then
     min = field[5]
@@ -97,6 +104,22 @@ local function addField(step)
   end
   if (step < 0 and field[4] > min) or (step > 0 and field[4] < max) then
     field[4] = field[4] + step
+  elseif step < min then
+    field[4] = min
+  elseif step > max then
+    field[4] = max
+  end
+end
+
+local function defaultField()
+  local field = fields[current]
+  local min, max
+  if field[2] == VALUE then
+    min = field[5]
+    max = field[6]
+    field[4] = (min + max) /2 
+  elseif field[2] == COMBO then
+    field[4] = 0
   end
 end
 
@@ -119,9 +142,9 @@ local function selectField(step)
 end
 
 local function drawProgressBar()
-  local width = (300 * refreshIndex) / #fields
-  lcd.drawRectangle(100, 10, 300, 6)
-  lcd.drawFilledRectangle(102, 13, width, 2);
+  local width = (130 * refreshIndex) / #fields
+  lcd.drawRectangle(60, 10, 200, 6)
+  lcd.drawFilledRectangle(62, 13, width, 2);
 end
 
 -- Redraw the current page
@@ -133,7 +156,7 @@ local function redrawFieldsPage(event)
     drawProgressBar()
   end
 
-  for index = 1, 10, 1 do
+  for index = 1, MAX_ROWS, 1 do
     local field = fields[pageOffset+index]
     if field == nil then
       break
@@ -142,16 +165,16 @@ local function redrawFieldsPage(event)
     local attr = current == (pageOffset+index) and ((edit == true and BLINK or 0) + INVERS) or 0
     attr = attr + TEXT_COLOR
 
-    lcd.drawText(1, 30+20*index, field[1], TEXT_COLOR)
+    lcd.drawText(COLUMN_1, MARGIN_TOP+ROW_H*index, field[1], TEXT_COLOR)
 
     if field[4] == nil then
-      lcd.drawText(COLUMN_2, 30+20*index, "---", attr)
+      lcd.drawText(COLUMN_2, MARGIN_TOP+ROW_H*index, "---", attr)
     else
       if field[2] == VALUE then
-        lcd.drawNumber(COLUMN_2, 30+20*index, field[4], LEFT + attr)
+        lcd.drawNumber(COLUMN_2, MARGIN_TOP+ROW_H*index, field[4], LEFT + attr)
       elseif field[2] == COMBO then
         if field[4] >= 0 and field[4] < #(field[5]) then
-          lcd.drawText(COLUMN_2, 30+20*index, field[5][1+field[4]], attr)
+          lcd.drawText(COLUMN_2, MARGIN_TOP+ROW_H*index, field[5][1+field[4]], attr)
         end
       end
     end
@@ -230,7 +253,11 @@ local function refreshNext()
 end
 
 local function updateField(field)
+  lcd.showKeyboard(KEYBOARD_NONE)
   local value = field[4]
+  if value == nil then
+    return
+  end
   if field[2] == COMBO and #field == 6 then
     value = field[6][1+value]
   elseif field[2] == VALUE and #field == 8 then
@@ -239,37 +266,88 @@ local function updateField(field)
   modifications[#modifications+1] = { field[3], value }
 end
 
+local function getField(x, y)
+  if x == nil or y == nil then
+    return -1
+  end
+  for i=1+pageOffset, #fields do
+      local f = fields[i]
+      local x_min = COLUMN_2 - 2;
+      local y_min = MARGIN_TOP+ROW_H*(i-pageOffset)
+      local val = "XyjgQ"
+      local value = f[4]
+      local h = lcd.getHeight(val, (f.to or 0))
+      local y_max = MARGIN_TOP+ROW_H*(i - pageOffset) + h
+      
+      if f[4] ~= nil and ( x >= x_min) and (y >= y_min) and (x <= MAX_W) and (y <= y_max) then
+          return i
+      end
+  end
+  return -1
+end
+
+
 -- Main
-local function runFieldsPage(event)
+local function runFieldsPage(event, x, y)
+  local idx = getField(x, y)
   if event == EVT_EXIT_BREAK then -- exit script
     return 2
-  elseif event == EVT_ENTER_BREAK or event == EVT_ROT_BREAK then -- toggle editing/selecting current field
-    if fields[current][4] ~= nil then
-      edit = not edit
-      if edit == false then
+  elseif event == EVT_ENTER_BREAK or event == EVT_ROT_BREAK or (event == EVT_TOUCH_UP and idx ~= -1) then -- toggle editing/selecting current field
+    if idx ~= -1 then
+      if current ~= idx then
         updateField(fields[current])
       end
+      current = idx
     end
+    if fields[current][4] ~= nil then
+      if event ~= EVT_TOUCH_UP then
+        edit = not edit
+      else 
+        edit = true
+      end
+      if edit == false then
+        updateField(fields[current])
+      else
+        lcd.showKeyboard(KEYBOARD_NUM_INC_DEC)
+      end
+    end
+  elseif event == EVT_TOUCH_UP then
+    edit = false
+    updateField(fields[current])
   elseif edit then
-    if event == EVT_PLUS_FIRST or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT then
+    if event == EVT_PLUS_FIRST or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT or event == EVT_VK_INC then
       addField(1)
-    elseif event == EVT_MINUS_FIRST or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
+    elseif event == EVT_MINUS_FIRST or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT or event == EVT_VK_DEC then
       addField(-1)
+    elseif event == EVT_VK_INC_LARGE then
+      addField(5)
+    elseif event == EVT_VK_DEC_LARGE then
+      addField(-5)
+    elseif event == EVT_VK_MIN then
+      addField(-65535)
+    elseif event == EVT_VK_MAX then
+      addField(65535)
+    elseif event == EVT_VK_DEFAULT then
+      defaultField()
     end
   else
     if event == EVT_MINUS_FIRST or event == EVT_ROT_RIGHT then
       selectField(1)
     elseif event == EVT_PLUS_FIRST or event == EVT_ROT_LEFT then
       selectField(-1)
+    elseif event == EVT_SLIDE_UP and pageOffset > 1 then
+      pageOffset = pageOffset -1
+    elseif event == EVT_SLIDE_DOWN and pageOffset < (#fields - MAX_ROWS) then
+      pageOffset = pageOffset +1
     end
   end
   redrawFieldsPage(event)
   return 0
 end
 
-local function runConfigPage(event)
+local function runConfigPage(event, x, y)
   fields = configFields
-  local result = runFieldsPage(event)
+  local result = runFieldsPage(event, x, y)
   if fields[1][4] ~= nil then
     if wingBitmaps[1 + fields[1][4]] == nil then
       wingBitmaps[1 + fields[1][4]] = Bitmap.open(wingBitmapsFile[1 + fields[1][4]])
@@ -285,9 +363,9 @@ local function runConfigPage(event)
   return result
 end
 
-local function runSettingsPage(event)
+local function runSettingsPage(event, x, y)
   fields = settingsFields
-  return runFieldsPage(event)
+  return runFieldsPage(event, x, y)
 end
 
 -- Init
@@ -300,18 +378,23 @@ local function init()
 end
 
 -- Main
-local function run(event)
+local function run(event, x, y)
   if event == nil then
     error("Cannot be run as a model script!")
     return 2
-  elseif (event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST or event == EVT_SLIDE_LEFT or (event == EVT_TOUCH_UP and x >= NAV_BUTTON_NEXT_LEFT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page < #pages-1 then
+  elseif (event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST or event == EVT_SLIDE_LEFT) then
     selectPage(1)
-  elseif (event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST or event == EVT_SLIDE_RIGHT or (event == EVT_TOUCH_UP and x <= NAV_BUTTON_PREV_RIGHT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page > 1 then
+  elseif (event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST or event == EVT_SLIDE_RIGHT) then
+    -- if page == 1 then
+    --  return 2
+    -- end
     killEvents(event);
     selectPage(-1)
+  elseif (event == EVT_TOUCH_UP and x <=30 and y <=30) then
+    return -2
   end
 
-  local result = pages[page](event)
+  local result = pages[page](event, x, y)
   refreshNext()
 
   return result
