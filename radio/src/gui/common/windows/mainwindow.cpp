@@ -52,8 +52,14 @@ static uint32_t getSlideEvent() {
   int slideSize = LCD_W / 4;
   if (x > slideSize) return TOUCH_SLIDE_RIGHT;
   else if (x < -slideSize) return TOUCH_SLIDE_LEFT;
-  else if (y > slideSize) return TOUCH_SLIDE_UP;
-  else if (y < -slideSize) return TOUCH_SLIDE_DOWN;
+  else if (y > slideSize) {
+    TRACE("TOUCH_SLIDE_UP");
+    return TOUCH_SLIDE_UP;
+  }
+  else if (y < -slideSize) {
+    TRACE("TOUCH_SLIDE_DOWN");
+    return TOUCH_SLIDE_DOWN;
+  }
   return 0;
 }
 
