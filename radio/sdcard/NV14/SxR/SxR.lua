@@ -50,9 +50,9 @@ local wingBitmapsFile = {"img/plane_b.png", "img/delta_b.png", "img/planev_b.png
 local mountBitmapsFile = {"img/up.png", "img/down.png", "img/vert.png", "img/vert-r.png"}
 
 local settingsFields = {
-  {"SxR functions:", COMBO, 0x9C, 0, { "Disable", "Enable" } },
-  {"Quick Mode:", COMBO, 0xAA, 0, { "Disable", "Enable" } },
-  {"CH5 mode:", COMBO, 0xA8, 0, { "AIL2", "AUX1" } },
+  {"SxR functions:", COMBO, 0x9C, nil, { "Disable", "Enable" } },
+  {"Quick Mode:", COMBO, 0xAA, nil, { "Disable", "Enable" } },
+  {"CH5 mode:", COMBO, 0xA8, nil, { "AIL2", "AUX1" } },
   {"CH6 mode:", COMBO, 0xA9, nil, { "ELE2", "AUX2" } },
   {"AIL direction:", COMBO, 0x82, nil, { "Normal", "Invers" }, { 255, 0 } },
   {"ELE direction:", COMBO, 0x83, nil, { "Normal", "Invers" }, { 255, 0 } },
@@ -352,13 +352,13 @@ local function runConfigPage(event, x, y)
     if wingBitmaps[1 + fields[1][4]] == nil then
       wingBitmaps[1 + fields[1][4]] = Bitmap.open(wingBitmapsFile[1 + fields[1][4]])
     end
-    lcd.drawBitmap(wingBitmaps[1 + fields[1][4]], 10, 90)
+    lcd.drawBitmap(wingBitmaps[1 + fields[1][4]], 0, 100)
   end
   if fields[2][4] ~= nil then
     if mountBitmaps[1 + fields[2][4]] == nil then
       mountBitmaps[1 + fields[2][4]] = Bitmap.open(mountBitmapsFile[1 + fields[2][4]])
     end
-    lcd.drawBitmap(mountBitmaps[1 + fields[2][4]], 190, 110)
+    lcd.drawBitmap(mountBitmaps[1 + fields[2][4]], 102, 125)
   end
   return result
 end
