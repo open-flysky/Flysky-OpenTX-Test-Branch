@@ -17,7 +17,12 @@
 local VALUE = 0
 local COMBO = 1
 
-local COLUMN_2 = 300
+local COLUMN_1 = 5
+local COLUMN_2 = 230
+local MAX_W = 320
+local MAX_ROWS = 18
+local MARGIN_TOP = 30
+local ROW_H = 22
 
 local edit = false
 local page = 1
@@ -285,7 +290,7 @@ local function runSettingsPage(event)
   return runFieldsPage(event)
 end
 
-local function runCalibrationPage(event)
+local function runCalibrationPage(event, x, y)
   fields = calibrationFields
   if refreshIndex == #fields then
     refreshIndex = 0
@@ -294,27 +299,29 @@ local function runCalibrationPage(event)
   drawScreenTitle("SxR", page, #pages)
   if(calibrationStep < 6) then
     local position = calibrationPositions[1 + calibrationStep]
-    lcd.drawText(100, 50, "Place the SxR in the following position", TEXT_COLOR)
+    lcd.drawText(COLUMN_1, 50, "Place the SxR in ", TEXT_COLOR)
+    lcd.drawText(COLUMN_1, 72, "the following position", TEXT_COLOR)
+    
     if calibBitmaps[calibrationStep + 1] == nil then
       calibBitmaps[calibrationStep + 1] = Bitmap.open(calibBitmapsFile[calibrationStep + 1])
     end
-    lcd.drawBitmap(calibBitmaps[calibrationStep + 1], 200, 70)
+    lcd.drawBitmap(calibBitmaps[calibrationStep + 1], 150, 100)
     for index = 1, 3, 1 do
       local field = fields[index]
-      lcd.drawText(70, 80+20*index, field[1]..":", TEXT_COLOR)
-      lcd.drawNumber(90, 80+20*index, field[4]/10, LEFT+PREC2)
+      lcd.drawText(20, 100+20*index, field[1], TEXT_COLOR)
+      lcd.drawNumber(55, 100+20*index, field[4]/10, LEFT+PREC2)
     end
 
     local attr = calibrationState == 0 and INVERS or 0
-    lcd.drawText(160, 220, "Press [Enter] when ready", attr)
+    lcd.drawText(COLUMN_1, 220, "Press [Enter]/tap when ready", attr)
   else
-    lcd.drawText(160, 50, "Calibration completed", 0)
-    lcd.drawBitmap(Bitmap.open("img/done.bmp"),200, 100)
-    lcd.drawText(160, 220, "Press [RTN] when ready", attr)
+    lcd.drawText(COLUMN_1, 50, "Calibration completed", 0)
+    lcd.drawBitmap(Bitmap.open("img/done.bmp"),100, 100)
+    lcd.drawText(COLUMN_1, 220, "Press [RTN]/tap when ready", attr)
   end
-  if calibrationStep > 6 and (event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK) then
+  if calibrationStep > 6 and (event == EVT_ENTER_BREAK or event == EVT_EXIT_BREAK or event == EVT_TOUCH_UP) then
     return 2
-  elseif event == EVT_ENTER_BREAK then
+  elseif event == EVT_ENTER_BREAK or event == EVT_TOUCH_UP then
     calibrationState = 1
   elseif event == EVT_EXIT_BREAK then
     if calibrationStep > 0 then
@@ -336,18 +343,20 @@ local function init()
 end
 
 -- Main
-local function run(event)
+local function run(event, x, y)
   if event == nil then
     error("Cannot be run as a model script!")
     return 2
-  elseif event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST then
+  elseif event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST or event == EVT_SLIDE_LEFT then
     selectPage(1)
-  elseif event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST then
+  elseif event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST or event == EVT_SLIDE_RIGHT then
     killEvents(event);
     selectPage(-1)
+  elseif (event == EVT_TOUCH_UP and x <=30 and y <=30) then
+    return -2
   end
 
-  local result = pages[page](event)
+  local result = pages[page](event, x, y)
   refreshNext()
 
   return result
