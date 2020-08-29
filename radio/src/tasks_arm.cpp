@@ -80,6 +80,33 @@ bool isForcePowerOffRequested()
   return false;
 }
 
+bool isModuleSynchronous(uint8_t moduleIdx)
+{
+  uint8_t protocol = moduleState[moduleIdx].protocol;
+  if (protocol == PROTOCOL_CHANNELS_PXX2_HIGHSPEED || protocol == PROTOCOL_CHANNELS_PXX2_LOWSPEED || protocol == PROTOCOL_CHANNELS_CROSSFIRE || protocol == PROTOCOL_CHANNELS_NONE || protocol == PROTOCOL_CHANNELS_AFHDS3)
+    return true;
+#if defined(INTMODULE_USART) || defined(EXTMODULE_USART)
+  if (protocol == PROTOCOL_CHANNELS_PXX1_SERIAL || protocol == PROTOCOL_CHANNELS_AFHDS2)
+    return true;
+#endif
+  return false;
+}
+
+void sendSynchronousPulses(uint8_t runMask)
+{
+#if defined(HARDWARE_INTERNAL_MODULE)
+  if ((runMask & (1 << INTERNAL_MODULE)) && isModuleSynchronous(INTERNAL_MODULE)) {
+    if (setupPulsesInternalModule())
+      intmoduleSendNextFrame();
+  }
+#endif
+
+  if ((runMask & (1 << EXTERNAL_MODULE)) && isModuleSynchronous(EXTERNAL_MODULE)) {
+    if (setupPulsesExternalModule())
+      extmoduleSendNextFrame();
+  }
+}
+
 uint32_t nextMixerTime[NUM_MODULES];
 
 TASK_FUNCTION(mixerTask)
@@ -94,7 +121,7 @@ TASK_FUNCTION(mixerTask)
       TASK_RETURN();
 #endif
 
-#if defined(SBUS)
+#if defined(SBUS_TRAINER)
     processSbusInput();
 #endif
 
@@ -104,32 +131,25 @@ TASK_FUNCTION(mixerTask)
       pwrOff();
     }
 
-    uint32_t now = RTOS_GET_TIME();
-    bool run = false;
-#if !defined(SIMU) && defined(STM32)
-    if ((now - lastRunTime) >= (usbStarted() ? 5 : 10)) {     // run at least every 20ms (every 10ms if USB is active)
-#else
-    if ((now - lastRunTime) >= 10) {     // run at least every 20ms
-#endif
-      run = true;
+    uint32_t now = RTOS_GET_MS();
+    uint8_t runMask = 0;
+
+if (now >= nextMixerTime[0]) {
+      runMask |= (1 << 0);
     }
-    else if (now >= nextMixerTime[0]) {
-      run = true;
-    }
+
 #if NUM_MODULES >= 2
-    else if (now >= nextMixerTime[1]) {
-      run = true;
+    if (now >= nextMixerTime[1]) {
+      runMask |= (1 << 1);
     }
 #endif
-    if (!run) {
+
+    if (!runMask) {
       continue;  // go back to sleep
     }
 
-    lastRunTime = now;
-
     if (!s_pulses_paused) {
-    uint16_t t0 = getTmr2MHz();
-
+      uint16_t t0 = getTmr2MHz();
       DEBUG_TIMER_START(debugTimerMixer);
       RTOS_LOCK_MUTEX(mixerMutex);
       doMixerCalculations();
@@ -159,15 +179,26 @@ TASK_FUNCTION(mixerTask)
 
       t0 = getTmr2MHz() - t0;
       if (t0 > maxMixerDuration) maxMixerDuration = t0;
+
+      sendSynchronousPulses(runMask);
     }
   }
 }
 
-void scheduleNextMixerCalculation(uint8_t module, uint16_t delay)
+void scheduleNextMixerCalculation(uint8_t module, uint16_t period_ms)
 {
-  // Schedule next mixer calculation time,
-  // for now assume mixer calculation takes 2 ms.
-  nextMixerTime[module] = (uint32_t)RTOS_GET_TIME() + (delay)/2 - 1/*2ms*/;
+  if (isModuleSynchronous(module)) {
+    nextMixerTime[module] += period_ms / RTOS_MS_PER_TICK;
+    if (nextMixerTime[module] < RTOS_GET_TIME()) {
+      // we are late ... let's add some small delay
+      nextMixerTime[module] = (uint32_t) RTOS_GET_TIME() + (period_ms / RTOS_MS_PER_TICK);
+    }
+  }
+  else {
+    // for now assume mixer calculation takes 2 ms.
+    nextMixerTime[module] = (uint32_t) RTOS_GET_TIME() + (period_ms / RTOS_MS_PER_TICK);
+  }
+
   DEBUG_TIMER_STOP(debugTimerMixerCalcToUsage);
 }
 

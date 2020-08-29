@@ -166,7 +166,7 @@ void StartSimu(bool tests, const char * sdPath, const char * settingsPath)
   if (main_thread_running)
     return;
 
-  s_current_protocol[0] = 255;
+  moduleState[0].protocol = 255;
   menuLevel = 0;
 
   main_thread_running = (tests ? 1 : 2); // TODO rename to simu_run_mode with #define

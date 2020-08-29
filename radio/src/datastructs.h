@@ -529,6 +529,16 @@ PACK(struct FrSkyTelemetryData {  // TODO EEPROM change, rename to VarioData
   int8_t  varioMin;
   int8_t  varioMax;
 });
+
+
+/*
+ * Telemetry Sensor structure
+ */
+
+#define TELEMETRY_ENDPOINT_NONE    0xFF
+#define TELEMETRY_ENDPOINT_SPORT   0x07
+
+
 #elif defined(CPUARM)
 // TODO remove this also on Taranis
 PACK(struct FrSkyTelemetryData {
@@ -906,7 +916,7 @@ PACK(struct TrainerData {
     char anaNames[NUM_STICKS+NUM_POTS+NUM_SLIDERS][LEN_ANA_NAME];
 #elif defined(CPUARM)
   #define EXTRA_GENERAL_FIELDS  EXTRA_GENERAL_FIELDS_ARM
-#elif defined(PXX)
+#elif defined(PXX1)
   #define EXTRA_GENERAL_FIELDS uint8_t countryCode;
 #else
   #define EXTRA_GENERAL_FIELDS

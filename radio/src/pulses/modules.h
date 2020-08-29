@@ -22,18 +22,59 @@
 #define _MODULES_H_
 
 #include "myeeprom.h"
-
+#include "modules_constants.h"
 #define CROSSFIRE_CHANNELS_COUNT        16
 
 #if defined(MULTIMODULE)
+#include "multi.h"
+#include "telemetry/multi.h"
+// When using packed, the pointer in here end up not being aligned, which clang and gcc complain about
+// Keep the order of the fields that the so that the size stays small
+struct mm_options_strings {
+  static const char* options[];
+};
+
+struct mm_protocol_definition {
+  uint8_t protocol;
+  uint8_t maxSubtype;
+  bool failsafe;
+  bool disable_ch_mapping;
+  const char *subTypeString;
+  const char *optionsstr;
+};
+
+const mm_protocol_definition *getMultiProtocolDefinition (uint8_t protocol);
+
+inline uint8_t getMaxMultiSubtype(uint8_t moduleIdx)
+{
+  MultiModuleStatus &status = getMultiModuleStatus(moduleIdx);
+  const mm_protocol_definition *pdef = getMultiProtocolDefinition(g_model.moduleData[moduleIdx].getMultiProtocol());
+
+  if (g_model.moduleData[moduleIdx].getMultiProtocol() == MODULE_SUBTYPE_MULTI_FRSKY) {
+    return 7;
+  }
+
+  if (g_model.moduleData[moduleIdx].getMultiProtocol() > MODULE_SUBTYPE_MULTI_LAST) {
+    if (status.isValid())
+      return (status.protocolSubNbr == 0 ? 0 : status.protocolSubNbr - 1);
+    else
+      return 7;
+  }
+  else {
+    return max((uint8_t )(status.protocolSubNbr == 0 ? 0 : status.protocolSubNbr - 1), pdef->maxSubtype);
+  }
+}
+
+
+
 inline bool isModuleMultimodule(uint8_t idx)
 {
-  return idx == EXTERNAL_MODULE && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_MULTIMODULE;
+  return g_model.moduleData[idx].type == MODULE_TYPE_MULTIMODULE;
 }
 
 inline bool isModuleMultimoduleDSM2(uint8_t idx)
 {
-  return isModuleMultimodule(idx) && g_model.moduleData[idx].getMultiProtocol(true) == MM_RF_PROTO_DSM2;
+  return isModuleMultimodule(idx) && g_model.moduleData[idx].getMultiProtocol() == MODULE_SUBTYPE_MULTI_DSM2;
 }
 #else
 inline bool isModuleMultimodule(uint8_t)
@@ -44,6 +85,26 @@ inline bool isModuleMultimodule(uint8_t)
 inline bool isModuleMultimoduleDSM2(uint8_t)
 {
   return false;
+}
+
+inline void resetMultiProtocolsOptions(uint8_t moduleIdx)
+{
+  if (!isModuleMultimodule(moduleIdx))
+    return;
+
+  // Sensible default for DSM2 (same as for ppm): 7ch@22ms + Autodetect settings enabled
+  if (g_model.moduleData[moduleIdx].getMultiProtocol() == MODULE_SUBTYPE_MULTI_DSM2) {
+    g_model.moduleData[moduleIdx].multi.autoBindMode = 1;
+  }
+  else {
+    g_model.moduleData[moduleIdx].multi.autoBindMode = 0;
+  }
+  g_model.moduleData[moduleIdx].multi.optionValue = 0;
+  g_model.moduleData[moduleIdx].multi.disableTelemetry = 0;
+  g_model.moduleData[moduleIdx].multi.disableMapping = 0;
+  g_model.moduleData[moduleIdx].multi.lowPowerMode = 0;
+  g_model.moduleData[moduleIdx].failsafeMode = FAILSAFE_NOT_SET;
+  g_model.header.modelId[moduleIdx] = 0;
 }
 #endif
 
@@ -68,12 +129,12 @@ inline bool isModuleAFHDS3(uint8_t idx)
 #if defined(PCBFRSKY)
 inline bool isModuleXJT(uint8_t idx)
 {
-  return g_model.moduleData[idx].type == MODULE_TYPE_XJT;
+  return g_model.moduleData[idx].type == MODULE_TYPE_XJT_PXX1;
 }
 #else
 inline bool isModuleXJT(uint8_t idx)
 {
-  return idx == EXTERNAL_MODULE && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_XJT;
+  return idx == EXTERNAL_MODULE && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_XJT_PXX1;
 }
 #endif
 
@@ -117,24 +178,119 @@ inline bool isModulePPM(uint8_t idx)
 }
 #endif
 
+inline bool isModuleTypeR9MNonAccess(uint8_t type)
+{
+  return type == MODULE_TYPE_R9M_PXX1 || type == MODULE_TYPE_R9M_LITE_PXX1 || type == MODULE_TYPE_R9M_LITE_PRO_PXX1;
+}
+
+inline bool isModuleR9MNonAccess(uint8_t idx)
+{
+  return isModuleTypeR9MNonAccess(g_model.moduleData[idx].type);
+}
+
+inline bool isModuleTypeR9MAccess(uint8_t type)
+{
+  return type == MODULE_TYPE_R9M_PXX2 || type == MODULE_TYPE_R9M_LITE_PXX2 || type == MODULE_TYPE_R9M_LITE_PRO_PXX2;
+}
+
+inline bool isModuleR9MAccess(uint8_t idx)
+{
+  return isModuleTypeR9MAccess(g_model.moduleData[idx].type);
+}
+
+inline bool isModuleTypeR9M(uint8_t type)
+{
+  return isModuleTypeR9MNonAccess(type) || isModuleTypeR9MAccess(type);
+}
+
 inline bool isModuleR9M(uint8_t idx)
 {
-  return g_model.moduleData[idx].type == MODULE_TYPE_R9M;
+  return isModuleTypeR9M(g_model.moduleData[idx].type);
+}
+
+inline bool isModuleTypeR9MLiteNonPro(uint8_t type)
+{
+  return type == MODULE_TYPE_R9M_LITE_PXX1 || type == MODULE_TYPE_R9M_LITE_PXX2;
+}
+
+inline bool isModuleR9MLiteNonPro(uint8_t idx)
+{
+  return isModuleTypeR9MLiteNonPro(g_model.moduleData[idx].type);
+}
+
+inline bool isModuleTypeR9MLitePro(uint8_t type)
+{
+  return type == MODULE_TYPE_R9M_LITE_PRO_PXX1 || type == MODULE_TYPE_R9M_LITE_PRO_PXX2;
+}
+
+inline bool isModuleTypeR9MLite(uint8_t type)
+{
+  return isModuleTypeR9MLiteNonPro(type) || isModuleTypeR9MLitePro(type);
+}
+
+inline bool isModuleR9MLite(uint8_t idx)
+{
+  return isModuleTypeR9MLite(g_model.moduleData[idx].type);
 }
 
 inline bool isModuleR9M_FCC(uint8_t idx)
 {
-  return isModuleR9M(idx) && g_model.moduleData[idx].subType == MODULE_SUBTYPE_R9M_FCC;
+  return isModuleR9MNonAccess(idx) && g_model.moduleData[idx].subType == MODULE_SUBTYPE_R9M_FCC;
+}
+
+inline bool isModuleTypeLite(uint8_t type)
+{
+  return isModuleTypeR9MLite(type) || type == MODULE_TYPE_XJT_LITE_PXX2;
 }
 
 inline bool isModuleR9M_LBT(uint8_t idx)
 {
-  return isModuleR9M(idx) && g_model.moduleData[idx].subType == MODULE_SUBTYPE_R9M_LBT;
+  return isModuleR9MNonAccess(idx) && g_model.moduleData[idx].subType == MODULE_SUBTYPE_R9M_EU;
+}
+
+inline bool isModuleR9M_FCC_VARIANT(uint8_t idx)
+{
+  return isModuleR9MNonAccess(idx) && g_model.moduleData[idx].subType != MODULE_SUBTYPE_R9M_EU;
+}
+
+inline bool isModuleR9M_EUPLUS(uint8_t idx)
+{
+  return isModuleR9MNonAccess(idx) && g_model.moduleData[idx].subType == MODULE_SUBTYPE_R9M_EUPLUS;
+}
+
+inline bool isModuleR9M_AU_PLUS(uint8_t idx)
+{
+  return isModuleR9MNonAccess(idx) && g_model.moduleData[idx].subType == MODULE_SUBTYPE_R9M_AUPLUS;
+}
+
+inline bool isModuleTypeXJT(uint8_t type)
+{
+  return type == MODULE_TYPE_XJT_PXX1 || type == MODULE_TYPE_XJT_LITE_PXX2;
 }
 
 inline bool isModulePXX(uint8_t idx)
 {
   return isModuleXJT(idx) || isModuleR9M(idx);
+}
+
+inline bool isModuleISRM(uint8_t idx)
+{
+  return g_model.moduleData[idx].type == MODULE_TYPE_ISRM_PXX2;
+}
+
+inline bool isModuleTypePXX1(uint8_t type)
+{
+  return isModuleTypeXJT(type) || isModuleTypeR9MNonAccess(type);
+}
+
+inline bool isModulePXX1(uint8_t idx)
+{
+  return isModuleTypePXX1(g_model.moduleData[idx].type);
+}
+
+inline bool isModulePXX2(uint8_t idx)
+{
+  return isModuleISRM(idx) || isModuleR9MAccess(idx);
 }
 
 #if defined(DSM2)
@@ -214,6 +370,11 @@ inline int8_t defaultModuleChannels_M8(uint8_t idx)
     return 8; // 16 channels
 }
 
+inline uint8_t sentModulePXXChannels(uint8_t idx)
+{
+  return 8 + g_model.moduleData[idx].channelsCount;
+}
+
 inline int8_t sentModuleChannels(uint8_t idx)
 {
   if (isModuleCrossfire(idx))
@@ -233,16 +394,17 @@ inline bool isModuleTypeAllowed(uint8_t idx, uint8_t type)
   else if (idx == EXTERNAL_MODULE) {
 #if defined(MULTIMODULE)
     if(type == MODULE_TYPE_MULTIMODULE) return true;
-#endif  
+#endif
     return (type == MODULE_TYPE_NONE || type == MODULE_TYPE_PPM
-         || type == MODULE_TYPE_XJT || type == MODULE_TYPE_CROSSFIRE
-         || type == MODULE_TYPE_R9M || type == MODULE_TYPE_AFHDS3);
+         || type == MODULE_TYPE_XJT_PXX1 || type == MODULE_TYPE_CROSSFIRE
+         || type == MODULE_TYPE_R9M_PXX1 || type == MODULE_TYPE_AFHDS3);
   }
 #endif
 
   return true;
 }
 
+//TBD
 inline bool isModuleNeedingReceiverNumber(uint8_t idx)
 {
   if(isModuleXJT(idx)) {
@@ -251,16 +413,19 @@ inline bool isModuleNeedingReceiverNumber(uint8_t idx)
   return isModulePXX(idx) || isModuleDSM2(idx) || isModuleMultimodule(idx);
 }
 
+//TBD
 inline bool isModuleNeedingBindRangeButtons(uint8_t idx)
 {
   return isModulePXX(idx) || isModuleDSM2(idx) || isModuleMultimodule(idx) || isModuleFlysky(idx) || isModuleAFHDS3(idx);
 }
 
+//TBD
 inline bool isModuleNeedingRangeButtons(uint8_t idx)
 {
   return isModuleNeedingBindRangeButtons(idx) && !isModuleAFHDS3(idx);
 }
 
+//TBD
 inline bool isModuleNeedingFailsafeButton(uint8_t idx)
 {
   if(isModuleXJT(idx)){
@@ -268,5 +433,6 @@ inline bool isModuleNeedingFailsafeButton(uint8_t idx)
   }
   return isModulePXX(idx) || isModuleR9M(idx) || isModuleFlysky(idx) || isModuleAFHDS3(idx);
 }
+
 
 #endif // _MODULES_H_

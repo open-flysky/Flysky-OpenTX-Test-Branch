@@ -156,11 +156,11 @@ enum TELEMETRY {
 };
 
 enum PULSE_MODE {
-  PWM = 0x00, PPM = 0x01,
+  PWM = 0x00, PPM_OUT = 0x01,
 };
 
 enum SERIAL_MODE {
-  IBUS = 0x00, SBUS = 0x02
+  IBUS = 0x00, SBUS_OUT = 0x02
 };
 
 struct __attribute__ ((packed)) Config_s {

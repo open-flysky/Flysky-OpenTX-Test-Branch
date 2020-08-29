@@ -51,22 +51,7 @@ void preModelLoad()
 #endif
 
   if (pulsesStarted()) {
-#if !defined(SIMU)
-    pulseFlag = CoCreateFlag(1,0);
-#endif
     pausePulses();
-#if !defined(SIMU)
-    //we need to ensure that no pulsed will be set so current mode will be deactivated
-    int tries = 10;
-    while(tries-- > 0) {
-      uint32_t result = CoWaitForSingleFlag(pulseFlag, 50);
-      if (result == E_OK) break;
-      wdt_reset();
-      TRACE("..");
-    }
-    TRACE("PAUSED");
-    pulseFlag = 0;
-#endif
   }
 
   pauseMixerCalculations();
@@ -75,7 +60,7 @@ void preModelLoad()
 static void fixUpModel()
 {
   // Ensure that when rfProtocol is RF_PROTO_OFF the type of the module is MODULE_TYPE_NONE
-  if (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT && g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF)
+  if (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT_PXX1 && g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF)
     g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_NONE;
 }
 #endif

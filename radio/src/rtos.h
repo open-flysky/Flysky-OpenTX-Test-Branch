@@ -90,6 +90,10 @@
     extern uint64_t simuTimerMicros(void);
     return simuTimerMicros() / 2000;
   }
+    static inline uint32_t RTOS_GET_MS(void)
+  {
+    return (uint32_t)(simuTimerMicros() / 1000);
+  }
 
   #define CoTickDelay(x) msleep(2*(x))  // TODO remove this later
 #elif defined(RTOS_COOS)
@@ -167,6 +171,10 @@
   inline uint32_t RTOS_GET_TIME(void)
   {
     return CoGetOSTime();
+  }
+  static inline uint32_t RTOS_GET_MS(void)
+  {
+    return (RTOS_GET_TIME() * RTOS_MS_PER_TICK);
   }
 #else
   #define RTOS_WAIT_MS(x)               doNothing()

@@ -45,6 +45,8 @@
 #endif
 #if defined(MULTIMODULE)
   #include "spektrum.h"
+  #include "hitec.h"
+  #include "hott.h"
   #include "multi.h"
 #endif
 #if defined(MULTIMODULE) || defined(AFHDS3)
@@ -142,27 +144,55 @@ void frskyDSetDefault(int index, uint16_t id);
 #define IS_DISTANCE_UNIT(unit)         ((unit) == UNIT_METERS || (unit) == UNIT_FEET)
 #define IS_SPEED_UNIT(unit)            ((unit) >= UNIT_KTS && (unit) <= UNIT_MPH)
 
-#if defined(CPUARM)
 extern uint8_t telemetryProtocol;
-#define IS_FRSKY_D_PROTOCOL()          (telemetryProtocol == PROTOCOL_FRSKY_D)
+
+
 #if defined (MULTIMODULE)
-#define IS_D16_MULTI()                 ((g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(false) == MM_RF_PROTO_FRSKY) && (g_model.moduleData[EXTERNAL_MODULE].subType == MM_RF_FRSKY_SUBTYPE_D16 || g_model.moduleData[EXTERNAL_MODULE].subType == MM_RF_FRSKY_SUBTYPE_D16_8CH))
-#define IS_FRSKY_SPORT_PROTOCOL()      (telemetryProtocol == PROTOCOL_FRSKY_SPORT || (telemetryProtocol == PROTOCOL_MULTIMODULE && IS_D16_MULTI()))
+  #define IS_D16_MULTI(module)           (((g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_FRSKY) && (g_model.moduleData[module].subType == MM_RF_FRSKY_SUBTYPE_D16 || g_model.moduleData[module].subType == MM_RF_FRSKY_SUBTYPE_D16_8CH || g_model.moduleData[module].subType == MM_RF_FRSKY_SUBTYPE_D16_LBT || g_model.moduleData[module].subType == MM_RF_FRSKY_SUBTYPE_D16_LBT_8CH || g_model.moduleData[module].subType == MM_RF_FRSKY_SUBTYPE_D16_CLONED)) \
+                                         || (g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_FRSKYX2))
+  #define IS_R9_MULTI(module)            (g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_FRSKY_R9)
+  #define IS_HOTT_MULTI(module)          (g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_HOTT)
+  #define IS_RX_MULTI(module)            ((g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_AFHDS2A_RX) || (g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_FRSKYX_RX) \
+                                         || (g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_BAYANG_RX) || (g_model.moduleData[module].getMultiProtocol() == MODULE_SUBTYPE_MULTI_DSM_RX))
+  #if defined(HARDWARE_INTERNAL_MODULE)
+    #define IS_FRSKY_SPORT_PROTOCOL()    (telemetryProtocol == PROTOCOL_TELEMETRY_FRSKY_SPORT || (telemetryProtocol == PROTOCOL_TELEMETRY_MULTIMODULE && (IS_D16_MULTI(INTERNAL_MODULE) || IS_D16_MULTI(EXTERNAL_MODULE) || IS_R9_MULTI(INTERNAL_MODULE) || IS_R9_MULTI(EXTERNAL_MODULE))))
+  #else
+    #define IS_FRSKY_SPORT_PROTOCOL()    (telemetryProtocol == PROTOCOL_TELEMETRY_FRSKY_SPORT || (telemetryProtocol == PROTOCOL_TELEMETRY_MULTIMODULE && (IS_D16_MULTI(EXTERNAL_MODULE) || IS_R9_MULTI(EXTERNAL_MODULE))))
+  #endif
 #else
-#define IS_FRSKY_SPORT_PROTOCOL()      (telemetryProtocol == PROTOCOL_FRSKY_SPORT)
+  #define IS_D16_MULTI(module)           false
+  #define IS_R9_MULTI(module)            false
+  #define IS_HOTT_MULTI(module)          false
+  #define IS_FRSKY_SPORT_PROTOCOL()      (telemetryProtocol == PROTOCOL_TELEMETRY_FRSKY_SPORT)
+  #define IS_RX_MULTI(module)            false
 #endif
-#define IS_SPEKTRUM_PROTOCOL()         (telemetryProtocol == PROTOCOL_SPEKTRUM)
+
+#define IS_SPEKTRUM_PROTOCOL()           (telemetryProtocol == PROTOCOL_TELEMETRY_SPEKTRUM)
+#define IS_FRSKY_D_PROTOCOL()             (telemetryProtocol == PROTOCOL_TELEMETRY_FRSKY_D)
+
+#if defined(PCBTARANIS) || defined(PCBHORUS)
+inline bool isSportLineUsedByInternalModule()
+{
+  return g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT_PXX1;
+}
 #else
-#define IS_FRSKY_D_PROTOCOL()          (true)
-#define IS_FRSKY_SPORT_PROTOCOL()      (false)
+inline bool isSportLineUsedByInternalModule()
+{
+  return false;
+}
 #endif
+
+
+
+
+
 
 #if defined(CPUARM)
 inline uint8_t modelTelemetryProtocol()
 {
 #if defined(CROSSFIRE)
   if (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_CROSSFIRE) {
-    return PROTOCOL_PULSES_CROSSFIRE;
+    return PROTOCOL_TELEMETRY_CROSSFIRE;
   }
 #endif
      
@@ -172,16 +202,16 @@ inline uint8_t modelTelemetryProtocol()
   
 #if defined(MULTIMODULE)
   if (!IS_INTERNAL_MODULE_ENABLED() && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_MULTIMODULE) {
-    return PROTOCOL_MULTIMODULE;
+    return PROTOCOL_TELEMETRY_MULTIMODULE;
   }
 #endif
 #if defined(AFHDS3)
   if (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_AFHDS3) {
-    return PROTOCOL_AFHDS3;
+    return PROTOCOL_TELEMETRY_AFHDS3;
   }
 #endif
   // default choice
-  return PROTOCOL_FRSKY_SPORT;
+  return PROTOCOL_TELEMETRY_FRSKY_SPORT;
 }
 #endif
 
@@ -200,19 +230,90 @@ void logTelemetryWriteByte(uint8_t data);
 #endif
 
 #define TELEMETRY_OUTPUT_FIFO_SIZE 16
-extern uint8_t outputTelemetryBuffer[TELEMETRY_OUTPUT_FIFO_SIZE] __DMA;
-extern uint8_t outputTelemetryBufferSize;
-extern uint8_t outputTelemetryBufferTrigger;
+#define TELEMETRY_OUTPUT_BUFFER_SIZE  64
 
-inline void telemetryOutputPushByte(uint8_t byte)
-{
-  outputTelemetryBuffer[outputTelemetryBufferSize++] = byte;
-}
+class OutputTelemetryBuffer {
+  public:
+    OutputTelemetryBuffer()
+    {
+      reset();
+    }
 
-inline void telemetryOutputSetTrigger(uint8_t byte)
-{
-  outputTelemetryBufferTrigger = byte;
-}
+    void setDestination(uint8_t value)
+    {
+      destination = value;
+      timeout = 200; /* 2s */
+    }
+
+    bool isModuleDestination(uint8_t module)
+    {
+      return destination != TELEMETRY_ENDPOINT_NONE && destination != TELEMETRY_ENDPOINT_SPORT && (destination >> 2) == module;
+    }
+
+    void per10ms()
+    {
+      if (timeout > 0) {
+        if (--timeout == 0)
+          reset();
+      }
+    }
+
+    void reset()
+    {
+      destination = TELEMETRY_ENDPOINT_NONE;
+      size = 0;
+      timeout = 0;
+    }
+
+    bool isAvailable()
+    {
+      return destination == TELEMETRY_ENDPOINT_NONE;
+    }
+
+    void pushByte(uint8_t byte)
+    {
+      if (size < TELEMETRY_OUTPUT_BUFFER_SIZE)
+        data[size++] = byte;
+    }
+
+    void pushByteWithBytestuffing(uint8_t byte)
+    {
+      if (byte == 0x7E || byte == 0x7D) {
+        pushByte(0x7D);
+        pushByte(0x20 ^ byte);
+      }
+      else {
+        pushByte(byte);
+      }
+    }
+
+    void pushSportPacketWithBytestuffing(SportTelemetryPacket & packet)
+    {
+      size = 0;
+      uint16_t crc = 0;
+      pushByte(packet.physicalId); // no bytestuffing, no CRC
+      for (uint8_t i=1; i<sizeof(SportTelemetryPacket); i++) {
+        uint8_t byte = packet.raw[i];
+        pushByteWithBytestuffing(byte);
+        crc += byte; // 0-1FF
+        crc += crc >> 8; // 0-100
+        crc &= 0x00ff;
+      }
+      pushByteWithBytestuffing(0xFF - crc);
+    }
+
+  public:
+    union {
+      SportTelemetryPacket sport;
+      uint8_t data[TELEMETRY_OUTPUT_BUFFER_SIZE];
+    };
+    uint8_t size;
+    uint8_t timeout;
+    uint8_t destination;
+};
+
+extern OutputTelemetryBuffer outputTelemetryBuffer __DMA;
+
 
 #if defined(LUA) || defined(CROSSFIRE_NATIVE)
 #define LUA_TELEMETRY_INPUT_FIFO_SIZE  256
@@ -220,7 +321,7 @@ extern Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE> * luaInputTelemetryFifo;
 #endif
 
 #if defined(STM32)
-#define IS_TELEMETRY_INTERNAL_MODULE() (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT)
+#define IS_TELEMETRY_INTERNAL_MODULE() (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT_PXX1)
 #else
 #define IS_TELEMETRY_INTERNAL_MODULE() (false)
 #endif

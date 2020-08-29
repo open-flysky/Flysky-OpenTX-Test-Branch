@@ -22,6 +22,8 @@
 #include "opentx.h"
 #include "libwindows.h"
 #include "page.h"
+// #include "io/frsky_firmware_update.h"
+// #include "io/multi_firmware_update.h"
 
 class FileNameEditWindow : public Page {
   public:

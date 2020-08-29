@@ -48,24 +48,26 @@
 
 void processCrossfireTelemetryData(uint8_t data);
 void crossfireSetDefault(int index, uint8_t id, uint8_t subId);
-bool isCrossfireOutputBufferAvailable();
 bool crossfireGet(uint8_t* buffer, uint8_t& dataSize);
 void crossfireSend(uint8_t* payload, size_t size);
+bool isCrossfireError();
 
-#if SPORT_MAX_BAUDRATE < 400000
 const uint32_t CROSSFIRE_BAUDRATES[] = {
   400000,
   115200,
 };
-const uint8_t CROSSFIRE_FRAME_PERIODS[] = {
+const uint8_t CROSSFIRE_PERIODS[] = {
   4,
   16,
 };
-#define CROSSFIRE_BAUDRATE             CROSSFIRE_BAUDRATES[g_eeGeneral.telemetryBaudrate]
-#define CROSSFIRE_FRAME_PERIOD         CROSSFIRE_FRAME_PERIODS[g_eeGeneral.telemetryBaudrate]
+#if SPORT_MAX_BAUDRATE < 400000
+#define CROSSFIRE_BAUDRATE    CROSSFIRE_BAUDRATES[g_eeGeneral.telemetryBaudrate]
+#define CROSSFIRE_PERIOD      CROSSFIRE_PERIODS[g_eeGeneral.telemetryBaudrate]
 #else
-#define CROSSFIRE_BAUDRATE             400000
-#define CROSSFIRE_FRAME_PERIOD         4 // 4ms
+#define CROSSFIRE_BAUDRATE       400000
+#define CROSSFIRE_PERIOD         4 // 4ms
 #endif
+
+#define CROSSFIRE_TELEM_MIRROR_BAUDRATE   115200
 
 #endif // _CROSSFIRE_H_

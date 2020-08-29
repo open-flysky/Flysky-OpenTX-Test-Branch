@@ -57,12 +57,16 @@ PACK2(struct ModuleData {
       int8_t  frameLength;
     } ppm);
     NOBACKUP2(struct {
-      uint8_t rfProtocolExtra:2;
-      uint8_t spare1:3;
+      uint8_t rfProtocolExtra:3;
+      uint8_t disableTelemetry:1;
+      uint8_t disableMapping:1;
       uint8_t customProto:1;
       uint8_t autoBindMode:1;
       uint8_t lowPowerMode:1;
       int8_t optionValue;
+      uint8_t receiverTelemetryOff:1;
+      uint8_t receiverHigherChannels:1;
+      uint8_t spare:6;
     } multi);
 
     struct {
@@ -97,8 +101,8 @@ PACK2(struct ModuleData {
     NOBACKUP2(struct {
       uint8_t power:2;                  // 0=10 mW, 1=100 mW, 2=500 mW, 3=1W
       uint8_t spare1:2;
-      uint8_t receiver_telem_off:1;     // false = receiver telem enabled
-      uint8_t receiver_channel_9_16:1;  // false = pwm out 1-8, true 9-16
+      uint8_t receiverTelemetryOff:1;     // false = receiver telem enabled
+      uint8_t receiverHigherChannels:1;  // false = pwm out 1-8, true 9-16
       uint8_t external_antenna:1;       // false = internal antenna, true = external antenna
       uint8_t spare2:1;
       uint8_t spare3;
@@ -112,16 +116,13 @@ PACK2(struct ModuleData {
   });
 
   // Helper functions to set both of the rfProto protocol at the same time
-  NOBACKUP2(inline uint8_t getMultiProtocol(bool returnCustom) {
-    if (returnCustom && multi.customProto)
-      return MM_RF_CUSTOM_SELECTED;
-    return ((uint8_t) (rfProtocol & 0x0f)) + (multi.rfProtocolExtra << 4);
+  NOBACKUP2(inline uint8_t getMultiProtocol() {
+    return ((uint8_t) (rfProtocol & 0x0F)) + (multi.rfProtocolExtra << 4);
   })
 
-  NOBACKUP2(inline void setMultiProtocol(uint8_t proto)
-  {
-    rfProtocol = (uint8_t) (proto & 0x0f);
-    multi.rfProtocolExtra = (proto & 0x30) >> 4;
+  NOBACKUP2(inline void setMultiProtocol(uint8_t proto) {
+    rfProtocol = (uint8_t) (proto & 0x0F);
+    multi.rfProtocolExtra = (proto & 0x70) >> 4;
   })
 });
 

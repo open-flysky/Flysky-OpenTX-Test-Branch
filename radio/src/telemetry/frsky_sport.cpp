@@ -111,14 +111,14 @@ void sportProcessTelemetryPacket(uint16_t id, uint8_t subId, uint8_t instance, u
     uint8_t cellsCount = (data & 0xF0) >> 4;
     uint8_t cellIndex = (data & 0x0F);
     uint32_t mask = (cellsCount << 24) + (cellIndex << 16);
-    setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, id, subId, instance, mask + (((data & 0x000FFF00) >> 8) / 5), unit, precision);
+    setTelemetryValue(PROTOCOL_TELEMETRY_FRSKY_SPORT, id, subId, instance, mask + (((data & 0x000FFF00) >> 8) / 5), unit, precision);
     if (cellIndex+1 < cellsCount) {
       mask += (1 << 16);
-      setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, id, subId, instance, mask + (((data & 0xFFF00000) >> 20) / 5), unit, precision);
+      setTelemetryValue(PROTOCOL_TELEMETRY_FRSKY_SPORT, id, subId, instance, mask + (((data & 0xFFF00000) >> 20) / 5), unit, precision);
     }
   }
   else {
-    setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, id, subId, instance, data, unit, precision);
+    setTelemetryValue(PROTOCOL_TELEMETRY_FRSKY_SPORT, id, subId, instance, data, unit, precision);
   }
 }
 

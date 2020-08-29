@@ -102,13 +102,10 @@
 #define LEN_USBMODES           TR("\006", "\010")
 #define TR_USBMODES            TR("Ask\0  ""Joyst\0""SDCard""Serial", "Ask\0    ""Joystick""Storage\0""Serial\0 ")
 
-#if defined(PCBFLYSKY)
-#define LEN_MODULE_PROTOCOLS  "\004"
-#define TR_MODULE_PROTOCOLS   "Off\0""PPM\0""XJT\0""FLY\0""DSM2""CRSF""MULT""R9M\0""SBUS"
-#else
-#define LEN_MODULE_PROTOCOLS  "\004"
-#define TR_MODULE_PROTOCOLS   "OFF\0""PPM\0""XJT\0""DSM2""CRSF""MULT""R9M\0""SBUS"
-#endif
+
+#define LEN_MODULE_PROTOCOLS  "\014"
+#define TR_MODULE_PROTOCOLS   "OFF\0        ""PPM\0        ""XJT\0        ""ISRM\0       ""DSM2\0       ""CRSF\0       ""MULTI\0      ""R9M\0        ""R9M ACCESS\0 " TR_MODULE_R9M_LITE "R9ML ACCESS\0""R9MLP\0      ""R9MLP ACCESS""SBUS\0       ""XJT Lite\0   ""AFHDS3"
+
 
 #define LEN_TELEMETRY_PROTOCOLS "\017"
 #define TR_TELEMETRY_PROTOCOLS "FrSky S.PORT\0  ""FrSky D\0       ""FrSky D (cable)""TBS Crossfire\0 ""Spektrum\0      ""AFHDS2A IBUS\0  ""Multi Telemetry"
@@ -157,7 +154,7 @@
 
 #define LEN_VPROTOS            "\006"
 
-#if defined(PXX)
+#if defined(PXX1)
   #define TR_PXX               "PXX\0  "
 #elif defined(DSM2) || defined(IRPROTOS)
   #define TR_PXX               "[PXX]\0"

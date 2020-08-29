@@ -283,14 +283,14 @@ void frskyPushValue(uint8_t *&ptr, uint8_t value)
     bytestuff = true;
     value = 0x5e;
   }
-  else if (value == BYTESTUFF) {
+  else if (value == BYTE_STUFF) {
     bytestuff = true;
     value = 0x5d;
   }
 
   *ptr++ = value;
   if (bytestuff)
-    *ptr = BYTESTUFF;
+    *ptr = BYTE_STUFF;
 }
 
 void frskySendPacket(uint8_t type, uint8_t value, uint8_t p1, uint8_t p2)

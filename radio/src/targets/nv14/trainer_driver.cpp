@@ -20,6 +20,10 @@
 
 #include "opentx.h"
 
+#if defined(SBUS_TRAINER)
+Fifo<uint8_t, 32> trainerSbusFifo;
+#endif
+
 void trainerSendNextFrame();
 
 void init_trainer_ppm()
@@ -45,7 +49,6 @@ void init_trainer_ppm()
   TRAINER_TIMER->DIER |= TIM_DIER_UDE;
   TRAINER_TIMER->CCMR1 = TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2PE; // PWM mode 1
   TRAINER_TIMER->CR1 |= TIM_CR1_CEN;
-
   trainerSendNextFrame();
 
   NVIC_EnableIRQ(TRAINER_TIMER_IRQn);

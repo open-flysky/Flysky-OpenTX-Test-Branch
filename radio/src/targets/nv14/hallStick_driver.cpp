@@ -592,7 +592,7 @@ void hall_stick_loop(void)
                 //TRACE("HALL: %02X %02X %02X ...%04X", pt[0], pt[1], pt[2], HallProtocol.checkSum);
                 pt[HallProtocol.length + 3] = HallProtocol.checkSum & 0xFF;
                 pt[HallProtocol.length + 4] = HallProtocol.checkSum >> 8;
-                usbDownloadTransmit( pt, HallProtocol.length + 5 );
+                usbDownloadTransmit(pt, HallProtocol.length + 5 );
                 break;
             }
         }

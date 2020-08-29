@@ -176,23 +176,27 @@ void sdramInit(void);
 #define IS_INTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(INTMODULE_PWR_GPIO, INTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_EXTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_UART_MODULE(port)            (port == INTERNAL_MODULE)
-
+void EXTERNAL_MODULE_ON();
 void init_no_pulses(uint32_t port);
 void disable_no_pulses(uint32_t port);
 void init_ppm(uint32_t module_index);
 void disable_ppm(uint32_t module_index);
-void init_pxx(uint32_t module_index);
-void init_afhds3(uint32_t module_index);
-void disable_afhds3(uint32_t module_index);
-void disable_pxx(uint32_t module_index);
-void init_dsm2(uint32_t module_index);
-void disable_dsm2(uint32_t module_index);
 void init_crossfire(uint32_t module_index);
 void disable_crossfire(uint32_t module_index);
-void init_sbusOut(uint32_t module_index);
-void disable_sbusOut(uint32_t module_index);
 void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us);
 
+
+void intmoduleSendNextFrame();
+void extmoduleSendNextFrame();
+
+void extmoduleSoftSerialStart(uint32_t baudRate, uint32_t period_half_us);
+void extmoduleSerialStart(uint32_t baudRate, uint32_t period_half_us, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
+void intmoduleSerialStart(uint32_t baudrate, uint8_t rxEnable, uint16_t parity, uint16_t stopBits, uint16_t wordLength);
+
+
+#if defined(INTERNAL_MODULE_MULTI)
+void intmoduleTimerStart(uint32_t periodMs);
+#endif
 // Trainer driver
 void init_trainer_ppm(void);
 void stop_trainer_ppm(void);
@@ -310,10 +314,6 @@ uint32_t readKeys(void);
 uint32_t readTrims(void);
 #define TRIMS_PRESSED()                 (readTrims())
 #define KEYS_PRESSED()                  (readKeys())
-#define DBLKEYS_PRESSED_RGT_LFT(in)     (false)
-#define DBLKEYS_PRESSED_UP_DWN(in)      (false)
-#define DBLKEYS_PRESSED_RGT_UP(in)      (false)
-#define DBLKEYS_PRESSED_LFT_DWN(in)     (false)
 
 // WDT driver
 #define WDTO_500MS                      500
@@ -340,7 +340,8 @@ void watchdogInit(unsigned int duration);
   #endif
   #define WAS_RESET_BY_WATCHDOG()               (RCC->CSR & (RCC_CSR_WDGRSTF | RCC_CSR_WWDGRSTF))
   #define WAS_RESET_BY_SOFTWARE()               (RCC->CSR & RCC_CSR_SFTRSTF)
-  #define WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()   (RCC->CSR & (RCC_CSR_WDGRSTF | RCC_CSR_WWDGRSTF | RCC_CSR_SFTRSTF))
+  //#define WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()   (RCC->CSR & (RCC_CSR_WDGRSTF | RCC_CSR_WWDGRSTF | RCC_CSR_SFTRSTF))
+  #define WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()   (false)
 #endif
 
 // ADC driver

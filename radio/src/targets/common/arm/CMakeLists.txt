@@ -9,6 +9,13 @@ option(TRACE_AUDIO "Traces audio enabled" OFF)
 option(DEBUG_TRACE_BUFFER "Debug Trace Screen" OFF)
 option(MULTIMODULE "DIY Multiprotocol TX Module (https://github.com/pascallanger/DIY-Multiprotocol-TX-Module)" OFF)
 option(AFHDS3 "Support for AFHDS3" YES)
+option(PPM "PPM TX Module" ON)
+option(DSM2 "DSM2 TX Module" ON)
+option(SBUS "SBUS TX Module" ON)
+option(SBUS_TRAINER "SBUS TRAINER" ON)
+option(XJT "XJT TX Module" ON)
+option(PXX1 "PXX1 protocol support" ON)
+option(PXX2 "PXX2 protocol support" OFF)
 option(SUPPORT_D16_EU_ONLY "XJT module only supports D16-EU and LR12-EU" OFF) # TODO rename to XJT_EU_ONLY
 option(DEBUG_INTERRUPTS "Count interrupts" OFF)
 option(DEBUG_WINDOWS "Debug Windows" OFF)
@@ -84,7 +91,7 @@ if(HAPTIC)
 endif()
 if(MULTIMODULE)
   add_definitions(-DMULTIMODULE)
-  set(SRC ${SRC} pulses/multi_arm.cpp telemetry/spektrum.cpp telemetry/flysky_ibus.cpp telemetry/multi.cpp)
+  set(SRC ${SRC} pulses/multi_arm.cpp telemetry/spektrum.cpp telemetry/hitec.cpp telemetry/hott.cpp telemetry/flysky_ibus.cpp telemetry/multi.cpp)
 endif()
 if(MULTIMODULE OR AFHDS3)
   set(SRC ${SRC} telemetry/flysky_ibus.cpp)
@@ -93,8 +100,28 @@ if(AFHDS3)
 add_definitions(-DAFHDS3)
 endif()
 
+if(PPM)
+  add_definitions(-DPPM)
+endif()
+if(DSM2)
+  add_definitions(-DDSM2)
+endif()
+
+if(SBUS)
+  add_definitions(-DSBUS)
+endif()
+
+if(PXX1)
+  add_definitions(-DPXX -DPXX1)
+  set(PULSES_SRC
+    ${PULSES_SRC}
+    pxx1.cpp
+    )
+endif()
+
+
 add_definitions(-DCPUARM -DVIRTUAL_INPUTS)
-add_definitions(-DTELEMETRY_FRSKY -DTELEMETRY_FRSKY_SPORT -DFRSKY_HUB -DGPS -DPXX -DDSM2)
+add_definitions(-DTELEMETRY_FRSKY -DTELEMETRY_FRSKY_SPORT -DFRSKY_HUB -DGPS)
 add_definitions(-DBOLD_FONT -DBATTGRAPH -DTHRTRACE -DGAUGES)
 add_definitions(-DREQUIRED_SDCARD_VERSION="${SDCARD_VERSION}")
 include_directories(${COOS_DIR} ${COOS_DIR}/kernel ${COOS_DIR}/portable)
@@ -160,7 +187,19 @@ set(PULSES_SRC
   ${PULSES_SRC}
   pulses_arm.cpp
   ppm_arm.cpp
-  pxx_arm.cpp
-  dsm2_arm.cpp
-  sbus_arm.cpp
-  )
+)
+
+
+if(DSM2)
+  set(PULSES_SRC
+    ${PULSES_SRC}
+    dsm2_arm.cpp
+    )
+endif()
+
+if(SBUS)
+  set(PULSES_SRC
+    ${PULSES_SRC}
+    sbus.cpp
+    )
+endif()

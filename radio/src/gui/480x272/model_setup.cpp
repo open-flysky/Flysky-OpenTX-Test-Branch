@@ -22,9 +22,8 @@
 #include "opentx.h"
 #include "libwindows.h"
 #include "model_crossfire.h"
-
 #define SET_DIRTY()     storageDirty(EE_MODEL)
-#define STR_4BIND(v)    ((moduleFlag[moduleIndex] == MODULE_BIND) ? STR_MODULE_BINDING : (v))
+#define STR_4BIND(v)    ((moduleState[moduleIndex].mode == MODULE_MODE_BIND) ? STR_MODULE_BINDING : (v))
 
 void resetModuleSettings(uint8_t module)
 {
@@ -34,10 +33,32 @@ void resetModuleSettings(uint8_t module)
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
   }
-  setModuleFlag(module, MODULE_RESET_SETTINGS);
-  setModuleFlag(module, MODULE_NORMAL_MODE);
+  setModuleFlag(module, MODULE_MODE_RESET_SETTINGS);
+  setModuleFlag(module, MODULE_MODE_NORMAL);
 }
 
+#if defined(MULTIMODULE)
+inline void resetMultiProtocolsOptions(uint8_t moduleIdx)
+{
+  if (!isModuleMultimodule(moduleIdx))
+    return;
+
+  // Sensible default for DSM2 (same as for ppm): 7ch@22ms + Autodetect settings enabled
+  if (g_model.moduleData[moduleIdx].getMultiProtocol() == MODULE_SUBTYPE_MULTI_DSM2) {
+    g_model.moduleData[moduleIdx].multi.autoBindMode = 1;
+  }
+  else {
+    g_model.moduleData[moduleIdx].multi.autoBindMode = 0;
+  }
+  g_model.moduleData[moduleIdx].multi.optionValue = 0;
+  g_model.moduleData[moduleIdx].multi.disableTelemetry = 0;
+  g_model.moduleData[moduleIdx].multi.disableMapping = 0;
+  g_model.moduleData[moduleIdx].multi.lowPowerMode = 0;
+  g_model.moduleData[moduleIdx].failsafeMode = FAILSAFE_NOT_SET;
+  g_model.header.modelId[moduleIdx] = 0;
+}
+
+#endif
 class ChannelFailsafeBargraph: public Window {
   public:
     ChannelFailsafeBargraph(Window * parent, const rect_t & rect, uint8_t moduleIndex, uint8_t channel):
@@ -295,7 +316,7 @@ class ModuleWindow : public Window {
                      if(isModuleFlysky(moduleIndex)) g_model.moduleData[moduleIndex].romData.mode = newValue;
                      else g_model.moduleData[moduleIndex].afhds3.mode = newValue;
                      SET_DIRTY();
-                     setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
+                     setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
                      setFlyskyState(moduleIndex, STATE_SET_RX_PWM_PPM);
                    });
         
@@ -306,27 +327,27 @@ class ModuleWindow : public Window {
         new StaticText(this, grid.getLabelSlot(true), STR_MODULE_STATUS);
         StaticText* status = new StaticText(this, grid.getFieldSlot());
         status->setCheckHandler([=]() {
-          afhds3uart.getState(reusableBuffer.msgbuf.msg);
-          if(!status->isTextEqual(reusableBuffer.msgbuf.msg)) {
-            status->setText(std::string(reusableBuffer.msgbuf.msg));
+          afhds3uart.getState(reusableBuffer.moduleSetup.msg);
+          if(!status->isTextEqual(reusableBuffer.moduleSetup.msg)) {
+            status->setText(std::string(reusableBuffer.moduleSetup.msg));
           }
         });
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), STR_POWER_SOURCE);
         StaticText* powerSource = new StaticText(this, grid.getFieldSlot());
         powerSource->setCheckHandler([=]() {
-          afhds3uart.getPowerSource(reusableBuffer.msgbuf.msg);
-          if(!powerSource->isTextEqual(reusableBuffer.msgbuf.msg)) {
-            powerSource->setText(std::string(reusableBuffer.msgbuf.msg));
+          afhds3uart.getPowerSource(reusableBuffer.moduleSetup.msg);
+          if(!powerSource->isTextEqual(reusableBuffer.moduleSetup.msg)) {
+            powerSource->setText(std::string(reusableBuffer.moduleSetup.msg));
           }
         });
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), TR_MODE);
         StaticText* afhds3Mode = new StaticText(this, grid.getFieldSlot());
         afhds3Mode->setCheckHandler([=]() {
-          afhds3uart.getOpMode(reusableBuffer.msgbuf.msg);
-          if(!afhds3Mode->isTextEqual(reusableBuffer.msgbuf.msg)) {
-            afhds3Mode->setText(std::string(reusableBuffer.msgbuf.msg));
+          afhds3uart.getOpMode(reusableBuffer.moduleSetup.msg);
+          if(!afhds3Mode->isTextEqual(reusableBuffer.moduleSetup.msg)) {
+            afhds3Mode->setText(std::string(reusableBuffer.moduleSetup.msg));
           }
         });
       }
@@ -335,46 +356,20 @@ class ModuleWindow : public Window {
       if (isModuleMultimodule(moduleIndex)) {
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), STR_RF_PROTOCOL);
-
         // Multi type (CUSTOM, brand A, brand B,...)
-        int multiRfProto = g_model.moduleData[moduleIndex].multi.customProto == 1 ? MM_RF_PROTO_CUSTOM : g_model.moduleData[moduleIndex].getMultiProtocol(false);
-        new Choice(this, grid.getFieldSlot(g_model.moduleData[moduleIndex].multi.customProto ? 3 : 2, 0), STR_MULTI_PROTOCOLS, MM_RF_PROTO_FIRST, MM_RF_PROTO_LAST,
+        int multiRfProto = g_model.moduleData[moduleIndex].getMultiProtocol();
+        new Choice(this, grid.getFieldSlot(g_model.moduleData[moduleIndex].multi.customProto ? 3 : 2, 0), STR_MULTI_PROTOCOLS, MODULE_SUBTYPE_MULTI_FIRST, MODULE_SUBTYPE_MULTI_LAST,
                               GET_DEFAULT(multiRfProto),
                               [=](int32_t newValue) {
-                                g_model.moduleData[moduleIndex].multi.customProto = (newValue == MM_RF_PROTO_CUSTOM);
-                                if (!g_model.moduleData[moduleIndex].multi.customProto)
-                                  g_model.moduleData[moduleIndex].setMultiProtocol(newValue);
-                                g_model.moduleData[moduleIndex].subType = 0;
-                                // Sensible default for DSM2 (same as for ppm): 7ch@22ms + Autodetect settings enabled
-                                if (g_model.moduleData[moduleIndex].getMultiProtocol(true) == MM_RF_PROTO_DSM2) {
-                                  g_model.moduleData[moduleIndex].multi.autoBindMode = 1;
-                                }
-                                else {
-                                  g_model.moduleData[moduleIndex].multi.autoBindMode = 0;
-                                }
-                                g_model.moduleData[moduleIndex].multi.optionValue = 0;
+                                g_model.moduleData[moduleIndex].setMultiProtocol(newValue);
+                                resetMultiProtocolsOptions(moduleIndex);
                                 SET_DIRTY();
                                 update();
                               });
-
-        if (g_model.moduleData[moduleIndex].multi.customProto) {
-          // Proto column 1
-          new NumberEdit(this, grid.getFieldSlot(3, 1), 0, 63,
-                         GET_DEFAULT(g_model.moduleData[moduleIndex].getMultiProtocol(false)),
-                         [=](int32_t newValue) {
-                           g_model.moduleData[moduleIndex].setMultiProtocol(newValue);
-                           SET_DIRTY();
-                         });
-
-          // Proto column 2
-          new NumberEdit(this, grid.getFieldSlot(3, 2), 0, 7, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].subType));
-        }
-        else {
-          // Subtype (D16, DSMX,...)
-          const mm_protocol_definition * pdef = getMultiProtocolDefinition(g_model.moduleData[moduleIndex].getMultiProtocol(false));
-          if (pdef->maxSubtype > 0)
-            new Choice(this, grid.getFieldSlot(2, 1), pdef->subTypeString, 0, pdef->maxSubtype,GET_SET_DEFAULT(g_model.moduleData[moduleIndex].subType));
-        }
+        const uint8_t multi_proto = g_model.moduleData[moduleIndex].getMultiProtocol();
+        const mm_protocol_definition *pdef = getMultiProtocolDefinition(multi_proto);
+        if (pdef->maxSubtype > 0)
+          new Choice(this, grid.getFieldSlot(2, 1), pdef->subTypeString, 0, pdef->maxSubtype, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].subType));
         grid.nextLine();
 
         // Multimodule status
@@ -382,37 +377,35 @@ class ModuleWindow : public Window {
         StaticText* status = new StaticText(this, grid.getFieldSlot());
         status->setCheckHandler([=]() {
           char statusText[64];
-          multiModuleStatus.getStatusString(statusText);
+          getMultiModuleStatus(moduleIndex).getStatusString(statusText);
           if(!status->isTextEqual(statusText)){
             status->setText(std::string(statusText));
           }
         });
         // Multimodule sync
-        if(multiSyncStatus.isValid()) {
+        if(getMultiSyncStatus(moduleIndex).isValid()) {
           grid.nextLine();
           new StaticText(this, grid.getLabelSlot(true), STR_MODULE_SYNC);
           StaticText* syncStatus = new StaticText(this, grid.getFieldSlot());
           syncStatus->setCheckHandler([=]() {
             char buffer[64];
-            multiSyncStatus.getRefreshString(buffer);
+            getMultiSyncStatus(moduleIndex).getRefreshString(buffer);
             if(!syncStatus->isTextEqual(buffer)){
               syncStatus->setText(std::string(buffer));
             }
           });
         }
         // Multi optional feature row
-        const uint8_t multi_proto = g_model.moduleData[moduleIndex].getMultiProtocol(true);
-        const mm_protocol_definition *pdef = getMultiProtocolDefinition(multi_proto);
         if (pdef->optionsstr) {
           grid.nextLine();
           new StaticText(this, grid.getLabelSlot(true), pdef->optionsstr);
-          if (multi_proto == MM_RF_PROTO_FS_AFHDS2A) {
+          if (multi_proto == MODULE_SUBTYPE_MULTI_FS_AFHDS2A) {
             auto edit = new NumberEdit(this, grid.getFieldSlot(2,0), 50, 400,
                            GET_DEFAULT(50 + 5 * g_model.moduleData[moduleIndex].multi.optionValue),
                            SET_VALUE(g_model.moduleData[moduleIndex].multi.optionValue, (newValue- 50) / 5));
             edit->setStep(5);
           }
-          else if (multi_proto == MM_RF_PROTO_OLRS) {
+          else if (multi_proto == MODULE_SUBTYPE_MULTI_OLRS) {
             new NumberEdit(this, grid.getFieldSlot(2,0), -1, 7, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.optionValue));
           }
           else {
@@ -422,7 +415,7 @@ class ModuleWindow : public Window {
 
         // Bind on power up
         grid.nextLine();
-        new StaticText(this, grid.getLabelSlot(true),g_model.moduleData[moduleIndex].getMultiProtocol(true) == MM_RF_PROTO_DSM2 ? STR_MULTI_DSM_AUTODTECT : STR_MULTI_AUTOBIND);
+        new StaticText(this, grid.getLabelSlot(true),g_model.moduleData[moduleIndex].getMultiProtocol() == MODULE_SUBTYPE_MULTI_DSM2 ? STR_MULTI_DSM_AUTODTECT : STR_MULTI_AUTOBIND);
         new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.autoBindMode));
 
         // Low power mode
@@ -462,7 +455,7 @@ class ModuleWindow : public Window {
 
       if (isModuleR9M(moduleIndex)) {
         new Choice(this, grid.getFieldSlot(), STR_R9M_MODES, MODULE_SUBTYPE_R9M_FCC,
-                   MODULE_SUBTYPE_R9M_LBT,
+                   MODULE_SUBTYPE_R9M_LAST,
                    GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
                    [=](int32_t newValue) {
                      g_model.moduleData[moduleIndex].subType = newValue;
@@ -529,7 +522,7 @@ class ModuleWindow : public Window {
                          g_model.moduleData[moduleIndex].romData.rx_freq[0] = newValue & 0xFF;
                          g_model.moduleData[moduleIndex].romData.rx_freq[1] = newValue >> 8;
                          SET_DIRTY();
-                         setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
+                         setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
                          setFlyskyState(moduleIndex, STATE_SET_RX_FREQUENCY);
                        });
         grid.nextLine();
@@ -550,7 +543,7 @@ class ModuleWindow : public Window {
                                       SET_DIRTY();
                                       update();
                                       failSafeChoice->setFocus();
-                                      setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
+                                      setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
                                       SEND_FAILSAFE_NOW(moduleIndex);
                                     });
         failSafeChoice->setAvailableHandler([=](int8_t newValue) {
@@ -575,13 +568,13 @@ class ModuleWindow : public Window {
       if (isModuleNeedingBindRangeButtons(moduleIndex)) {
         bindButton = new TextButton(this, grid.getFieldSlot(2, 0), STR_4BIND(STR_MODULE_BIND));
         bindButton->setPressHandler([=]() -> uint8_t {
-          if (moduleFlag[moduleIndex] == MODULE_RANGECHECK) {
+          if (moduleState[moduleIndex].mode == MODULE_MODE_RANGECHECK) {
             rangeButton->check(false);
           }
-          if (moduleFlag[moduleIndex] == MODULE_BIND) {
+          if (moduleState[moduleIndex].mode == MODULE_MODE_BIND) {
             bindButton->setText(STR_MODULE_BIND);
-            setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
-            if (isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
+            setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
+            if (isModuleFlysky(moduleIndex)) resetPulsesAFHDS2(moduleIndex);
             return 0;
           }
           else {
@@ -592,7 +585,7 @@ class ModuleWindow : public Window {
                   menu->setSelectHandler([=](const char* selected) {
                     onBindMenu(selected, moduleIndex);
                     bindButton->setText(STR_MODULE_BINDING);
-                    setModuleFlag(moduleIndex, MODULE_BIND);
+                    setModuleFlag(moduleIndex, MODULE_MODE_BIND);
                   });
                   if (isModuleR9M_LBT(moduleIndex)) {
                       menu->addLine(STR_BINDING_25MW_CH1_8_TELEM_OFF);
@@ -619,21 +612,21 @@ class ModuleWindow : public Window {
               menu->setSelectHandler([=](const char* selected) {
                 g_model.moduleData[moduleIndex].afhds3.telemetry = strcmp(selected, STR_AFHDS3_ONE_TO_ONE_TELEMETRY) == 0;
                 bindButton->setText(STR_MODULE_BINDING);
-                setModuleFlag(moduleIndex, MODULE_BIND);
+                setModuleFlag(moduleIndex, MODULE_MODE_BIND);
               });
               menu->addLine(STR_AFHDS3_ONE_TO_ONE_TELEMETRY);
               menu->addLine(STR_AFHDS3_ONE_TO_MANY);
             }
             else {
               bindButton->setText(STR_MODULE_BINDING);
-              setModuleFlag(moduleIndex, MODULE_BIND);
+              setModuleFlag(moduleIndex, MODULE_MODE_BIND);
 #if defined(MULTIMODULE)
               //why not use moduleFlag directly
-              multiBindStatus = MULTI_BIND_INITIATED;
+              setMultiBindStatus(moduleIndex, MULTI_BIND_INITIATED);
 #endif
             }
             if (isModuleFlysky(moduleIndex)) {
-              resetPulsesFlySky(moduleIndex);
+              resetPulsesAFHDS2(moduleIndex);
               setFlyskyState(moduleIndex, STATE_INIT);
             }
             return 1;
@@ -641,12 +634,12 @@ class ModuleWindow : public Window {
         });
         bindButton->setCheckHandler([=]() {
 #if defined(MULTIMODULE)
-          if (multiBindStatus == MULTI_BIND_FINISHED) {
-            multiBindStatus = MULTI_NORMAL_OPERATION;
-            setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
+          if (getMultiBindStatus(moduleIndex)  == MULTI_BIND_FINISHED) {
+            setMultiBindStatus(moduleIndex, MULTI_NORMAL_OPERATION);
+            setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
           }
 #endif
-          if (moduleFlag[moduleIndex] != MODULE_BIND) {
+          if (moduleState[moduleIndex].mode != MODULE_MODE_BIND) {
             bindButton->setText(STR_MODULE_BIND);
             bindButton->check(false);
           }
@@ -655,16 +648,16 @@ class ModuleWindow : public Window {
       if(isModuleNeedingRangeButtons(moduleIndex)) {
         rangeButton = new TextButton(this, grid.getFieldSlot(2, 1), STR_MODULE_RANGE);
         rangeButton->setPressHandler([=]() -> uint8_t {
-          if (moduleFlag[moduleIndex] == MODULE_BIND) {
+          if (moduleState[moduleIndex].mode == MODULE_MODE_BIND) {
             bindButton->setText(STR_MODULE_BIND);
             bindButton->check(false);
           }
-          if (moduleFlag[moduleIndex] != MODULE_RANGECHECK) {
-            setModuleFlag(moduleIndex, MODULE_RANGECHECK);
-            if(isModuleFlysky(moduleIndex)) resetPulsesFlySky(moduleIndex);
+          if (moduleState[moduleIndex].mode != MODULE_MODE_RANGECHECK) {
+            setModuleFlag(moduleIndex, MODULE_MODE_RANGECHECK);
+            if(isModuleFlysky(moduleIndex)) resetPulsesAFHDS2(moduleIndex);
             MessageBox* mb = new MessageBox(WARNING_TYPE_INFO, DialogResult::Cancel, "Range check", "",
               [=](DialogResult result) {
-                setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
+                setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
                 rangeButton->check(false);
               }
             );
@@ -680,12 +673,12 @@ class ModuleWindow : public Window {
             return 1;
           }
           else {
-            setModuleFlag(moduleIndex, MODULE_NORMAL_MODE);
+            setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
             return 0;
           }
         });
         rangeButton->setCheckHandler([=]() {
-          if (moduleFlag[moduleIndex] != MODULE_RANGECHECK) {
+          if (moduleState[moduleIndex].mode != MODULE_MODE_RANGECHECK) {
             rangeButton->check(false);
           }
         });
@@ -749,46 +742,46 @@ uint8_t g_moduleIndex;
 void onBindMenu(const char * result, uint8_t moduleIndex)
 {
   if (strcmp(result, STR_BINDING_25MW_CH1_8_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_25;
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = true;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = false;
+    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_25_8CH;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
   }
   else if (strcmp(result, STR_BINDING_25MW_CH1_8_TELEM_ON) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_25;
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = false;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = false;
+    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_25_8CH;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = false;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
   }
   else if (strcmp(result, STR_BINDING_500MW_CH1_8_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_500;
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = true;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = false;
+    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_500_16CH_NOTELEM;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
   }
   else if (strcmp(result, STR_BINDING_500MW_CH9_16_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_500;
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = true;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = true;
+    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_500_16CH_NOTELEM;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = true;
   }
   else if (strcmp(result, STR_BINDING_1_8_TELEM_ON) == 0) {
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = false;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = false;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = false;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
   }
   else if (strcmp(result, STR_BINDING_1_8_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = true;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = false;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
   }
   else if (strcmp(result, STR_BINDING_9_16_TELEM_ON) == 0) {
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = false;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = true;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = false;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = true;
   }
   else if (strcmp(result, STR_BINDING_9_16_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.receiver_telem_off = true;
-    g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 = true;
+    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
+    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = true;
   }
   else {
     return;
   }
 
-  moduleFlag[moduleIndex] = MODULE_BIND;
+  moduleState[moduleIndex].mode = MODULE_MODE_BIND;
 }
 void ModelSetupPage::build(Window * window)
 {
@@ -1108,7 +1101,7 @@ case ITEM_MODEL_INTERNAL_MODULE_MODE:
   if (attr) {
     g_model.moduleData[INTERNAL_MODULE].rfProtocol = checkIncDec(event, g_model.moduleData[INTERNAL_MODULE].rfProtocol, RF_PROTO_OFF, RF_PROTO_LAST, EE_MODEL, isRfProtocolAvailable);
     if (checkIncDec_Ret) {
-      g_model.moduleData[0].type = MODULE_TYPE_XJT;
+      g_model.moduleData[0].type = MODULE_TYPE_XJT_PXX1;
       g_model.moduleData[0].channelsStart = 0;
       g_model.moduleData[0].channelsCount = DEFAULT_CHANNELS(INTERNAL_MODULE);
       if (g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF)
@@ -1157,7 +1150,7 @@ case ITEM_MODEL_EXTERNAL_MODULE_MODE:
     lcdDrawTextAtIndex(MODEL_SETUP_3RD_COLUMN, y, STR_R9M_MODES, g_model.moduleData[EXTERNAL_MODULE].subType, (menuHorizontalPosition==1 ? attr : 0));
 #if defined(MULTIMODULE)
   else if (isModuleMultimodule(EXTERNAL_MODULE)) {
-    int multi_rfProto = g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(false);
+    int multi_rfProto = g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol();
     if (g_model.moduleData[EXTERNAL_MODULE].multi.customProto) {
       drawText(window,MODEL_SETUP_3RD_COLUMN, y, STR_MULTI_CUSTOM, menuHorizontalPosition == 1 ? attr : 0);
       lcdDrawNumber(MODEL_SETUP_4TH_COLUMN, y, multi_rfProto, menuHorizontalPosition==2 ? attr : 0, 2);
@@ -1187,18 +1180,18 @@ case ITEM_MODEL_EXTERNAL_MODULE_MODE:
         if (isModuleDSM2(EXTERNAL_MODULE))
           CHECK_INCDEC_MODELVAR(event, g_model.moduleData[EXTERNAL_MODULE].rfProtocol, DSM2_PROTO_LP45, DSM2_PROTO_DSMX);
         else if (isModuleR9M(EXTERNAL_MODULE))
-          CHECK_INCDEC_MODELVAR(event, g_model.moduleData[EXTERNAL_MODULE].subType, MODULE_SUBTYPE_R9M_FCC, MODULE_SUBTYPE_R9M_LBT);
+          CHECK_INCDEC_MODELVAR(event, g_model.moduleData[EXTERNAL_MODULE].subType, MODULE_SUBTYPE_R9M_FCC, MODULE_SUBTYPE_R9M_LAST);
 #if defined(MULTIMODULE)
         else if (isModuleMultimodule(EXTERNAL_MODULE)) {
-          int multiRfProto = g_model.moduleData[EXTERNAL_MODULE].multi.customProto == 1 ? MM_RF_PROTO_CUSTOM : g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(false);
-          CHECK_INCDEC_MODELVAR(event, multiRfProto, MM_RF_PROTO_FIRST, MM_RF_PROTO_LAST);
+          int multiRfProto = g_model.moduleData[EXTERNAL_MODULE].multi.customProto == 1 ? MM_RF_CUSTOM_SELECTED : g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol();
+          CHECK_INCDEC_MODELVAR(event, multiRfProto, MODULE_SUBTYPE_MULTI_FIRST, MODULE_SUBTYPE_MULTI_LAST);
           if (checkIncDec_Ret) {
-            g_model.moduleData[EXTERNAL_MODULE].multi.customProto = (multiRfProto == MM_RF_PROTO_CUSTOM);
+            g_model.moduleData[EXTERNAL_MODULE].multi.customProto = (multiRfProto == MM_RF_CUSTOM_SELECTED);
             if (!g_model.moduleData[EXTERNAL_MODULE].multi.customProto)
               g_model.moduleData[EXTERNAL_MODULE].setMultiProtocol(multiRfProto);
             g_model.moduleData[EXTERNAL_MODULE].subType = 0;
             // Sensible default for DSM2 (same as for ppm): 7ch@22ms + Autodetect settings enabled
-            if (g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(true) == MM_RF_PROTO_DSM2) {
+            if (g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol() == MODULE_SUBTYPE_MULTI_DSM2) {
               g_model.moduleData[EXTERNAL_MODULE].multi.autoBindMode = 1;
             }
             else {
@@ -1219,10 +1212,10 @@ case ITEM_MODEL_EXTERNAL_MODULE_MODE:
 #if defined(MULTIMODULE)
       case 2:
         if (g_model.moduleData[EXTERNAL_MODULE].multi.customProto) {
-          g_model.moduleData[EXTERNAL_MODULE].setMultiProtocol(checkIncDec(event, g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(false), 0, 63, EE_MODEL));
+          g_model.moduleData[EXTERNAL_MODULE].setMultiProtocol(checkIncDec(event, g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(), 0, 63, EE_MODEL));
           break;
         } else {
-          const mm_protocol_definition *pdef = getMultiProtocolDefinition(g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(false));
+          const mm_protocol_definition *pdef = getMultiProtocolDefinition(g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol());
           if (pdef->maxSubtype > 0)
             CHECK_INCDEC_MODELVAR(event, g_model.moduleData[EXTERNAL_MODULE].subType, 0, pdef->maxSubtype);
         }
@@ -1374,12 +1367,12 @@ case ITEM_MODEL_TRAINER_LINE2:
         lcdDrawNumber(MODEL_SETUP_2ND_COLUMN, y, g_model.header.modelId[moduleIndex], (l_posHorz==0 ? attr : 0) | LEADING0 | LEFT, 2);
       if (attr && l_posHorz==0 && s_editMode>0)
         CHECK_INCDEC_MODELVAR_ZERO(event, g_model.header.modelId[moduleIndex], MAX_RX_NUM(moduleIndex));
-      drawButton(MODEL_SETUP_2ND_COLUMN+xOffsetBind, y, STR_MODULE_BIND, (moduleFlag[moduleIndex] == MODULE_BIND ? BUTTON_ON : BUTTON_OFF) | (l_posHorz==1 ? attr : 0));
-      drawButton(MODEL_SETUP_2ND_COLUMN+MODEL_SETUP_RANGE_OFS+xOffsetBind, y, STR_MODULE_RANGE, (moduleFlag[moduleIndex] == MODULE_RANGECHECK ? BUTTON_ON : BUTTON_OFF) | (l_posHorz==2 ? attr : 0));
+      drawButton(MODEL_SETUP_2ND_COLUMN+xOffsetBind, y, STR_MODULE_BIND, (moduleState[moduleIndex].mode == MODULE_MODE_BIND ? BUTTON_ON : BUTTON_OFF) | (l_posHorz==1 ? attr : 0));
+      drawButton(MODEL_SETUP_2ND_COLUMN+MODEL_SETUP_RANGE_OFS+xOffsetBind, y, STR_MODULE_RANGE, (moduleState[moduleIndex].mode == MODULE_MODE_RANGECHECK ? BUTTON_ON : BUTTON_OFF) | (l_posHorz==2 ? attr : 0));
       uint8_t newFlag = 0;
 #if defined(MULTIMODULE)
-      if (multiBindStatus == MULTI_BIND_FINISHED) {
-        multiBindStatus = MULTI_NORMAL_OPERATION;
+      if (getMultiBindStatus(moduleIdx) == MULTI_BIND_FINISHED) {
+        setMultiBindStatus(moduleIdx, MULTI_NORMAL_OPERATION);
         s_editMode = 0;
       }
 #endif
@@ -1404,14 +1397,14 @@ case ITEM_MODEL_TRAINER_LINE2:
                   if (!(IS_TELEMETRY_INTERNAL_MODULE() && moduleIndex == EXTERNAL_MODULE))
                     POPUP_MENU_ADD_ITEM(STR_BINDING_9_16_TELEM_ON);
                   POPUP_MENU_ADD_ITEM(STR_BINDING_9_16_TELEM_OFF);
-                  default_selection = g_model.moduleData[moduleIndex].pxx.receiver_telem_off + (g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 << 1);
+                  default_selection = g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff + (g_model.moduleData[moduleIndex].pxx.receiverHigherChannels << 1);
                 }
                 POPUP_MENU_SELECT_ITEM(default_selection);
                 POPUP_MENU_START(onBindMenu);
                 continue;
               }
-              if (moduleFlag[moduleIndex] == MODULE_BIND) {
-                newFlag = MODULE_BIND;
+              if (moduleState[moduleIndex].mode == MODULE_MODE_BIND) {
+                newFlag = MODULE_MODE_BIND;
               }
               else {
                 if (!popupMenuNoItems) {
@@ -1420,18 +1413,18 @@ case ITEM_MODEL_TRAINER_LINE2:
               }
             }
             else {
-              newFlag = MODULE_BIND;
+              newFlag = MODULE_MODE_BIND;
             }
           }
           else if (l_posHorz == 2) {
-            newFlag = MODULE_RANGECHECK;
+            newFlag = MODULE_MODE_RANGECHECK;
           }
         }
       }
-      moduleFlag[moduleIndex] = newFlag;
+      moduleState[moduleIndex].mode = newFlag;
 #if defined(MULTIMODULE)
-      if (newFlag == MODULE_BIND)
-        multiBindStatus = MULTI_BIND_INITIATED;
+      if (newFlag == MODULE_MODE_BIND)
+        setMultiBindStatus(moduleIdx, MULTI_BIND_INITIATED);
 #endif
     }
   }
@@ -1478,20 +1471,20 @@ case ITEM_MODEL_EXTERNAL_MODULE_OPTIONS:
   if (isModuleMultimodule(moduleIndex)) {
     int optionValue = g_model.moduleData[moduleIndex].multi.optionValue;
 
-    const uint8_t multi_proto = g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(true);
+    const uint8_t multi_proto = g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol();
     const mm_protocol_definition *pdef = getMultiProtocolDefinition(multi_proto);
     if (pdef->optionsstr)
       drawText(window,MENUS_MARGIN_LEFT, y, pdef->optionsstr);
 
-    if (multi_proto == MM_RF_PROTO_FS_AFHDS2A)
+    if (multi_proto == MODULE_SUBTYPE_MULTI_FS_AFHDS2A)
       optionValue = 50 + 5 * optionValue;
 
     lcdDrawNumber(MODEL_SETUP_2ND_COLUMN, y, optionValue, LEFT | attr);
     if (attr) {
-      if (multi_proto == MM_RF_PROTO_FS_AFHDS2A) {
+      if (multi_proto == MODULE_SUBTYPE_MULTI_FS_AFHDS2A) {
         CHECK_INCDEC_MODELVAR(event, g_model.moduleData[moduleIndex].multi.optionValue, 0, 70);
       }
-      else if (multi_proto == MM_RF_PROTO_OLRS) {
+      else if (multi_proto == MODULE_SUBTYPE_MULTI_OLRS) {
         CHECK_INCDEC_MODELVAR(event, g_model.moduleData[moduleIndex].multi.optionValue, -1, 7);
       }
       else {
@@ -1521,14 +1514,14 @@ case ITEM_MODEL_EXTERNAL_MODULE_BIND_OPTIONS:
   uint8_t moduleIndex = CURRENT_MODULE_EDITED(i);
 
   drawText(window,MENUS_MARGIN_LEFT+ INDENT_WIDTH, y, "Bind mode");
-  if (g_model.moduleData[moduleIndex].pxx.power == R9M_LBT_POWER_25) {
-    if(g_model.moduleData[moduleIndex].pxx.receiver_telem_off == true)
+  if (g_model.moduleData[moduleIndex].pxx.power == R9M_LBT_POWER_25_8CH) {
+    if(g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff == true)
       drawText(window,MODEL_SETUP_2ND_COLUMN, y, STR_BINDING_25MW_CH1_8_TELEM_OFF);
     else
       drawText(window,MODEL_SETUP_2ND_COLUMN, y, STR_BINDING_25MW_CH1_8_TELEM_ON);
   }
   else {
-    if(g_model.moduleData[moduleIndex].pxx.receiver_channel_9_16 == true)
+    if(g_model.moduleData[moduleIndex].pxx.receiverHigherChannels == true)
       drawText(window,MODEL_SETUP_2ND_COLUMN, y, STR_BINDING_500MW_CH9_16_TELEM_OFF);
     else
       drawText(window,MODEL_SETUP_2ND_COLUMN, y, STR_BINDING_500MW_CH1_8_TELEM_OFF);
@@ -1559,7 +1552,7 @@ break;
 
 #if defined(MULTIMODULE)
 case ITEM_MODEL_EXTERNAL_MODULE_AUTOBIND:
-if (g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(true) == MM_RF_PROTO_DSM2)
+if (g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol() == MODULE_SUBTYPE_MULTI_DSM2)
   drawText(window,MENUS_MARGIN_LEFT, y, STR_MULTI_DSM_AUTODTECT);
 else
   drawText(window,MENUS_MARGIN_LEFT, y, STR_MULTI_AUTOBIND);
@@ -1569,14 +1562,14 @@ case ITEM_MODEL_EXTERNAL_MODULE_STATUS: {
 drawText(window,MENUS_MARGIN_LEFT, y, STR_MODULE_STATUS);
 
 char statusText[64];
-multiModuleStatus.getStatusString(statusText);
+getMultiModuleStatus(EXTERNAL_MODULE).getStatusString(statusText);
 drawText(window,MODEL_SETUP_2ND_COLUMN, y, statusText);
 break;
 case ITEM_MODEL_EXTERNAL_MODULE_SYNCSTATUS: {
 drawText(window,MENUS_MARGIN_LEFT, y, STR_MODULE_SYNC);
 
 char statusText[64];
-multiSyncStatus.getRefreshString(statusText);
+getMultiSyncStatus(EXTERNAL_MODULE).getRefreshString(statusText);
 drawText(window,MODEL_SETUP_2ND_COLUMN, y, statusText);
 break;
 }

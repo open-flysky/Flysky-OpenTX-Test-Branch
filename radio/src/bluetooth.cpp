@@ -155,7 +155,7 @@ void bluetoothProcessTrainerByte(uint8_t data)
       break;
 
     case STATE_DATA_IN_FRAME:
-      if (data == BYTESTUFF) {
+      if (data == BYTE_STUFF) {
         dataState = STATE_DATA_XOR; // XOR next byte
       }
       else if (data == START_STOP) {
@@ -201,7 +201,7 @@ uint8_t bluetoothCrc;
 void bluetoothPushByte(uint8_t byte)
 {
   bluetoothCrc ^= byte;
-  if (byte == START_STOP || byte == BYTESTUFF) {
+  if (byte == START_STOP || byte == BYTE_STUFF) {
     bluetoothBuffer[bluetoothBufferIndex++] = 0x7d;
     byte ^= STUFF_MASK;
   }

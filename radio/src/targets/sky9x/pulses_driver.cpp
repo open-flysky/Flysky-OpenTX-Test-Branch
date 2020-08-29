@@ -200,27 +200,6 @@ void disable_ssc()
   sscptr->SSC_CR = SSC_CR_TXDIS;
 }
 
-void init_pxx(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    init_main_ppm(2500 * 2, 0);
-    init_ssc(125);                      // 8us per bit
-  }
-  else {
-    // TODO
-  }
-}
-
-void disable_pxx(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    disable_ssc();
-    disable_ppm(EXTERNAL_MODULE);
-  }
-  else {
-    // TODO
-  }
-}
 
 void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us)
 {
@@ -260,8 +239,8 @@ extern "C" void PWM_IRQHandler(void)
 
   if (reason & PWM_ISR1_CHID3) {
     // Use the current protocol, don't switch until set_up_pulses
-    switch (s_current_protocol[EXTERNAL_MODULE]) {
-      case PROTO_PXX:
+    switch (moduleState[EXTERNAL_MODULE].protocol) {
+      case PROTOCOL_CHANNELS_PXX1_PULSES:
         // Alternate periods of 6.5mS and 2.5 mS
         period = pwmptr->PWM_CH_NUM[3].PWM_CPDR;
         if (period == 2500 * 2) {
@@ -272,21 +251,21 @@ extern "C" void PWM_IRQHandler(void)
         }
         pwmptr->PWM_CH_NUM[3].PWM_CPDRUPD = period; // Period in half uS
         if (period != 2500 * 2) {
-          setupPulses(EXTERNAL_MODULE);
+          setupPulsesExternalModule();
           setExternalModulePolarity();
         }
         else {
           // Kick off serial output here
           Ssc * sscptr = SSC;
-          sscptr->SSC_TPR = CONVERT_PTR_UINT(modulePulsesData[EXTERNAL_MODULE].pxx.pulses);
-          sscptr->SSC_TCR = (uint8_t *)modulePulsesData[EXTERNAL_MODULE].pxx.ptr - (uint8_t *)modulePulsesData[EXTERNAL_MODULE].pxx.pulses;
+          sscptr->SSC_TPR = CONVERT_PTR_UINT(extmodulePulsesData.pxx.pulses);
+          sscptr->SSC_TCR = (uint8_t *)extmodulePulsesData.pxx.ptr - (uint8_t *)extmodulePulsesData.pxx.pulses;
           sscptr->SSC_PTCR = SSC_PTCR_TXTEN;        // Start transfers
         }
         break;
 
-      case PROTO_DSM2_LP45:
-      case PROTO_DSM2_DSM2:
-      case PROTO_DSM2_DSMX:
+      case PROTOCOL_CHANNELS_DSM2_LP45:
+      case PROTOCOL_CHANNELS_DSM2_DSM2:
+      case PROTOCOL_CHANNELS_DSM2_DSMX:
         // Alternate periods of 19.5mS and 2.5 mS
         period = pwmptr->PWM_CH_NUM[3].PWM_CPDR;
         if (period == 2500 * 2) {
@@ -297,21 +276,21 @@ extern "C" void PWM_IRQHandler(void)
         }
         pwmptr->PWM_CH_NUM[3].PWM_CPDRUPD = period; // Period in half uS
         if (period != 2500 * 2) {
-          setupPulses(EXTERNAL_MODULE);
+          setupPulsesExternalModule();
         }
         else {
           // Kick off serial output here
           Ssc * sscptr = SSC;
-          sscptr->SSC_TPR = CONVERT_PTR_UINT(modulePulsesData[EXTERNAL_MODULE].dsm2.pulses);
-          sscptr->SSC_TCR = (uint8_t *)modulePulsesData[EXTERNAL_MODULE].dsm2.ptr - (uint8_t *)modulePulsesData[EXTERNAL_MODULE].dsm2.pulses;
+          sscptr->SSC_TPR = CONVERT_PTR_UINT(extmodulePulsesData.dsm2.pulses);
+          sscptr->SSC_TCR = (uint8_t *)extmodulePulsesData.dsm2.ptr - (uint8_t *)extmodulePulsesData.dsm2.pulses;
           sscptr->SSC_PTCR = SSC_PTCR_TXTEN;        // Start transfers
         }
         break;
 
 #if defined(MULTIMODULE)
-      case PROTO_MULTIMODULE:
+      case PROTOCOL_CHANNELS_MULTIMODULE:
 #endif
-      case PROTO_SBUS:
+      case PROTOCOL_CHANNELS_SBUS:
         // Todo: how to do inverted polarity on this platform?
         // Alternate periods of 5.5mS and 3.5 mS
         period = pwmptr->PWM_CH_NUM[3].PWM_CPDR;
@@ -323,22 +302,22 @@ extern "C" void PWM_IRQHandler(void)
         }
         pwmptr->PWM_CH_NUM[3].PWM_CPDRUPD = period; // Period in half uS
         if (period != 3500 * 2) {
-          setupPulses(EXTERNAL_MODULE);
+          setupPulsesExternalModule();
         }
         else {
           // Kick off serial output here
           Ssc * sscptr = SSC;
-          sscptr->SSC_TPR = CONVERT_PTR_UINT(modulePulsesData[EXTERNAL_MODULE].dsm2.pulses);
-          sscptr->SSC_TCR = (uint8_t *)modulePulsesData[EXTERNAL_MODULE].dsm2.ptr - (uint8_t *)modulePulsesData[EXTERNAL_MODULE].dsm2.pulses;
+          sscptr->SSC_TPR = CONVERT_PTR_UINT(extmodulePulsesData.dsm2.pulses);
+          sscptr->SSC_TCR = (uint8_t *)extmodulePulsesData.dsm2.ptr - (uint8_t *)extmodulePulsesData.dsm2.pulses;
           sscptr->SSC_PTCR = SSC_PTCR_TXTEN;        // Start transfers
         }
         break;
 
       default:
-        pwmptr->PWM_CH_NUM[3].PWM_CPDRUPD = *modulePulsesData[EXTERNAL_MODULE].ppm.ptr++;
-        if (*modulePulsesData[EXTERNAL_MODULE].ppm.ptr == 0) {
+        pwmptr->PWM_CH_NUM[3].PWM_CPDRUPD = *extmodulePulsesData.ppm.ptr++;
+        if (*extmodulePulsesData.ppm.ptr == 0) {
           setExternalModulePolarity();
-          setupPulses(EXTERNAL_MODULE);
+          setupPulsesExternalModule();
         }
         break;
 

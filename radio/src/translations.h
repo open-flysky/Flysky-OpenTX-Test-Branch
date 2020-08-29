@@ -221,7 +221,7 @@ extern const pm_char STR_OPEN9X[];
 #else
   #define OFS_COUNTRYCODES      (OFS_VLCD)
 #endif
-#if defined(PXX) || defined(CPUARM)
+#if defined(PXX1) || defined(CPUARM)
   #define OFS_VFAILSAFE         (OFS_USBMODESELECT + sizeof(TR_USBMODESELECT))
   #define OFS_VTRAINERMODES     (OFS_VFAILSAFE + sizeof(TR_VFAILSAFE))
 #else
@@ -239,7 +239,8 @@ extern const pm_char STR_OPEN9X[];
   #define OFS_DSM_PROTOCOLS     (OFS_FLYSKY_PROTOCOLS + sizeof(TR_FLYSKY_PROTOCOLS))
 #if defined(MULTIMODULE)
   #define OFS_MULTI_PROTOCOLS   (OFS_DSM_PROTOCOLS + sizeof(TR_DSM_PROTOCOLS))
-  #define OFS_VOLTSRC           (OFS_MULTI_PROTOCOLS + sizeof(TR_MULTI_PROTOCOLS))
+  #define OFS_MULTI_POWERS      (OFS_MULTI_PROTOCOLS + sizeof(TR_MULTI_PROTOCOLS))
+  #define OFS_VOLTSRC           (OFS_MULTI_POWERS + sizeof(TR_MULTI_POWER))
 #else
   #define OFS_VOLTSRC           (OFS_DSM_PROTOCOLS + sizeof(TR_DSM_PROTOCOLS))
 #endif
@@ -354,7 +355,7 @@ extern const pm_char STR_OPEN9X[];
   #define STR_VVARIOCENTER      (STR_OPEN9X + OFS_VVARIOCENTER)
 #endif
 
-#if defined(PXX) || defined(CPUARM)
+#if defined(PXX1) || defined(CPUARM)
   #define STR_COUNTRYCODES      (STR_OPEN9X + OFS_COUNTRYCODES)
   #define STR_USBMODES          (STR_OPEN9X + OFS_USBMODES)
   #define STR_USBMODESELECT     (STR_OPEN9X + OFS_USBMODESELECT)
@@ -373,6 +374,7 @@ extern const pm_char STR_OPEN9X[];
   #define STR_DSM_PROTOCOLS     (STR_OPEN9X + OFS_DSM_PROTOCOLS)
 #if defined(MULTIMODULE)
   #define STR_MULTI_PROTOCOLS   (STR_OPEN9X + OFS_MULTI_PROTOCOLS)
+  #define STR_MULTI_POWER       (STR_OPEN9X + OFS_MULTI_POWER)
 #endif
   #define STR_CURVE_TYPES       (STR_OPEN9X + OFS_CURVE_TYPES)
   #define STR_VSENSORTYPES      (STR_OPEN9X + OFS_VSENSORTYPES)
@@ -633,6 +635,14 @@ extern const pm_char STR_FAS_OFFSET[];
 extern const pm_char STR_MODULE_STATUS[];
 extern const pm_char STR_MODULE_BINDING[];
 
+extern pm_char STR_NEEDS_FILE[];
+extern pm_char STR_DISABLE_CH_MAP[];
+extern pm_char STR_DISABLE_TELEM[];
+extern pm_char STR_MODULE_UPGRADE_ALERT[];
+extern pm_char STR_MODULE_UPGRADE[];
+extern pm_char STR_RFPOWER[];
+
+
 #if defined(MULTIMODULE)
 extern const pm_char STR_MULTI_CUSTOM[];
 extern const pm_char STR_MULTI_OPTION[];
@@ -647,6 +657,13 @@ extern const pm_char STR_MODULE_NO_INPUT[];
 extern const pm_char STR_MODULE_WAITFORBIND[];
 extern const pm_char STR_MODULE_NO_TELEMETRY[];
 extern const pm_char STR_PROTOCOL_INVALID[];
+extern pm_char STR_MULTI_FIXEDID[];
+extern pm_char STR_MULTI_LNA_DISABLE[];
+extern pm_char STR_MULTI_MAX_THROW[];
+extern pm_char STR_MULTI_RFCHAN[];
+extern pm_char STR_EXT_MULTI_SPEC[];
+extern pm_char STR_INT_MULTI_SPEC[];
+
 
 extern const pm_char STR_MODULE_SYNC[];
 extern const pm_char STR_MULTI_SERVOFREQ[];
@@ -664,12 +681,12 @@ extern const pm_char STR_POWER_SOURCE[];
 extern const pm_char STR_AFHDS3_ONE_TO_ONE_TELEMETRY[];
 extern const pm_char STR_AFHDS3_ONE_TO_MANY[];
 #endif
-#if defined(DSM2) || defined(PXX)
+#if defined(DSM2) || defined(PXX1)
 extern const pm_char STR_RECEIVER_NUM[];
 extern const pm_char STR_RECEIVER[];
 #endif
 
-#if defined(PXX) || defined(CPUARM)
+#if defined(PXX1) || defined(CPUARM)
 extern const pm_char STR_SYNCMENU[];
 extern const pm_char STR_INTERNALRF[];
 extern const pm_char STR_EXTERNALRF[];

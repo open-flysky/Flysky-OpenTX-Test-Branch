@@ -47,6 +47,11 @@ class Fifo
       }
     }
 
+    void skip()
+    {
+      ridx = nextIndex(ridx);
+    }
+
     bool pop(T & element)
     {
       if (isEmpty()) {
@@ -100,6 +105,11 @@ class Fifo
     T fifo[N];
     volatile uint32_t widx;
     volatile uint32_t ridx;
+
+    static inline uint32_t nextIndex(uint32_t idx)
+    {
+      return (idx + 1) & (N - 1);
+    }
 };
 
 #endif // _FIFO_H_

@@ -226,7 +226,7 @@ void afhds3::parseData(uint8_t* rxBuffer, uint8_t rxBufferCount) {
         break;
       case COMMAND::MODULE_GET_CONFIG:
           std::memcpy((void*)cfg.buffer, &responseFrame->value, sizeof(cfg.buffer));
-          TRACE("AFHDS3 [MODULE_GET_CONFIG] bpow %d rpow %d tele %d pwm/ppm %d ibus/sbus %d", cfg.config.bindPower, cfg.config.runPower, cfg.config.telemetry, cfg.config.pulseMode, cfg.config.serialMode);
+          TRACE("AFHDS3 [MODULE_GET_CONFIG] bpow %d rpow %d tele %d pwm/PPM_OUT %d ibus/SBUS_OUT %d", cfg.config.bindPower, cfg.config.runPower, cfg.config.telemetry, cfg.config.pulseMode, cfg.config.serialMode);
           break;
       case COMMAND::MODULE_VERSION:
         std::memcpy((void*)&version, &responseFrame->value, sizeof(version));
@@ -487,19 +487,19 @@ bool afhds3::syncSettings() {
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
-  PULSE_MODE modelPulseMode = moduleData->afhds3.isPWM() ? PULSE_MODE::PWM: PULSE_MODE::PPM;
+  PULSE_MODE modelPulseMode = moduleData->afhds3.isPWM() ? PULSE_MODE::PWM: PULSE_MODE::PPM_OUT;
   if(modelPulseMode != cfg.config.pulseMode) {
     cfg.config.pulseMode = modelPulseMode;
-    TRACE("AFHDS3 PWM/PPM %d", modelPulseMode);
+    TRACE("AFHDS3 PWM/PPM_OUT %d", modelPulseMode);
     uint8_t data[] = {0x16, 0x70, 0x01, (uint8_t)(modelPulseMode)};
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
   }
 
-  SERIAL_MODE modelSerialMode = moduleData->afhds3.isSbus() ? SERIAL_MODE::SBUS : SERIAL_MODE::IBUS;
+  SERIAL_MODE modelSerialMode = moduleData->afhds3.isSbus() ? SERIAL_MODE::SBUS_OUT : SERIAL_MODE::IBUS;
   if(modelSerialMode != cfg.config.serialMode) {
     cfg.config.serialMode = modelSerialMode;
-    TRACE("AFHDS3 IBUS/SBUS %d", modelSerialMode);
+    TRACE("AFHDS3 IBUS/SBUS_OUT %d", modelSerialMode);
     uint8_t data[] = {0x18, 0x70, 0x01, (uint8_t)(modelSerialMode)};
     putFrame(COMMAND::SEND_COMMAND, FRAME_TYPE::REQUEST_SET_EXPECT_DATA, data, sizeof(data));
     return true;
@@ -570,7 +570,7 @@ void afhds3::setToDefault() {
   moduleData->afhds3.failsafeTimeout = 1000;
   moduleData->channelsCount = 14 - 8;
   moduleData->failsafeMode = FAILSAFE_HOLD;
-  //" PWM+i"" PWM+s"" PPM+i"" PPM+s"
+  //" PWM+i"" PWM+s"" PPM_OUT+i"" PPM_OUT+s"
   moduleData->afhds3.mode = 0;
   for (uint8_t channel = 0; channel < MAX_OUTPUT_CHANNELS; channel++) {
     moduleData->failsafeChannels[channel] = 0;
@@ -608,8 +608,8 @@ void afhds3::setModelData() {
   cfg.config.emiStandard = EMI_STANDARD::FCC;
   cfg.config.telemetry = moduleData->afhds3.telemetry;
   cfg.config.pwmFreq = moduleData->afhds3.rxFreq;
-  cfg.config.serialMode = moduleData->afhds3.isSbus() ? SERIAL_MODE::SBUS: SERIAL_MODE::IBUS;
-  cfg.config.pulseMode = moduleData->afhds3.isPWM() ? PULSE_MODE::PWM: PULSE_MODE::PPM;
+  cfg.config.serialMode = moduleData->afhds3.isSbus() ? SERIAL_MODE::SBUS_OUT: SERIAL_MODE::IBUS;
+  cfg.config.pulseMode = moduleData->afhds3.isPWM() ? PULSE_MODE::PWM: PULSE_MODE::PPM_OUT;
   //use max channels - because channel count can not be changed after bind
   cfg.config.channelCount = MAX_CHANNELS;
   cfg.config.failSafeTimout = moduleData->afhds3.failsafeTimeout;

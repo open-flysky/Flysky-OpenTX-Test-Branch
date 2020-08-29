@@ -182,7 +182,7 @@ void per10ms()
 #endif
 
 #if defined(TELEMETRY_FRSKY) || defined(TELEMETRY_JETI)
-  if (!IS_DSM2_SERIAL_PROTOCOL(s_current_protocol[0])) {
+  if (!IS_DSM2_SERIAL_PROTOCOL(moduleState[0].protocol)) {
     telemetryInterrupt10ms();
   }
 #endif
@@ -202,7 +202,7 @@ void per10ms()
 #if defined(SDCARD)
   sdPoll10ms();
 #endif
-
+  outputTelemetryBuffer.per10ms();
   heartbeat |= HEART_TIMER_10MS;
 }
 
@@ -406,16 +406,16 @@ void checkModelIdUnique(uint8_t index, uint8_t module)
 {
   uint8_t modelId = g_model.header.modelId[module];
   uint8_t additionalOnes = 0;
-  char * name = reusableBuffer.msgbuf.msg;
+  char * name = reusableBuffer.moduleSetup.msg;
 
-  memset(reusableBuffer.msgbuf.msg, 0, sizeof(reusableBuffer.msgbuf.msg));
+  memset(reusableBuffer.moduleSetup.msg, 0, sizeof(reusableBuffer.moduleSetup.msg));
 
   if (modelId != 0) {
     for (uint8_t i = 0; i < MAX_MODELS; i++) {
       if (i != index) {
         if (modelId == modelHeaders[i].modelId[module]) {
-          if ((WARNING_LINE_LEN - 4 - (name - reusableBuffer.msgbuf.msg)) > (signed)(modelHeaders[i].name[0] ? zlen(modelHeaders[i].name, LEN_MODEL_NAME) : sizeof(TR_MODEL) + 2)) { // you cannot rely exactly on WARNING_LINE_LEN so using WARNING_LINE_LEN-2 (-2 for the ",")
-            if (reusableBuffer.msgbuf.msg[0] != 0) {
+          if ((WARNING_LINE_LEN - 4 - (name - reusableBuffer.moduleSetup.msg)) > (signed)(modelHeaders[i].name[0] ? zlen(modelHeaders[i].name, LEN_MODEL_NAME) : sizeof(TR_MODEL) + 2)) { // you cannot rely exactly on WARNING_LINE_LEN so using WARNING_LINE_LEN-2 (-2 for the ",")
+            if (reusableBuffer.moduleSetup.msg[0] != 0) {
               name = strAppend(name, ", ");
             }
             if (modelHeaders[i].name[0] == 0) {
@@ -440,9 +440,9 @@ void checkModelIdUnique(uint8_t index, uint8_t module)
     name = strAppend(name, ")");
   }
 
-  if (reusableBuffer.msgbuf.msg[0] != 0) {
+  if (reusableBuffer.moduleSetup.msg[0] != 0) {
     POPUP_WARNING(STR_MODELIDUSED);
-    SET_WARNING_INFO(reusableBuffer.msgbuf.msg, sizeof(reusableBuffer.msgbuf.msg), 0);
+    SET_WARNING_INFO(reusableBuffer.moduleSetup.msg, sizeof(reusableBuffer.moduleSetup.msg), 0);
   }
 }
 #endif
@@ -463,7 +463,7 @@ void modelDefault(uint8_t id)
 #if defined(PCBFLYSKY)
   g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_FLYSKY;
 #elif defined(PCBFRSKY)
-  g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_XJT;
+  g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_XJT_PXX1;
   g_model.moduleData[INTERNAL_MODULE].channelsCount = DEFAULT_CHANNELS(INTERNAL_MODULE);
 #elif defined(PCBSKY9X)
   g_model.moduleData[EXTERNAL_MODULE].type = MODULE_TYPE_PPM;
@@ -1838,13 +1838,13 @@ void doMixerCalculations()
       }
     }
 
-#if defined(PXX) || defined(DSM2)
+#if defined(PXX1) || defined(DSM2)
     static uint8_t countRangecheck = 0;
     for (uint8_t i=0; i<NUM_MODULES; ++i) {
 #if defined(MULTIMODULE)
-      if (moduleFlag[i] != MODULE_NORMAL_MODE || (i == EXTERNAL_MODULE && multiModuleStatus.isBinding())) {
+      if (moduleState[i].mode != MODULE_MODE_NORMAL || (i == EXTERNAL_MODULE && getMultiModuleStatus(i).isBinding())) {
 #else
-      if (moduleFlag[i] != MODULE_NORMAL_MODE) {
+      if (moduleState[i].mode != MODULE_MODE_NORMAL) {
 #endif
         if (++countRangecheck >= 250) {
           countRangecheck = 0;
@@ -2227,7 +2227,7 @@ FORCEINLINE void FRSKY_USART_vect()
 ISR(USART_UDRE_vect_N(TLM_USART))
 {
 #if defined(TELEMETRY_FRSKY) && defined(DSM2_SERIAL)
-  if (IS_DSM2_PROTOCOL(g_model.protocol)) { // TODO not s_current_protocol?
+  if (IS_DSM2_PROTOCOL(g_model.protocol)) { // TODO not moduleState[].protocol?
     DSM2_USART_vect();
   }
   else {

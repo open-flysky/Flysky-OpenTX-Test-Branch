@@ -30,17 +30,10 @@ void extmoduleStop(void);
 
 void intmoduleNoneStart(void);
 void intmodulePxxStart(void);
-void intmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us);
 
 void extmoduleNoneStart(void);
 void extmodulePpmStart(void);
 void extmodulePxxStart(void);
-#if defined(DSM2)
-void extmoduleDsm2Start(void);
-#endif
-void extmoduleCrossfireStart(void);
-void extmoduleSerialStart(uint32_t baudRate, uint32_t period_half_us, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
-
 
 void init_no_pulses(uint32_t port) {
   if (port == INTERNAL_MODULE)
@@ -63,79 +56,6 @@ void init_ppm(uint32_t port) {
 }
 
 void disable_ppm(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}
-
-void init_pxx(uint32_t port) {
-  if (port == INTERNAL_MODULE)
-    intmodulePxxStart();
-  else
-    extmodulePxxStart();
-}
-void disable_pxx(uint32_t port) {
-  if (port == INTERNAL_MODULE)
-    intmoduleStop();
-  else
-    extmoduleStop();
-}
-
-void init_afhds3(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleSerialStart(afhds3uart.baudrate, AFHDS3_PERIOD_HALF_US, afhds3uart.wordLength, afhds3uart.stopBits, afhds3uart.parity);
-  }
-}
-void disable_afhds3(uint32_t port) {
-  if (port == EXTERNAL_MODULE) extmoduleStop();
-}
-
-
-void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us)
-{
-  if (port == INTERNAL_MODULE) {
-    intmoduleSerialStart(baudrate, period_half_us);
-  }
-  else if (port == EXTERNAL_MODULE) {
-    extmoduleSerialStart(baudrate, period_half_us, WordLength_8b, StopBits_1, Parity_No);
-  }
-}
-
-#if defined(DSM2)
-void init_dsm2(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleDsm2Start();
-  }
-}
-
-void disable_dsm2(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}
-#endif
-
-void init_sbusOut(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleDsm2Start();
-  }
-}
-
-void disable_sbusOut(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}
-
-void init_crossfire(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleCrossfireStart();
-  }
-}
-
-void disable_crossfire(uint32_t port) {
   if (port == EXTERNAL_MODULE) {
     extmoduleStop();
   }

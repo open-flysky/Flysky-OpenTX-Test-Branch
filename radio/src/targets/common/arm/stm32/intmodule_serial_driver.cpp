@@ -62,7 +62,7 @@ void intmoduleNoneStart()
 
 //#define INTMODULE_RX_INT
 static uint8_t intmodule_hal_inited = 0;
-void intmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us)
+void intmoduleSerialStart(uint32_t baudrate, uint8_t rxEnable, uint16_t parity, uint16_t stopBits, uint16_t wordLength)
 {
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = INTMODULE_TX_DMA_Stream_IRQn;
@@ -138,6 +138,14 @@ void intmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us)
   USART_Cmd(INTMODULE_USART, ENABLE);
   DMA_Cmd(INTMODULE_RX_DMA_STREAM, ENABLE); // TRACE("RF DMA receive started...");
  #endif
+  intmodule_hal_inited = 1;
+}
+
+
+#if defined(INTERNAL_MODULE_MULTI)
+void intmoduleTimerStart(uint32_t periodMs)
+{
+/*
   // Timer
   INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
   INTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
@@ -151,13 +159,30 @@ void intmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us)
   INTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
   NVIC_SetPriority(INTMODULE_TIMER_IRQn, 7);
   NVIC_EnableIRQ(INTMODULE_TIMER_IRQn);
+*/
 
-  intmodule_hal_inited = 1;
+  // Timer
+  INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
+  INTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
+  INTMODULE_TIMER->ARR = periodMs * 2000;
+  INTMODULE_TIMER->CCR2 = (periodMs - 1) * 2000;
+  INTMODULE_TIMER->CCER = TIM_CCER_CC3E;
+  INTMODULE_TIMER->CCMR2 = 0;
+  INTMODULE_TIMER->EGR = 1; // Restart
 
+  INTMODULE_TIMER->CCMR2 = TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3M_0; // Toggle CC1 o/p
+  INTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
+  INTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;  // Enable this interrupt
+  INTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
+
+  NVIC_EnableIRQ(INTMODULE_TIMER_IRQn);
+  NVIC_SetPriority(INTMODULE_TIMER_IRQn, 7);
 }
-void intmodulePxxStart()
-{
-  intmoduleSerialStart(INTMODULE_USART_PXX_BAUDRATE, 18000);
+#endif
+
+
+void intmodulePxx1SerialStart() {
+   intmoduleSerialStart(INTMODULE_PXX1_SERIAL_BAUDRATE, false, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
 }
 
 extern "C" void INTMODULE_USART_IRQHandler(void)
@@ -196,13 +221,13 @@ uint8_t intmoduleGetByte(uint8_t * byte)
 #endif
 }
 
-static uint8_t dmaBuffer[512] __DMA;
+static uint8_t dmaBuffer[254] __DMA;
 void intmoduleSendBufferDMA(uint8_t * data, uint8_t size)
 {
-  if (IS_PXX_PROTOCOL(s_current_protocol[INTERNAL_MODULE]) || IS_FLYSKY_PROTOCOL(s_current_protocol[INTERNAL_MODULE])) {
-    if (size > 0 && size < 512) {
+  if (IS_PXX_PROTOCOL(moduleState[INTERNAL_MODULE].protocol) || IS_FLYSKY_PROTOCOL(moduleState[INTERNAL_MODULE].protocol)) {
+    if (size > 0 && size <= 254) {
 #if !defined(SIMU)
-      for (int idx = 0; idx < size; idx++) {
+      for (uint8_t idx = 0; idx < size; idx++) {
           dmaBuffer[idx] = data[idx];
       }
 #endif
@@ -234,15 +259,29 @@ void intmoduleSendNextFrame()
 {
     uint8_t * data;
     uint8_t size;
+  switch(moduleState[INTERNAL_MODULE].protocol) {
+#if defined(AFHDS2)
+    case PROTOCOL_CHANNELS_AFHDS2:
+      data = (uint8_t*)intmodulePulsesData.flysky.pulses;
+      size = intmodulePulsesData.flysky.ptr - data;
+      break;
+#endif
 
-    if (s_current_protocol[INTERNAL_MODULE] == PROTO_FLYSKY) {
-      data = modulePulsesData[INTERNAL_MODULE].flysky.pulses;
-      size = modulePulsesData[INTERNAL_MODULE].flysky.ptr - data;
-    }
-    else {
-      data = modulePulsesData[INTERNAL_MODULE].pxx_uart.pulses;
-      size = modulePulsesData[INTERNAL_MODULE].pxx_uart.ptr - data;
-    }
+#if defined(PXX1)
+    case PROTOCOL_CHANNELS_PXX1_SERIAL:
+      data = (uint8_t*)intmodulePulsesData.pxx_uart.getData();
+      size = intmodulePulsesData.pxx_uart.getSize();
+      break;
+#endif
+
+#if defined(INTERNAL_MODULE_MULTI)
+    case PROTOCOL_CHANNELS_MULTIMODULE:
+      data = (uint8_t*)intmodulePulsesData.multi.getData();
+      size = intmodulePulsesData.multi.getSize();
+      break;
+#endif
+  }
+
     intmoduleSendBufferDMA(data, size);
 }
 
@@ -254,8 +293,10 @@ extern "C" void INTMODULE_TIMER_IRQHandler()
 
   INTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // clear flag
 
-  setupPulses(INTERNAL_MODULE);
-  intmoduleSendNextFrame();
+  if(setupPulsesInternalModule()){
+    intmoduleSendNextFrame();
+  }
+
 
   DEBUG_TIMER_STOP(debugTimerIntPulsesDuration);
 }

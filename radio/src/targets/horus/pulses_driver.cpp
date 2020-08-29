@@ -25,12 +25,10 @@ void extmoduleStop(void);
 
 void intmoduleNoneStart(void);
 void intmodulePxxStart(void);
-void intmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us)
 void extmoduleNoneStart(void);
 void extmodulePpmStart(void);
 void extmodulePxxStart(void);
 void extmoduleSerialStart(uint32_t baudrate, uint32_t period_half_us);
-void extmoduleCrossfireStart(void);
 
 void init_no_pulses(uint32_t port)
 {
@@ -62,22 +60,6 @@ void disable_ppm(uint32_t port)
   }
 }
 
-void init_pxx(uint32_t port)
-{
-  if (port == INTERNAL_MODULE)
-    intmodulePxxStart();
-  else
-    extmodulePxxStart();
-}
-
-void disable_pxx(uint32_t port)
-{
-  if (port == INTERNAL_MODULE)
-    intmoduleStop();
-  else
-    extmoduleStop();
-}
-
 #if defined(DSM2)
 void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us)
 {
@@ -85,9 +67,6 @@ void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us)
   if (port == EXTERNAL_MODULE) {
     extmoduleSerialStart(baudrate, period_half_us);
   }
-  if (port == INTERNAL_MODULE) {
-    intmoduleSerialStart(baudrate, period_half_us);
-  } 
 }
 
 void disable_serial(uint32_t port)
@@ -97,17 +76,3 @@ void disable_serial(uint32_t port)
   }
 }
 #endif
-
-void init_crossfire(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleCrossfireStart();
-  }
-}
-
-void disable_crossfire(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}

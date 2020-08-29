@@ -160,7 +160,7 @@
 
 #define LEN_VPROTOS            "\006"
 
-#if defined(PXX)
+#if defined(PXX1)
   #define TR_PXX               "PXX\0  "
 #elif defined(DSM2) || defined(IRPROTOS)
   #define TR_PXX               "[PXX]\0"

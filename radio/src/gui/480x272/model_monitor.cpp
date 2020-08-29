@@ -23,7 +23,7 @@
 #include "libwindows.h"
 
 #define SET_DIRTY()     storageDirty(EE_MODEL)
-#define STR_4BIND(v)    ((moduleFlag[moduleIndex] == MODULE_BIND) ? STR_MODULE_BINDING : (v))
+#define STR_4BIND(v)    ((moduleState[moduleIndex].mode == MODULE_MODE_BIND) ? STR_MODULE_BINDING : (v))
 
 class ChannelMonitorBargraph: public Window {
   public:

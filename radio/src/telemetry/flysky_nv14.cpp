@@ -134,7 +134,7 @@ void flySkyNv14ProcessTelemetryPacket(const uint8_t * ptr, uint8_t sensorID )
   for (const FlyskyNv14Sensor sensor : Nv14Sensor) {
   if (sensor.id == sensorID) {
     int32_t value = GetSensorValueFlySkyNv14(&sensor, ptr);
-    setTelemetryValue(TELEM_PROTO_FLYSKY_NV14, sensor.id, sensor.subId, instnace, value, sensor.unit, sensor.precision);
+    setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_NV14, sensor.id, sensor.subId, instnace, value, sensor.unit, sensor.precision);
   }
     }
 

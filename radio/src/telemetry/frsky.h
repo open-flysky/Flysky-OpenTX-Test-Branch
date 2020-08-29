@@ -415,7 +415,7 @@ enum AlarmLevel {
 #define TELEMETRY_MIN_CELL_VOLTAGE        (telemetryData.hub.minCellVolts * TELEMETRY_CELL_VOLTAGE_MUTLIPLIER)
 
 #define START_STOP                        0x7e
-#define BYTESTUFF                         0x7d
+#define BYTE_STUFF                         0x7d
 #define STUFF_MASK                        0x20
 
 #if defined(CPUARM)
@@ -462,17 +462,6 @@ void telemetryInit(void);
 #endif
 
 void telemetryInterrupt10ms();
-
-enum TelemetryProtocol
-{
-  TELEM_PROTO_FRSKY_D,
-  TELEM_PROTO_FRSKY_SPORT,
-  TELEM_PROTO_CROSSFIRE,
-  TELEM_PROTO_SPEKTRUM,
-  TELEM_PROTO_LUA,
-  TELEM_PROTO_FLYSKY_IBUS,
-  TELEM_PROTO_FLYSKY_NV14,
-};
 
 enum TelemAnas {
   TELEM_ANA_A1,

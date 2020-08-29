@@ -118,7 +118,7 @@ void auxSerialInit(unsigned int mode, unsigned int protocol)
       break;
 #endif
     case UART_MODE_TELEMETRY:
-      if (protocol == PROTOCOL_FRSKY_D_SECONDARY) {
+      if (protocol == PROTOCOL_TELEMETRY_FRSKY_D_SECONDARY) {
         auxSerialSetup(FRSKY_D_BAUDRATE, true);
       }
       break;

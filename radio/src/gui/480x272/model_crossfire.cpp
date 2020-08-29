@@ -656,7 +656,7 @@ void CrossfireConfigPage::update() {
       timoutSettings = 0; //load next
     }
   }
-  if (now > timoutSettings) {
+  if (now > timoutSettings || isCrossfireError()) {
     timoutSettings = get_tmr10ms() + 200;
     crossfire_state currentState = X_IDLE;
     //Loading or saving
