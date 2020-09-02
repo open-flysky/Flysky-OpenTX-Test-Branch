@@ -33,7 +33,6 @@
 
 #define AFHDS2_SYNC_SAMPLES         8
 #define AFHDS2_NEGATIVE_SYNC_LIMIT  (AFHDS2_PERIOD - SAFE_SYNC_LAG)
-#define AFHDS2_SAFE_SYNC_US         100
 
 struct FlyskyNv14Sensor {
   const uint16_t id;
@@ -135,10 +134,8 @@ int32_t GetSensorValueFlySkyNv14(const FlyskyNv14Sensor* sensor, const uint8_t *
 int16_t syncAfhds2min=0;
 int16_t syncAfhds2max=0;
 unsigned currentSyncIndex;
-bool syncAfhds2Module;
 
 void flySkyNv14Sync(int16_t delayValue) {
-  int16_t delayValue = value;
   if(delayValue > AFHDS2_NEGATIVE_SYNC_LIMIT) {
      delayValue -= AFHDS2_PERIOD;
   }
@@ -158,14 +155,14 @@ void flySkyNv14Sync(int16_t delayValue) {
     TRACE("min %d max %d", syncAfhds2min, syncAfhds2max);
     //check against to late delivered frames up to 800us, some frames still in range
     if (syncAfhds2min < 0 && syncAfhds2max < SAFE_SYNC_LAG) {
-      getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, (syncAfhds2min-AFHDS2_SAFE_SYNC_US)+SAFE_SYNC_LAG);
+      getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, (syncAfhds2min-100)+SAFE_SYNC_LAG);
     }
-    else if(syncAfhds2max > SAFE_SYNC_LAG + AFHDS2_SAFE_SYNC_US) { // > 900us
-      if (syncAfhds2min > AFHDS2_SAFE_SYNC_US) { //never sync if last registred 
-        getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, (syncAfhds2min-AFHDS2_SAFE_SYNC_US)+SAFE_SYNC_LAG);
+    else if(syncAfhds2max > SAFE_SYNC_LAG + 100) { // > 900us
+      if (syncAfhds2min > 100) { //never sync if last registred value is below 100us - we are to close to perfect time
+        getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, (syncAfhds2min-100)+SAFE_SYNC_LAG);
       }
       else if (syncAfhds2min < 0) {
-        getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, (syncAfhds2max-(SAFE_SYNC_LAG+AFHDS2_SAFE_SYNC_US)))+SAFE_SYNC_LAG);
+        getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, (syncAfhds2max-900)+SAFE_SYNC_LAG);
       }
     }
   }
