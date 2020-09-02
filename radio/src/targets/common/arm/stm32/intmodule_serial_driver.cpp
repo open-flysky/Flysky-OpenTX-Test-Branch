@@ -27,12 +27,8 @@ DMAFifo<512> intmoduleDMAFifo __DMA (INTMODULE_RX_DMA_STREAM);
 void intmoduleStop()
 {
   INTERNAL_MODULE_OFF();
-
   NVIC_DisableIRQ(INTMODULE_TIMER_IRQn);
-
   INTMODULE_TX_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
-  INTMODULE_TIMER->DIER &= ~TIM_DIER_CC2IE;
-  INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
 }
 
 void intmoduleNoneStart()
@@ -141,46 +137,6 @@ void intmoduleSerialStart(uint32_t baudrate, uint8_t rxEnable, uint16_t parity, 
   intmodule_hal_inited = 1;
 }
 
-
-#if defined(INTERNAL_MODULE_MULTI)
-void intmoduleTimerStart(uint32_t periodMs)
-{
-/*
-  // Timer
-  INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
-  INTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
-  INTMODULE_TIMER->ARR = period_half_us;
-  INTMODULE_TIMER->CCR2 = period_half_us - 2000; // Update time
-  INTMODULE_TIMER->CCER |= TIM_CCER_CC2E;
-  INTMODULE_TIMER->EGR |= TIM_EGR_CC2G; //
-  INTMODULE_TIMER->CCMR1 |= TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_0; // Toggle CC1 o/p
-  INTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-  INTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;  // Enable this interrupt
-  INTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
-  NVIC_SetPriority(INTMODULE_TIMER_IRQn, 7);
-  NVIC_EnableIRQ(INTMODULE_TIMER_IRQn);
-*/
-
-  // Timer
-  INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
-  INTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
-  INTMODULE_TIMER->ARR = periodMs * 2000;
-  INTMODULE_TIMER->CCR2 = (periodMs - 1) * 2000;
-  INTMODULE_TIMER->CCER = TIM_CCER_CC3E;
-  INTMODULE_TIMER->CCMR2 = 0;
-  INTMODULE_TIMER->EGR = 1; // Restart
-
-  INTMODULE_TIMER->CCMR2 = TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3M_0; // Toggle CC1 o/p
-  INTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-  INTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;  // Enable this interrupt
-  INTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
-
-  NVIC_EnableIRQ(INTMODULE_TIMER_IRQn);
-  NVIC_SetPriority(INTMODULE_TIMER_IRQn, 7);
-}
-#endif
-
-
 void intmodulePxx1SerialStart() {
    intmoduleSerialStart(INTMODULE_PXX1_SERIAL_BAUDRATE, false, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
 }
@@ -284,20 +240,3 @@ void intmoduleSendNextFrame()
 
     intmoduleSendBufferDMA(data, size);
 }
-
-extern "C" void INTMODULE_TIMER_IRQHandler()
-{
-  DEBUG_INTERRUPT(INT_TIM1CC);
-  DEBUG_TIMER_SAMPLE(debugTimerIntPulses);
-  DEBUG_TIMER_START(debugTimerIntPulsesDuration);
-
-  INTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // clear flag
-
-  if(setupPulsesInternalModule()){
-    intmoduleSendNextFrame();
-  }
-
-
-  DEBUG_TIMER_STOP(debugTimerIntPulsesDuration);
-}
-

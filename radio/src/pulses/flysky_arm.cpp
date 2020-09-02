@@ -65,6 +65,7 @@ enum DEBUG_RF_FRAME_PRINT_E {
 };
 #define DEBUG_RF_FRAME_PRINT            FRAME_PRINT_OFF
 #define FLYSKY_MODULE_TIMEOUT           155 /* ms */
+#define FLYSKY_PERIOD                   4 /*ms*/
 #define NUM_OF_NV14_CHANNELS            (14)
 #define VALID_CH_DATA(v)                ((v) > 900 && (v) < 2100)
 #define FAILSAVE_SEND_COUNTER_MAX       (400)

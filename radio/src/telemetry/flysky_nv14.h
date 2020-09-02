@@ -31,8 +31,11 @@ enum FlySkySensorType_E {
   FLYSKY_SENSOR_EXT_VOLTAGE,
   FLYSKY_SENSOR_MOTO_RPM,
   FLYSKY_SENSOR_PRESURRE,
-  FLYSKY_SENSOR_GPS
+  FLYSKY_SENSOR_GPS,
+  FLYSKY_SENSOR_SYNC = 0xEE,
 };
+
+
 typedef struct FLYSKY_GPS_INFO_S {
   uint8_t position_fix;
   uint8_t satell_cnt;
@@ -62,4 +65,5 @@ void flySkyNv14ProcessTelemetryPacket(const uint8_t * ptr, uint8_t SensorType );
 void processInternalFlySkyTelemetryData(uint8_t byte);
 uint8_t intmoduleGetByte(uint8_t * byte);
 
+extern bool syncAfhds2Module;
 #endif

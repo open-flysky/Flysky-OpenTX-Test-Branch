@@ -19,6 +19,8 @@
  */
 
 #include "opentx.h"
+#include "mixer_scheduler.h"
+
 uint16_t telemetryStreaming = 0;
 uint8_t telemetryRxBuffer[TELEMETRY_RX_PACKET_SIZE];   // Receive buffer. 9 bytes (full packet), worst case 18 bytes with byte-stuffing (+1)
 uint8_t telemetryRxBufferCount = 0;
@@ -487,3 +489,95 @@ OutputTelemetryBuffer outputTelemetryBuffer __DMA;
 #if defined(LUA) || defined(CROSSFIRE_NATIVE)
 Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE> * luaInputTelemetryFifo = new Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE>();
 #endif
+
+#if defined(HARDWARE_INTERNAL_MODULE)
+
+static ModuleSyncStatus moduleSyncStatus[NUM_MODULES];
+
+ModuleSyncStatus &getModuleSyncStatus(uint8_t moduleIdx)
+{
+  return moduleSyncStatus[moduleIdx];
+}
+
+#else
+
+static ModuleSyncStatus moduleSyncStatus;
+
+ModuleSyncStatus &getModuleSyncStatus(uint8_t moduleIdx)
+{
+  return moduleSyncStatus;
+}
+
+#endif
+
+ModuleSyncStatus::ModuleSyncStatus()
+{
+  memset(this, 0, sizeof(ModuleSyncStatus));
+}
+
+void ModuleSyncStatus::update(uint16_t newRefreshRate, int16_t newInputLag)
+{
+  if (!newRefreshRate)
+    return;
+
+  if (newRefreshRate < MIN_REFRESH_RATE)
+    newRefreshRate = newRefreshRate * (MIN_REFRESH_RATE / (newRefreshRate + 1));
+  else if (newRefreshRate > MAX_REFRESH_RATE)
+    newRefreshRate = MAX_REFRESH_RATE;
+
+  refreshRate = newRefreshRate;
+  inputLag    = newInputLag;
+  currentLag  = newInputLag;
+  TRACE("refreshRate %d inputLag %d currentLag %d", refreshRate, inputLag, currentLag);
+  lastUpdate  = get_tmr10ms();
+}
+void ModuleSyncStatus::invalidate() {
+  //make invalid after use
+  lastUpdate -= SYNC_UPDATE_TIMEOUT;
+  currentLag = SAFE_SYNC_LAG;
+}
+
+uint16_t ModuleSyncStatus::getAdjustedRefreshRate()
+{
+  int16_t lag = currentLag - SAFE_SYNC_LAG;
+  int32_t newRefreshRate = refreshRate;
+
+  if (lag == 0) {
+    TRACE("[SYNC] rate = %dus", refreshRate);
+    return refreshRate;
+  }
+
+  newRefreshRate += lag;
+  //include safe lag - maybe we want to go below MIN_REFRESH_RATE
+  if (newRefreshRate < (MIN_REFRESH_RATE - SAFE_SYNC_LAG)) {
+      newRefreshRate = MIN_REFRESH_RATE;
+  }
+  else if (newRefreshRate > MAX_REFRESH_RATE) {
+    newRefreshRate = MAX_REFRESH_RATE;
+  }
+
+  TRACE("[SYNC] rate = %dus",newRefreshRate);
+
+  currentLag -= newRefreshRate - refreshRate;
+  return (uint16_t)newRefreshRate;
+}
+
+void ModuleSyncStatus::getRefreshString(char * statusText)
+{
+  if (!isValid()) {
+    return;
+  }
+
+  char * tmp = statusText;
+#if defined(DEBUG)
+  *tmp++ = 'L';
+  tmp = strAppendUnsigned(tmp, inputLag, 5);
+  tmp = strAppend(tmp, "us R ");
+  tmp = strAppendUnsigned(tmp, (uint32_t) (refreshRate / 1000), 5);
+  tmp = strAppend(tmp, "us");
+#else
+  tmp = strAppend(tmp, "Sync at ");
+  tmp = strAppendUnsigned(tmp, (uint32_t) (refreshRate / 1000000));
+  tmp = strAppend(tmp, " ms");
+#endif
+}

@@ -43,7 +43,7 @@
 #define READ_SETTINGS_ID               0x2C
 #define WRITE_SETTINGS_ID              0x2D
 #define CROSSFIRE_COMMAND_ID           0x32
-
+#define RADIO_ID                       0x3A
 
 
 void processCrossfireTelemetryData(uint8_t data);
@@ -62,10 +62,10 @@ const uint8_t CROSSFIRE_PERIODS[] = {
 };
 #if SPORT_MAX_BAUDRATE < 400000
 #define CROSSFIRE_BAUDRATE    CROSSFIRE_BAUDRATES[g_eeGeneral.telemetryBaudrate]
-#define CROSSFIRE_PERIOD      CROSSFIRE_PERIODS[g_eeGeneral.telemetryBaudrate]
+#define CROSSFIRE_PERIOD      (CROSSFIRE_PERIODS[g_eeGeneral.telemetryBaudrate]*1000)
 #else
 #define CROSSFIRE_BAUDRATE       400000
-#define CROSSFIRE_PERIOD         4 // 4ms
+#define CROSSFIRE_PERIOD         6666 /* us; 150 Hz */
 #endif
 
 #define CROSSFIRE_TELEM_MIRROR_BAUDRATE   115200

@@ -521,6 +521,12 @@ void ModelTelemetryPage::build(Window * window, int8_t focusSensorIndex)
     }
   }
 
+  auto sync = new TextButton(window, grid.getLineSlot(), "Sync module");
+  sync->setPressHandler([=]() {
+      syncAfhds2Module = true;
+      return 1;
+  });
+  grid.nextLine();
   // Autodiscover button
   auto discover = new TextButton(window, grid.getLineSlot(), STR_DISCOVER_SENSORS);
   discover->setPressHandler([=]() {

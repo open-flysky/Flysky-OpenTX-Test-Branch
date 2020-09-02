@@ -135,9 +135,20 @@ public:
 
   virtual void build(Window * window) override
   {
+    static int32_t syncVal = 0;
     GridLayout grid;
     grid.setLabelWidth(180);
-    //new StaticText(window, grid.getLabelSlot(), )
+    
+    new StaticText(window, grid.getLabelSlot(), "Sync int mod");
+    new NumberEdit(window, grid.getFieldSlot(), 0, AFHDS2_PERIOD,  GET_DEFAULT(syncVal), [=](int32_t newValue) { syncVal = newValue; });
+    grid.nextLine();
+    TextButton* btn = new TextButton(window, grid.getLineSlot(), "Sync");
+    btn->setPressHandler([=]() -> uint8_t {
+      getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, syncVal + SAFE_SYNC_LAG);
+      syncVal = 0;
+      return 0;
+    });
+    grid.nextLine();
     char tmpBuffer[32];
     NumberEdit * ne;
     uint8_t index = 0;

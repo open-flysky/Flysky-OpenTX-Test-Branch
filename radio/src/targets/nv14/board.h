@@ -189,14 +189,10 @@ void init_serial(uint32_t port, uint32_t baudrate, uint32_t period_half_us);
 void intmoduleSendNextFrame();
 void extmoduleSendNextFrame();
 
-void extmoduleSoftSerialStart(uint32_t baudRate, uint32_t period_half_us);
-void extmoduleSerialStart(uint32_t baudRate, uint32_t period_half_us, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
+void extmoduleSoftSerialStart();
+void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
 void intmoduleSerialStart(uint32_t baudrate, uint8_t rxEnable, uint16_t parity, uint16_t stopBits, uint16_t wordLength);
 
-
-#if defined(INTERNAL_MODULE_MULTI)
-void intmoduleTimerStart(uint32_t periodMs);
-#endif
 // Trainer driver
 void init_trainer_ppm(void);
 void stop_trainer_ppm(void);

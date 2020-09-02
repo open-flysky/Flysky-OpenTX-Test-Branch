@@ -188,7 +188,7 @@ template<class T> struct PpmPulsesData {
 #define EXTMODULE_USART_PXX_BAUDRATE 420000
 #define INTMODULE_USART_PXX_BAUDRATE 450000
 
-#define PXX_PERIOD 4 /*ms*/
+#define PXX_PERIOD                   4000 /*us*/
 #else
 #define EXTMODULE_USART_PXX_BAUDRATE 115200
 #define INTMODULE_USART_PXX_BAUDRATE 115200
@@ -196,29 +196,28 @@ template<class T> struct PpmPulsesData {
 #endif
 
 #define HALF_US_MULTI 200
-#define PERIOD_LENGHT 2000
 
-#define PXX_PERIOD 9 /*ms*/
-#define PXX_PERIOD_HALF_US (PXX_PERIOD * PERIOD_LENGHT)
+#define PXX_PERIOD                  9000/*us*/
+#define PXX_PERIOD_HALF_US          (PXX_PERIOD * 2)
+#define AFHDS2_PERIOD               3850 /*us*/
+#define AFHDS2_PERIOD_HALF_US       (AFHDS2_PERIOD * 2)
 
-#define FLYSKY_PERIOD 4 /*ms*/
-#define FLYSKY_PERIOD_HALF_US (FLYSKY_PERIOD * PERIOD_LENGHT)
-#define AFHDS3_PERIOD 4 /*ms*/
-#define AFHDS3_PERIOD_HALF_US (AFHDS3_PERIOD * PERIOD_LENGHT)
+#define AFHDS3_PERIOD               4000 /*us*/
+#define AFHDS3_PERIOD_HALF_US       (AFHDS3_PERIOD * 2)
 
 
 #define PPM_PERIOD_HALF_US(module)   ((g_model.moduleData[module].ppm.frameLength * 5 + 225) * 200) /*half us*/
-#define PPM_PERIOD(module)           (PPM_PERIOD_HALF_US(module) / 2000) /*ms*/
+#define PPM_PERIOD(module)           (PPM_PERIOD_HALF_US(module) / 2) /*us*/
 
 #define DSM2_BAUDRATE 125000
-#define DSM2_PERIOD 22 /*ms*/
+#define DSM2_PERIOD                  22000 /*us*/
 
 #define SBUS_BAUDRATE 100000
 #define SBUS_PERIOD_HALF_US ((g_model.moduleData[EXTERNAL_MODULE].sbus.refreshRate * 5 + 225) * HALF_US_MULTI)                                          /*half us*/
-#define SBUS_PERIOD (SBUS_PERIOD_HALF_US / PERIOD_LENGHT)
+#define SBUS_PERIOD                  (SBUS_PERIOD_HALF_US / 2) /*us*/
 
-#define MULTIMODULE_BAUDRATE 100000
-#define MULTIMODULE_PERIOD 7 /*ms*/
+#define MULTIMODULE_BAUDRATE         100000
+#define MULTIMODULE_PERIOD           7000 /*us*/
 
 #if defined(PPM_PIN_SERIAL)
 PACK(struct Dsm2SerialPulsesData {
@@ -234,7 +233,6 @@ typedef Dsm2SerialPulsesData Dsm2PulsesData;
 PACK(struct Dsm2TimerPulsesData {
   pulse_duration_t pulses[MAX_PULSES_TRANSITIONS];
   pulse_duration_t * ptr;
-  uint16_t rest;
   uint8_t index;
 });
 typedef Dsm2TimerPulsesData Dsm2PulsesData;

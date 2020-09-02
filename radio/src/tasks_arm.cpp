@@ -20,6 +20,7 @@
 
 #include "opentx.h"
 #include "shutdown_animation.h"
+#include "mixer_scheduler.h"
 
 RTOS_TASK_HANDLE menusTaskId;
 RTOS_DEFINE_STACK(menusStack, MENUS_STACK_SIZE);
@@ -30,6 +31,9 @@ RTOS_DEFINE_STACK(mixerStack, MIXER_STACK_SIZE);
 RTOS_TASK_HANDLE audioTaskId;
 RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);
 
+RTOS_TASK_HANDLE telemetryTaskId;
+RTOS_DEFINE_STACK(telemetryStack, TELEMETRY_STACK_SIZE);
+
 RTOS_MUTEX_HANDLE audioMutex;
 RTOS_MUTEX_HANDLE mixerMutex;
 
@@ -38,6 +42,7 @@ RTOS_FLAG_HANDLE openTxInitCompleteFlag;
 enum TaskIndex {
   MENU_TASK_INDEX,
   MIXER_TASK_INDEX,
+  TELEMETRY_TASK_INDEX,
   AUDIO_TASK_INDEX,
   CLI_TASK_INDEX,
   TOUCH_TASK_INDEX,
@@ -51,6 +56,7 @@ void stackPaint()
   menusStack.paint();
   mixerStack.paint();
   audioStack.paint();
+  telemetryStack.paint();
 #if defined(CLI)
   cliStack.paint();
 #endif
@@ -82,71 +88,100 @@ bool isForcePowerOffRequested()
 
 bool isModuleSynchronous(uint8_t moduleIdx)
 {
-  uint8_t protocol = moduleState[moduleIdx].protocol;
-  if (protocol == PROTOCOL_CHANNELS_PXX2_HIGHSPEED || protocol == PROTOCOL_CHANNELS_PXX2_LOWSPEED || protocol == PROTOCOL_CHANNELS_CROSSFIRE || protocol == PROTOCOL_CHANNELS_NONE || protocol == PROTOCOL_CHANNELS_AFHDS3)
-    return true;
+    switch(moduleState[moduleIdx].protocol) {
+    case PROTOCOL_CHANNELS_PXX2_HIGHSPEED:
+    case PROTOCOL_CHANNELS_PXX2_LOWSPEED:
+    case PROTOCOL_CHANNELS_CROSSFIRE:
+    case PROTOCOL_CHANNELS_NONE:
+#if defined(AFHDS2)
+    case PROTOCOL_CHANNELS_AFHDS2:
+#endif
+#if defined(AFHDS2)
+    case PROTOCOL_CHANNELS_AFHDS3:
+#endif
+#if defined(MULTIMODULE)
+    case PROTOCOL_CHANNELS_MULTIMODULE:
+#endif
 #if defined(INTMODULE_USART) || defined(EXTMODULE_USART)
-  if (protocol == PROTOCOL_CHANNELS_PXX1_SERIAL || protocol == PROTOCOL_CHANNELS_AFHDS2)
+    case PROTOCOL_CHANNELS_PXX1_SERIAL:
     return true;
 #endif
+#if defined(DSM2)
+    case PROTOCOL_CHANNELS_SBUS:
+    case PROTOCOL_CHANNELS_DSM2_LP45:
+    case PROTOCOL_CHANNELS_DSM2_DSM2:
+    case PROTOCOL_CHANNELS_DSM2_DSMX:
+#endif
+      return true;
+  }
   return false;
 }
 
-void sendSynchronousPulses(uint8_t runMask)
+void sendSynchronousPulses()
 {
 #if defined(HARDWARE_INTERNAL_MODULE)
-  if ((runMask & (1 << INTERNAL_MODULE)) && isModuleSynchronous(INTERNAL_MODULE)) {
+  if (isModuleSynchronous(INTERNAL_MODULE)) {
     if (setupPulsesInternalModule())
       intmoduleSendNextFrame();
   }
 #endif
 
-  if ((runMask & (1 << EXTERNAL_MODULE)) && isModuleSynchronous(EXTERNAL_MODULE)) {
+  if (isModuleSynchronous(EXTERNAL_MODULE)) {
     if (setupPulsesExternalModule())
       extmoduleSendNextFrame();
   }
 }
 
-uint32_t nextMixerTime[NUM_MODULES];
+RTOS_FLAG_HANDLE telemetryFlag;
+
+TASK_FUNCTION(telemetryTask)
+{
+  while(1) {
+#if defined(SIMU)
+  if (pwrCheck() == e_power_off || main_thread_running == 0) {
+    TASK_RETURN();
+  }
+#endif
+  // if(!telemetryFlag) 
+  //   break;
+  RTOS_CLEAR_FLAG(telemetryFlag);
+  RTOS_WAIT_FLAG(telemetryFlag, 10);
+  DEBUG_TIMER_START(debugTimerTelemetryWakeup);
+  telemetryWakeup();
+  DEBUG_TIMER_STOP(debugTimerTelemetryWakeup);
+  }
+}
+
 
 TASK_FUNCTION(mixerTask)
 {
-  static uint32_t lastRunTime;
   s_pulses_paused = true;
-
+  mixerSchedulerInit();
+  mixerSchedulerStart();
+  RTOS_CREATE_FLAG(telemetryFlag);
   while(1) {
-
-#if defined(SIMU)
-    if (main_thread_running == 0)
-      TASK_RETURN();
-#endif
-
 #if defined(SBUS_TRAINER)
     processSbusInput();
 #endif
+#if defined(BLUETOOTH)
+    bluetoothWakeup();
+#endif
+  //process telemetry when waiting
+  RTOS_ISR_SET_FLAG(telemetryFlag);
+  // run mixer at least every 30ms
+  bool timeout = mixerSchedulerWaitForTrigger(30);
+  // re-enable trigger
+  mixerSchedulerEnableTrigger();
 
-    CoTickDelay(1);
-
+#if defined(SIMU)
+  if (pwrCheck() == e_power_off || main_thread_running == 0) {
+      TASK_RETURN();
+  }
+#else
     if (isForcePowerOffRequested()) {
       pwrOff();
     }
-
-    uint32_t now = RTOS_GET_MS();
-    uint8_t runMask = 0;
-
-if (now >= nextMixerTime[0]) {
-      runMask |= (1 << 0);
-    }
-
-#if NUM_MODULES >= 2
-    if (now >= nextMixerTime[1]) {
-      runMask |= (1 << 1);
-    }
 #endif
-
-    if (!runMask) {
-      continue;  // go back to sleep
-    }
 
     if (!s_pulses_paused) {
       uint16_t t0 = getTmr2MHz();
@@ -164,13 +199,9 @@ if (now >= nextMixerTime[0]) {
       }
 #endif
 
-      DEBUG_TIMER_START(debugTimerTelemetryWakeup);
-      telemetryWakeup();
-      DEBUG_TIMER_STOP(debugTimerTelemetryWakeup);
-
-#if defined(BLUETOOTH)
-      bluetoothWakeup();
-#endif
+      // DEBUG_TIMER_START(debugTimerTelemetryWakeup);
+      // telemetryWakeup();
+      // DEBUG_TIMER_STOP(debugTimerTelemetryWakeup);
 
       if (heartbeat == HEART_WDT_CHECK) {
         wdt_reset();
@@ -178,28 +209,18 @@ if (now >= nextMixerTime[0]) {
       }
 
       t0 = getTmr2MHz() - t0;
-      if (t0 > maxMixerDuration) maxMixerDuration = t0;
+      if (t0 > maxMixerDuration) 
+        maxMixerDuration = t0;
+      
+      // TODO:
+      // - check the cause of timeouts when switching
+      //    between protocols with multi-proto RF
+      if (timeout)
+        TRACE("mix sched timeout!");
 
-      sendSynchronousPulses(runMask);
+      sendSynchronousPulses();
     }
   }
-}
-
-void scheduleNextMixerCalculation(uint8_t module, uint16_t period_ms)
-{
-  if (isModuleSynchronous(module)) {
-    nextMixerTime[module] += period_ms / RTOS_MS_PER_TICK;
-    if (nextMixerTime[module] < RTOS_GET_TIME()) {
-      // we are late ... let's add some small delay
-      nextMixerTime[module] = (uint32_t) RTOS_GET_TIME() + (period_ms / RTOS_MS_PER_TICK);
-    }
-  }
-  else {
-    // for now assume mixer calculation takes 2 ms.
-    nextMixerTime[module] = (uint32_t) RTOS_GET_TIME() + (period_ms / RTOS_MS_PER_TICK);
-  }
-
-  DEBUG_TIMER_STOP(debugTimerMixerCalcToUsage);
 }
 
 #define MENU_TASK_PERIOD_TICKS      10    // 50ms
@@ -305,6 +326,7 @@ void tasksStart()
 #endif
 
   RTOS_CREATE_TASK(mixerTaskId, mixerTask, "Mixer", mixerStack, MIXER_STACK_SIZE, MIXER_TASK_PRIO);
+  RTOS_CREATE_TASK(telemetryTaskId, telemetryTask, "Telemetry", telemetryStack, TELEMETRY_STACK_SIZE, TELEMETRY_TASK_PRIO);
   RTOS_CREATE_TASK(menusTaskId, menusTask, "Menus", menusStack,  MENUS_STACK_SIZE, MENUS_TASK_PRIO);
 
 #if !defined(SIMU)

@@ -51,6 +51,16 @@
   #define RTOS_UNLOCK_MUTEX(mutex)      pthread_mutex_unlock(&mutex)
   #define RTOS_CREATE_FLAG(flag)        flag = 0  // TODO: real flags (use semaphores?)
   #define RTOS_SET_FLAG(flag)           flag = 1
+  #define RTOS_CLEAR_FLAG(flag)         flag = 0
+
+  static inline bool RTOS_WAIT_FLAG(RTOS_FLAG_HANDLE flag, uint32_t timeout)
+  {
+    simuSleep(timeout);
+    return false;
+  }
+
+  #define RTOS_ISR_SET_FLAG RTOS_SET_FLAG
+
   template<int SIZE>
   class FakeTaskStack
   {
@@ -117,6 +127,21 @@
   #define RTOS_UNLOCK_MUTEX(mutex)      CoLeaveMutexSection(mutex);
   #define RTOS_CREATE_FLAG(flag)        flag = CoCreateFlag(false, false)
   #define RTOS_SET_FLAG(flag)           (void)CoSetFlag(flag)
+  #define RTOS_CLEAR_FLAG(flag)         (void)CoClearFlag(flag)
+   // RTOS timer tick length in ms (currently 2)
+  #define RTOS_WAIT_FLAG(flag,timeout)  (CoWaitForSingleFlag(flag,timeout/2) == E_TIMEOUT)
+
+
+  static inline void RTOS_ISR_SET_FLAG(RTOS_FLAG_HANDLE flag)
+  {
+    CoEnterISR();
+    CoSchedLock();
+    isr_SetFlag(flag);
+    CoSchedUnlock();
+    CoExitISR();
+  }
+
+
   inline uint16_t getStackAvailable(void * address, uint16_t size)
   {
     uint32_t * array = (uint32_t *)address;

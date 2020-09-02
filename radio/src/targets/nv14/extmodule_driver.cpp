@@ -236,7 +236,7 @@ void ConfigureRxDMA(){
   DMA_Cmd(EXTMODULE_USART_RX_DMA_STREAM, ENABLE);
 }
 
-void extmoduleSerialStart(uint32_t baudRate, uint32_t period_half_us, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity)
+void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity)
 {
   #if defined(SIMU)
   return;
@@ -282,26 +282,10 @@ void extmoduleSerialStart(uint32_t baudRate, uint32_t period_half_us, bool inver
   USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
   USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
   USART_Init(EXTMODULE_USART, &USART_InitStructure);
+
   ConfigureRxDMA();
 
   USART_Cmd(EXTMODULE_USART, ENABLE);
-  if (period_half_us) {
-    // Timer
-    EXTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
-    EXTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
-    EXTMODULE_TIMER->ARR = period_half_us;
-    EXTMODULE_TIMER->CCR2 = period_half_us - 2000; // Update time
-    EXTMODULE_TIMER->CCER = TIM_CCER_CC3E;
-    EXTMODULE_TIMER->CCMR2 = 0;
-    EXTMODULE_TIMER->EGR = 1; // Restart
-
-    EXTMODULE_TIMER->CCMR2 = TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3M_0; // Toggle CC1 o/p
-    EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-    EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;  // Enable this interrupt
-    EXTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
-    NVIC_EnableIRQ(EXTMODULE_TIMER_IRQn);
-    NVIC_SetPriority(EXTMODULE_TIMER_IRQn, 7);
-  }
 
   NVIC_EnableIRQ(EXTMODULE_USART_TX_DMA_IRQn);
   NVIC_SetPriority(EXTMODULE_USART_TX_DMA_IRQn, 7);
@@ -347,11 +331,11 @@ void extmodulePxx1PulsesStart() {
 
 #if defined(PXX1) && defined(EXTMODULE_USART)
 void extmodulePxx1SerialStart() {
-  extmoduleSerialStart(EXTMODULE_PXX1_SERIAL_BAUDRATE, 0, true, USART_WordLength_8b, USART_StopBits_1, USART_Parity_No);
+  extmoduleSerialStart(EXTMODULE_PXX1_SERIAL_BAUDRATE, true, USART_WordLength_8b, USART_StopBits_1, USART_Parity_No);
 }
 #endif
 
-void extmoduleSoftSerialStart(uint32_t baudrate, uint32_t period_half_us)
+void extmoduleSoftSerialStart()
 {
   EXTERNAL_MODULE_ON();
   GPIO_SetBits(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN);
@@ -376,10 +360,9 @@ void extmoduleSoftSerialStart(uint32_t baudrate, uint32_t period_half_us)
   EXTMODULE_TIMER->EGR = 1; // Restart
   EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_0;
   
-  EXTMODULE_TIMER->ARR = period_half_us;
-  EXTMODULE_TIMER->CCR2 = period_half_us - 4000;
-  EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-  EXTMODULE_TIMER->DIER |= TIM_DIER_UDE | TIM_DIER_CC2IE; // Enable DMA on update
+  EXTMODULE_TIMER->ARR = 40000; // dummy value until the DMA request kicks in
+  EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag - remove it!
+  EXTMODULE_TIMER->DIER |= TIM_DIER_UDE; // Enable DMA on update
   EXTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
 
   NVIC_EnableIRQ(EXTMODULE_DMA_IRQn);
@@ -420,8 +403,7 @@ void extmoduleSendBuffer(const uint8_t * data, uint8_t size)
 
 void extmoduleSendNextFrame()
 {
-  uint32_t start = 0;
-  uint32_t count = 0;
+
   if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_PPM) {
     EXTMODULE_TIMER->CCR1 = GET_PPM_DELAY(EXTERNAL_MODULE) * 2;
     EXTMODULE_TIMER->CCER = TIM_CCER_CC1E | (GET_PPM_POLARITY(EXTERNAL_MODULE)? TIM_CCER_CC1P : 0);
@@ -429,10 +411,8 @@ void extmoduleSendNextFrame()
     EXTMODULE_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
     EXTMODULE_DMA_STREAM->CR |= EXTMODULE_DMA_CHANNEL | DMA_SxCR_DIR_0 | DMA_SxCR_MINC | DMA_SxCR_PSIZE_0 | DMA_SxCR_MSIZE_0 | DMA_SxCR_PL_0 | DMA_SxCR_PL_1;
     EXTMODULE_DMA_STREAM->PAR = CONVERT_PTR_UINT(&EXTMODULE_TIMER->ARR);
-    start = CONVERT_PTR_UINT(extmodulePulsesData.ppm.pulses);
-    count = extmodulePulsesData.ppm.ptr - extmodulePulsesData.ppm.pulses;
-    EXTMODULE_DMA_STREAM->M0AR = start;
-    EXTMODULE_DMA_STREAM->NDTR = count;
+    EXTMODULE_DMA_STREAM->M0AR = CONVERT_PTR_UINT(extmodulePulsesData.ppm.pulses);
+    EXTMODULE_DMA_STREAM->NDTR = extmodulePulsesData.ppm.ptr - extmodulePulsesData.ppm.pulses;
     EXTMODULE_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE; // Enable DMA | DMA_SxCR_TEIE | DMA_SxCR_DMEIE
   }
 #if defined(PXX1)
@@ -441,10 +421,8 @@ void extmoduleSendNextFrame()
     EXTMODULE_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
     EXTMODULE_DMA_STREAM->CR |= EXTMODULE_DMA_CHANNEL | DMA_SxCR_DIR_0 | DMA_SxCR_MINC | DMA_SxCR_PSIZE_0 | DMA_SxCR_MSIZE_0 | DMA_SxCR_PL_0 | DMA_SxCR_PL_1;
     EXTMODULE_DMA_STREAM->PAR = CONVERT_PTR_UINT(&EXTMODULE_TIMER->ARR);
-    start = CONVERT_PTR_UINT(extmodulePulsesData.pxx.getData());
-    count = extmodulePulsesData.pxx.getSize();
-    EXTMODULE_DMA_STREAM->M0AR = start;
-    EXTMODULE_DMA_STREAM->NDTR = count;
+    EXTMODULE_DMA_STREAM->M0AR = CONVERT_PTR_UINT(extmodulePulsesData.pxx.getData());
+    EXTMODULE_DMA_STREAM->NDTR = extmodulePulsesData.pxx.getSize();
     EXTMODULE_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE; // Enable DMA | DMA_SxCR_TEIE | DMA_SxCR_DMEIE
   }
 #endif
@@ -455,16 +433,22 @@ void extmoduleSendNextFrame()
 #endif
 #if defined(SBUS) || defined(DSM2) || defined(MULTIMODULE)
   else if (IS_DSM2_PROTOCOL(moduleState[EXTERNAL_MODULE].protocol) || IS_MULTIMODULE_PROTOCOL(moduleState[EXTERNAL_MODULE].protocol) || IS_SBUS_PROTOCOL(moduleState[EXTERNAL_MODULE].protocol)) {
-    EXTMODULE_TIMER->CCR2 = *(extmodulePulsesData.dsm2.ptr - 1) - 4000; // 2mS in advance
+    if (EXTMODULE_DMA_STREAM->CR & DMA_SxCR_EN)
+        return;
+    if (IS_SBUS_PROTOCOL(moduleState[EXTERNAL_MODULE].protocol)) EXTMODULE_TIMER->CCER = TIM_CCER_CC1E | (GET_SBUS_POLARITY(EXTERNAL_MODULE) ? TIM_CCER_CC1P : 0); // reverse polarity for Sbus if needed
+    
+    // disable timer
+    EXTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
+
     EXTMODULE_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
     EXTMODULE_DMA_STREAM->CR |= EXTMODULE_DMA_CHANNEL | DMA_SxCR_DIR_0 | DMA_SxCR_MINC | DMA_SxCR_PSIZE_0 | DMA_SxCR_MSIZE_0 | DMA_SxCR_PL_0 | DMA_SxCR_PL_1;
-    if (IS_SBUS_PROTOCOL(moduleState[EXTERNAL_MODULE].protocol)) EXTMODULE_TIMER->CCER = TIM_CCER_CC1E | (GET_SBUS_POLARITY(EXTERNAL_MODULE) ? TIM_CCER_CC1P : 0); // reverse polarity for Sbus if needed
     EXTMODULE_DMA_STREAM->PAR = CONVERT_PTR_UINT(&EXTMODULE_TIMER->ARR);
-    start = CONVERT_PTR_UINT(extmodulePulsesData.dsm2.pulses);
-    count = extmodulePulsesData.dsm2.ptr - extmodulePulsesData.dsm2.pulses;
-    EXTMODULE_DMA_STREAM->M0AR = start;
-    EXTMODULE_DMA_STREAM->NDTR = count;
+    EXTMODULE_DMA_STREAM->M0AR = CONVERT_PTR_UINT(extmodulePulsesData.dsm2.pulses);
+    EXTMODULE_DMA_STREAM->NDTR = extmodulePulsesData.dsm2.ptr - extmodulePulsesData.dsm2.pulses;
     EXTMODULE_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_DMEIE; // Enable DMA | DMA_SxCR_TEIE | DMA_SxCR_DMEIE
+    // re-init timer
+    EXTMODULE_TIMER->EGR = 1;
+    EXTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
   }
 #endif
 #if defined(CROSSFIRE)
@@ -474,8 +458,7 @@ void extmoduleSendNextFrame()
 #endif
 #if defined(AFHDS3)
   else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_AFHDS3) {
-    count = extmodulePulsesData.flysky.ptr - extmodulePulsesData.flysky.pulses;
-    extmoduleSendBuffer(extmodulePulsesData.flysky.pulses, count);
+    extmoduleSendBuffer(extmodulePulsesData.flysky.pulses, extmodulePulsesData.flysky.ptr - extmodulePulsesData.flysky.pulses);
   }
 #endif
   else {
@@ -485,7 +468,6 @@ void extmoduleSendNextFrame()
 
 extern "C" void EXTMODULE_USART_TX_DMA_IRQHandler(void)
 {
-
   bool startTimer = false;
   if (DMA_GetITStatus(EXTMODULE_USART_TX_DMA_STREAM, EXTMODULE_USART_TX_DMA_FLAG_TC)) {
     // TODO we could send the 8 next channels here (when needed)
@@ -502,8 +484,13 @@ extern "C" void EXTMODULE_USART_TX_DMA_IRQHandler(void)
     startTimer = true;
   }
   if(startTimer) {
-    EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-    EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE; // Enable this interrupt
+    switch (moduleState[EXTERNAL_MODULE].protocol) {
+      case PROTOCOL_CHANNELS_PXX1_PULSES: 
+      case PROTOCOL_CHANNELS_PPM:
+        EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
+        EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE; // Enable this interrupt
+        break;
+    }
   }
 }
 
@@ -524,8 +511,13 @@ extern "C" void EXTMODULE_DMA_IRQHandler()
   }
 
   if(startTimer) {
-    EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-    EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE; // Enable this interrupt
+    switch (moduleState[EXTERNAL_MODULE].protocol) {
+      case PROTOCOL_CHANNELS_PXX1_PULSES: 
+      case PROTOCOL_CHANNELS_PPM:
+        EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
+        EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE; // Enable this interrupt
+        break;
+    }
   }
 }
 

@@ -383,13 +383,13 @@ class ModuleWindow : public Window {
           }
         });
         // Multimodule sync
-        if(getMultiSyncStatus(moduleIndex).isValid()) {
+        if(getModuleSyncStatus(moduleIndex).isValid()) {
           grid.nextLine();
           new StaticText(this, grid.getLabelSlot(true), STR_MODULE_SYNC);
           StaticText* syncStatus = new StaticText(this, grid.getFieldSlot());
           syncStatus->setCheckHandler([=]() {
             char buffer[64];
-            getMultiSyncStatus(moduleIndex).getRefreshString(buffer);
+            getModuleSyncStatus(moduleIndex).getRefreshString(buffer);
             if(!syncStatus->isTextEqual(buffer)){
               syncStatus->setText(std::string(buffer));
             }
@@ -1569,7 +1569,7 @@ case ITEM_MODEL_EXTERNAL_MODULE_SYNCSTATUS: {
 drawText(window,MENUS_MARGIN_LEFT, y, STR_MODULE_SYNC);
 
 char statusText[64];
-getMultiSyncStatus(EXTERNAL_MODULE).getRefreshString(statusText);
+getModuleSyncStatus(EXTERNAL_MODULE).getRefreshString(statusText);
 drawText(window,MODEL_SETUP_2ND_COLUMN, y, statusText);
 break;
 }

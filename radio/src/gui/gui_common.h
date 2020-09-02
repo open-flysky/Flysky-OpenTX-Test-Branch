@@ -138,7 +138,7 @@ void lcdDrawMMM(coord_t x, coord_t y, LcdFlags flags=0);
 
 
 #if defined(MULTIMODULE)
-#define MULTIMODULE_STATUS_ROWS         isModuleMultimodule(EXTERNAL_MODULE) ? TITLE_ROW : HIDDEN_ROW, (isModuleMultimodule(EXTERNAL_MODULE) && getMultiSyncStatus(EXTERNAL_MODULE).isValid()) ? TITLE_ROW : HIDDEN_ROW,
+#define MULTIMODULE_STATUS_ROWS         isModuleMultimodule(EXTERNAL_MODULE) ? TITLE_ROW : HIDDEN_ROW, (isModuleMultimodule(EXTERNAL_MODULE) && getModuleSyncStatus(EXTERNAL_MODULE).isValid()) ? TITLE_ROW : HIDDEN_ROW,
 #define MULTIMODULE_MODULE_ROWS         isModuleMultimodule(EXTERNAL_MODULE) ? (uint8_t) 0 : HIDDEN_ROW,
 #define MULTIMODULE_MODE_ROWS(x)        (g_model.moduleData[x].multi.customProto) ? (uint8_t) 3 :MULTIMODULE_HAS_SUBTYPE(g_model.moduleData[x].getMultiProtocol()) ? (uint8_t)2 : (uint8_t)1
 #define MULTIMODULE_RFPROTO_ROWS(x)     (g_model.moduleData[x].multi.customProto) ? (uint8_t) 1 :MULTIMODULE_HAS_SUBTYPE(g_model.moduleData[x].getMultiProtocol()) ? (uint8_t) 0 : HIDDEN_ROW

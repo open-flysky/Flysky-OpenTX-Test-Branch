@@ -25,12 +25,14 @@
 
 // stack sizes should be in multiples of 8 for better alignment
 #define MENUS_STACK_SIZE       3000
-#define MIXER_STACK_SIZE       500 //504
+#define MIXER_STACK_SIZE       300 //504
+#define TELEMETRY_STACK_SIZE   240 
 #define AUDIO_STACK_SIZE       500
-#define TOUCH_STACK_SIZE       400  // TODO: this can be reduced a lot after debug (tracing) is done (on last check only 42 Words are actually used)
+#define TOUCH_STACK_SIZE       100  // TODO: this can be reduced a lot after debug (tracing) is done (on last check only 42 Words are actually used)
 #define BLUETOOTH_STACK_SIZE   504  // WTF: there is no BT task.... ???
 
 #define MIXER_TASK_PRIO        5
+#define TELEMETRY_TASK_PRIO    6
 #define AUDIO_TASK_PRIO        7
 #define MENUS_TASK_PRIO        10
 #define CLI_TASK_PRIO          10
@@ -41,6 +43,9 @@ extern RTOS_DEFINE_STACK(menusStack, MENUS_STACK_SIZE);
 
 extern RTOS_TASK_HANDLE mixerTaskId;
 extern RTOS_DEFINE_STACK(mixerStack, MIXER_STACK_SIZE);
+
+extern RTOS_TASK_HANDLE telemetryTaskId;
+extern RTOS_DEFINE_STACK(telemetryStack, TELEMETRY_STACK_SIZE);
 
 extern RTOS_TASK_HANDLE audioTaskId;
 extern RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);

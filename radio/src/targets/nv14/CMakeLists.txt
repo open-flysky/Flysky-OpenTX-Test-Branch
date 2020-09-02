@@ -118,6 +118,7 @@ set(TARGET_SRC
   board.cpp
   extmodule_driver.cpp
   trainer_driver.cpp
+  ../common/arm/stm32/mixer_scheduler_driver.cpp
   ../common/arm/stm32/intmodule_serial_driver.cpp
   )
 
