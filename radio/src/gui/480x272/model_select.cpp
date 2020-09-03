@@ -133,10 +133,11 @@ void initModelsList()
     // setCurrentModel(0);
   }
 }
+class ModelselectPage;
 
 class ModelselectButton: public Button {
   public:
-    ModelselectButton(Window * parent, const rect_t & rect, ModelCell * modelCell, Window * footer);
+    ModelselectButton(ModelselectPage* page, Window * parent, const rect_t & rect, ModelCell * modelCell, Window * footer);
 
     virtual void paint(BitmapBuffer * dc) override {
       drawSolidRect(dc, 0, 0, rect.w, rect.h, 2, hasFocus() ? SCROLLBOX_COLOR : CURVE_AXIS_COLOR);
@@ -316,33 +317,51 @@ class ModelselectFooter: public Window {
 };
 
 class ModelselectPage: public PageTab {
+  private:
+    Window* body;
+    Window* footer;
+    uint8_t showMenuAddModel() {
+      auto menu = new Menu();
+      menu->addLine(STR_CREATE_MODEL, [&]() {
+        storageCheck(true);
+        modelslist.setCurrentModel(modelslist.addModel(currentCategory, createModel()));
+#if defined(LUA)
+        if(getWizardCount()) {
+          new WizardSelectWindow();
+        }
+#endif
+        updateModels(currentCategory->size() - 1);
+      });
+      return 1;
+    }
   public:
     ModelselectPage() :
       PageTab(STR_MODEL_SELECT, ICON_MODEL_SELECT)
     {
     }
 
-    static void updateModels(Window * window, Window * footer, int selected=-1) {
-      window->clear();
+    void updateModels(int selected=-1) {
+    
+      this->body->clear();
       int index = 0;
       for (auto it = currentCategory->begin(); it != currentCategory->end(); ++it, ++index) {
-        Button * button = new ModelselectButton(window, {10, 10 + index * 104, LCD_W - 20, 94}, *it, footer);
+        Button * button = new ModelselectButton(this, this->body, {10, 10 + index * 104, LCD_W - 20, 94}, *it, footer);
         if (selected == index) {
           button->setFocus();
         }
       }
-      window->adjustInnerHeight();
+      auto addButton = new Button(this->body, {10, 10 + index * 104, LCD_W - 20, 94});
+      addButton->setPressHandler(std::bind(&ModelselectPage::showMenuAddModel, this));
+      body->adjustInnerHeight();
     }
-
     virtual void build(Window * window) override
     {
       initModelsList();
-      Window * body = new Window(window, {0, 0, LCD_W, window->height() - 55});
-      Window * footer = new ModelselectFooter(window, {0, window->height() - 55, LCD_W, 55});
-      updateModels(body, footer);
+      this->body = new Window(window, {0, 0, LCD_W, window->height() - 55});
+      this->footer = new ModelselectFooter(window, {0, window->height() - 55, LCD_W, 55});
+      updateModels();
     }
 };
-
 
 ModelselectMenu::ModelselectMenu():
   TabsGroup()
@@ -350,7 +369,8 @@ ModelselectMenu::ModelselectMenu():
   addTab(new ModelselectPage());
 }
 
-ModelselectButton::ModelselectButton(Window * parent, const rect_t & rect, ModelCell * modelCell, Window * footer):
+ModelselectButton::ModelselectButton(ModelselectPage* page, Window * parent, const rect_t & rect, ModelCell * modelCell, Window * footer):
+
   Button(parent, rect,
          [=]() -> uint8_t {
            if (hasFocus()) {
@@ -367,7 +387,7 @@ ModelselectButton::ModelselectButton(Window * parent, const rect_t & rect, Model
                  // chainMenu(menuMainView);
                  postModelLoad(true);
                  modelslist.setCurrentModel(modelCell);
-                 ModelselectPage::updateModels(parent, footer, modelslist.getModelIndex(modelCell));
+                 page->updateModels(modelslist.getModelIndex(modelCell));
                });
              }
              menu->addLine(STR_CREATE_MODEL, [=]() {
@@ -378,7 +398,7 @@ ModelselectButton::ModelselectButton(Window * parent, const rect_t & rect, Model
                  new WizardSelectWindow();
                }
 #endif
-               ModelselectPage::updateModels(parent, footer, currentCategory->size() - 1);
+               page->updateModels(currentCategory->size() - 1);
              });
              if (modelCell) {
                menu->addLine(STR_DUPLICATE_MODEL, [=]() {
@@ -387,7 +407,7 @@ ModelselectButton::ModelselectButton(Window * parent, const rect_t & rect, Model
                  if (findNextFileIndex(duplicatedFilename, LEN_MODEL_FILENAME, MODELS_PATH)) {
                    sdCopyFile(modelCell->modelFilename, MODELS_PATH, duplicatedFilename, MODELS_PATH);
                    modelslist.addModel(currentCategory, duplicatedFilename);
-                   ModelselectPage::updateModels(parent, footer, currentCategory->size() - 1);
+                   page->updateModels(currentCategory->size() - 1);
                  }
                  else {
                    POPUP_WARNING("Invalid File");
@@ -403,7 +423,7 @@ ModelselectButton::ModelselectButton(Window * parent, const rect_t & rect, Model
                  if (index > 0)
                    --index;
                  modelslist.removeModel(currentCategory, modelCell);
-                 ModelselectPage::updateModels(parent, footer, index);
+                 page->updateModels(index);
                });
              }
            }

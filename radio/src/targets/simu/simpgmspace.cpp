@@ -129,6 +129,17 @@ uint16_t getTmr2MHz()
   return simuTimerMicros() * 2;
 }
 
+uint8_t simuSleep(uint32_t ms)
+{
+  for (uint32_t i = 0; i < ms; ++i){
+    if (!main_thread_running)
+      return 1;
+    sleep(1);
+  }
+  return 0;
+}
+
+
 void simuInit()
 {
 #if defined(STM32)
