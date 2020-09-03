@@ -85,12 +85,21 @@ NumberKeyboard::NumberKeyboard():
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 
-  new TextButton(this, { LCD_W/2 - 55, 50, 110, 30 }, "DEFAULT",
+  new TextButton(this, { LCD_W/2 - 55, 50, 50, 30 }, "DEF",
                  [=]() -> uint8_t {
                    if (field) {
                      field->setValue(field->getDefault());
                    }
                    else putEvent(EVT_VK(VKEY_DEFAULT));
+                   return 0;
+                 }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
+				 
+  new TextButton(this, { LCD_W/2 + 5, 50, 50, 30 }, "+/-",
+                 [=]() -> uint8_t {
+                   if (field) {
+                     field->setValue(-field->getValue());
+                   }
+                   else putEvent(EVT_VK(VKEY_SIGN));
                    return 0;
                  }, BUTTON_BACKGROUND | BUTTON_NOFOCUS);
 }
