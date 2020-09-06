@@ -108,7 +108,7 @@ class MultiExternalUpdateDriver: public MultiFirmwareUpdateDriver
     {
       TRACE("INIT inverted %d", inverted);
 #if defined(EXTMODULE_USART)
-      extmoduleSerialStartPooling(57600, true, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
+      extmoduleSerialStartPooling(57600, false, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
 #else
       GPIO_InitTypeDef GPIO_InitStructure;
       GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_GPIO_PIN;
