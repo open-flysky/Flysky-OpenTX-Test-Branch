@@ -28,7 +28,8 @@ WARNING_TYPE_ASTERISK,
 WARNING_TYPE_CONFIRM,
 WARNING_TYPE_INPUT,
 WARNING_TYPE_ALERT,
-WARNING_TYPE_INFO
+WARNING_TYPE_INFO,
+WARNING_TYPE_PROGRESS,
 };
 
 #define DialogResultMask  0x100
@@ -53,7 +54,7 @@ enum DialogResult {
 
 class Dialog : public Window {
   public:
-    Dialog(uint8_t type, std::string title, std::string message="", std::function<void(void)> onConfirm=nullptr, std::function<void(void)> onCancel=nullptr, bool cancellable = false);
+    Dialog(uint8_t type, std::string title, std::string message="", std::function<void(void)> onConfirm=nullptr, std::function<void(void)> onCancel=nullptr, bool cancellable = false, bool hasNextStep = true);
 
     ~Dialog() override;
 
@@ -78,13 +79,16 @@ class Dialog : public Window {
     }
 
     void runForever();
-
+    void setProgress(const char * title, const char * message, int num, int den, bool enableCloseButton);
   protected:
     uint8_t type;
     std::string title;
     std::string message;
     bool running = false;
+    int32_t progress;
+    int32_t progressTotal;
     std::function<bool(void)> closeCondition;
+    FabIconButton* nextButton;
 };
 
 class MessageBox : public Window {

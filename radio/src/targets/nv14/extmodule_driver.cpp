@@ -238,16 +238,12 @@ void ConfigureRxDMA(){
 
 void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity)
 {
-  #if defined(SIMU)
-  return;
-  #endif
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = EXTMODULE_USART_TX_DMA_IRQn;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; /* Not used as 4 bits are used for the pre-emption priority. */;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
-
 
   GPIO_PinAFConfig(EXTMODULE_TX_GPIO, EXTMODULE_TX_GPIO_PinSource, EXTMODULE_TX_GPIO_AF_USART);
   GPIO_PinAFConfig(EXTMODULE_RX_GPIO, EXTMODULE_RX_GPIO_PinSource, EXTMODULE_RX_GPIO_AF_USART);
@@ -263,7 +259,6 @@ void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength,
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_INVERT_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_Init(EXTMODULE_TX_INVERT_GPIO, &GPIO_InitStructure);
-
   GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_RESET : BitAction::Bit_SET);
   
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_RX_INVERT_GPIO_PIN;
@@ -464,6 +459,41 @@ void extmoduleSendNextFrame()
   else {
     EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;
   }
+}
+void extmoduleSerialStartPooling(uint32_t baudRate, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity)
+{
+  GPIO_PinAFConfig(EXTMODULE_TX_GPIO, EXTMODULE_TX_GPIO_PinSource, EXTMODULE_TX_GPIO_AF_USART);
+  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_GPIO_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_InitStructure.GPIO_Speed = GPIO_High_Speed;
+  GPIO_Init(EXTMODULE_TX_GPIO, &GPIO_InitStructure);
+
+  GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_INVERT_GPIO_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_Init(EXTMODULE_TX_INVERT_GPIO, &GPIO_InitStructure);
+  GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_RESET : BitAction::Bit_SET);
+
+  USART_DeInit(EXTMODULE_USART);
+  USART_InitTypeDef USART_InitStructure;
+  USART_InitStructure.USART_BaudRate = baudRate;
+  USART_InitStructure.USART_WordLength = wordLength;
+  USART_InitStructure.USART_StopBits = stopBits;
+  USART_InitStructure.USART_Parity = parity;
+  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+  USART_InitStructure.USART_Mode = USART_Mode_Tx;
+  USART_Init(EXTMODULE_USART, &USART_InitStructure);
+
+  USART_Cmd(EXTMODULE_USART, ENABLE);
+}
+
+void extmoduleSendInvertedByte(uint8_t byte)
+{
+  while (USART_GetFlagStatus(EXTMODULE_USART, USART_FLAG_TXE) == RESET);
+  USART_SendData(EXTMODULE_USART, byte);
+  while (USART_GetFlagStatus(EXTMODULE_USART, USART_FLAG_TC) == RESET);
 }
 
 extern "C" void EXTMODULE_USART_TX_DMA_IRQHandler(void)

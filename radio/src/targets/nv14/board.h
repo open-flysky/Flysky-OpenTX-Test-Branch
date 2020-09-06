@@ -176,7 +176,13 @@ void sdramInit(void);
 #define IS_INTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(INTMODULE_PWR_GPIO, INTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_EXTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_UART_MODULE(port)            (port == INTERNAL_MODULE)
+#define SPORT_UPDATE_POWER_ON()
+#define SPORT_UPDATE_POWER_OFF()
+#define SPORT_UPDATE_POWER_INIT()
+#define IS_SPORT_UPDATE_POWER_ON()     (false)
+
 void EXTERNAL_MODULE_ON();
+void EXTERNAL_MODULE_OFF();
 void init_no_pulses(uint32_t port);
 void disable_no_pulses(uint32_t port);
 void init_ppm(uint32_t module_index);
@@ -192,7 +198,9 @@ void extmoduleSendNextFrame();
 void extmoduleSoftSerialStart();
 void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
 void intmoduleSerialStart(uint32_t baudrate, uint8_t rxEnable, uint16_t parity, uint16_t stopBits, uint16_t wordLength);
-
+void extmoduleSerialStartPooling(uint32_t baudRate, bool inverted, uint16_t wordLength, uint16_t stopBits, uint16_t parity);
+void extmoduleSendInvertedByte(uint8_t byte);
+void telemetryClearFifo();
 // Trainer driver
 void init_trainer_ppm(void);
 void stop_trainer_ppm(void);
@@ -326,13 +334,16 @@ void watchdogInit(unsigned int duration);
   #define WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()   (false)
   #define wdt_enable(x)
   #define wdt_reset()
+  #define WDG_RESET()
 #else
   #if defined(WATCHDOG_DISABLED)
     #define wdt_enable(x)
     #define wdt_reset()
+    #define WDG_RESET()
   #else
     #define wdt_enable(x)                       watchdogInit(x)
     #define wdt_reset()                         IWDG->KR = 0xAAAA
+    #define WDG_RESET()                         IWDG->KR = 0xAAAA
   #endif
   #define WAS_RESET_BY_WATCHDOG()               (RCC->CSR & (RCC_CSR_WDGRSTF | RCC_CSR_WWDGRSTF))
   #define WAS_RESET_BY_SOFTWARE()               (RCC->CSR & RCC_CSR_SFTRSTF)

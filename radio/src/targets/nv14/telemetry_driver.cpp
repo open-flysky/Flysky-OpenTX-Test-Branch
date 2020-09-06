@@ -241,3 +241,13 @@ uint8_t telemetryGetByte(uint8_t * byte)
   return telemetryNoDMAFifo.pop(*byte);
 #endif
 }
+
+void telemetryClearFifo()
+{
+#if defined(PCBX12S)
+  telemetryNoDMAFifo.clear();
+  telemetryDMAFifo.clear();
+#else
+  telemetryNoDMAFifo.clear();
+#endif
+}

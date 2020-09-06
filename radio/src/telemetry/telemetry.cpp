@@ -405,8 +405,9 @@ void telemetryInit(uint8_t protocol)
 #endif
 #if defined(MULTIMODULE)
   else if (protocol == PROTOCOL_TELEMETRY_MULTIMODULE || protocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS) {
+    // wrong multi output in version 1.3.1.59 
     // The DIY Multi module always speaks 100000 baud regardless of the telemetry protocol in use
-    telemetryPortInit(MULTIMODULE_BAUDRATE, TELEMETRY_SERIAL_8E2);
+    telemetryPortInit(MULTIMODULE_BAUDRATE, TELEMETRY_SERIAL_8E2 | TELEMETRY_SERIAL_NOT_INVERTED);
 #if defined(LUA)
     outputTelemetryBuffer.reset();
 #endif

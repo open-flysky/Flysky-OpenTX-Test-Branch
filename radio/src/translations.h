@@ -663,7 +663,7 @@ extern pm_char STR_MULTI_MAX_THROW[];
 extern pm_char STR_MULTI_RFCHAN[];
 extern pm_char STR_EXT_MULTI_SPEC[];
 extern pm_char STR_INT_MULTI_SPEC[];
-
+extern pm_char STR_FLASH_EXTERNAL_MULTI[];
 
 extern const pm_char STR_MODULE_SYNC[];
 extern const pm_char STR_MULTI_SERVOFREQ[];
@@ -671,7 +671,9 @@ extern const pm_char STR_MULTI_SERVOFREQ[];
 extern const pm_char STR_SUBTYPE[];
 #endif
 #endif
-
+extern const pm_char STR_WRITING[];
+extern const pm_char STR_DEVICE_RESET[];
+extern const pm_char STR_FIRMWARE_UPDATE_SUCCESS[];
 extern const pm_char STR_RFPOWER_AFHDS2[];
 #if defined(AFHDS3)
 extern const pm_char STR_RFPOWER_AFHDS3[];

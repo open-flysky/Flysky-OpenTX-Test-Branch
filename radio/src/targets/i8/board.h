@@ -268,9 +268,11 @@ uint32_t readTrims(void);
 #if defined(WATCHDOG_DISABLED) || defined(SIMU)
   #define wdt_enable(x)
   #define wdt_reset()
+  #define WDG_RESET()
 #else
   #define wdt_enable(x)                       watchdogInit(x)
   #define wdt_reset()                         IWDG->KR = 0xAAAA
+  #define WDG_RESET()                         IWDG->KR = 0xAAAA
 #endif
 #define wdt_disable()
 void watchdogInit(unsigned int duration);

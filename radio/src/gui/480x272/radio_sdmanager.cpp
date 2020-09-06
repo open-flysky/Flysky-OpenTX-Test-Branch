@@ -23,7 +23,7 @@
 #include "libwindows.h"
 #include "page.h"
 // #include "io/frsky_firmware_update.h"
-// #include "io/multi_firmware_update.h"
+#include "io/multi_firmware_update.h"
 
 class FileNameEditWindow : public Page {
   public:
@@ -94,6 +94,16 @@ char * getFullPath(const std::string & filename)
   return full_path;
 }
 
+const char * getBasename(const char * path)
+{
+  for (int8_t i = strlen(path) - 1; i >= 0; i--) {
+    if (path[i] == '/') {
+      return &path[i + 1];
+    }
+  }
+  return path;
+}
+
 void RadioSdManagerPage::build(Window * window)
 {
   GridLayout grid;
@@ -139,7 +149,7 @@ void RadioSdManagerPage::build(Window * window)
       });
       grid.nextLine();
     }
-
+    
     for (auto name: files) {
       new TextButton(window, grid.getLineSlot(), name, [=]() -> uint8_t {
         auto menu = new Menu();
@@ -169,6 +179,24 @@ void RadioSdManagerPage::build(Window * window)
             menu->addLine(STR_EXECUTE_FILE, [=]() {
               luaExec(getFullPath(name));
             });
+          }
+#endif
+#if defined(MULTIMODULE)
+          else if (!READ_ONLY() && !strcasecmp(ext, MULTI_FIRMWARE_EXT)) {
+            char* fullPath = getFullPath(name);
+            MultiFirmwareInformation information;
+            if (information.readMultiFirmwareInformation(fullPath) == nullptr) {
+#if defined(INTERNAL_MODULE_MULTI)
+              menu->addLine(STR_FLASH_INTERNAL_MULTI, [=]() {
+                multiFlashFirmware(INTERNAL_MODULE, fullPath);
+                runProgressScreen();
+              });
+#endif        
+              menu->addLine(STR_FLASH_EXTERNAL_MULTI, [=]() {
+                multiFlashFirmware(EXTERNAL_MODULE, fullPath);
+                runProgressScreen();
+              });
+            }
           }
 #endif
         }

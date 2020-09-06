@@ -23,7 +23,7 @@
 #include "multi_firmware_update.h"
 #include "stk500.h"
 #include "debug.h"
-
+#define DEBUG_EXT_MODULE_FLASH
 #define UPDATE_MULTI_EXT_BIN ".bin"
 
 class MultiFirmwareUpdateDriver
@@ -106,7 +106,10 @@ class MultiExternalUpdateDriver: public MultiFirmwareUpdateDriver
 
     void init(bool inverted) const override
     {
-#if !defined(EXTMODULE_USART)
+      TRACE("INIT inverted %d", inverted);
+#if defined(EXTMODULE_USART)
+      extmoduleSerialStartPooling(57600, true, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
+#else
       GPIO_InitTypeDef GPIO_InitStructure;
       GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_GPIO_PIN;
       GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -114,10 +117,11 @@ class MultiExternalUpdateDriver: public MultiFirmwareUpdateDriver
       GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
       GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
       GPIO_Init(EXTMODULE_TX_GPIO, &GPIO_InitStructure);
+
 #endif
 
       if (inverted)
-        telemetryPortInvertedInit(57600);
+        telemetryPortInit(57600, TELEMETRY_SERIAL_DEFAULT | TELEMETRY_SERIAL_NOT_INVERTED);
       else
         telemetryPortInit(57600, TELEMETRY_SERIAL_DEFAULT);
     }
@@ -130,6 +134,7 @@ class MultiExternalUpdateDriver: public MultiFirmwareUpdateDriver
     void sendByte(uint8_t byte) const override
     {
       extmoduleSendInvertedByte(byte);
+      TRACE("[TX] 0x%X", byte);
     }
 
     void clear() const override
@@ -140,7 +145,7 @@ class MultiExternalUpdateDriver: public MultiFirmwareUpdateDriver
     void deinit(bool inverted) const override
     {
       if (inverted)
-        telemetryPortInvertedInit(0);
+        telemetryPortInit(0, 0);
       else
         telemetryPortInit(0, 0);
 
@@ -172,7 +177,8 @@ bool MultiFirmwareUpdateDriver::getRxByte(uint8_t& byte) const
 bool MultiFirmwareUpdateDriver::checkRxByte(uint8_t byte) const
 {
   uint8_t rxchar;
-  return getRxByte(rxchar) ? rxchar == byte : false;
+  getRxByte(rxchar);
+  return rxchar == byte;
 }
 
 const char * MultiFirmwareUpdateDriver::waitForInitialSync(bool& inverted) const
@@ -241,7 +247,7 @@ const char * MultiFirmwareUpdateDriver::loadAddress(uint32_t offset) const
   sendByte(CRC_EOP);
 
   if (!checkRxByte(STK_INSYNC) || !checkRxByte(STK_OK)) {
-    return "NoSync";
+    return "NoSyncLoadAddress";
   }
 
   return nullptr;
@@ -267,7 +273,7 @@ const char * MultiFirmwareUpdateDriver::progPage(uint8_t* buffer, uint16_t size)
     return "NoSync";
 
   uint8_t byte;
-  uint8_t retries = 4;
+  uint8_t retries = 10;
   do {
     getRxByte(byte);
     WDG_RESET();
@@ -343,16 +349,23 @@ const char * MultiFirmwareUpdateDriver::flashFirmware(FIL* file, const char* lab
       break;
 
     clear();
+    int retry = 3; 
+    while(retry--) {
+      result = loadAddress(writeOffset);
+      if (result) {
+        continue;
+      }
 
-    result = loadAddress(writeOffset);
-    if (result) {
+      result = progPage(buffer, pageSize);
+      if (result) {
+        continue;
+      }
+    }
+    if(!retry) {
       break;
     }
 
-    result = progPage(buffer, pageSize);
-    if (result) {
-      break;
-    }
+    
 
     writeOffset += pageSize / 2;
   }
@@ -483,14 +496,14 @@ bool multiFlashFirmware(uint8_t moduleIdx, const char * filename)
   FIL file;
 
   if (f_open(&file, filename, FA_READ) != FR_OK) {
-    POPUP_WARNING("Not a valid file");
+    raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);
     return false;
   }
 
   MultiFirmwareInformation firmwareFile;
   if (firmwareFile.readMultiFirmwareInformation(&file)) {
     f_close(&file);
-    POPUP_WARNING("Not a valid file");
+    raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);
     return false;
   }
   f_lseek(&file, 0);
@@ -498,16 +511,14 @@ bool multiFlashFirmware(uint8_t moduleIdx, const char * filename)
   if (moduleIdx == EXTERNAL_MODULE) {
     if (!firmwareFile.isMultiExternalFirmware()) {
       f_close(&file);
-      POPUP_WARNING(STR_NEEDS_FILE);
-      SET_WARNING_INFO(STR_EXT_MULTI_SPEC, strlen(STR_EXT_MULTI_SPEC), 0);
+      raiseAlert(STR_NEEDS_FILE, STR_EXT_MULTI_SPEC, nullptr, AU_ERROR);
       return false;
     }
   }
   else {
     if (!firmwareFile.isMultiInternalFirmware()) {
       f_close(&file);
-      POPUP_WARNING(STR_NEEDS_FILE);
-      SET_WARNING_INFO(STR_INT_MULTI_SPEC, strlen(STR_INT_MULTI_SPEC), 0);
+      raiseAlert(STR_NEEDS_FILE, STR_EXT_MULTI_SPEC, nullptr, AU_ERROR);
       return false;
     }
   }
@@ -540,16 +551,7 @@ bool multiFlashFirmware(uint8_t moduleIdx, const char * filename)
   const char * result = driver->flashFirmware(&file, getBasename(filename));
   f_close(&file);
 
-  AUDIO_PLAY(AU_SPECIAL_SOUND_BEEP1 );
-  BACKLIGHT_ENABLE();
-
-  if (result) {
-    POPUP_WARNING(STR_FIRMWARE_UPDATE_ERROR);
-    SET_WARNING_INFO(result, strlen(result), 0);
-  }
-  else {
-    POPUP_INFORMATION(STR_FIRMWARE_UPDATE_SUCCESS);
-  }
+  drawProgressScreenDone(result == 0, result ? STR_FIRMWARE_UPDATE_ERROR : STR_FIRMWARE_UPDATE_SUCCESS, result);
 
 #if defined(HARDWARE_INTERNAL_MODULE)
   INTERNAL_MODULE_OFF();

@@ -32,24 +32,29 @@
 #define ALERT_MESSAGE_TOP         210
 #define ALERT_ACTION_TOP          230
 #define ALERT_BUTTON_TOP          300
-
+#define MAX_PROGRESS_WIDTH        (LCD_W - (2*(ALERT_FRAME_PADDING+5)))
+#define MAX_PROGRESS_BAR_WIDTH    (LCD_W - (2*(ALERT_FRAME_PADDING+7)))
 #define DIALOG_BUTTON_WIDTH       70
 #define DIALOG_BUTTON_MARGIN      5
 #define MESSAGE_BOX_HEADER        30
 
-Dialog::Dialog(uint8_t type, std::string title, std::string message, std::function<void(void)> onConfirm, std::function<void(void)> onCancel, bool cancellable):
+Dialog::Dialog(uint8_t type, std::string title, std::string message, std::function<void(void)> onConfirm, std::function<void(void)> onCancel, bool cancellable, bool hasNextStep):
   Window(&mainWindow, {0, 0, LCD_W, LCD_H}, OPAQUE),
   type(type),
   title(std::move(title)),
   message(std::move(message))
 {
-  new FabIconButton(this, LCD_W - 50, ALERT_BUTTON_TOP, ICON_NEXT, [=]() -> uint8_t
+  nextButton = nullptr;
+  if (hasNextStep) {
+    nextButton = new FabIconButton(this, LCD_W - 50, ALERT_BUTTON_TOP, ICON_NEXT, [=]() -> uint8_t
       {
         deleteLater();
         if (onConfirm) onConfirm();
         putEvent(EVT_VK(DialogResult::OK));
         return 0;
       });
+  }
+
   if (cancellable){
     new FabIconButton(this, 50, ALERT_BUTTON_TOP, ICON_BACK, [=]() -> uint8_t
         {
@@ -60,7 +65,6 @@ Dialog::Dialog(uint8_t type, std::string title, std::string message, std::functi
         });
   }
   mainWindow.setTopMostWindow(this);
-
   bringToTop();
 }
 
@@ -77,7 +81,7 @@ void Dialog::paint(BitmapBuffer * dc)
     dc->drawBitmap(ALERT_BITMAP_PADDING, ALERT_FRAME_TOP + ALERT_BITMAP_PADDING, theme->asterisk);
   else if (type == WARNING_TYPE_INFO)
     dc->drawBitmap(ALERT_BITMAP_PADDING, ALERT_FRAME_TOP + ALERT_BITMAP_PADDING, theme->busy);
-  else
+  else if (type != WARNING_TYPE_PROGRESS)
     dc->drawBitmap(ALERT_BITMAP_PADDING, ALERT_FRAME_TOP + ALERT_BITMAP_PADDING, theme->question);
 
   if (type == WARNING_TYPE_ALERT) {
@@ -89,6 +93,13 @@ void Dialog::paint(BitmapBuffer * dc)
     dc->drawText(ALERT_TITLE_LEFT, ALERT_FRAME_TOP + ALERT_FRAME_PADDING + ALERT_TITLE_LINE_HEIGHT, STR_WARNING, ALARM_COLOR|DBLSIZE);
 #endif
   }
+  else if (type == WARNING_TYPE_PROGRESS) {
+    LcdFlags flags = ALARM_COLOR;
+    if (title.length() < 17) {
+      flags |= DBLSIZE;
+    }
+    dc->drawText(ALERT_BITMAP_PADDING, ALERT_FRAME_TOP + ALERT_FRAME_PADDING, title.c_str(), flags);
+  }
   else if (!title.empty()) {
     dc->drawText(ALERT_TITLE_LEFT, ALERT_FRAME_TOP + ALERT_FRAME_PADDING, title.c_str(), ALARM_COLOR|DBLSIZE);
   }
@@ -97,6 +108,14 @@ void Dialog::paint(BitmapBuffer * dc)
     dc->drawText(ALERT_FRAME_PADDING+5, ALERT_MESSAGE_TOP, message.c_str(), MIDSIZE);
   }
 
+  if (type == WARNING_TYPE_PROGRESS) {
+    dc->drawSolidFilledRect(ALERT_FRAME_PADDING+5, ALERT_BUTTON_TOP + 50, MAX_PROGRESS_WIDTH, 20, CURVE_AXIS_COLOR);
+
+    if (progressTotal) {
+      dc->drawSolidFilledRect(ALERT_FRAME_PADDING+7, ALERT_BUTTON_TOP + 50 + 3, (MAX_PROGRESS_BAR_WIDTH*progress)/progressTotal, 14, BATTERY_CHARGE_COLOR);
+    }
+
+  }
 #if 0
   if (action) {
    // dc->drawText(ALERT_FRAME_PADDING+5, ALERT_ACTION_TOP, action);
@@ -125,6 +144,33 @@ void Dialog::deleteLater()
   // Lets wait for new iteration;
   if (running) running = false;
   else Window::deleteLater();
+}
+
+void Dialog::setProgress(const char * title, const char * message, int num, int den, bool enableCloseButton) {
+  if (title) {
+    this->title = std::move(title);
+  }
+  else {
+    this->title.clear();
+  }
+  if (message) {
+    this->message = std::move(message);
+  }
+  else {
+    this->message.clear();
+  }
+  this->progress = num;
+  this->progressTotal = den;
+
+  if (enableCloseButton && nextButton == nullptr) {
+      nextButton = new FabIconButton(this, LCD_W - 50, ALERT_BUTTON_TOP, ICON_NEXT, [=]() -> uint8_t
+      {
+        deleteLater();
+        putEvent(EVT_VK(DialogResult::OK));
+        return 0;
+      });
+  }
+  this->invalidate();
 }
 
 void Dialog::runForever()
@@ -290,4 +336,33 @@ void raiseAlert(const char * title, const char * msg, const char * info, uint8_t
   AUDIO_ERROR_MESSAGE(sound);
   auto dialog = new Dialog(WARNING_TYPE_ALERT, title, msg);
   dialog->runForever();
+}
+
+Dialog* progressDialog = nullptr;
+
+void drawProgressScreen(const char * title, const char * message, int num, int den) {
+  if(!progressDialog) {
+    progressDialog = new Dialog(WARNING_TYPE_PROGRESS, title, message, nullptr, nullptr, false, false);
+  }
+
+  progressDialog->setProgress(title, message, num, den, false);
+  BACKLIGHT_ENABLE();
+  wdt_reset();
+  mainWindow.run();
+}
+
+void drawProgressScreenDone(bool success, const char * title, const char * message) {
+  if(progressDialog) {
+    progressDialog->setProgress(title, message, 100, 100, true);
+  }
+
+}
+
+void runProgressScreen() {
+  if(progressDialog) {
+    progressDialog->runForever();
+  }
+  //clear pointer no more needed - it will be deleted after closing
+  //more elegant will be clear on close but it will require more changes
+  progressDialog = nullptr;
 }
