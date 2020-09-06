@@ -156,12 +156,17 @@ void extmodulePpmStart()
 
   EXTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN; // Stop timer
   EXTMODULE_TIMER->PSC = EXTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
-  EXTMODULE_TIMER->ARR = 45000;
 
-  EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2; // PWM mode 1
-  EXTMODULE_TIMER->BDTR = TIM_BDTR_MOE;
+  EXTMODULE_TIMER->CCR1 = GET_PPM_DELAY(EXTERNAL_MODULE) * 2;
+  EXTMODULE_TIMER->CCER = TIM_CCER_CC1E | (GET_PPM_POLARITY(EXTERNAL_MODULE)? TIM_CCER_CC1P : 0);
+  EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_0; // Force O/P high
   EXTMODULE_TIMER->EGR = 1; // Reloads register values now
-  EXTMODULE_TIMER->DIER = TIM_DIER_UDE; // Update DMA request
+  EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC2PE; // PWM mode 1
+
+  EXTMODULE_TIMER->ARR = 45000;
+  EXTMODULE_TIMER->CCR2 = 40000; // The first frame will be sent in 20ms
+  EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
+  EXTMODULE_TIMER->DIER |= TIM_DIER_UDE | TIM_DIER_CC2IE; // Enable this interrupt
   EXTMODULE_TIMER->CR1 = TIM_CR1_CEN; // Start timer
 
   NVIC_EnableIRQ(EXTMODULE_DMA_IRQn);
@@ -259,7 +264,7 @@ void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength,
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_INVERT_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_Init(EXTMODULE_TX_INVERT_GPIO, &GPIO_InitStructure);
-  GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_RESET : BitAction::Bit_SET);
+  GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_SET : BitAction::Bit_RESET);
   
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_RX_INVERT_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -408,7 +413,7 @@ void extmoduleSendNextFrame()
     EXTMODULE_DMA_STREAM->PAR = CONVERT_PTR_UINT(&EXTMODULE_TIMER->ARR);
     EXTMODULE_DMA_STREAM->M0AR = CONVERT_PTR_UINT(extmodulePulsesData.ppm.pulses);
     EXTMODULE_DMA_STREAM->NDTR = extmodulePulsesData.ppm.ptr - extmodulePulsesData.ppm.pulses;
-    EXTMODULE_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE; // Enable DMA | DMA_SxCR_TEIE | DMA_SxCR_DMEIE
+    EXTMODULE_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE; // Enable DMA
   }
 #if defined(PXX1)
   else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_PXX1_PULSES) {
@@ -474,7 +479,7 @@ void extmoduleSerialStartPooling(uint32_t baudRate, bool inverted, uint16_t word
   GPIO_InitStructure.GPIO_Pin = EXTMODULE_TX_INVERT_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_Init(EXTMODULE_TX_INVERT_GPIO, &GPIO_InitStructure);
-  GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_RESET : BitAction::Bit_SET);
+  GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_SET : BitAction::Bit_RESET);
 
   USART_DeInit(EXTMODULE_USART);
   USART_InitTypeDef USART_InitStructure;

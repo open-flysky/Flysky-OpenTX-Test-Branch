@@ -340,7 +340,6 @@ void enablePulsesExternalModule(uint8_t protocol)
 #if defined(AFHDS3)
     case PROTOCOL_CHANNELS_AFHDS3:
       afhds3uart.reset();
-      //tbd remove period!
       extmoduleSerialStart(AFHDS3_BAUDRATE, false, afhds3uart.wordLength, afhds3uart.stopBits, afhds3uart.parity);
       schedulerPeriodUs = AFHDS3_PERIOD;
       break;
