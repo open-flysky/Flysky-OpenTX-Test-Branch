@@ -534,7 +534,6 @@ void ModuleSyncStatus::update(uint16_t newRefreshRate, int16_t newInputLag)
 }
 void ModuleSyncStatus::invalidate() {
   //make invalid after use
-  lastUpdate -= SYNC_UPDATE_TIMEOUT;
   currentLag = SAFE_SYNC_LAG;
 }
 
@@ -566,6 +565,7 @@ uint16_t ModuleSyncStatus::getAdjustedRefreshRate()
 void ModuleSyncStatus::getRefreshString(char * statusText)
 {
   if (!isValid()) {
+    strcpy(statusText, STR_MODULE_NO_TELEMETRY);
     return;
   }
 

@@ -307,9 +307,10 @@ class ModuleWindow : public Window {
           return isModuleTypeAllowed(moduleIndex, moduleType);
         });
       }
-      grid.nextLine();
+      
       // Module parameters
       if (isModuleFlysky(moduleIndex) || isModuleAFHDS3(moduleIndex)) {
+        grid.nextLine();
         new Choice(this, grid.getFieldSlot(), STR_FLYSKY_PROTOCOLS, 0, 3,
                    GET_DEFAULT(isModuleFlysky(moduleIndex) ? g_model.moduleData[moduleIndex].romData.mode : g_model.moduleData[moduleIndex].afhds3.mode),
                    [=](int32_t newValue) -> void {
@@ -355,10 +356,12 @@ class ModuleWindow : public Window {
 #if defined(MULTIMODULE)
       if (isModuleMultimodule(moduleIndex)) {
         grid.nextLine();
+        int count = LCD_W < LCD_H ? 1 : 2;
         new StaticText(this, grid.getLabelSlot(true), STR_RF_PROTOCOL);
         // Multi type (CUSTOM, brand A, brand B,...)
         int multiRfProto = g_model.moduleData[moduleIndex].getMultiProtocol();
-        new Choice(this, grid.getFieldSlot(g_model.moduleData[moduleIndex].multi.customProto ? 3 : 2, 0), STR_MULTI_PROTOCOLS, MODULE_SUBTYPE_MULTI_FIRST, MODULE_SUBTYPE_MULTI_LAST,
+        //g_model.moduleData[moduleIndex].multi.customProto ? 3 : 2
+        new Choice(this, grid.getFieldSlot(count, 0), STR_MULTI_PROTOCOLS, MODULE_SUBTYPE_MULTI_FIRST, MODULE_SUBTYPE_MULTI_LAST,
                               GET_DEFAULT(multiRfProto),
                               [=](int32_t newValue) {
                                 g_model.moduleData[moduleIndex].setMultiProtocol(newValue);
@@ -368,10 +371,18 @@ class ModuleWindow : public Window {
                               });
         const uint8_t multi_proto = g_model.moduleData[moduleIndex].getMultiProtocol();
         const mm_protocol_definition *pdef = getMultiProtocolDefinition(multi_proto);
-        if (pdef->maxSubtype > 0)
-          new Choice(this, grid.getFieldSlot(2, 1), pdef->subTypeString, 0, pdef->maxSubtype, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].subType));
-        grid.nextLine();
+        MultiModuleStatus &multiStatus = getMultiModuleStatus(moduleIndex);
 
+        if (pdef->maxSubtype > 0) {
+          int index = 1;
+          if (count == 1) {
+            grid.nextLine();
+            index = 0;
+          }
+          new Choice(this, grid.getFieldSlot(count, index), pdef->subTypeString, 0, pdef->maxSubtype, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].subType));
+        }
+          
+        grid.nextLine();
         // Multimodule status
         new StaticText(this, grid.getLabelSlot(true), STR_MODULE_STATUS);
         StaticText* status = new StaticText(this, grid.getFieldSlot());
@@ -383,35 +394,68 @@ class ModuleWindow : public Window {
           }
         });
         // Multimodule sync
-        if(getModuleSyncStatus(moduleIndex).isValid()) {
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), STR_MODULE_SYNC);
+        StaticText* syncStatus = new StaticText(this, grid.getFieldSlot());
+        syncStatus->setCheckHandler([=]() {
+          char buffer[64];
+          getModuleSyncStatus(moduleIndex).getRefreshString(buffer);
+          if(!syncStatus->isTextEqual(buffer)){
+            syncStatus->setText(std::string(buffer));
+          }
+        });
+        
+  
+        if ((multiStatus.isValid() && multiStatus.optionDisp == 2) || (pdef->optionsstr && pdef->optionsstr == STR_MULTI_RFTUNE)) {
           grid.nextLine();
-          new StaticText(this, grid.getLabelSlot(true), STR_MODULE_SYNC);
-          StaticText* syncStatus = new StaticText(this, grid.getFieldSlot());
-          syncStatus->setCheckHandler([=]() {
+          if (multiStatus.optionDisp == 2) {
+            new StaticText(this, grid.getLabelSlot(true), mm_options_strings::options[multiStatus.optionDisp]);
+          }
+          auto rssi = new StaticText(this, grid.getFieldSlot(), STR_MODULE_NO_TELEMETRY);
+          rssi->setCheckHandler([=]() {
             char buffer[64];
-            getModuleSyncStatus(moduleIndex).getRefreshString(buffer);
-            if(!syncStatus->isTextEqual(buffer)){
-              syncStatus->setText(std::string(buffer));
+            sprintf(buffer, "RSSI(%d)", TELEMETRY_RSSI());
+            if(!rssi->isTextEqual(buffer)){
+              rssi->setText(std::string(buffer));
             }
           });
         }
         // Multi optional feature row
         if (pdef->optionsstr) {
           grid.nextLine();
+          int8_t min, max;
+          getMultiOptionValues(multi_proto, min, max);
           new StaticText(this, grid.getLabelSlot(true), pdef->optionsstr);
+          
           if (multi_proto == MODULE_SUBTYPE_MULTI_FS_AFHDS2A) {
-            auto edit = new NumberEdit(this, grid.getFieldSlot(2,0), 50, 400,
+            auto edit = new NumberEdit(this, grid.getFieldSlot(2,0), 50 + 5 * min, 50 + 5 * max,
                            GET_DEFAULT(50 + 5 * g_model.moduleData[moduleIndex].multi.optionValue),
                            SET_VALUE(g_model.moduleData[moduleIndex].multi.optionValue, (newValue- 50) / 5));
             edit->setStep(5);
           }
-          else if (multi_proto == MODULE_SUBTYPE_MULTI_OLRS) {
-            new NumberEdit(this, grid.getFieldSlot(2,0), -1, 7, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.optionValue));
+          else if (multi_proto == MODULE_SUBTYPE_MULTI_FRSKY_R9) {
+            new Choice(this, grid.getFieldSlot(), STR_MULTI_POWER, min, max, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.optionValue));
+          }
+          else if (multi_proto == MODULE_SUBTYPE_MULTI_DSM2) {  
+            new CheckBox(this, grid.getFieldSlot(), GET_DEFAULT(g_model.moduleData[moduleIndex].multi.optionValue & 0x01), 
+                        [=](int32_t x) { g_model.moduleData[moduleIndex].multi.optionValue = x & 0x1; SET_DIRTY(); });
           }
           else {
-            new NumberEdit(this, grid.getFieldSlot(2,0), -128, 127, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.optionValue));
+            if (min == 0 && max == 1)
+              new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.optionValue));
+            else
+              new NumberEdit(this, grid.getFieldSlot(), min, max, GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.optionValue));
           }
         }
+        // Disable mapping
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), STR_DISABLE_CH_MAP);
+        new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.disableMapping));
+
+        // Disable telemetry
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), STR_DISABLE_TELEM);
+        new CheckBox(this, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.moduleData[moduleIndex].multi.disableTelemetry));
 
         // Bind on power up
         grid.nextLine();
@@ -426,6 +470,7 @@ class ModuleWindow : public Window {
 #endif
 
       if (isModuleXJT(moduleIndex)) {
+        grid.nextLine();
         auto xjtChoice = new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_OFF, RF_PROTO_LAST,
                                     GET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol),
                                     [=](int32_t newValue) {
@@ -449,11 +494,13 @@ class ModuleWindow : public Window {
       }
 
       if (isModuleDSM2(moduleIndex)) {
+        grid.nextLine();
         new Choice(this, grid.getFieldSlot(), STR_DSM_PROTOCOLS, DSM2_PROTO_LP45, DSM2_PROTO_DSMX,
                    GET_SET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol));
       }
 
       if (isModuleR9M(moduleIndex)) {
+        grid.nextLine();
         new Choice(this, grid.getFieldSlot(), STR_R9M_MODES, MODULE_SUBTYPE_R9M_FCC,
                    MODULE_SUBTYPE_R9M_LAST,
                    GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
@@ -465,6 +512,7 @@ class ModuleWindow : public Window {
       }
 
       if (isPPM(moduleIndex)) {
+        grid.nextLine();
         new Choice(this, grid.getFieldSlot(), "\006""     +""     -", 0,
                    1,
                    GET_DEFAULT(g_model.moduleData[moduleIndex].ppm.pulsePol),
