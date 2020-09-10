@@ -131,11 +131,12 @@ static void sendFailsafeChannels(uint8_t moduleIdx)
 void setupPulsesMulti(uint8_t moduleIdx)
 {
   static int counter[2] = {0,0}; //TODO
-  static uint8_t invert[2] = {0x00,        //internal
-#if defined(PCBTARANIS) || defined(PCBHORUS)
+  static uint8_t invert[2] = {
+    0x00,       //internal
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
     0x08        //external
 #else
-    0x00	//external
+    0x00	      //external
 #endif
   };
   uint8_t type=MULTI_NORMAL;
@@ -147,8 +148,9 @@ void setupPulsesMulti(uint8_t moduleIdx)
 
   // Invert telemetry if needed
   if (invert[moduleIdx] & 0x80 && !g_model.moduleData[moduleIdx].multi.disableTelemetry) {
+    TRxw
     if (getMultiModuleStatus(moduleIdx).isValid()) {
-      invert[moduleIdx] &= 0x08;    // Telemetry received, stop searching
+      invert[moduleIdx] &= 0x08;  // Telemetry received, stop searching
     }
     else if (counter[moduleIdx] % 100 == 0) {
       invert[moduleIdx] ^= 0x08;  // Try inverting telemetry

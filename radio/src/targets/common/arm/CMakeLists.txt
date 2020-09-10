@@ -14,6 +14,7 @@ option(DSM2 "DSM2 TX Module" ON)
 option(SBUS "SBUS TX Module" ON)
 option(SBUS_TRAINER "SBUS TRAINER" ON)
 option(XJT "XJT TX Module" ON)
+option(MODULE_SIZE_STD "Standard size TX Module" ON)
 option(PXX1 "PXX1 protocol support" ON)
 option(PXX2 "PXX2 protocol support" OFF)
 option(SUPPORT_D16_EU_ONLY "XJT module only supports D16-EU and LR12-EU" OFF) # TODO rename to XJT_EU_ONLY
@@ -118,6 +119,14 @@ if(PXX1)
     ${PULSES_SRC}
     pxx1.cpp
     )
+endif()
+
+if(XJT)
+  add_definitions(-DXJT)
+endif()
+
+if(MODULE_SIZE_STD)
+  add_definitions(-DHARDWARE_EXTERNAL_MODULE_SIZE_STD)
 endif()
 
 

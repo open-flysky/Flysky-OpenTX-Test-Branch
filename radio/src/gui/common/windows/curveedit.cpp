@@ -66,9 +66,13 @@ void CurveEdit::update()
 
 bool CurveEdit::onTouchEnd(coord_t x, coord_t y)
 {
+  bool updateContent = false;
   if (!hasFocus()) {
     setFocus();
-    update();
+    if (LCD_W < LCD_H) {
+      parent->setInnerHeight(rect.y);
+    }
+    updateContent = true;
   }
 
   CurveKeyboard * keyboard = CurveKeyboard::instance();
@@ -83,13 +87,15 @@ bool CurveEdit::onTouchEnd(coord_t x, coord_t y)
       if (abs(getPointX(point.x) - x) <= 10 && abs(getPointY(point.y) - y) <= 10) {
         current = i;
         pointSelect = true;
-        update();
+        updateContent = true;
         break;
       }
     }
   }
 
-  if(!pointSelect){
+  if (updateContent) {
+    update();
+  } else if (!pointSelect && current >= 0 && current < pointsTotal){
     int8_t* point = pointsPtr + current;
     *point = (int8_t)((((y) * (2000) / (height()) - 1000) / 10)*-1);
     if(*point < -100) *point = -100;
@@ -102,6 +108,8 @@ bool CurveEdit::onTouchEnd(coord_t x, coord_t y)
 
 void CurveEdit::onFocusLost()
 {
+  current = -1;
+  parent->adjustInnerHeight();
   update();
   CurveKeyboard::instance()->disable(true);
 }
