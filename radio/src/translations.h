@@ -641,7 +641,10 @@ extern pm_char STR_DISABLE_TELEM[];
 extern pm_char STR_MODULE_UPGRADE_ALERT[];
 extern pm_char STR_MODULE_UPGRADE[];
 extern pm_char STR_RFPOWER[];
-
+extern pm_char STR_TURN_OFF_RECEIVER[];
+extern pm_char STR_TURN_OFF_RECEIVER_MESSAGE[];
+extern pm_char STR_STOPPING[];
+extern pm_char STR_MENU_SPECTRUM_ANALYSER[];
 
 #if defined(MULTIMODULE)
 extern const pm_char STR_MULTI_CUSTOM[];

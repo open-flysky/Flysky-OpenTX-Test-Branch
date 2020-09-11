@@ -43,7 +43,9 @@ class PageTab {
     }
 
     virtual void build(Window * window) = 0;
-
+    virtual void leave() {
+      
+    }
     virtual void checkEvents()
     {
     }

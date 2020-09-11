@@ -23,7 +23,10 @@
 class RadioSpectrumAnalyserPage: public PageTab {
   public:
     RadioSpectrumAnalyserPage();
-
     void build(Window * window) override;
-
+    void leave() override; 
+  protected:
+    bool prepare(Window * window);
+    int moduleIndex;
+    bool started;
 };

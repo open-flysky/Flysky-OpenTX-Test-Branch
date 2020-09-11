@@ -127,6 +127,7 @@ void TabsGroup::setCurrentTab(PageTab * tab)
     TextKeyboard::instance()->disable(false);
     NumberKeyboard::instance()->disable(false);
     CurveKeyboard::instance()->disable(false);
+    if (currentTab) currentTab->leave();
     currentTab = tab;
     tab->build(&body);
     header.setTitle(tab->title.c_str());
