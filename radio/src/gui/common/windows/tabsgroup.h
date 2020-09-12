@@ -43,9 +43,13 @@ class PageTab {
     }
 
     virtual void build(Window * window) = 0;
-    virtual void leave() {
-      
+    //leave page called when page is switched or leaved 
+    //if true is retuned it can be removed/leaved immedtly
+    //otherweise leave function will call action specified after it is possibile
+    virtual bool leave(std::function<void()> handler) {
+      return true;
     }
+
     virtual void checkEvents()
     {
     }
@@ -113,6 +117,7 @@ class TabsGroupHeader: public Window {
     }
 
   protected:
+    TabsGroup * menu;
     IconButton back;
     TabsCarousel carousel;
     const char * title = nullptr;
@@ -120,7 +125,7 @@ class TabsGroupHeader: public Window {
 
 class TabsGroup: public Window {
     friend class TabsCarousel;
-
+    friend class TabsGroupHeader;
   public:
     TabsGroup();
 

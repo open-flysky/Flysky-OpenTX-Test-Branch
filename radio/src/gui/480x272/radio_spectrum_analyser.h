@@ -24,7 +24,7 @@ class RadioSpectrumAnalyserPage: public PageTab {
   public:
     RadioSpectrumAnalyserPage();
     void build(Window * window) override;
-    void leave() override; 
+    bool leave(std::function<void()> handler) override; 
   protected:
     bool prepare(Window * window);
     int moduleIndex;

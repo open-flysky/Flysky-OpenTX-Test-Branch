@@ -469,4 +469,20 @@ inline void getMultiOptionValues(int8_t multi_proto, int8_t & min, int8_t & max)
 }
 
 
+inline void setModuleType(uint8_t moduleIdx, uint8_t moduleType)
+{
+  ModuleData & moduleData = g_model.moduleData[moduleIdx];
+  memclear(&moduleData, sizeof(ModuleData));
+  moduleData.type = moduleType;
+  moduleData.channelsCount = defaultModuleChannels_M8(moduleIdx);
+  // if (moduleData.type == MODULE_TYPE_SBUS)
+  //   moduleData.sbus.refreshRate = -31;
+  // else if (moduleData.type == MODULE_TYPE_PPM)
+  //   setDefaultPpmFrameLength(moduleIdx);
+  // else if (moduleData.type == MODULE_TYPE_AFHDS3)
+  //   resetAfhds3Options(moduleIdx);
+  // else
+  //   resetAccessAuthenticationCount();
+}
+
 #endif // _MODULES_H_

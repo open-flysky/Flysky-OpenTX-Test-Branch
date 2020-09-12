@@ -167,12 +167,20 @@ static MultiBufferState guessProtocol(uint8_t module)
 
 static void processMultiScannerPacket(const uint8_t *data)
 {
+  static uint8_t maxu = 0; 
+  static uint8_t minu = 255; 
+  static uint8_t maxscaled = 0; 
+  static uint8_t minscales = 255; 
   uint8_t cur_channel = data[0];
+  reusableBuffer.spectrumAnalyser.dirty = true;
   if (moduleState[INTERNAL_MODULE].mode == MODULE_MODE_SPECTRUM_ANALYSER || moduleState[EXTERNAL_MODULE].mode == MODULE_MODE_SPECTRUM_ANALYSER) {
     for (uint8_t channel = 0; channel <5; channel++) {
+      if (maxu < data[channel+1]) maxu = data[channel+1];
+      if (minu > data[channel+1]) minu = data[channel+1];
       uint8_t power = max<int>(0,(data[channel+1] - 34) >> 1); // remove everything below -120dB
-
-#if LCD_W == 480
+      if (maxscaled <power) maxscaled = power;
+      if (minscales > power) minscales = power;
+#if LCD_W == 480 || LCD_W == 320
       coord_t x = cur_channel*2;
       if (x < LCD_W) {
         reusableBuffer.spectrumAnalyser.bars[x] = power;
@@ -201,6 +209,7 @@ static void processMultiScannerPacket(const uint8_t *data)
         cur_channel = 0;
     }
   }
+  TRACE("%d %d %d %d", minu, maxu, minscales, maxscaled);
 }
 
 static void processMultiStatusPacket(const uint8_t * data, uint8_t module, uint8_t len)

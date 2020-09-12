@@ -29,11 +29,20 @@ TabsGroupHeader::TabsGroupHeader(TabsGroup * parent):
   Window(parent, { 0, 0, LCD_W, MENU_BODY_TOP }, OPAQUE),
   back(this, { 0, 0, TOPBAR_BUTTON_WIDTH, TOPBAR_BUTTON_WIDTH }, ICON_BACK,
        [=]() -> uint8_t {
-         parent->deleteLater();
-         return 1;
+        bool canContinue = true;
+        if (menu->currentTab) {
+          canContinue = menu->currentTab->leave([=]() {
+            parent->deleteLater();
+          });
+        }
+        if (canContinue) {
+          parent->deleteLater();
+        }
+        return canContinue;
        }, BUTTON_NOFOCUS),
   carousel(this, parent)
 {
+  menu = parent;
 }
 
 void TabsGroupHeader::paint(BitmapBuffer * dc)
@@ -127,11 +136,22 @@ void TabsGroup::setCurrentTab(PageTab * tab)
     TextKeyboard::instance()->disable(false);
     NumberKeyboard::instance()->disable(false);
     CurveKeyboard::instance()->disable(false);
-    if (currentTab) currentTab->leave();
-    currentTab = tab;
-    tab->build(&body);
-    header.setTitle(tab->title.c_str());
-    invalidate();
+    bool canContinue = true;
+    if (currentTab) {
+      canContinue = currentTab->leave([=]() {
+        currentTab = tab;
+        tab->build(&body);
+        header.setTitle(tab->title.c_str());
+        invalidate();
+      });
+    }
+    if (canContinue) {
+      currentTab = tab;
+      tab->build(&body);
+      header.setTitle(tab->title.c_str());
+      invalidate();
+    }
+    
   }
 }
 
