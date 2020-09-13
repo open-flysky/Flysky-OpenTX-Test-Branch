@@ -468,6 +468,18 @@ inline void getMultiOptionValues(int8_t multi_proto, int8_t & min, int8_t & max)
   }
 }
 
+inline void setDefaultPpmFrameLength(uint8_t moduleIdx)
+{
+  g_model.moduleData[moduleIdx].ppm.frameLength = 4 * max<int>(0, g_model.moduleData[moduleIdx].channelsCount);
+}
+
+inline void resetAccessAuthenticationCount()
+{
+#if defined(ACCESS_LIB)
+  // the module will reset on mode switch, we need to reset the authentication counter
+  globalData.authenticationCount = 0;
+#endif
+}
 
 inline void setModuleType(uint8_t moduleIdx, uint8_t moduleType)
 {
@@ -475,14 +487,14 @@ inline void setModuleType(uint8_t moduleIdx, uint8_t moduleType)
   memclear(&moduleData, sizeof(ModuleData));
   moduleData.type = moduleType;
   moduleData.channelsCount = defaultModuleChannels_M8(moduleIdx);
-  // if (moduleData.type == MODULE_TYPE_SBUS)
-  //   moduleData.sbus.refreshRate = -31;
-  // else if (moduleData.type == MODULE_TYPE_PPM)
-  //   setDefaultPpmFrameLength(moduleIdx);
+  if (moduleData.type == MODULE_TYPE_SBUS)
+    moduleData.sbus.refreshRate = -31;
+  else if (moduleData.type == MODULE_TYPE_PPM)
+    setDefaultPpmFrameLength(moduleIdx);
   // else if (moduleData.type == MODULE_TYPE_AFHDS3)
   //   resetAfhds3Options(moduleIdx);
-  // else
-  //   resetAccessAuthenticationCount();
+  else
+    resetAccessAuthenticationCount();
 }
 
 #endif // _MODULES_H_

@@ -119,22 +119,15 @@ bool isModuleSynchronous(uint8_t moduleIdx)
 
 void sendSynchronousPulses()
 {
-   static bool last[EXTERNAL_MODULE+1];
-   bool current[EXTERNAL_MODULE+1];  
 #if defined(HARDWARE_INTERNAL_MODULE)
-  current[INTERNAL_MODULE] = isModuleSynchronous(INTERNAL_MODULE);
-  if (current[INTERNAL_MODULE] || last[INTERNAL_MODULE]) {
-    if (setupPulsesInternalModule())
-      intmoduleSendNextFrame();
+  if (isModuleSynchronous(INTERNAL_MODULE) && setupPulsesInternalModule()) {
+    intmoduleSendNextFrame();
   }
-  last[INTERNAL_MODULE] = current[INTERNAL_MODULE];
 #endif
-  current[EXTERNAL_MODULE] = isModuleSynchronous(EXTERNAL_MODULE);
-  if (current[EXTERNAL_MODULE] || last[EXTERNAL_MODULE]) {
+  if (isModuleSynchronous(EXTERNAL_MODULE)) {
     if (setupPulsesExternalModule())
       extmoduleSendNextFrame();
   }
-  last[INTERNAL_MODULE] = current[INTERNAL_MODULE];
 }
 
 RTOS_FLAG_HANDLE telemetryFlag;

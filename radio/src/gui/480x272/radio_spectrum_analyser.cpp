@@ -42,12 +42,6 @@ coord_t getAverage(uint8_t number, const uint8_t * value)
   return sum / number;
 }
 
-#if defined(INTERNAL_MODULE_MULTI)
-  #define SPECTRUM_ROW  (g_moduleIdx == INTERNAL_MODULE ? READONLY_ROW : isModuleMultimodule(g_moduleIdx) ? READONLY_ROW : (uint8_t)0)
-#else
-  #define SPECTRUM_ROW  (isModuleMultimodule(g_moduleIdx) ? READONLY_ROW : (uint8_t)0)
-#endif
-
 class SpectrumView : public Window {
   public:
     SpectrumView(Window * parent, const rect_t & rect) : Window(parent, rect, OPAQUE){}
@@ -125,21 +119,18 @@ bool RadioSpectrumAnalyserPage::leave(std::function<void()> handler) {
     return true;
   }
   started = false;
+   if (isModulePXX2(moduleIndex)) {
+    moduleState[moduleIndex].readModuleInformation(&reusableBuffer.moduleSetup.pxx2.moduleInformation, PXX2_HW_INFO_TX_ID, PXX2_HW_INFO_TX_ID);
+    resetAccessAuthenticationCount();
+  }
+  if (isModuleMultimodule(moduleIndex)) {
+    if (reusableBuffer.spectrumAnalyser.moduleOFF) {
+      setModuleType(moduleIndex, MODULE_TYPE_NONE);
+    }
+  }
+  setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
   tmr10ms_t start = get_tmr10ms();
-  auto mb = new MessageBox(WARNING_TYPE_INFO, (DialogResult)0, "", STR_STOPPING, 
-    [=](DialogResult result) { 
-      if (isModulePXX2(moduleIndex)) {
-        moduleState[moduleIndex].readModuleInformation(&reusableBuffer.moduleSetup.pxx2.moduleInformation, PXX2_HW_INFO_TX_ID, PXX2_HW_INFO_TX_ID);
-        //resetAccessAuthenticationCount();
-      }
-      if (isModuleMultimodule(moduleIndex)) {
-        if (reusableBuffer.spectrumAnalyser.moduleOFF) {
-          setModuleType(moduleIndex, MODULE_TYPE_NONE);
-        }
-        else {
-          moduleState[moduleIndex].mode = MODULE_MODE_NORMAL;
-        } 
-      }
+  auto mb = new MessageBox(WARNING_TYPE_INFO, (DialogResult)0, STR_STOPPING, "Releasing resources, please wait...",  [=](DialogResult result) { 
       if(handler) handler();
     });
     mb->setCloseCondition([=]() -> DialogResult {
@@ -154,7 +145,10 @@ bool RadioSpectrumAnalyserPage::leave(std::function<void()> handler) {
 bool RadioSpectrumAnalyserPage::prepare(Window * window) {
   if (moduleState[moduleIndex].mode != MODULE_MODE_SPECTRUM_ANALYSER) {
     if (TELEMETRY_STREAMING()) {
-      new MessageBox(WARNING_TYPE_INFO, DialogResult::OK, STR_TURN_OFF_RECEIVER, STR_TURN_OFF_RECEIVER_MESSAGE, [=](DialogResult result) { 
+      new MessageBox(WARNING_TYPE_INFO, (DialogResult)(DialogResult::OK | DialogResult::Cancel), STR_TURN_OFF_RECEIVER, STR_TURN_OFF_RECEIVER_MESSAGE, [=](DialogResult result) { 
+        if (result == DialogResult::Cancel) {
+          started = false;
+        }
         build(window);
       });
       return false;
@@ -191,9 +185,19 @@ bool RadioSpectrumAnalyserPage::prepare(Window * window) {
     reusableBuffer.spectrumAnalyser.track = reusableBuffer.spectrumAnalyser.freq;
     reusableBuffer.spectrumAnalyser.step = reusableBuffer.spectrumAnalyser.span / LCD_W;
     reusableBuffer.spectrumAnalyser.dirty = true;
-    moduleState[moduleIndex].mode = MODULE_MODE_SPECTRUM_ANALYSER;
+    setModuleFlag(moduleIndex, MODULE_MODE_SPECTRUM_ANALYSER);
   }
   return true;
+}
+
+bool isSpectrumAnalyserSupported(int moduleIndex) {
+#if defined(INTERNAL_MODULE_MULTI)
+  if (moduleIndex == INTERNAL_MODULE) {
+    return true;
+  }
+#endif
+  return isModuleMultimodule(moduleIndex) || isModulePXX(moduleIndex);
+  return false;
 }
 
 void RadioSpectrumAnalyserPage::build(Window * window)
@@ -201,8 +205,25 @@ void RadioSpectrumAnalyserPage::build(Window * window)
   GridLayout grid;
   if (!started) {
     grid.spacer(10);
-    auto startScan = new TextButton(window, grid.getLineSlot(), "Start");
-    startScan->setPressHandler([=]() {
+    auto startScanInt = new TextButton(window, grid.getLineSlot(), "Start analyser int. module");
+    startScanInt->setPressHandler([=]() {
+        moduleIndex = INTERNAL_MODULE;
+        started = true;
+        window->clear();
+        build(window);
+        return 0;
+    });
+    if (!isSpectrumAnalyserSupported(INTERNAL_MODULE)) {
+      startScanInt->disable();
+    }
+    grid.nextLine();
+    auto startScanExt = new TextButton(window, grid.getLineSlot(), "Start analyser ext. module");
+    startScanExt->setPressHandler([=]() {
+        if (!isSpectrumAnalyserSupported(EXTERNAL_MODULE)) {
+          new MessageBox(WARNING_TYPE_INFO, (DialogResult)DialogResult::OK, "Module not supported", "Please use supported module eg. Multimodule.", [=](DialogResult result) { });
+          return 0;
+        }
+        moduleIndex = EXTERNAL_MODULE;
         started = true;
         window->clear();
         build(window);
@@ -210,7 +231,7 @@ void RadioSpectrumAnalyserPage::build(Window * window)
     });
     return;
   }
-  moduleIndex = EXTERNAL_MODULE;
+  
   if(!prepare(window)) {
     return;
   }

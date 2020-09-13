@@ -56,7 +56,7 @@ void preModelLoad()
 
   pauseMixerCalculations();
 }
-#if defined(PCBTARANIS) || defined(PCBHORUS)
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
 static void fixUpModel()
 {
   // Ensure that when rfProtocol is RF_PROTO_OFF the type of the module is MODULE_TYPE_NONE
@@ -67,9 +67,37 @@ static void fixUpModel()
 
 void postModelLoad(bool alarms)
 {
-#if defined(PCBTARANIS) || defined(PCBHORUS)
+#if defined(PXX2)
+  if (is_memclear(g_model.modelRegistrationID, PXX2_LEN_REGISTRATION_ID)) {
+    memcpy(g_model.modelRegistrationID, g_eeGeneral.ownerRegistrationID, PXX2_LEN_REGISTRATION_ID);
+  }
+#endif
+#if defined(HARDWARE_INTERNAL_MODULE)
+  if (!isInternalModuleAvailable(g_model.moduleData[INTERNAL_MODULE].type)) {
+    memclear(&g_model.moduleData[INTERNAL_MODULE], sizeof(ModuleData));
+  }
+#if defined(MULTIMODULE)
+  else if (isModuleMultimodule(INTERNAL_MODULE))
+    multiPatchCustom(INTERNAL_MODULE);
+#endif
+  setModuleFlag(INTERNAL_MODULE, MODULE_MODE_RESET_SETTINGS);
+  setModuleFlag(INTERNAL_MODULE, MODULE_MODE_NORMAL);
+#endif
+
+if (!isExternalModuleAvailable(g_model.moduleData[EXTERNAL_MODULE].type)) {
+    memclear(&g_model.moduleData[EXTERNAL_MODULE], sizeof(ModuleData));
+  }
+#if defined(MULTIMODULE)
+  else if (isModuleMultimodule(EXTERNAL_MODULE))
+    multiPatchCustom(EXTERNAL_MODULE);
+#endif
+  setModuleFlag(EXTERNAL_MODULE, MODULE_MODE_RESET_SETTINGS);
+  setModuleFlag(EXTERNAL_MODULE, MODULE_MODE_NORMAL);
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
   fixUpModel();
 #endif
+
+
   AUDIO_FLUSH();
   flightReset(false);
 

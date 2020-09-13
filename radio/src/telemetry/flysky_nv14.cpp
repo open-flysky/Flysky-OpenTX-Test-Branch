@@ -115,16 +115,16 @@ int32_t GetSensorValueFlySkyNv14(const FlyskyNv14Sensor* sensor, const uint8_t *
   else if(sensor->bytes == 4) value = sensorData->UINT32;
 
   if(sensor->id == FLYSKY_SENSOR_RX_RSSI) {
-      if(value < -200) value = -200;
+    if(value < -200) value = -200;
 #if defined (PCBNV14)
     if(!g_model.rssiAlarms.flysky_telemetry)
 #endif
     {
-         value += 200;
-         value /= 2;
-      }
-      telemetryData.rssi.set(value);
+      value += 200;
+      value /= 2;
     }
+    telemetryData.rssi.set(value);
+  }
   if(sensor->id == FLYSKY_SENSOR_PRESURRE && sensor->subId != 0){
     value = CalculateAltitude(value);
   }
@@ -169,6 +169,7 @@ void flySkyNv14Sync(int16_t delayValue) {
 }
 void flySkyNv14ProcessTelemetryPacket(const uint8_t * ptr, uint8_t sensorID )
 {
+  int sensorCount = 0;
   uint8_t instnace = *ptr++;
   if(sensorID == FLYSKY_SENSOR_RX_VOLTAGE) sensorID = FLYSKY_FIXED_RX_VOLTAGE;
   for (const FlyskyNv14Sensor sensor : Nv14Sensor) {
@@ -178,8 +179,11 @@ void flySkyNv14ProcessTelemetryPacket(const uint8_t * ptr, uint8_t sensorID )
       if(sensor.id == FLYSKY_SENSOR_SYNC) {
         flySkyNv14Sync(value);
       }
+      else sensorCount++;
     }
   }
-  telemetryStreaming = TELEMETRY_TIMEOUT10ms;
+  if (sensorCount) {
+    telemetryStreaming = TELEMETRY_TIMEOUT10ms;
+  }
 }
 

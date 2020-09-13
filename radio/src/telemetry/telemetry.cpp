@@ -219,7 +219,9 @@ void telemetryWakeup()
       }
       else if (telemetryState == TELEMETRY_OK) {
         telemetryState = TELEMETRY_KO;
-        AUDIO_TELEMETRY_LOST();
+        if (!isModuleInBeepMode()) {
+          AUDIO_TELEMETRY_LOST();
+        }
       }
     }
   }
