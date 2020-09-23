@@ -37,14 +37,12 @@ static MixerSchedule mixerSchedules[NUM_MODULES];
 
 uint16_t getMixerSchedulerPeriod()
 {
-  if (mixerSchedules[INTERNAL_MODULE].period) {
-    return mixerSchedules[INTERNAL_MODULE].period;
-  }
-  else if (mixerSchedules[EXTERNAL_MODULE].period) {
-    return mixerSchedules[EXTERNAL_MODULE].period;
+  uint16_t period = std::max(mixerSchedules[INTERNAL_MODULE].period, mixerSchedules[EXTERNAL_MODULE].period);
+  if (!period) {
+    period = MIXER_SCHEDULER_DEFAULT_PERIOD_US;
   }
     
-  return MIXER_SCHEDULER_DEFAULT_PERIOD_US;
+  return period;
 }
 
 void mixerSchedulerInit()

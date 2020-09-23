@@ -361,7 +361,7 @@ class ModuleWindow : public Window {
         // Multi type (CUSTOM, brand A, brand B,...)
         int multiRfProto = g_model.moduleData[moduleIndex].getMultiProtocol();
         //g_model.moduleData[moduleIndex].multi.customProto ? 3 : 2
-        new Choice(this, grid.getFieldSlot(count, 0), STR_MULTI_PROTOCOLS, MODULE_SUBTYPE_MULTI_FIRST, MODULE_SUBTYPE_MULTI_LAST,
+        auto rfProt = new Choice(this, grid.getFieldSlot(count, 0), STR_MULTI_PROTOCOLS, MODULE_SUBTYPE_MULTI_FIRST, MODULE_SUBTYPE_MULTI_LAST,
                               GET_DEFAULT(multiRfProto),
                               [=](int32_t newValue) {
                                 g_model.moduleData[moduleIndex].setMultiProtocol(newValue);
@@ -369,6 +369,7 @@ class ModuleWindow : public Window {
                                 SET_DIRTY();
                                 update();
                               });
+        rfProt->setAvailableHandler([=](int value) { return value != MODULE_SUBTYPE_MULTI_SCANNER; });
         const uint8_t multi_proto = g_model.moduleData[moduleIndex].getMultiProtocol();
         const mm_protocol_definition *pdef = getMultiProtocolDefinition(multi_proto);
         MultiModuleStatus &multiStatus = getMultiModuleStatus(moduleIndex);
