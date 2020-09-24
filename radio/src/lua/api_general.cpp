@@ -50,6 +50,10 @@
 
 #define FIND_FIELD_DESC  0x01
 
+#if defined(LUA) && !defined(CLI)
+Fifo<uint8_t, LUA_FIFO_SIZE> * luaRxFifo = nullptr;
+#endif
+
 /*luadoc
 @function getVersion()
 
@@ -260,7 +264,7 @@ void luaGetValueAndPush(lua_State* L, int src)
     }
   }
   else if (src == MIXSRC_TX_VOLTAGE) {
-    lua_pushnumber(L, float(value) * 0.1f);
+    lua_pushnumber(L, float(value) * 0.01f);
   }
   else {
     lua_pushinteger(L, value);
@@ -420,9 +424,9 @@ When called without parameters, it will only return the status of the output buf
 static int luaSportTelemetryPush(lua_State * L)
 {
   if (lua_gettop(L) == 0) {
-    lua_pushboolean(L, isSportOutputBufferAvailable());
+    lua_pushboolean(L, outputTelemetryBuffer.isAvailable());
   }
-  else if (isSportOutputBufferAvailable()) {
+  else if (outputTelemetryBuffer.isAvailable()) {
     SportTelemetryPacket packet;
     packet.physicalId = getDataId(luaL_checkunsigned(L, 1));
     packet.primId = luaL_checkunsigned(L, 2);
@@ -495,22 +499,31 @@ When called without parameters, it will only return the status of the output buf
 */
 static int luaCrossfireTelemetryPush(lua_State * L)
 {
-  if (lua_gettop(L) == 0) {
-    lua_pushboolean(L, isCrossfireOutputBufferAvailable());
+  if (telemetryProtocol != PROTOCOL_TELEMETRY_CROSSFIRE) {
+    lua_pushnil(L);
+    return 1;
   }
-  else if (isCrossfireOutputBufferAvailable()) {
+
+  if (lua_gettop(L) == 0) {
+    lua_pushboolean(L, outputTelemetryBuffer.isAvailable());
+  }
+  else if (lua_gettop(L) > TELEMETRY_OUTPUT_BUFFER_SIZE ) {
+    lua_pushboolean(L, false);
+    return 1;
+  }
+  else if (outputTelemetryBuffer.isAvailable()) {
     uint8_t command = luaL_checkunsigned(L, 1);
     luaL_checktype(L, 2, LUA_TTABLE);
     uint8_t length = luaL_len(L, 2);
-    telemetryOutputPushByte(MODULE_ADDRESS);
-    telemetryOutputPushByte(2 + length); // 1(COMMAND) + data length + 1(CRC)
-    telemetryOutputPushByte(command); // COMMAND
+    outputTelemetryBuffer.pushByte(MODULE_ADDRESS);
+    outputTelemetryBuffer.pushByte(2 + length); // 1(COMMAND) + data length + 1(CRC)
+    outputTelemetryBuffer.pushByte(command); // COMMAND
     for (int i=0; i<length; i++) {
       lua_rawgeti(L, 2, i+1);
-      telemetryOutputPushByte(luaL_checkunsigned(L, -1));
+      outputTelemetryBuffer.pushByte(luaL_checkunsigned(L, -1));
     }
-    telemetryOutputPushByte(crc8(outputTelemetryBuffer+2, 1 + length));
-    telemetryOutputSetTrigger(command);
+    outputTelemetryBuffer.pushByte(crc8(outputTelemetryBuffer.data+2, 1 + length));
+    outputTelemetryBuffer.setDestination(TELEMETRY_ENDPOINT_SPORT);
     lua_pushboolean(L, true);
   }
   else {
@@ -1111,7 +1124,7 @@ static int luaSetTelemetryValue(lua_State * L)
     zname[3] = hex2zchar((id & 0x000f) >> 0);
   }
   if (id | subId | instance) {
-    int index = setTelemetryValue(TELEM_PROTO_LUA, id, subId, instance, value, unit, prec);
+    int index = setTelemetryValue(PROTOCOL_TELEMETRY_LUA, id, subId, instance, value, unit, prec);
     if (index >= 0) {
       TelemetrySensor &telemetrySensor = g_model.telemetrySensors[index];
       telemetrySensor.id = id;
@@ -1283,6 +1296,138 @@ static int luaResetGlobalTimer(lua_State * L)
   storageDirty(EE_GENERAL);
   return 0;
 }
+
+/*luadoc
+@function multiBuffer(address[,value])
+
+This function reads/writes the Multi protocol buffer to interact with a protocol².
+
+@param address to read/write in the buffer
+@param (optional): value to write in the buffer
+
+@retval buffer value (number)
+
+@status current Introduced in 2.3.2
+*/
+#if defined(MULTIMODULE)
+uint8_t * Multi_Buffer = nullptr;
+
+static int luaMultiBuffer(lua_State * L)
+{
+  uint8_t address = luaL_checkunsigned(L, 1);
+  if (!Multi_Buffer)
+    Multi_Buffer = (uint8_t *) malloc(MULTI_BUFFER_SIZE);
+
+  if (!Multi_Buffer || address >= MULTI_BUFFER_SIZE) {
+    lua_pushinteger(L, 0);
+    return 0;
+  }
+  uint16_t value = luaL_optunsigned(L, 2, 0x100);
+  if (value < 0x100) {
+    Multi_Buffer[address] = value;
+  }
+  lua_pushinteger(L, Multi_Buffer[address]);
+  return 1;
+}
+#endif
+
+/*luadoc
+@function serialWrite(str)
+@param str (string) String to be written to the serial port.
+
+Writes a string to the serial port. The string is allowed to contain any character, including 0.
+
+@status current Introduced in TODO
+*/
+static int luaSerialWrite(lua_State * L)
+{
+  const char * str = luaL_checkstring(L, 1);
+  size_t len = lua_rawlen(L, 1);
+
+  if (!str || len < 1)
+    return 0;
+
+#if !defined(SIMU)
+  #if defined(USB_SERIAL)
+  if (getSelectedUsbMode() == USB_SERIAL_MODE) {
+    size_t wr_len = len;
+    const char* p = str;
+    while(wr_len--) usbSerialPutc(*p++);
+  }
+  #endif
+  #if defined(AUX_SERIAL)
+  if (auxSerialMode == UART_MODE_LUA) {
+    size_t wr_len = len;
+    const char* p = str;
+    while(wr_len--) auxSerialPutc(*p++);
+  }
+  #endif
+#if defined(AUX2_SERIAL)
+  if (aux2SerialMode == UART_MODE_LUA) {
+    size_t wr_len = len;
+    const char* p = str;
+    while(wr_len--) aux2SerialPutc(*p++);
+  }
+#endif
+#else
+  debugPrintf("luaSerialWrite: %.*s",len,str);
+#endif
+
+  return 0;
+}
+
+/*luadoc
+@function serialRead([num])
+@param num (optional): maximum number of bytes to read.
+                       If non-zero, serialRead will read up to num characters from the buffer.
+                       If 0 or left out, serialRead will read up to and including the first newline character or the end of the buffer.
+                       Note that the returned string may not end in a newline if this character is not present in the buffer.
+
+@retval str string. Empty if no new characters were available.
+
+Reads characters from the serial port. The string is allowed to contain any character, including 0.
+
+@status current Introduced in 2.3.8
+*/
+static int luaSerialRead(lua_State * L)
+{
+#if defined(LUA) && !defined(CLI)
+  int num = luaL_optunsigned(L, 1, 0);
+
+  if (!luaRxFifo) {
+    luaRxFifo = new Fifo<uint8_t, LUA_FIFO_SIZE>();
+    if (!luaRxFifo) {
+      lua_pushlstring(L, "", 0);
+      return 1;
+    }
+  }
+  uint8_t str[LUA_FIFO_SIZE];
+  uint8_t *p = str;
+  while (luaRxFifo->pop(*p)) {
+    p++;  // increment only when pop was successful
+    if (p - str >= LUA_FIFO_SIZE) {
+      // buffer full
+      break;
+    }
+    if (num == 0) {
+      if (*(p - 1) == '\n' || *(p - 1) == '\r') {
+        // found newline
+        break;
+      }
+    }
+    else if (p - str >= num) {
+      // requested number of characters reached
+      break;
+    }
+  }
+  lua_pushlstring(L, (const char*)str, p - str);
+#else
+  lua_pushlstring(L, "", 0);
+#endif
+
+  return 1;
+}
+
 
 const luaL_Reg opentxLib[] = {
   { "getTime", luaGetTime },

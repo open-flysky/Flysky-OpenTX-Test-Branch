@@ -81,7 +81,7 @@ PLAY_FUNCTION(playValue, source_t idx)
     PLAY_DURATION(val*60, PLAY_TIME);
   }
   else if (idx == MIXSRC_TX_VOLTAGE) {
-    PLAY_NUMBER(val, UNIT_VOLTS, PREC1);
+    PLAY_NUMBER(val, UNIT_VOLTS, PREC2);
   }
   else {
     if (idx <= MIXSRC_LAST_CH) {
@@ -389,7 +389,7 @@ void evalFunctions()
           {
             unsigned int moduleIndex = CFN_PARAM(cfn);
             if (moduleIndex < NUM_MODULES) {
-              moduleFlag[moduleIndex] = 1 + CFN_FUNC(cfn) - FUNC_RANGECHECK;
+              moduleState[moduleIndex].mode = 1 + CFN_FUNC(cfn) - FUNC_RANGECHECK;
             }
             break;
           }
@@ -598,7 +598,7 @@ void evalFunctions()
             {
               unsigned int moduleIndex = CFN_PARAM(cfn);
               if (moduleIndex < NUM_MODULES) {
-                moduleFlag[moduleIndex] = 0;
+                moduleState[moduleIndex].mode = 0;
               }
               break;
             }

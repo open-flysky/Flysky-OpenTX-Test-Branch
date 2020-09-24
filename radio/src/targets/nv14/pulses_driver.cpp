@@ -20,6 +20,11 @@
 
 #include "opentx.h"
 
+const uint16_t Parity_No = ((uint16_t)0x0000); //USART_Parity_No
+const uint16_t StopBits_1 = ((uint16_t)0x0000); //USART_StopBits_1
+const uint16_t WordLength_8b = ((uint16_t)0x0000); //USART_WordLength_8b
+
+
 void intmoduleStop(void);
 void extmoduleStop(void);
 
@@ -29,10 +34,6 @@ void intmodulePxxStart(void);
 void extmoduleNoneStart(void);
 void extmodulePpmStart(void);
 void extmodulePxxStart(void);
-#if defined(DSM2)
-void extmoduleDsm2Start(void);
-#endif
-void extmoduleCrossfireStart(void);
 
 void init_no_pulses(uint32_t port) {
   if (port == INTERNAL_MODULE)
@@ -55,60 +56,6 @@ void init_ppm(uint32_t port) {
 }
 
 void disable_ppm(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}
-
-void init_pxx(uint32_t port) {
-  if (port == INTERNAL_MODULE)
-    intmodulePxxStart();
-  else
-    extmodulePxxStart();
-}
-
-void disable_pxx(uint32_t port) {
-  if (port == INTERNAL_MODULE)
-    intmoduleStop();
-  else
-    extmoduleStop();
-}
-
-#if defined(DSM2)
-void init_dsm2(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleDsm2Start();
-  }
-}
-
-void disable_dsm2(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}
-#endif
-
-void init_sbusOut(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleDsm2Start();
-  }
-}
-
-void disable_sbusOut(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}
-
-void init_crossfire(uint32_t port) {
-  if (port == EXTERNAL_MODULE) {
-    extmoduleCrossfireStart();
-  }
-}
-
-void disable_crossfire(uint32_t port) {
   if (port == EXTERNAL_MODULE) {
     extmoduleStop();
   }

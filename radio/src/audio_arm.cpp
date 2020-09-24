@@ -1078,6 +1078,16 @@ void audioEvent(unsigned int index)
       flashCounter = FLASH_DURATION;
     }
   }
+  if (!g_eeGeneral.disableAlarmWarning)
+  {
+    switch (index)
+    {
+      case AU_TX_BATTERY_LOW:
+      case AU_INACTIVITY:
+      case AU_MODEL_STILL_POWERED:
+        return;
+    }
+  }
 
   if (g_eeGeneral.beepMode >= e_mode_nokeys || (g_eeGeneral.beepMode >= e_mode_alarms && index <= AU_ERROR)) {
 #if defined(SDCARD)
@@ -1097,6 +1107,7 @@ void audioEvent(unsigned int index)
       case AU_TX_MAH_HIGH:
       case AU_TX_TEMP_HIGH:
 #endif
+
         audioQueue.playTone(1950, 160, 20, PLAY_REPEAT(2), 1);
         audioQueue.playTone(2550, 160, 20, PLAY_REPEAT(2), -1);
         break;

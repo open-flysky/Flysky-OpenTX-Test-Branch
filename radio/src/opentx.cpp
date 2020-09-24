@@ -182,7 +182,7 @@ void per10ms()
 #endif
 
 #if defined(TELEMETRY_FRSKY) || defined(TELEMETRY_JETI)
-  if (!IS_DSM2_SERIAL_PROTOCOL(s_current_protocol[0])) {
+  if (!IS_DSM2_SERIAL_PROTOCOL(moduleState[0].protocol)) {
     telemetryInterrupt10ms();
   }
 #endif
@@ -202,7 +202,7 @@ void per10ms()
 #if defined(SDCARD)
   sdPoll10ms();
 #endif
-
+  outputTelemetryBuffer.per10ms();
   heartbeat |= HEART_TIMER_10MS;
 }
 
@@ -276,10 +276,10 @@ void generalDefault()
 #if defined(DEFAULT_MODE)
   g_eeGeneral.stickMode = DEFAULT_MODE-1;
 #endif
-  g_eeGeneral.stickMode = 0;
+
 #if defined(PCBTARANIS)
   g_eeGeneral.templateSetup = 17; /* TAER */
-#else defined(PCBNV14)
+#elif defined(PCBNV14)
   g_eeGeneral.templateSetup = 21; /* AETR */
 #endif
 
@@ -406,16 +406,16 @@ void checkModelIdUnique(uint8_t index, uint8_t module)
 {
   uint8_t modelId = g_model.header.modelId[module];
   uint8_t additionalOnes = 0;
-  char * name = reusableBuffer.msgbuf.msg;
+  char * name = reusableBuffer.moduleSetup.msg;
 
-  memset(reusableBuffer.msgbuf.msg, 0, sizeof(reusableBuffer.msgbuf.msg));
+  memset(reusableBuffer.moduleSetup.msg, 0, sizeof(reusableBuffer.moduleSetup.msg));
 
   if (modelId != 0) {
     for (uint8_t i = 0; i < MAX_MODELS; i++) {
       if (i != index) {
         if (modelId == modelHeaders[i].modelId[module]) {
-          if ((WARNING_LINE_LEN - 4 - (name - reusableBuffer.msgbuf.msg)) > (signed)(modelHeaders[i].name[0] ? zlen(modelHeaders[i].name, LEN_MODEL_NAME) : sizeof(TR_MODEL) + 2)) { // you cannot rely exactly on WARNING_LINE_LEN so using WARNING_LINE_LEN-2 (-2 for the ",")
-            if (reusableBuffer.msgbuf.msg[0] != 0) {
+          if ((WARNING_LINE_LEN - 4 - (name - reusableBuffer.moduleSetup.msg)) > (signed)(modelHeaders[i].name[0] ? zlen(modelHeaders[i].name, LEN_MODEL_NAME) : sizeof(TR_MODEL) + 2)) { // you cannot rely exactly on WARNING_LINE_LEN so using WARNING_LINE_LEN-2 (-2 for the ",")
+            if (reusableBuffer.moduleSetup.msg[0] != 0) {
               name = strAppend(name, ", ");
             }
             if (modelHeaders[i].name[0] == 0) {
@@ -440,9 +440,9 @@ void checkModelIdUnique(uint8_t index, uint8_t module)
     name = strAppend(name, ")");
   }
 
-  if (reusableBuffer.msgbuf.msg[0] != 0) {
+  if (reusableBuffer.moduleSetup.msg[0] != 0) {
     POPUP_WARNING(STR_MODELIDUSED);
-    SET_WARNING_INFO(reusableBuffer.msgbuf.msg, sizeof(reusableBuffer.msgbuf.msg), 0);
+    SET_WARNING_INFO(reusableBuffer.moduleSetup.msg, sizeof(reusableBuffer.moduleSetup.msg), 0);
   }
 }
 #endif
@@ -463,7 +463,7 @@ void modelDefault(uint8_t id)
 #if defined(PCBFLYSKY)
   g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_FLYSKY;
 #elif defined(PCBFRSKY)
-  g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_XJT;
+  g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_XJT_PXX1;
   g_model.moduleData[INTERNAL_MODULE].channelsCount = DEFAULT_CHANNELS(INTERNAL_MODULE);
 #elif defined(PCBSKY9X)
   g_model.moduleData[EXTERNAL_MODULE].type = MODULE_TYPE_PPM;
@@ -534,12 +534,11 @@ bool isInputRecursive(int index)
 #endif
 
 #if defined(AUTOSOURCE)
-int8_t getMovedSource(GET_MOVED_SOURCE_PARAMS)
+int8_t getMovedSource(uint8_t min)
 {
   int8_t result = 0;
   static tmr10ms_t s_move_last_time = 0;
 
-#if defined(VIRTUAL_INPUTS)
   static int16_t inputsStates[MAX_INPUTS];
   if (min <= MIXSRC_FIRST_INPUT) {
     for (uint8_t i=0; i<MAX_INPUTS; i++) {
@@ -551,14 +550,21 @@ int8_t getMovedSource(GET_MOVED_SOURCE_PARAMS)
       }
     }
   }
-#endif
 
   static int16_t sourcesStates[NUM_STICKS+NUM_POTS+NUM_SLIDERS+NUM_MOUSE_ANALOGS];
+  static int16_t switchesStates[NUM_SWITCHES];
   if (result == 0) {
     for (uint8_t i=0; i<NUM_STICKS+NUM_POTS+NUM_SLIDERS; i++) {
       if (abs(calibratedAnalogs[i] - sourcesStates[i]) > 512) {
         result = MIXSRC_Rud+i;
         break;
+      }
+    }
+    for (uint8_t i=0; i<NUM_SWITCHES; i++) {
+      int16_t oldVal = switchesStates[i];
+      switchesStates[i] = getValue(MIXSRC_FIRST_SWITCH+i);
+      if(abs(oldVal - switchesStates[i]) > 512) {
+        result = MIXSRC_FIRST_SWITCH + i;
       }
     }
   }
@@ -569,9 +575,7 @@ int8_t getMovedSource(GET_MOVED_SOURCE_PARAMS)
   }
 
   if (result || recent) {
-#if defined(VIRTUAL_INPUTS)
     memcpy(inputsStates, anas, sizeof(inputsStates));
-#endif
     memcpy(sourcesStates, calibratedAnalogs, sizeof(sourcesStates));
   }
 
@@ -886,10 +890,14 @@ void checkBacklight()
         backlightOn();
       }
     }
-    if ((g_eeGeneral.backlightMode & e_backlight_mode_keys) && touchState.Time + 50 > get_tmr10ms()) {
+    if ((g_eeGeneral.backlightMode & e_backlight_mode_keys) && touchState.LastEvent + 50 > get_tmr10ms()) {
       backlightOn();
-
     }
+#if defined(PWR_BUTTON_PRESS)
+    if (pwrPressed()) {
+      backlightOn();
+    }
+#endif
     bool backlightOn = (g_eeGeneral.backlightMode == e_backlight_mode_on || lightOffCounter || isFunctionActive(FUNCTION_BACKLIGHT));
 
     if (flashCounter) backlightOn = !backlightOn;
@@ -982,22 +990,17 @@ void doSplash()
 #if defined(FSPLASH)
       }
 #endif
-
-#if defined(PWR_BUTTON_PRESS)
       uint32_t pwr_check = pwrCheck();
       if (pwr_check == e_power_off) {
         break;
       }
+#if defined(PWR_BUTTON_PRESS)
       else if (pwr_check == e_power_press) {
         refresh = true;
       }
       else if (pwr_check == e_power_on && refresh) {
         drawSplash();
         refresh = false;
-      }
-#else
-      if (pwrCheck() == e_power_off) {
-        return;
       }
 #endif
 
@@ -1209,22 +1212,17 @@ void checkTHR()
     if (!isThrottleWarningAlertNeeded()) {
       return;
     }
-
-#if defined(PWR_BUTTON_PRESS)
     uint32_t pwr_check = pwrCheck();
     if (pwr_check == e_power_off) {
       break;
     }
+#if defined(PWR_BUTTON_PRESS)
     else if (pwr_check == e_power_press) {
       refresh = true;
     }
     else if (pwr_check == e_power_on && refresh) {
       RAISE_ALERT(STR_THROTTLEWARN, STR_THROTTLENOTIDLE, STR_PRESSANYKEYTOSKIP, AU_NONE);
       refresh = false;
-    }
-#else
-    if (pwrCheck() == e_power_off) {
-      break;
     }
 #endif
 
@@ -1242,17 +1240,6 @@ void checkTHR()
   LED_ERROR_END();
 }
 #endif
-
-void checkAlarm() // added by Gohst
-{
-  if (g_eeGeneral.disableAlarmWarning) {
-    return;
-  }
-
-  if (IS_SOUND_OFF()) {
-    ALERT(STR_ALARMSWARN, STR_ALARMSDISABLED, AU_ERROR);
-  }
-}
 
 void alert(const pm_char * title, const pm_char * msg ALERT_SOUND_ARG)
 {
@@ -1277,22 +1264,18 @@ void alert(const pm_char * title, const pm_char * msg ALERT_SOUND_ARG)
     doLoopCommonActions();
 
     wdt_reset();
-
-#if defined(PWR_BUTTON_PRESS)
+	
     uint32_t pwr_check = pwrCheck();
     if (pwr_check == e_power_off) {
       boardOff();
     }
+#if defined(PWR_BUTTON_PRESS)
     else if (pwr_check == e_power_press) {
       refresh = true;
     }
     else if (pwr_check == e_power_on && refresh) {
       RAISE_ALERT(title, msg, STR_PRESSANYKEY, AU_NONE);
       refresh = false;
-    }
-#else
-    if (pwrCheck() == e_power_off) {
-      boardOff(); // turn power off now
     }
 #endif
   }
@@ -1597,7 +1580,8 @@ void getADC()
 
 #endif // SIMU
 
-uint8_t g_vbat100mV = 0;
+uint16_t g_vbat10mV;
+uint8_t g_vbat100mV;
 uint16_t lightOffCounter;
 uint8_t flashCounter = 0;
 
@@ -1811,8 +1795,8 @@ void doMixerCalculations()
         struct t_inactivity *ptrInactivity = &inactivity;
         FORCE_INDIRECT(ptrInactivity) ;
         ptrInactivity->counter++;
-        //use check against 25 instead 50 because of NV14
-        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && g_vbat100mV > 25 && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
+        //use check against 250 instead 500 because of NV14
+        if ((((uint8_t)ptrInactivity->counter)&0x07)==0x01 && g_eeGeneral.inactivityTimer && g_vbat10mV > 250 && ptrInactivity->counter > ((uint16_t)g_eeGeneral.inactivityTimer*60))
           AUDIO_INACTIVITY();
 
 #if defined(AUDIO)
@@ -1854,13 +1838,13 @@ void doMixerCalculations()
       }
     }
 
-#if defined(PXX) || defined(DSM2)
+#if defined(PXX1) || defined(DSM2)
     static uint8_t countRangecheck = 0;
     for (uint8_t i=0; i<NUM_MODULES; ++i) {
 #if defined(MULTIMODULE)
-      if (moduleFlag[i] != MODULE_NORMAL_MODE || (i == EXTERNAL_MODULE && multiModuleStatus.isBinding())) {
+      if (moduleState[i].mode >= MODULE_MODE_BEEP_FIRST || getMultiModuleStatus(i).isBinding()) {
 #else
-      if (moduleFlag[i] != MODULE_NORMAL_MODE) {
+      if (moduleState[i].mode >= MODULE_MODE_BEEP_FIRST) {
 #endif
         if (++countRangecheck >= 250) {
           countRangecheck = 0;
@@ -1957,7 +1941,9 @@ void opentxStart(OPENTX_START_ARGS)
 #endif
   }
   else {
-    checkAlarm();
+    if (!g_eeGeneral.disableAlarmWarning && IS_SOUND_OFF()) {
+      ALERT(STR_ALARMSWARN, STR_ALARMSDISABLED, AU_ERROR);
+    }
     checkAll();
     PLAY_MODEL_NAME();
   }
@@ -2124,65 +2110,6 @@ uint8_t getSticksNavigationEvent()
 }
 #endif
 
-#if !defined(CPUARM)
-void checkBattery()
-{
-  static uint8_t counter = 0;
-#if defined(GUI) && !defined(COLORLCD)
-  // TODO not the right menu I think ...
-  if (menuHandlers[menuLevel] == menuRadioDiagAnalogs) {
-    g_vbat100mV = 0;
-    counter = 0;
-  }
-#endif
-  if (counter-- == 0) {
-    counter = 10;
-    int32_t instant_vbat = anaIn(TX_VOLTAGE);
-#if defined(CPUM2560)
-    instant_vbat = (instant_vbat*1112 + instant_vbat*g_eeGeneral.txVoltageCalibration + (BandGap<<2)) / (BandGap<<3);
-#else
-    instant_vbat = (instant_vbat*16 + instant_vbat*g_eeGeneral.txVoltageCalibration/8) / BandGap;
-#endif
-
-    static uint8_t  s_batCheck;
-    static uint16_t s_batSum;
-
-#if defined(VOICE)
-    s_batCheck += 8;
-#else
-    s_batCheck += 32;
-#endif
-
-    s_batSum += instant_vbat;
-
-    if (g_vbat100mV == 0) {
-      g_vbat100mV = instant_vbat;
-      s_batSum = 0;
-      s_batCheck = 0;
-    }
-#if defined(VOICE)
-    else if (!(s_batCheck & 0x3f)) {
-#else
-    else if (s_batCheck == 0) {
-#endif
-      g_vbat100mV = s_batSum / 8;
-      s_batSum = 0;
-#if defined(VOICE)
-      if (s_batCheck != 0) {
-        // no alarms
-      }
-      else
-#endif
-      //use check against 25 instead 50 because of NV14
-      if (IS_TXBATT_WARNING() && g_vbat100mV > 25) {
-        AUDIO_TX_BATTERY_LOW();
-      }
-    }
-  }
-}
-#endif // #if !defined(CPUARM)
-
-
 #if !defined(SIMU) && !defined(CPUARM)
 
 volatile uint8_t g_tmr16KHz; //continuous timer 16ms (16MHz/1024/256) -- 8-bit counter overflow
@@ -2300,7 +2227,7 @@ FORCEINLINE void FRSKY_USART_vect()
 ISR(USART_UDRE_vect_N(TLM_USART))
 {
 #if defined(TELEMETRY_FRSKY) && defined(DSM2_SERIAL)
-  if (IS_DSM2_PROTOCOL(g_model.protocol)) { // TODO not s_current_protocol?
+  if (IS_DSM2_PROTOCOL(g_model.protocol)) { // TODO not moduleState[].protocol?
     DSM2_USART_vect();
   }
   else {
@@ -2667,6 +2594,7 @@ int main()
   wdt_disable();
 
   boardInit();
+  haptic.play(15, 3, PLAY_NOW);  // short hum to signal that radio is on
 
 #if defined(PCBX7)
   bluetoothInit(BLUETOOTH_DEFAULT_BAUDRATE);   //BT is turn on for a brief period to differentiate X7 and X7S
@@ -2845,91 +2773,62 @@ uint32_t pwrPressedDuration()
 uint32_t pwrCheck()
 {
   const char * message = NULL;
-
-  enum PwrCheckState {
-    PWR_CHECK_ON,
-    PWR_CHECK_OFF,
-    PWR_CHECK_PAUSED,
-  };
-
-  static uint8_t pwr_check_state = PWR_CHECK_ON;
-
-  if (pwr_check_state == PWR_CHECK_OFF) {
-    return e_power_off;
-  }
-  else if (pwrPressed()) {
+  if (pwrPressed()) {
     if (TELEMETRY_STREAMING()) {
       message = STR_MODEL_STILL_POWERED;
     }
-    if (pwr_check_state == PWR_CHECK_PAUSED) {
-      // nothing
-    }
-    else if (pwr_press_time == 0) {
+
+    if (pwr_press_time == 0) {
       pwr_press_time = get_tmr10ms();
       if (message && !g_eeGeneral.disableRssiPoweroffAlarm) {
         audioEvent(AU_MODEL_STILL_POWERED);
       }
     }
     else {
-      inactivity.counter = 0;
-      if (g_eeGeneral.backlightMode != e_backlight_mode_off) {
-        BACKLIGHT_ENABLE();
-      }
-      if (get_tmr10ms() - pwr_press_time > PWR_PRESS_SHUTDOWN_DELAY) {
-
-#if defined(SHUTDOWN_CONFIRMATION)
-        while (1) {
-#else
-        while ((TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm)) {
-#endif
-#if defined(COLORLCD)
-          POPUP_CONFIRMATION("Confirm Shutdown");
-          event_t evt = getEvent(false);
-          DISPLAY_WARNING(evt);
-          if (warningResult) {
-            pwr_check_state = PWR_CHECK_OFF;
-            return e_power_off;
-          }
-          else if (!warningText) {
-             // shutdown has been cancelled
-             pwr_check_state = PWR_CHECK_PAUSED;
-             return e_power_on;
-          }
-          checkBacklight();
-          wdt_reset();
-
-          RTOS_WAIT_MS(20);
-          mainWindow.run();
-#else
-          lcdRefreshWait();
-          lcdClear();
-          POPUP_CONFIRMATION("Confirm Shutdown");
-          event_t evt = getEvent(false);
-          DISPLAY_WARNING(evt);
-          lcdRefresh();
-          if (warningResult) {
-            pwr_check_state = PWR_CHECK_OFF;
-            return e_power_off;
-          }
-          else if (!warningText) {
-            // shutdown has been cancelled
-            pwr_check_state = PWR_CHECK_PAUSED;
-            return e_power_on;
-          }
-#endif
-        }
-        haptic.play(15, 3, PLAY_NOW);
-        pwr_check_state = PWR_CHECK_OFF;
-        return e_power_off;
-      }
-      else {
+      if (get_tmr10ms() - pwr_press_time < PWR_PRESS_SHUTDOWN_DELAY) {
         drawShutdownAnimation(pwrPressedDuration(), message);
         return e_power_press;
       }
+#if defined(SHUTDOWN_CONFIRMATION)
+      while (1) {
+#else
+      while ((TELEMETRY_STREAMING() && !g_eeGeneral.disableRssiPoweroffAlarm)) {
+#endif
+#if defined(COLORLCD)
+        POPUP_CONFIRMATION("Confirm Shutdown");
+        event_t evt = getEvent(false);
+        DISPLAY_WARNING(evt);
+        if (warningResult) {
+          return e_power_off;
+        }
+        else if (!warningText) {
+           return e_power_on;
+        }
+        checkBacklight();
+        wdt_reset();
+
+        RTOS_WAIT_MS(20);
+        mainWindow.run();
+#else
+        lcdRefreshWait();
+        lcdClear();
+        POPUP_CONFIRMATION("Confirm Shutdown");
+        event_t evt = getEvent(false);
+        DISPLAY_WARNING(evt);
+        lcdRefresh();
+        if (warningResult) {
+          return e_power_off;
+        }
+        else if (!warningText) {
+          return e_power_on;
+        }
+#endif
+      }
+      haptic.play(15, 3, PLAY_NOW);
+      return e_power_off;
     }
   }
   else {
-    pwr_check_state = PWR_CHECK_ON;
     pwr_press_time = 0;
   }
 
@@ -2966,7 +2865,7 @@ uint32_t lowPowerCheck()
   if (low_pwr_state == PWR_CHECK_OFF) {
     return e_power_off;
   }
-  else if (g_vbat100mV < LOW_POWER_DOWN_VOLT) {
+  else if (g_vbat10mV < LOW_POWER_DOWN_10MILI_VOLT) {
 
     if (TELEMETRY_STREAMING()) {
       message = STR_MODEL_STILL_POWERED;

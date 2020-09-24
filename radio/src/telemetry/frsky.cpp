@@ -74,7 +74,7 @@ NOINLINE void processFrskyTelemetryData(uint8_t data)
       break;
 
     case STATE_DATA_IN_FRAME:
-      if (data == BYTESTUFF) {
+      if (data == BYTE_STUFF) {
         dataState = STATE_DATA_XOR; // XOR next byte
       }
       else if (data == START_STOP) {

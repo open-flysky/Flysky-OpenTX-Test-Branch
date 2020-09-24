@@ -143,7 +143,7 @@
   #define CASE_MAVLINK(x)
 #endif
 
-#if defined(PXX)
+#if defined(PXX1)
   #define CASE_PXX(x) x,
 #else
   #define CASE_PXX(x)
@@ -345,7 +345,7 @@ void memswap(void * a, void * b, uint8_t size);
 #define PWR_PRESS_SHUTDOWN_DELAY       300 // 3s
 
 #if defined (PCBFLYSKY)
-  #define LOW_POWER_DOWN_VOLT          36  // 3.6v power down
+  #define LOW_POWER_DOWN_10MILI_VOLT   360  // 3.6v power down
 
   #define POWER_ON_DELAY               100 // 3s
   #define LOW_POWER_SHUTDOWN_DELAY     300 // 3s
@@ -403,6 +403,7 @@ void memswap(void * a, void * b, uint8_t size);
 #include "storage/storage.h"
 #include "pulses/pulses.h"
 #include "pulses/modules.h"
+//#include "pulses/modules_helpers.h"
 
 #if defined(CPUARM)
   #define MASK_CFN_TYPE  uint64_t  // current max = 64 function switches
@@ -626,7 +627,6 @@ extern uint8_t flightModeTransitionLast;
 void evalFlightModeMixes(uint8_t mode, uint8_t tick10ms);
 void evalMixes(uint8_t tick10ms);
 void doMixerCalculations();
-void scheduleNextMixerCalculation(uint8_t module, uint16_t delay);
 
 #if defined(CPUARM)
   void checkTrims();
@@ -667,15 +667,8 @@ void logicalSwitchesReset();
 extern swarnstate_t switches_states;
 swsrc_t getMovedSwitch();
 
-#if defined(CPUARM)
-  #define GET_MOVED_SOURCE_PARAMS uint8_t min
-  int8_t getMovedSource(GET_MOVED_SOURCE_PARAMS);
-  #define GET_MOVED_SOURCE(min, max) getMovedSource(min)
-#else
-  #define GET_MOVED_SOURCE_PARAMS
-  int8_t getMovedSource();
-  #define GET_MOVED_SOURCE(min, max) getMovedSource()
-#endif
+int8_t getMovedSource(uint8_t min);
+#define GET_MOVED_SOURCE(min, max) getMovedSource(min)
 
 #if defined(FLIGHT_MODES)
   extern uint8_t getFlightMode();
@@ -852,13 +845,15 @@ extern const char vers_stamp[];
  */
 const char* getOtherVersion(char* buffer);
 
+extern uint16_t g_vbat10mV;
 extern uint8_t g_vbat100mV;
+
 #if LCD_W > 128
   #define GET_TXBATT_BARS() (limit<int8_t>(0, div_and_round(10 * (g_vbat100mV - g_eeGeneral.vBatMin - 90), 30 + g_eeGeneral.vBatMax - g_eeGeneral.vBatMin), 10))
 #else
   #define GET_TXBATT_BARS() (limit<int8_t>(2, 20 * (g_vbat100mV - g_eeGeneral.vBatMin - 90) / (30 + g_eeGeneral.vBatMax - g_eeGeneral.vBatMin), 20))
 #endif
-#define IS_TXBATT_WARNING() (g_vbat100mV <= g_eeGeneral.vBatWarn)
+#define IS_TXBATT_WARNING() (g_vbat10mV <= (g_eeGeneral.vBatWarn * 10) && g_vbat10mV > 250)
 
 
 #define g_blinkTmr10ms    (*(uint8_t*)&g_tmr10ms)
@@ -922,7 +917,7 @@ inline void getMixSrcRange(const int source, int16_t & valMin, int16_t & valMax,
     valMax =  255;
     valMin = 0;
     if (flags)
-      *flags |= PREC1;
+      *flags |= PREC2;
   }
   else if (source == MIXSRC_TX_TIME) {
     valMax =  23 * 60 + 59;
@@ -1329,9 +1324,6 @@ union ReusableBuffer
   // 275 bytes
   struct
   {
-#if !defined(CPUARM)
-    char listnames[NUM_BODY_LINES][LEN_MODEL_NAME];
-#endif
 #if defined(EEPROM_RLC) && LCD_W < 212
     uint16_t eepromfree;
 #endif
@@ -1346,6 +1338,39 @@ union ReusableBuffer
   struct {
     char msg[64];
   } msgbuf; // used in modelsel and modelsetup (only in a warning message)
+  
+  struct {
+    char msg[64];
+    uint8_t r9mPower;
+    int8_t antennaMode;
+    uint8_t previousType;
+    uint8_t newType;
+    BindInformation bindInformation;
+    struct {
+      union {
+        uint8_t registerStep;
+        uint8_t resetStep;
+      };
+      uint8_t registerPopupVerticalPosition;
+      uint8_t registerPopupHorizontalPosition;
+      int8_t registerPopupEditMode;
+      char registerRxName[PXX2_LEN_RX_NAME];
+      uint8_t registerLoopIndex; // will be removed later
+      union {
+        uint8_t shareReceiverIndex;
+        uint8_t resetReceiverIndex;
+      };
+      uint8_t resetReceiverFlags;
+      ModuleInformation moduleInformation;
+      ModuleSettings moduleSettings;
+    } pxx2;
+#if defined(BLUETOOTH)
+    struct {
+      char devices[MAX_BLUETOOTH_DISTANT_ADDR][LEN_BLUETOOTH_ADDR+1];
+      uint8_t devicesCount;
+    } bt;
+#endif
+  } moduleSetup;
 
   // 103 bytes
   struct
@@ -1384,6 +1409,22 @@ union ReusableBuffer
   } sdmanager;
 #endif
 
+  struct {
+    ModuleInformation modules[NUM_MODULES];
+    uint32_t updateTime;
+    ModuleSettings moduleSettings;
+    ReceiverSettings receiverSettings; // when dealing with receiver settings, we also need module settings
+  } hardwareAndSettings; // moduleOptions, receiverOptions, radioVersion
+
+  struct {
+    ModuleInformation modules[NUM_MODULES];
+    uint8_t linesCount;
+  } radioTools;
+
+  struct {
+    int8_t antennaMode;
+  } radioHardware;
+
 #if defined(STM32)
   struct
   {
@@ -1394,6 +1435,54 @@ union ReusableBuffer
   {
     uint8_t stickMode;
   } generalSettings;
+
+  struct {
+    uint8_t bars[LCD_W];
+    uint8_t max[LCD_W];
+    uint32_t freq;
+    uint32_t span;
+    uint32_t step;
+    uint32_t track;
+    uint8_t spanDefault;
+    uint8_t spanMax;
+    uint16_t freqDefault;
+    uint16_t freqMax;
+    uint16_t freqMin;
+    uint8_t dirty;
+    uint8_t moduleOFF;
+  } spectrumAnalyser;
+
+  struct {
+    uint32_t freq;
+    int16_t power;
+    int16_t peak;
+    uint8_t attn;
+    uint8_t dirty;
+  } powerMeter;
+
+  struct {
+    int8_t preset;
+  } curveEdit;
+
+  struct {
+    char filename[TEXT_FILENAME_MAXLEN];
+    char lines[NUM_BODY_LINES][LCD_COLS + 1];
+    int linesCount;
+  } viewText;
+
+  struct {
+    bool longNames;
+    bool secondPage;
+    bool mixersView;
+  } viewChannels;
+
+  struct {
+    uint8_t maxNameLen;
+  } modelFailsafe;
+
+  struct {
+    ModuleInformation internalModule;
+  } viewMain;
 };
 
 extern union ReusableBuffer reusableBuffer;

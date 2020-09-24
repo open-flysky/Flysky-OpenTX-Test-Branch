@@ -51,40 +51,53 @@ void preModelLoad()
 #endif
 
   if (pulsesStarted()) {
-#if !defined(SIMU)
-    pulseFlag = CoCreateFlag(1,0);
-#endif
     pausePulses();
-#if !defined(SIMU)
-    //we need to ensure that no pulsed will be set so current mode will be deactivated
-    int tries = 10;
-    while(tries-- > 0) {
-      uint32_t result = CoWaitForSingleFlag(pulseFlag, 50);
-      if (result == E_OK) break;
-      wdt_reset();
-      TRACE("..");
-    }
-    TRACE("PAUSED");
-    pulseFlag = 0;
-#endif
   }
 
   pauseMixerCalculations();
 }
-#if defined(PCBTARANIS) || defined(PCBHORUS)
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
 static void fixUpModel()
 {
   // Ensure that when rfProtocol is RF_PROTO_OFF the type of the module is MODULE_TYPE_NONE
-  if (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT && g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF)
+  if (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT_PXX1 && g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF)
     g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_NONE;
 }
 #endif
 
 void postModelLoad(bool alarms)
 {
-#if defined(PCBTARANIS) || defined(PCBHORUS)
+#if defined(PXX2)
+  if (is_memclear(g_model.modelRegistrationID, PXX2_LEN_REGISTRATION_ID)) {
+    memcpy(g_model.modelRegistrationID, g_eeGeneral.ownerRegistrationID, PXX2_LEN_REGISTRATION_ID);
+  }
+#endif
+#if defined(HARDWARE_INTERNAL_MODULE)
+  if (!isInternalModuleAvailable(g_model.moduleData[INTERNAL_MODULE].type)) {
+    memclear(&g_model.moduleData[INTERNAL_MODULE], sizeof(ModuleData));
+  }
+#if defined(MULTIMODULE)
+  else if (isModuleMultimodule(INTERNAL_MODULE))
+    multiPatchCustom(INTERNAL_MODULE);
+#endif
+  setModuleFlag(INTERNAL_MODULE, MODULE_MODE_RESET_SETTINGS);
+  setModuleFlag(INTERNAL_MODULE, MODULE_MODE_NORMAL);
+#endif
+
+if (!isExternalModuleAvailable(g_model.moduleData[EXTERNAL_MODULE].type)) {
+    memclear(&g_model.moduleData[EXTERNAL_MODULE], sizeof(ModuleData));
+  }
+#if defined(MULTIMODULE)
+  else if (isModuleMultimodule(EXTERNAL_MODULE))
+    multiPatchCustom(EXTERNAL_MODULE);
+#endif
+  setModuleFlag(EXTERNAL_MODULE, MODULE_MODE_RESET_SETTINGS);
+  setModuleFlag(EXTERNAL_MODULE, MODULE_MODE_NORMAL);
+#if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
   fixUpModel();
 #endif
+
+
   AUDIO_FLUSH();
   flightReset(false);
 

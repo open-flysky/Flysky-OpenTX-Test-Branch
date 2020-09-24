@@ -529,6 +529,16 @@ PACK(struct FrSkyTelemetryData {  // TODO EEPROM change, rename to VarioData
   int8_t  varioMin;
   int8_t  varioMax;
 });
+
+
+/*
+ * Telemetry Sensor structure
+ */
+
+#define TELEMETRY_ENDPOINT_NONE    0xFF
+#define TELEMETRY_ENDPOINT_SPORT   0x07
+
+
 #elif defined(CPUARM)
 // TODO remove this also on Taranis
 PACK(struct FrSkyTelemetryData {
@@ -645,74 +655,8 @@ PACK(struct TelemetrySensor {
 });
 #endif
 
-/*
- * Module structure
- */
-
-// Only used in case switch and if statements as "virtual" protocol
-#define MM_RF_CUSTOM_SELECTED 0xff
-PACK(struct ModuleData {
-  uint8_t type:4;
-  int8_t  rfProtocol:4;
-  uint8_t channelsStart;
-  int8_t  channelsCount; // 0=8 channels
-  uint8_t failsafeMode:4;  // only 3 bits used
-  uint8_t subType:3;
-  uint8_t invertedSerial:1; // telemetry serial inverted from standard
-  int16_t failsafeChannels[MAX_OUTPUT_CHANNELS];
-  union {
-    NOBACKUP(struct {
-      int8_t  delay:6;
-      uint8_t pulsePol:1;
-      uint8_t outputType:1;    // false = open drain, true = push pull
-      int8_t  frameLength;
-    } ppm);
-    NOBACKUP(struct {
-      uint8_t rfProtocolExtra:2;
-      uint8_t spare1:3;
-      uint8_t customProto:1;
-      uint8_t autoBindMode:1;
-      uint8_t lowPowerMode:1;
-      int8_t optionValue;
-    } multi);
-
-    struct {
-      uint8_t rx_id[4];
-      uint8_t mode;
-      uint8_t rx_freq[2];
-    } romData;
-
-    NOBACKUP(struct {
-      uint8_t power:2;                  // 0=10 mW, 1=100 mW, 2=500 mW, 3=1W
-      uint8_t spare1:2;
-      uint8_t receiver_telem_off:1;     // false = receiver telem enabled
-      uint8_t receiver_channel_9_16:1;  // false = pwm out 1-8, true 9-16
-      uint8_t external_antenna:1;       // false = internal antenna, true = external antenna
-      uint8_t spare2:1;
-      uint8_t spare3;
-    } pxx);
-    NOBACKUP(struct {
-      uint8_t spare1:6;
-      uint8_t noninverted:1;
-      uint8_t spare2:1;
-      int8_t refreshRate;  // definition as framelength for ppm (* 5 + 225 = time in 1/10 ms)
-    } sbus);
-  };
-
-  // Helper functions to set both of the rfProto protocol at the same time
-  NOBACKUP(inline uint8_t getMultiProtocol(bool returnCustom) {
-    if (returnCustom && multi.customProto)
-      return MM_RF_CUSTOM_SELECTED;
-    return ((uint8_t) (rfProtocol & 0x0f)) + (multi.rfProtocolExtra << 4);
-  })
-
-  NOBACKUP(inline void setMultiProtocol(uint8_t proto)
-  {
-    rfProtocol = (uint8_t) (proto & 0x0f);
-    multi.rfProtocolExtra = (proto & 0x30) >> 4;
-  })
-
-});
+//reused Module DATA
+#include "moduledata.h"
 
 /*
  * Model structure
@@ -972,7 +916,7 @@ PACK(struct TrainerData {
     char anaNames[NUM_STICKS+NUM_POTS+NUM_SLIDERS][LEN_ANA_NAME];
 #elif defined(CPUARM)
   #define EXTRA_GENERAL_FIELDS  EXTRA_GENERAL_FIELDS_ARM
-#elif defined(PXX)
+#elif defined(PXX1)
   #define EXTRA_GENERAL_FIELDS uint8_t countryCode;
 #else
   #define EXTRA_GENERAL_FIELDS

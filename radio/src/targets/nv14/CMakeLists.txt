@@ -25,11 +25,12 @@ set(SIZE_TARGET_MEM_DEFINE "MEM_SIZE_SDRAM2=8192")
 option(USB_SERIAL "Enable USB serial (CDC)" ON)
 
 set(RF_BAUD_RATE 921600 230400 115200 57600 38400 19200 9600 4800 2400 1200)
-set(PCB_RF_BAUD 921600 CACHE STRING "INTERNAL_MODULE_BAUDRATE: ${RF_BAUD_RATE}")
+set(PCB_RF_BAUD 921600 CACHE STRING "INTMODULE_USART_AFHDS2_BAUDRATE: ${RF_BAUD_RATE}")
 set_property(CACHE PCB_RF_BAUD PROPERTY STRINGS ${RF_BAUD_RATE})
 
 set(FLAVOUR NV14)
-add_definitions(-DPCBNV14 -DPCBFLYSKY -DINTERNAL_MODULE_BAUDRATE=${PCB_RF_BAUD})
+
+add_definitions(-DPCBNV14 -DPCBFLYSKY -DHARDWARE_INTERNAL_MODULE -DINTMODULE_USART_AFHDS2_BAUDRATE=${PCB_RF_BAUD})
 #add_definitions(-DSOFTWARE_VOLUME)
 set(TARGET_SRC
   ${TARGET_SRC}
@@ -59,6 +60,7 @@ add_definitions(-DPWR_BUTTON_${PWR_BUTTON})
 add_definitions(-DCROSSFIRE_NATIVE)
 add_definitions(-DFLYSKY_HALL_STICKS_REVERSE)
 add_definitions(-DHALL_STICKS)
+add_definitions(-DAFHDS2) 
 #add_definitions(-DFLYSKY_AUTO_POWER_DOWN)
 
 if(STICKS_DEAD_ZONE)
@@ -116,6 +118,7 @@ set(TARGET_SRC
   board.cpp
   extmodule_driver.cpp
   trainer_driver.cpp
+  ../common/arm/stm32/mixer_scheduler_driver.cpp
   ../common/arm/stm32/intmodule_serial_driver.cpp
   )
 
@@ -137,9 +140,14 @@ if(BOOTLOADER)
   )
 endif()
 
+
+
+
 set(PULSES_SRC
   ${PULSES_SRC}
   flysky_arm.cpp
+  afhds2.cpp
+  afhds3.cpp
   )
 
 set(STM32LIB_SRC

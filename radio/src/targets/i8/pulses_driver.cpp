@@ -30,54 +30,8 @@ void intmoduleStart(void);
 void extmoduleNoneStart(void);
 void extmodulePpmStart(void);
 void extmodulePxxStart(void);
-#if defined(DSM2) || defined(MULTIMODULE)
-void extmoduleDsm2Start(void);
-#endif
-void extmoduleCrossfireStart(void);
 
 void intmoduleSendNextFrame();
-
-void init_pxx(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE)
-    extmodulePxxStart();
-  else
-    intmodulePxxStart();
-}
-
-void disable_pxx(uint32_t port)
-{
-  if (port == INTERNAL_MODULE)
-    intmoduleStop();
-  else
-    extmoduleStop();
-}
-
-
-void init_dsm2(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleDsm2Start();
-  }
-}
-
-void disable_dsm2(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
-}
-
-void init_sbusOut(uint32_t port)
-{
-  init_dsm2(port);
-}
-
-void disable_sbusOut(uint32_t port)
-{
-  disable_dsm2(port);
-}
-
 
 void init_ppm(uint32_t port)
 {
@@ -107,18 +61,4 @@ void disable_no_pulses(uint32_t port)
     intmoduleStop();
   else
     extmoduleStop();
-}
-
-void init_crossfire(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleCrossfireStart();
-  }
-}
-
-void disable_crossfire(uint32_t port)
-{
-  if (port == EXTERNAL_MODULE) {
-    extmoduleStop();
-  }
 }

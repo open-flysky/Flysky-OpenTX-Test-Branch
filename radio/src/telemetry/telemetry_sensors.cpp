@@ -462,35 +462,37 @@ int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
   if (index >= 0) {
     switch (protocol) {
 #if defined(TELEMETRY_FRSKY_SPORT)
-      case TELEM_PROTO_FRSKY_SPORT:
+      case PROTOCOL_TELEMETRY_FRSKY_SPORT:
         frskySportSetDefault(index, id, subId, instance);
         break;
 #endif
 #if defined(TELEMETRY_FRSKY)
-      case TELEM_PROTO_FRSKY_D:
+      case PROTOCOL_TELEMETRY_FRSKY_D:
         frskyDSetDefault(index, id);
         break;
 #endif
 #if defined(CROSSFIRE)
-      case TELEM_PROTO_CROSSFIRE:
+      case PROTOCOL_TELEMETRY_CROSSFIRE:
         crossfireSetDefault(index, id, instance);
         break;
 #endif
 #if defined(MULTIMODULE)
-      case TELEM_PROTO_SPEKTRUM:
+      case PROTOCOL_TELEMETRY_SPEKTRUM:
         spektrumSetDefault(index, id, subId, instance);
         break;
-      case TELEM_PROTO_FLYSKY_IBUS:
+#endif
+#if defined(MULTIMODULE) || defined(AFHDS3)
+      case PROTOCOL_TELEMETRY_FLYSKY_IBUS:
         flySkySetDefault(index,id, subId, instance);
         break;
 #endif
 #if defined(PCBNV14)
-      case TELEM_PROTO_FLYSKY_NV14:
+      case PROTOCOL_TELEMETRY_FLYSKY_NV14:
         flySkyNv14SetDefault(index,id, subId, instance);
         break;
 #endif
 #if defined(LUA)
-     case TELEM_PROTO_LUA:
+     case PROTOCOL_TELEMETRY_LUA:
         // Sensor will be initialized by calling function
         // This drops the first value
         return index;

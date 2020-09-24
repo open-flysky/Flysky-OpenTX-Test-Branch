@@ -82,6 +82,7 @@ const CrossfireSensor crossfireSensors[] = {
   {0,              0, "UNKNOWN",        UNIT_RAW,           0},
 };
 
+static bool crossfireError;
 const CrossfireSensor & getCrossfireSensor(uint8_t id, uint8_t subId)
 {
   if (id == LINK_ID)
@@ -101,7 +102,7 @@ const CrossfireSensor & getCrossfireSensor(uint8_t id, uint8_t subId)
 void processCrossfireTelemetryValue(uint8_t index, int32_t value)
 {
   const CrossfireSensor & sensor = crossfireSensors[index];
-  setTelemetryValue(TELEM_PROTO_CROSSFIRE, sensor.id, 0, sensor.subId, value, sensor.unit, sensor.precision);
+  setTelemetryValue(PROTOCOL_TELEMETRY_CROSSFIRE, sensor.id, 0, sensor.subId, value, sensor.unit, sensor.precision);
 }
 
 bool checkCrossfireTelemetryFrameCRC()
@@ -127,13 +128,20 @@ bool getCrossfireTelemetryValue(uint8_t index, int32_t & value)
   return result;
 }
 
+bool isCrossfireError() {
+  bool result = crossfireError;
+  crossfireError = false;
+  return result;
+}
+
 void processCrossfireTelemetryFrame()
 {
   if (!checkCrossfireTelemetryFrameCRC()) {
     TRACE("[XF] CRC error");
+    crossfireError = true;
     return;
   }
-
+  crossfireError = false;
   uint8_t id = telemetryRxBuffer[2];
   int32_t value;
   switch(id) {
@@ -191,11 +199,28 @@ void processCrossfireTelemetryFrame()
       const CrossfireSensor & sensor = crossfireSensors[FLIGHT_MODE_INDEX];
       for (int i=0; i<min<int>(16, telemetryRxBuffer[1]-2); i+=4) {
         uint32_t value = *((uint32_t *)&telemetryRxBuffer[3+i]);
-        setTelemetryValue(TELEM_PROTO_CROSSFIRE, sensor.id, 0, sensor.subId, value, sensor.unit, i);
+        setTelemetryValue(PROTOCOL_TELEMETRY_CROSSFIRE, sensor.id, 0, sensor.subId, value, sensor.unit, i);
       }
       break;
     }
+    case RADIO_ID: 
+    {
+      if (telemetryRxBuffer[3] == 0xEA    // radio address
+          && telemetryRxBuffer[5] == 0x10 ) {// timing correction frame
+        uint32_t update_interval;
+        int32_t  offset;
+        if (getCrossfireTelemetryValue<4>(6, (int32_t&)update_interval) && getCrossfireTelemetryValue<4>(10, offset)) {
 
+          // values are in 10th of micro-seconds
+          update_interval /= 10;
+          offset /= 10;
+
+          TRACE("[XF] Rate: %d, Lag: %d", update_interval, offset);
+          getModuleSyncStatus(EXTERNAL_MODULE).update(update_interval, offset + SAFE_SYNC_LAG);
+        }
+      }
+      break;
+    }
 #if defined(LUA) || defined(CROSSFIRE_NATIVE)
     default:
       if (luaInputTelemetryFifo && luaInputTelemetryFifo->hasSpace(telemetryRxBufferCount-2) ) {
@@ -209,21 +234,18 @@ void processCrossfireTelemetryFrame()
   }
 }
 
-bool isCrossfireOutputBufferAvailable()
-{
-  return outputTelemetryBufferSize == 0;
-}
-
 void processCrossfireTelemetryData(uint8_t data)
 {
   if (telemetryRxBufferCount == 0 && data != RADIO_ADDRESS) {
     TRACE("[XF] address 0x%02X error", data);
+    crossfireError = true;
     return;
   }
 
   if (telemetryRxBufferCount == 1 && (data < 2 || data > TELEMETRY_RX_PACKET_SIZE-2)) {
     TRACE("[XF] length 0x%02X error", data);
     telemetryRxBufferCount = 0;
+    crossfireError = true;
     return;
   }
 
@@ -233,6 +255,8 @@ void processCrossfireTelemetryData(uint8_t data)
   else {
     TRACE("[XF] array size %d error", telemetryRxBufferCount);
     telemetryRxBufferCount = 0;
+    crossfireError = true;
+    return;
   }
 
   if (telemetryRxBufferCount > 4) {
@@ -266,17 +290,17 @@ void crossfireSetDefault(int index, uint8_t id, uint8_t subId)
 
 void crossfireSend(uint8_t* payload, size_t size)
 {
-  if(!isCrossfireOutputBufferAvailable()) return;
+  if(!outputTelemetryBuffer.isAvailable()) return;
   luaInputTelemetryFifo->clear();
-  //telemetryOutputPushByte(MODULE_ADDRESS);//MODULE ADDRESS
-  telemetryOutputPushByte(SYNC_BYTE);//MODULE ADDRESS
-  telemetryOutputPushByte(1 + size);
+  //outputTelemetryBuffer.pushByte(MODULE_ADDRESS);//MODULE ADDRESS
+  outputTelemetryBuffer.pushByte(SYNC_BYTE);//MODULE ADDRESS
+  outputTelemetryBuffer.pushByte(1 + size);
 
   for(size_t index = 0; index < size; index++){
-    telemetryOutputPushByte(payload[index]);
+    outputTelemetryBuffer.pushByte(payload[index]);
   }
-  telemetryOutputPushByte(crc8(payload, size));
-  telemetryOutputSetTrigger(payload[0]);
+  outputTelemetryBuffer.pushByte(crc8(payload, size));
+  outputTelemetryBuffer.setDestination(TELEMETRY_ENDPOINT_SPORT);
 }
 
 bool crossfireGet(uint8_t* buffer, uint8_t& size)

@@ -129,6 +129,17 @@ uint16_t getTmr2MHz()
   return simuTimerMicros() * 2;
 }
 
+uint8_t simuSleep(uint32_t ms)
+{
+  for (uint32_t i = 0; i < ms; ++i){
+    if (!main_thread_running)
+      return 1;
+    sleep(1);
+  }
+  return 0;
+}
+
+
 void simuInit()
 {
 #if defined(STM32)
@@ -166,7 +177,7 @@ void StartSimu(bool tests, const char * sdPath, const char * settingsPath)
   if (main_thread_running)
     return;
 
-  s_current_protocol[0] = 255;
+  moduleState[0].protocol = 255;
   menuLevel = 0;
 
   main_thread_running = (tests ? 1 : 2); // TODO rename to simu_run_mode with #define

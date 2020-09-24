@@ -31,8 +31,6 @@ extern uint8_t menuPageIndex;
 extern uint8_t menuPageCount;
 extern uint16_t linesCount;
 extern uint8_t linesDisplayed;
-extern int menuVerticalPosition;
-extern int menuHorizontalPosition;
 extern int menuVerticalOffset;
 extern uint8_t menuCalibrationState;
 
@@ -64,6 +62,7 @@ enum MenuIcons {
   ICON_RADIO_SD_BROWSER,
   ICON_RADIO_GLOBAL_FUNCTIONS,
   ICON_RADIO_TRAINER,
+  ICON_RADIO_SPECTRUM_ANALYSER,
   ICON_RADIO_HARDWARE,
   ICON_RADIO_CALIBRATION,
   ICON_RADIO_VERSION,
@@ -127,6 +126,7 @@ const uint8_t RADIO_ICONS[] = {
   ICON_RADIO_SD_BROWSER,
   ICON_RADIO_GLOBAL_FUNCTIONS,
   ICON_RADIO_TRAINER,
+  ICON_RADIO_SPECTRUM_ANALYSER,
   ICON_RADIO_HARDWARE,
   ICON_RADIO_VERSION
 };

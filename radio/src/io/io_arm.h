@@ -36,7 +36,6 @@ PACK(union SportTelemetryPacket
 });
 
 void sportProcessPacket(uint8_t * packet);
-bool isSportOutputBufferAvailable();
 void sportOutputPushPacket(SportTelemetryPacket * packet);
 void sportFlashDevice(ModuleIndex module, const char * filename);
 #endif

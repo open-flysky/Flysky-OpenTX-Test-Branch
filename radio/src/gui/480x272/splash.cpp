@@ -41,7 +41,7 @@ void drawSplash()
 
   lcd->setOffset(0, 0);
   lcd->clearClippingRect();
-  lcd->clear();
+  lcd->clear(TEXT_BGCOLOR);
 
   if (splashImg) {
     lcd->drawBitmap((LCD_W - splashImg->getWidth()) / 2,

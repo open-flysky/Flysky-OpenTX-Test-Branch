@@ -368,6 +368,7 @@ uint64_t simuTimerMicros(void);
 void simuInit();
 void StartSimu(bool tests=true, const char * sdPath = 0, const char * settingsPath = 0);
 void StopSimu();
+uint8_t simuSleep(uint32_t ms);  // returns true if thread shutdown requested
 
 void simuSetKey(uint8_t key, bool state);
 void simuSetTrim(uint8_t trim, bool state);
@@ -401,6 +402,7 @@ typedef void               (*FUNCPtr)(void*);
 
 #if defined(STM32)
 inline void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct) { }
+inline void GPIO_WriteBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, BitAction BitVal) { }
 #define TIM_DeInit(...)
 #define TIM_SetCompare2(...)
 #define TIM_ClearFlag(...)

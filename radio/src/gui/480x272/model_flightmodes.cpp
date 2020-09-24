@@ -29,10 +29,10 @@ ModelFlightModesPage::ModelFlightModesPage():
 {
 }
 
-bool isTrimModeAvailable(int mode)
-{
-  return (mode < 0 || (mode%2) == 0 || (mode/2) != menuVerticalPosition);
-}
+// bool isTrimModeAvailable(int mode)
+// {
+//   return (mode < 0 || (mode%2) == 0 || (mode/2) != menuVerticalPosition);
+// }
 
 void ModelFlightModesPage::build(Window * window)
 {

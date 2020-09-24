@@ -99,7 +99,9 @@ void drawCurveVerticalScale(int x);
 void drawCurveHorizontalScale();
 void drawCurveCoord(int x, int y, const char * text, bool active=false);
 void drawCurvePoint(int x, int y, LcdFlags color);
-
+void drawProgressScreen(const char * title, const char * message, int num, int den);
+void drawProgressScreenDone(bool success, const char * title, const char * message);
+void runProgressScreen();
 extern Layout * customScreens[MAX_CUSTOM_SCREENS];
 extern Topbar * topbar;
 

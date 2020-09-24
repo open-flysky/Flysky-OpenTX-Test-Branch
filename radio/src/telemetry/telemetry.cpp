@@ -19,6 +19,7 @@
  */
 
 #include "opentx.h"
+#include "mixer_scheduler.h"
 
 uint16_t telemetryStreaming = 0;
 uint8_t telemetryRxBuffer[TELEMETRY_RX_PACKET_SIZE];   // Receive buffer. 9 bytes (full packet), worst case 18 bytes with byte-stuffing (+1)
@@ -59,22 +60,28 @@ lcdint_t applyChannelRatio(source_t channel, lcdint_t val)
 void processTelemetryData(uint8_t data)
 {
 #if defined(CROSSFIRE)
-  if (telemetryProtocol == PROTOCOL_PULSES_CROSSFIRE) {
+  if (telemetryProtocol == PROTOCOL_TELEMETRY_CROSSFIRE) {
     processCrossfireTelemetryData(data);
     return;
   }
 #endif
 #if defined(MULTIMODULE)
-  if (telemetryProtocol == PROTOCOL_SPEKTRUM) {
-    processSpektrumTelemetryData(data);
+  if (telemetryProtocol == PROTOCOL_TELEMETRY_SPEKTRUM) {
+    processSpektrumTelemetryData(EXTERNAL_MODULE, data, telemetryRxBuffer, telemetryRxBufferCount);
     return;
   }
-  if (telemetryProtocol == PROTOCOL_FLYSKY_IBUS) {
+  if (telemetryProtocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS) {
     processFlySkyTelemetryData(data, telemetryRxBuffer, telemetryRxBufferCount);
     return;
   }
-  if (telemetryProtocol == PROTOCOL_MULTIMODULE) {
-    processMultiTelemetryData(data);
+  if (telemetryProtocol == PROTOCOL_TELEMETRY_MULTIMODULE) {
+    processMultiTelemetryData(data, EXTERNAL_MODULE);
+    return;
+  }
+#endif
+#if defined(AFHDS3)
+  if (telemetryProtocol == PROTOCOL_TELEMETRY_AFHDS3) {
+    afhds3uart.onDataReceived(data, telemetryRxBuffer, telemetryRxBufferCount, TELEMETRY_RX_PACKET_SIZE);
     return;
   }
 #endif
@@ -105,8 +112,18 @@ void telemetryWakeup()
       LOG_TELEMETRY_WRITE_BYTE(data);
     } while (telemetryGetByte(&data));
   }
+#if defined(PCBNV14)
+  if(moduleState[INTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_AFHDS2 && intmoduleGetByte(&data)) {
+    do {
+      processInternalFlySkyTelemetryData(data);
+      LOG_TELEMETRY_WRITE_BYTE(data);
+    } while (intmoduleGetByte(&data));
+  }
+ #endif
+  
+
 #elif defined(PCBSKY9X)
-  if (telemetryProtocol == PROTOCOL_FRSKY_D_SECONDARY) {
+  if (telemetryProtocol == PROTOCOL_TELEMETRY_FRSKY_D_SECONDARY) {
     uint8_t data;
     while (telemetrySecondPortReceive(data)) {
       processTelemetryData(data);
@@ -202,7 +219,9 @@ void telemetryWakeup()
       }
       else if (telemetryState == TELEMETRY_OK) {
         telemetryState = TELEMETRY_KO;
-        AUDIO_TELEMETRY_LOST();
+        if (!isModuleInBeepMode()) {
+          AUDIO_TELEMETRY_LOST();
+        }
       }
     }
   }
@@ -378,48 +397,50 @@ void telemetryInit(uint8_t protocol)
 {
   telemetryProtocol = protocol;
 
-  if (protocol == PROTOCOL_FRSKY_D) {
+  if (protocol == PROTOCOL_TELEMETRY_FRSKY_D) {
     telemetryPortInit(FRSKY_D_BAUDRATE, TELEMETRY_SERIAL_DEFAULT);
   }
-
+#if defined(AFHDS3)
+  else if(protocol == PROTOCOL_TELEMETRY_AFHDS3){
+    telemetryPortInit(AFHDS3_BAUDRATE, TELEMETRY_SERIAL_DEFAULT | TELEMETRY_SERIAL_NOT_INVERTED);
+  }
+#endif
 #if defined(MULTIMODULE)
-  else if (protocol == PROTOCOL_MULTIMODULE || protocol == PROTOCOL_FLYSKY_IBUS) {
+  else if (protocol == PROTOCOL_TELEMETRY_MULTIMODULE || protocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS) {
+    // wrong multi output in version 1.3.1.59 
     // The DIY Multi module always speaks 100000 baud regardless of the telemetry protocol in use
     telemetryPortInit(MULTIMODULE_BAUDRATE, TELEMETRY_SERIAL_8E2);
 #if defined(LUA)
-    outputTelemetryBufferSize = 0;
-    outputTelemetryBufferTrigger = 0x7E;
+    outputTelemetryBuffer.reset();
 #endif
   }
-  else if (protocol == PROTOCOL_SPEKTRUM) {
+  else if (protocol == PROTOCOL_TELEMETRY_SPEKTRUM) {
     // Spektrum's own small race RX (SPM4648) uses 125000 8N1, use the same since there is no real standard
     telemetryPortInit(125000, TELEMETRY_SERIAL_DEFAULT);
   }
 #endif
 
 #if defined(CROSSFIRE)
-  else if (protocol == PROTOCOL_PULSES_CROSSFIRE) {
+  else if (protocol == PROTOCOL_TELEMETRY_CROSSFIRE) {
     telemetryPortInit(CROSSFIRE_BAUDRATE, TELEMETRY_SERIAL_DEFAULT);
 #if defined(LUA)
-    outputTelemetryBufferSize = 0;
-    outputTelemetryBufferTrigger = 0;
+    outputTelemetryBuffer.reset();
 #endif
     telemetryPortSetDirectionOutput();
   }
 #endif
 
 #if defined(SERIAL2) || defined(PCBSKY9X)
-  else if (protocol == PROTOCOL_FRSKY_D_SECONDARY) {
+  else if (protocol == PROTOCOL_TELEMETRY_FRSKY_D_SECONDARY) {
     telemetryPortInit(0, TELEMETRY_SERIAL_DEFAULT);
-    serial2TelemetryInit(PROTOCOL_FRSKY_D_SECONDARY);
+    serial2TelemetryInit(PROTOCOL_TELEMETRY_FRSKY_D_SECONDARY);
   }
 #endif
 
   else {
     telemetryPortInit(FRSKY_SPORT_BAUDRATE, TELEMETRY_SERIAL_WITHOUT_DMA);
 #if defined(LUA)
-    outputTelemetryBufferSize = 0;
-    outputTelemetryBufferTrigger = 0x7E;
+    outputTelemetryBuffer.reset();
 #endif
   }
 
@@ -466,10 +487,100 @@ void logTelemetryWriteByte(uint8_t data)
 }
 #endif
 
-uint8_t outputTelemetryBuffer[TELEMETRY_OUTPUT_FIFO_SIZE] __DMA;
-uint8_t outputTelemetryBufferSize = 0;
-uint8_t outputTelemetryBufferTrigger = 0;
+OutputTelemetryBuffer outputTelemetryBuffer __DMA;
 
 #if defined(LUA) || defined(CROSSFIRE_NATIVE)
 Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE> * luaInputTelemetryFifo = new Fifo<uint8_t, LUA_TELEMETRY_INPUT_FIFO_SIZE>();
 #endif
+
+#if defined(HARDWARE_INTERNAL_MODULE)
+
+static ModuleSyncStatus moduleSyncStatus[NUM_MODULES];
+
+ModuleSyncStatus &getModuleSyncStatus(uint8_t moduleIdx)
+{
+  return moduleSyncStatus[moduleIdx];
+}
+
+#else
+
+static ModuleSyncStatus moduleSyncStatus;
+
+ModuleSyncStatus &getModuleSyncStatus(uint8_t moduleIdx)
+{
+  return moduleSyncStatus;
+}
+
+#endif
+
+ModuleSyncStatus::ModuleSyncStatus()
+{
+  memset(this, 0, sizeof(ModuleSyncStatus));
+}
+
+void ModuleSyncStatus::update(uint16_t newRefreshRate, int16_t newInputLag)
+{
+  if (!newRefreshRate)
+    return;
+
+  if (newRefreshRate < MIN_REFRESH_RATE)
+    newRefreshRate = newRefreshRate * (MIN_REFRESH_RATE / (newRefreshRate + 1));
+  else if (newRefreshRate > MAX_REFRESH_RATE)
+    newRefreshRate = MAX_REFRESH_RATE;
+
+  refreshRate = newRefreshRate;
+  inputLag    = newInputLag;
+  currentLag  = newInputLag;
+  TRACE("refreshRate %d inputLag %d currentLag %d", refreshRate, inputLag, currentLag);
+  lastUpdate  = get_tmr10ms();
+}
+void ModuleSyncStatus::invalidate() {
+  //make invalid after use
+  currentLag = SAFE_SYNC_LAG;
+}
+
+uint16_t ModuleSyncStatus::getAdjustedRefreshRate()
+{
+  int16_t lag = currentLag - SAFE_SYNC_LAG;
+  int32_t newRefreshRate = refreshRate;
+
+  if (lag == 0) {
+    TRACE("[SYNC] rate = %dus", refreshRate);
+    return refreshRate;
+  }
+
+  newRefreshRate += lag;
+  //include safe lag - maybe we want to go below MIN_REFRESH_RATE
+  if (newRefreshRate < (MIN_REFRESH_RATE - SAFE_SYNC_LAG)) {
+      newRefreshRate = MIN_REFRESH_RATE;
+  }
+  else if (newRefreshRate > MAX_REFRESH_RATE) {
+    newRefreshRate = MAX_REFRESH_RATE;
+  }
+
+  TRACE("[SYNC] rate = %dus",newRefreshRate);
+
+  currentLag -= newRefreshRate - refreshRate;
+  return (uint16_t)newRefreshRate;
+}
+
+void ModuleSyncStatus::getRefreshString(char * statusText)
+{
+  if (!isValid()) {
+    strcpy(statusText, STR_MODULE_NO_TELEMETRY);
+    return;
+  }
+
+  char * tmp = statusText;
+#if defined(DEBUG)
+  *tmp++ = 'L';
+  tmp = strAppendUnsigned(tmp, inputLag, 5);
+  tmp = strAppend(tmp, "us R ");
+  tmp = strAppendUnsigned(tmp, (uint32_t) (refreshRate / 1000), 5);
+  tmp = strAppend(tmp, "us");
+#else
+  tmp = strAppend(tmp, "Sync at ");
+  tmp = strAppendUnsigned(tmp, (uint32_t) (refreshRate / 1000000));
+  tmp = strAppend(tmp, " ms");
+#endif
+}

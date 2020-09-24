@@ -424,7 +424,7 @@ getvalue_t getValue(mixsrc_t i)
 
 #if defined(CPUARM)
   else if (i == MIXSRC_TX_VOLTAGE) {
-    return g_vbat100mV;
+    return g_vbat10mV;
   }
   else if (i < MIXSRC_FIRST_TIMER) {
     // TX_TIME + SPARES

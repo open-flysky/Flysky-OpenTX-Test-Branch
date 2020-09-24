@@ -27,12 +27,8 @@ DMAFifo<512> intmoduleDMAFifo __DMA (INTMODULE_RX_DMA_STREAM);
 void intmoduleStop()
 {
   INTERNAL_MODULE_OFF();
-
   NVIC_DisableIRQ(INTMODULE_TIMER_IRQn);
-
   INTMODULE_TX_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
-  INTMODULE_TIMER->DIER &= ~TIM_DIER_CC2IE;
-  INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
 }
 
 void intmoduleNoneStart()
@@ -62,7 +58,7 @@ void intmoduleNoneStart()
 
 //#define INTMODULE_RX_INT
 static uint8_t intmodule_hal_inited = 0;
-void intmodulePxxStart()
+void intmoduleSerialStart(uint32_t baudrate, uint8_t rxEnable, uint16_t parity, uint16_t stopBits, uint16_t wordLength)
 {
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = INTMODULE_TX_DMA_Stream_IRQn;
@@ -94,7 +90,7 @@ void intmodulePxxStart()
 
   USART_DeInit(INTMODULE_USART);
   USART_InitTypeDef USART_InitStructure;
-  USART_InitStructure.USART_BaudRate = INTERNAL_MODULE_BAUDRATE;
+  USART_InitStructure.USART_BaudRate = baudrate;
   USART_InitStructure.USART_WordLength = USART_WordLength_8b;
   USART_InitStructure.USART_StopBits = USART_StopBits_1;
   USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -138,22 +134,11 @@ void intmodulePxxStart()
   USART_Cmd(INTMODULE_USART, ENABLE);
   DMA_Cmd(INTMODULE_RX_DMA_STREAM, ENABLE); // TRACE("RF DMA receive started...");
  #endif
-  // Timer
-  INTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
-  INTMODULE_TIMER->PSC = INTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
-  INTMODULE_TIMER->ARR = 18000; // 9mS
-  INTMODULE_TIMER->CCR2 = 15000; // Update time
-  INTMODULE_TIMER->CCER |= TIM_CCER_CC2E;
-  INTMODULE_TIMER->EGR |= TIM_EGR_CC2G; //
-  INTMODULE_TIMER->CCMR1 |= TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_0; // Toggle CC1 o/p
-  INTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-  INTMODULE_TIMER->DIER |= TIM_DIER_CC2IE;  // Enable this interrupt
-  INTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
-  NVIC_SetPriority(INTMODULE_TIMER_IRQn, 7);
-  NVIC_EnableIRQ(INTMODULE_TIMER_IRQn);
-
   intmodule_hal_inited = 1;
+}
 
+void intmodulePxx1SerialStart() {
+   intmoduleSerialStart(INTMODULE_PXX1_SERIAL_BAUDRATE, false, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
 }
 
 extern "C" void INTMODULE_USART_IRQHandler(void)
@@ -192,13 +177,13 @@ uint8_t intmoduleGetByte(uint8_t * byte)
 #endif
 }
 
-static uint8_t dmaBuffer[512] __DMA;
+static uint8_t dmaBuffer[254] __DMA;
 void intmoduleSendBufferDMA(uint8_t * data, uint8_t size)
 {
-  if (IS_PXX_PROTOCOL(s_current_protocol[INTERNAL_MODULE]) || IS_FLYSKY_PROTOCOL(s_current_protocol[INTERNAL_MODULE])) {
-    if (size > 0 && size < 512) {
+  if (IS_PXX_PROTOCOL(moduleState[INTERNAL_MODULE].protocol) || IS_FLYSKY_PROTOCOL(moduleState[INTERNAL_MODULE].protocol)) {
+    if (size > 0 && size <= 254) {
 #if !defined(SIMU)
-      for (int idx = 0; idx < size; idx++) {
+      for (uint8_t idx = 0; idx < size; idx++) {
           dmaBuffer[idx] = data[idx];
       }
 #endif
@@ -228,22 +213,30 @@ void intmoduleSendBufferDMA(uint8_t * data, uint8_t size)
 
 void intmoduleSendNextFrame()
 {
-    uint8_t * data = modulePulsesData[INTERNAL_MODULE].pxx_uart.pulses;
-    uint8_t size = modulePulsesData[INTERNAL_MODULE].pxx_uart.ptr - data;
+    uint8_t * data;
+    uint8_t size;
+  switch(moduleState[INTERNAL_MODULE].protocol) {
+#if defined(AFHDS2)
+    case PROTOCOL_CHANNELS_AFHDS2:
+      data = (uint8_t*)intmodulePulsesData.flysky.pulses;
+      size = intmodulePulsesData.flysky.ptr - data;
+      break;
+#endif
+
+#if defined(PXX1)
+    case PROTOCOL_CHANNELS_PXX1_SERIAL:
+      data = (uint8_t*)intmodulePulsesData.pxx_uart.getData();
+      size = intmodulePulsesData.pxx_uart.getSize();
+      break;
+#endif
+
+#if defined(INTERNAL_MODULE_MULTI)
+    case PROTOCOL_CHANNELS_MULTIMODULE:
+      data = (uint8_t*)intmodulePulsesData.multi.getData();
+      size = intmodulePulsesData.multi.getSize();
+      break;
+#endif
+  }
+
     intmoduleSendBufferDMA(data, size);
 }
-
-extern "C" void INTMODULE_TIMER_IRQHandler()
-{
-  DEBUG_INTERRUPT(INT_TIM1CC);
-  DEBUG_TIMER_SAMPLE(debugTimerIntPulses);
-  DEBUG_TIMER_START(debugTimerIntPulsesDuration);
-
-  INTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // clear flag
-
-  setupPulses(INTERNAL_MODULE);
-  intmoduleSendNextFrame();
-
-  DEBUG_TIMER_STOP(debugTimerIntPulsesDuration);
-}
-

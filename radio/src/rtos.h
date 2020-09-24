@@ -37,6 +37,7 @@
     #include <windows.h>
     #define msleep(x) Sleep(x)
   #endif
+  #define RTOS_MS_PER_TICK              1
   #define RTOS_INIT()
   #define RTOS_WAIT_MS(x)               msleep(x)
   #define RTOS_WAIT_TICKS(x)            msleep((x)*2)
@@ -50,6 +51,16 @@
   #define RTOS_UNLOCK_MUTEX(mutex)      pthread_mutex_unlock(&mutex)
   #define RTOS_CREATE_FLAG(flag)        flag = 0  // TODO: real flags (use semaphores?)
   #define RTOS_SET_FLAG(flag)           flag = 1
+  #define RTOS_CLEAR_FLAG(flag)         flag = 0
+
+  static inline bool RTOS_WAIT_FLAG(RTOS_FLAG_HANDLE flag, uint32_t timeout)
+  {
+    simuSleep(timeout);
+    return false;
+  }
+
+  #define RTOS_ISR_SET_FLAG RTOS_SET_FLAG
+
   template<int SIZE>
   class FakeTaskStack
   {
@@ -89,12 +100,18 @@
     extern uint64_t simuTimerMicros(void);
     return simuTimerMicros() / 2000;
   }
+    static inline uint32_t RTOS_GET_MS(void)
+  {
+    return (uint32_t)(simuTimerMicros() / 1000);
+  }
 
   #define CoTickDelay(x) msleep(2*(x))  // TODO remove this later
 #elif defined(RTOS_COOS)
   extern "C" {
     #include <CoOS.h>
   }
+  #define RTOS_MS_PER_TICK              ((CFG_CPU_FREQ / CFG_SYSTICK_FREQ) / (CFG_CPU_FREQ / 1000))  // RTOS timer tick length in ms (currently 2)
+
   #define RTOS_INIT()                   CoInitOS()
   #define RTOS_WAIT_MS(x)               CoTickDelay((x)/2)
   #define RTOS_WAIT_TICKS(x)            CoTickDelay(x)
@@ -110,6 +127,21 @@
   #define RTOS_UNLOCK_MUTEX(mutex)      CoLeaveMutexSection(mutex);
   #define RTOS_CREATE_FLAG(flag)        flag = CoCreateFlag(false, false)
   #define RTOS_SET_FLAG(flag)           (void)CoSetFlag(flag)
+  #define RTOS_CLEAR_FLAG(flag)         (void)CoClearFlag(flag)
+   // RTOS timer tick length in ms (currently 2)
+  #define RTOS_WAIT_FLAG(flag,timeout)  (CoWaitForSingleFlag(flag,timeout/2) == E_TIMEOUT)
+
+
+  static inline void RTOS_ISR_SET_FLAG(RTOS_FLAG_HANDLE flag)
+  {
+    CoEnterISR();
+    CoSchedLock();
+    isr_SetFlag(flag);
+    CoSchedUnlock();
+    CoExitISR();
+  }
+
+
   inline uint16_t getStackAvailable(void * address, uint16_t size)
   {
     uint32_t * array = (uint32_t *)address;
@@ -164,6 +196,10 @@
   inline uint32_t RTOS_GET_TIME(void)
   {
     return CoGetOSTime();
+  }
+  static inline uint32_t RTOS_GET_MS(void)
+  {
+    return (RTOS_GET_TIME() * RTOS_MS_PER_TICK);
   }
 #else
   #define RTOS_WAIT_MS(x)               doNothing()

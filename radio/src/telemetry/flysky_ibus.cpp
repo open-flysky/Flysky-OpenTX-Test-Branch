@@ -59,7 +59,8 @@ enum{
     AFHDS2A_ID_GPS_DIST       = 0x14,    // 2 bytes distance from home m unsigned
     AFHDS2A_ID_ARMED          = 0x15,    // 2 bytes
     AFHDS2A_ID_FLIGHT_MODE    = 0x16,    // 2 bytes
-
+    AFHDS3_FRM_TEMP           = 0x57,    //virtual
+    AFHDS3_FRM_EXT_V          = 0x58,    //virtual
     AFHDS2A_ID_PRES           = 0x41,    // Pressure
     AFHDS2A_ID_ODO1           = 0x7C,    // Odometer1
     AFHDS2A_ID_ODO2           = 0x7D,    // Odometer2
@@ -77,7 +78,8 @@ enum{
     AFHDS2A_ID_S88            = 0x88,
     AFHDS2A_ID_S89            = 0x89,
     AFHDS2A_ID_S8a            = 0x8A,
-
+    AFHDS2A_ID_RX_SIG_AFHDS3  = 0xF7,    // SIG
+    AFHDS2A_ID_RX_SNR_AFHDS3  = 0xF8,    // SNR
     AFHDS2A_ID_ALT_FLYSKY     = 0xF9,    // Altitude 2 bytes signed in m - used in FlySky native TX
     AFHDS2A_ID_RX_SNR         = 0xFA,    // SNR
     AFHDS2A_ID_RX_NOISE       = 0xFB,    // Noise
@@ -118,6 +120,8 @@ const FlySkySensor flySkySensors[] = {
   {AFHDS2A_ID_FLIGHT_MODE,      ZSTR_FLIGHT_MODE,       UNIT_RAW,                    0},  // 2 bytes index
   {AFHDS2A_ID_PRES,             ZSTR_PRES,              UNIT_RAW,                    2},  // 4 bytes In fact Temperature + Pressure -> Altitude
   {AFHDS2A_ID_PRES|0x100,       ZSTR_TEMP2,             UNIT_CELSIUS,                1},  // 2 bytes Temperature
+  {AFHDS3_FRM_TEMP,             ZSTR_TEMP2,             UNIT_CELSIUS,                1},  // 2 bytes temperature
+  {AFHDS3_FRM_EXT_V,            ZSTR_TXV,               UNIT_VOLTS,                  2},  // 2 bytes voltage
   {AFHDS2A_ID_ODO1,             ZSTR_ODO1,              UNIT_METERS,                 2},  // 2 bytes Odometer1 -- some magic with 330 needed
   {AFHDS2A_ID_ODO2,             ZSTR_ODO2,              UNIT_METERS,                 2},  // 2 bytes Odometer2 -- some magic with 330 needed
   {AFHDS2A_ID_SPE,              ZSTR_ASPD,              UNIT_KMH,                    2},  // 2 bytes Speed km/h -- some magic with 330 needed
@@ -126,7 +130,8 @@ const FlySkySensor flySkySensors[] = {
   {AFHDS2A_ID_GPS_LON,          ZSTR_GPS,               UNIT_RAW,                    7},  // 4 bytes signed WGS84 in degrees * 1E7
   {AFHDS2A_ID_GPS_ALT,          ZSTR_GPSALT,            UNIT_METERS,                 2},  // 4 bytes signed GPS alt m*100
   {AFHDS2A_ID_ALT,              ZSTR_ALT,               UNIT_METERS,                 2},  // 4 bytes signed Alt m*100
-
+  {AFHDS2A_ID_RX_SIG_AFHDS3,    ZSTR_RX_QUALITY,        UNIT_RAW,                    0},  // RX error rate
+  {AFHDS2A_ID_RX_SNR_AFHDS3,    ZSTR_RX_SNR,            UNIT_DB,                     1},  // RX SNR
   {AFHDS2A_ID_RX_SNR,           ZSTR_RX_SNR,            UNIT_DB,                     0},  // RX SNR
   {AFHDS2A_ID_RX_NOISE,         ZSTR_RX_NOISE,          UNIT_DB,                     0},  // RX Noise
   {AFHDS2A_ID_RX_RSSI,          ZSTR_RSSI,              UNIT_DB,                     0},  // RX RSSI (0xfc)
@@ -150,7 +155,7 @@ void debugIbus(const char* type, const uint8_t* rxBuffer, uint8_t rxBufferCount)
   TRACE("[%s] count [%d] data: %s", type, rxBufferCount, buffer);
 }
 
-static void processFlySkySensor(const uint8_t *packet, uint8_t type)
+void processFlySkySensor(const uint8_t *packet, uint8_t type)
 {
   //cheating but efficient
   uint8_t buffer[8];
@@ -177,11 +182,15 @@ static void processFlySkySensor(const uint8_t *packet, uint8_t type)
     telemetryData.rssi.set(value);
     if(value>0) telemetryStreaming = TELEMETRY_TIMEOUT10ms;
   }
+  else if(id == AFHDS2A_ID_RX_SIG_AFHDS3) {
+    telemetryData.rssi.set(value);
+    if(value>0) telemetryStreaming = TELEMETRY_TIMEOUT10ms;
+  }
   else if(id == AFHDS2A_ID_PRES && value) {
     // Extract temperature to a new sensor
-    setTelemetryValue(TELEM_PROTO_FLYSKY_IBUS, id|0x100, 0, instance, ((value >> 19) - 400), UNIT_CELSIUS, 1);
+    setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_IBUS, id|0x100, 0, instance, ((value >> 19) - 400), UNIT_CELSIUS, 1);
     // Extract alt to a new sensor
-    setTelemetryValue(TELEM_PROTO_FLYSKY_IBUS, AFHDS2A_ID_ALT, 0, instance, getALT(value), UNIT_METERS, 2);
+    setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_IBUS, AFHDS2A_ID_ALT, 0, instance, getALT(value), UNIT_METERS, 2);
     value &= PRESSURE_MASK;
   }
   else if((id >= AFHDS2A_ID_ACC_X && id <= AFHDS2A_ID_VERTICAL_SPEED) || id == AFHDS2A_ID_CLIMB_RATE) {
@@ -192,7 +201,7 @@ static void processFlySkySensor(const uint8_t *packet, uint8_t type)
   }
   else if(id == AFHDS2A_ID_GPS_FULL) {
     //(AC FRAME)[ID][inst][size][fix][sats][LAT]x4[LON]x4[ALT]x4
-    setTelemetryValue(TELEM_PROTO_FLYSKY_IBUS, AFHDS2A_ID_GPS_STATUS, 0, instance, packet[4], UNIT_RAW, 0);
+    setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_IBUS, AFHDS2A_ID_GPS_STATUS, 0, instance, packet[4], UNIT_RAW, 0);
     for(uint8_t sensorID = AFHDS2A_ID_GPS_LAT; sensorID <= AFHDS2A_ID_GPS_ALT; sensorID++){
       int index = 5 + (sensorID - AFHDS2A_ID_GPS_LAT) * 4;
       buffer[0] = sensorID;
@@ -231,18 +240,18 @@ static void processFlySkySensor(const uint8_t *packet, uint8_t type)
   {
     if (sensor->id != id) continue;
     if (sensor->unit == UNIT_CELSIUS) value -= 400; // Temperature sensors have 40 degree offset
-    else if (sensor->unit == UNIT_VOLTS) value = (uint16_t)value; // Voltage types are unsigned 16bit integers
-    setTelemetryValue(TELEM_PROTO_FLYSKY_IBUS, id, 0, instance, value, sensor->unit, sensor->precision);
+    else if (sensor->unit == UNIT_VOLTS) value = (int16_t)value; // Voltage types are unsigned 16bit integers
+    setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_IBUS, id, 0, instance, value, sensor->unit, sensor->precision);
     return;
   }
   //unknown
-  setTelemetryValue(TELEM_PROTO_FLYSKY_IBUS, id, 0, instance, value, UNIT_RAW, 0);
+  setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_IBUS, id, 0, instance, value, UNIT_RAW, 0);
 }
 
 void processFlySkyPacket(const uint8_t *packet)
 {
   // Set TX RSSI Value, reverse MULTIs scaling
-  setTelemetryValue(TELEM_PROTO_FLYSKY_IBUS, TX_RSSI_ID, 0, 0, packet[0], UNIT_RAW, 0);
+  setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_IBUS, TX_RSSI_ID, 0, 0, packet[0], UNIT_RAW, 0);
   const uint8_t *buffer = packet + 1;
   int sesnor = 0;
   while(sesnor++ < 7)
@@ -256,7 +265,7 @@ void processFlySkyPacket(const uint8_t *packet)
 void processFlySkyPacketAC(const uint8_t *packet)
 {
   // Set TX RSSI Value, reverse MULTIs scaling
-  setTelemetryValue(TELEM_PROTO_FLYSKY_IBUS, TX_RSSI_ID, 0, 0, packet[0], UNIT_RAW, 0);
+  setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_IBUS, TX_RSSI_ID, 0, 0, packet[0], UNIT_RAW, 0);
   const uint8_t *buffer = packet + 1;
   while(buffer - packet < 26) //28 + 1(multi TX rssi) - 3(ac header)
   {

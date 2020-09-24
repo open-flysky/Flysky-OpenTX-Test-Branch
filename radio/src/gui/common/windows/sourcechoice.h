@@ -66,9 +66,9 @@ class SourceChoice : public Window {
     std::function<void(int16_t)> setValue;
     std::function<bool(int)> isValueAvailable = isSourceAvailable;
     void fillMenu(Menu * menu, std::function<bool(int16_t)> condition=nullptr);
-	std::map<int, int> valueIndexMap;
+    std::map<int, int> valueIndexMap;
     Menu * menu;
-    void deleteMenu() { menu = nullptr; }
+    void deleteMenu() { this->menu = nullptr; }
 };
 
 #endif // _SOURCECHOICE_H_

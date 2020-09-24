@@ -130,7 +130,7 @@ void drawSourceCustomValue(coord_t x, coord_t y, source_t source, int32_t value,
     drawTimer(x, y, value, flags);
   }
   else if (source == MIXSRC_TX_VOLTAGE) {
-    lcdDrawNumber(x, y, value, flags|PREC1);
+    lcdDrawNumber(x, y, value, flags|PREC2);
   }
 #if defined(INTERNAL_GPS)
   else if (source == MIXSRC_TX_GPS) {

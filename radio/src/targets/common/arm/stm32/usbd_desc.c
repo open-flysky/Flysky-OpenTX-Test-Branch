@@ -53,6 +53,7 @@
 /** @defgroup USBD_DESC_Private_Defines
   * @{
   */
+
 #ifdef PCBNV14
 #define USBD_VID                            0x284e
 #else

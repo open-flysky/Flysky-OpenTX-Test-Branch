@@ -168,15 +168,8 @@ void init_no_pulses(uint32_t port);
 void disable_no_pulses(uint32_t port);
 void init_ppm( uint32_t module_index );
 void disable_ppm( uint32_t module_index );
-void init_pxx( uint32_t module_index );
-void disable_pxx( uint32_t module_index );
-void init_dsm2( uint32_t module_index );
-void disable_dsm2( uint32_t module_index );
 void init_crossfire( uint32_t module_index );
 void disable_crossfire( uint32_t module_index );
-void init_sbusOut(uint32_t module_index);
-void disable_sbusOut(uint32_t module_index);
-
 // Trainer driver
 void init_trainer_ppm(void);
 void stop_trainer_ppm(void);
@@ -275,9 +268,11 @@ uint32_t readTrims(void);
 #if defined(WATCHDOG_DISABLED) || defined(SIMU)
   #define wdt_enable(x)
   #define wdt_reset()
+  #define WDG_RESET()
 #else
   #define wdt_enable(x)                       watchdogInit(x)
   #define wdt_reset()                         IWDG->KR = 0xAAAA
+  #define WDG_RESET()                         IWDG->KR = 0xAAAA
 #endif
 #define wdt_disable()
 void watchdogInit(unsigned int duration);

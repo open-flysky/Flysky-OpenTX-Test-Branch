@@ -70,7 +70,7 @@ void SourceChoice::paint(BitmapBuffer * dc)
 void SourceChoice::checkEvents()
 {
   Window::checkEvents();
-  if (menu != nullptr)
+  if (this->menu != nullptr)
   {
     int8_t value = getValue();
     int8_t source = getMovedSource(vmin);
@@ -83,28 +83,27 @@ void SourceChoice::checkEvents()
       if (it != valueIndexMap.end() && it->second >= 0)
       {
         setValue(static_cast<int16_t>(source));
-        menu->select(it->second);
+        this->menu->select(it->second);
       }
     }
   }
 }
 
-void SourceChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
+void SourceChoice::fillMenu(Menu * menuLocal, std::function<bool(int16_t)> filter)
 {
   auto value = getValue();
   int count = 0;
   int current = -1;
 
-  menu->removeLines();
+  menuLocal->removeLines();
   valueIndexMap.clear();
-  
   for (int i = vmin; i <= vmax; ++i) {
     if (filter && !filter(i))
       continue;
     if (isValueAvailable && !isValueAvailable(i))
       continue;
     valueIndexMap[i] = count;
-    menu->addLine(getSourceString(i), [=]() {
+    menuLocal->addLine(getSourceString(i), [=]() {
       setValue(i);
     });
     if (value == i) {
@@ -114,18 +113,17 @@ void SourceChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
   }
 
   if (current >= 0) {
-    menu->select(current);
+    menuLocal->select(current);
   }
 }
 
 bool SourceChoice::onTouchEnd(coord_t, coord_t)
 {
-  menu = new Menu();
-  fillMenu(menu);
-
-  menu->setToolbar(new SourceChoiceMenuToolbar(this, menu));
+  this->menu = new Menu();
+  fillMenu(this->menu);
+  this->menu->setToolbar(new SourceChoiceMenuToolbar(this, this->menu));
   AUDIO_KEY_PRESS();
-  menu->setCloseHandler(std::bind(&SourceChoice::deleteMenu, this));  
+  this->menu->setCloseHandler(std::bind(&SourceChoice::deleteMenu, this));  
   setFocus();
   return true;
 }

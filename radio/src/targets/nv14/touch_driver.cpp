@@ -197,7 +197,10 @@ bool I2C_WaitEvent(uint32_t event)
 {
   uint32_t timeout = I2C_TIMEOUT_MAX;
   while (!I2C_CheckEvent(I2C_TOUCH, event)) {
-    if ((timeout--) == 0) return false;
+    if ((timeout--) == 0) {
+      TRACE("TOUCH TIMEOUT I2C_WaitEvent %d", event);
+      return false;
+    }
   }
   return true;
 }
@@ -206,7 +209,10 @@ bool I2C_WaitEventCleared(uint32_t event)
 {
   uint32_t timeout = I2C_TIMEOUT_MAX;
   while (I2C_CheckEvent(I2C_TOUCH, event)) {
-    if ((timeout--) == 0) return false;
+    if ((timeout--) == 0) {
+      TRACE("TOUCH TIMEOUT I2C_WaitEventCleared %d", event);
+      return false;
+    }
   }
   return true;
 }
@@ -444,6 +450,7 @@ static void ft6x06_TS_GetGestureID(uint16_t DeviceAddr, uint32_t * pGestureId)
 }
 
 void TouchReset(){
+  TRACE("TouchReset");
   GPIO_ResetBits(I2C_TOUCH_RESET_GPIO, I2C_TOUCH_RESET_GPIO_PIN);
   delay_ms(20);
   GPIO_SetBits(I2C_TOUCH_RESET_GPIO, I2C_TOUCH_RESET_GPIO_PIN);
@@ -546,9 +553,9 @@ void handleTouch()
 extern "C" void EXTI9_5_IRQHandler(void) {
 
   if(EXTI_GetITStatus(EXTI_Line9) != RESET) {
-
     if(ft6x06_TS_DetectTouch(TOUCH_FT6236_I2C_ADDRESS)){
       handleTouch();
+      touchState.LastEvent = get_tmr10ms();
       /*
       TRACE("X %d Y %d", x, y);
       uint32_t gesture;

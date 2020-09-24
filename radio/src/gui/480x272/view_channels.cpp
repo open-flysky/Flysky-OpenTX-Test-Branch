@@ -135,9 +135,20 @@ public:
 
   virtual void build(Window * window) override
   {
+    static int32_t syncVal = 0;
     GridLayout grid;
     grid.setLabelWidth(180);
-    //new StaticText(window, grid.getLabelSlot(), )
+    
+    new StaticText(window, grid.getLabelSlot(), "Sync int mod");
+    new NumberEdit(window, grid.getFieldSlot(), 0, AFHDS2_PERIOD,  GET_DEFAULT(syncVal), [=](int32_t newValue) { syncVal = newValue; });
+    grid.nextLine();
+    TextButton* btn = new TextButton(window, grid.getLineSlot(), "Sync");
+    btn->setPressHandler([=]() -> uint8_t {
+      getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, syncVal + SAFE_SYNC_LAG);
+      syncVal = 0;
+      return 0;
+    });
+    grid.nextLine();
     char tmpBuffer[32];
     NumberEdit * ne;
     uint8_t index = 0;
@@ -315,14 +326,14 @@ void drawComboOutputBar(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t chan
 
   if (ld && ld->revert) {
     drawOutputBarLimits(x + posOnBar(-100 - ld->max / 10), x + posOnBar(100 - ld->min / 10), y + Y_OUTBAR);
-    lcd->drawBitmap(x - X_OFFSET + 7, y + 25, chanMonInvertedBitmap);
+    lcd->drawBitmap(x + X_OFFSET*2, y-1, chanMonInvertedBitmap);
   }
   else if (ld) {
     drawOutputBarLimits(x + posOnBar(-100 + ld->min / 10), x + posOnBar(100 + ld->max / 10), y + Y_OUTBAR);
   }
 #if defined(OVERRIDE_CHANNEL_FUNCTION)
   if (safetyCh[channel] != OVERRIDE_CHANNEL_UNDEFINED)
-    lcd->drawBitmap(x - X_OFFSET + 7, y + 7, chanMonLockedBitmap);
+    lcd->drawBitmap(x + X_OFFSET*2 + 16, y-1, chanMonLockedBitmap);
 #endif
   lcd->drawSolidVerticalLine(x + w / 2, y + Y_OUTBAR, h, TEXT_COLOR);
   if (chanVal > calcRESXto100((ld && ld->revert) ? -ld->offset : ld->offset))

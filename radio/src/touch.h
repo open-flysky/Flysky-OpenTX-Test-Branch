@@ -43,6 +43,7 @@ typedef struct
    short lastX;
    short lastY;
    uint32_t Time;
+   uint32_t LastEvent;
 } STRUCT_TOUCH;
 
 typedef struct

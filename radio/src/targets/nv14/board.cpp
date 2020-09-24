@@ -145,7 +145,9 @@ void delay_self(int count)
                                INTMODULE_RCC_APB1Periph |\
                                HALL_RCC_APB1Periph |\
                                EXTMODULE_RCC_APB1Periph |\
-                               INTMODULE_RCC_APB1Periph_TIM3 \
+                               INTMODULE_RCC_APB1Periph_TIM3 |\
+                               AUX_SERIAL_RCC_APB1Periph |\
+                               MIXER_SCHEDULER_TIMER_RCC_APB1Periph \
                               )
 #define RCC_APB2PeriphMinimum (LCD_RCC_APB2Periph)
 

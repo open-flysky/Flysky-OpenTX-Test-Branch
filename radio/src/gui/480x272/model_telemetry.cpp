@@ -446,7 +446,7 @@ void ModelTelemetryPage::build(Window * window, int8_t focusSensorIndex)
   // RSSI
   if (g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF &&
       g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_MULTIMODULE &&
-      g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(false) == MM_RF_PROTO_FS_AFHDS2A)
+      g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol() == MODULE_SUBTYPE_MULTI_FS_AFHDS2A)
     new Subtitle(window, grid.getLineSlot(), "RSNR");
   else
     new Subtitle(window, grid.getLineSlot(), "RSSI");
@@ -520,7 +520,6 @@ void ModelTelemetryPage::build(Window * window, int8_t focusSensorIndex)
       grid.spacer(button->height()+2);
     }
   }
-
   // Autodiscover button
   auto discover = new TextButton(window, grid.getLineSlot(), STR_DISCOVER_SENSORS);
   discover->setPressHandler([=]() {

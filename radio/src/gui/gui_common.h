@@ -68,9 +68,13 @@ bool isSwitchAvailableInCustomFunctions(int swtch);
 bool isSwitchAvailableInMixes(int swtch);
 bool isSwitchAvailableInTimers(int swtch);
 bool isModuleAvailable(int module);
+bool isExternalModuleAvailable(int moduleType);
+bool isInternalModuleAvailable(int moduleType);
 bool isRfProtocolAvailable(int protocol);
 bool isTelemetryProtocolAvailable(int protocol);
 bool isTrainerModeAvailable(int mode);
+bool isTrainerUsingModuleBay();
+bool isModuleUsingSport(uint8_t moduleBay, uint8_t moduleType);
 
 bool isSensorUnit(int sensor, uint8_t unit);
 bool isCellsSensor(int sensor);
@@ -130,32 +134,21 @@ void runFatalErrorScreen(const char * message);
 void lcdDrawMMM(coord_t x, coord_t y, LcdFlags flags=0);
 
 // model_setup Defines that are used in all uis in the same way
-#define EXTERNAL_MODULE_CHANNELS_ROWS   IF_EXTERNAL_MODULE_ON((isModuleDSM2(EXTERNAL_MODULE) || isModuleCrossfire(EXTERNAL_MODULE) || isModuleSBUS(EXTERNAL_MODULE) || (isModuleMultimodule(EXTERNAL_MODULE) && g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(true) != MM_RF_PROTO_DSM2)) ? (uint8_t)0 : (uint8_t)1)
+#define EXTERNAL_MODULE_CHANNELS_ROWS   IF_EXTERNAL_MODULE_ON((isModuleDSM2(EXTERNAL_MODULE) || isModuleCrossfire(EXTERNAL_MODULE) || isModuleSBUS(EXTERNAL_MODULE) || (isModuleMultimodule(EXTERNAL_MODULE) && g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol() != MODULE_SUBTYPE_MULTI_DSM2)) ? (uint8_t)0 : (uint8_t)1)
 
 
 #if defined(MULTIMODULE)
-#define MULTIMODULE_STATUS_ROWS         isModuleMultimodule(EXTERNAL_MODULE) ? TITLE_ROW : HIDDEN_ROW, (isModuleMultimodule(EXTERNAL_MODULE) && multiSyncStatus.isValid()) ? TITLE_ROW : HIDDEN_ROW,
+#define MULTIMODULE_STATUS_ROWS         isModuleMultimodule(EXTERNAL_MODULE) ? TITLE_ROW : HIDDEN_ROW, (isModuleMultimodule(EXTERNAL_MODULE) && getModuleSyncStatus(EXTERNAL_MODULE).isValid()) ? TITLE_ROW : HIDDEN_ROW,
 #define MULTIMODULE_MODULE_ROWS         isModuleMultimodule(EXTERNAL_MODULE) ? (uint8_t) 0 : HIDDEN_ROW,
-#define MULTIMODULE_MODE_ROWS(x)        (g_model.moduleData[x].multi.customProto) ? (uint8_t) 3 :MULTIMODULE_HAS_SUBTYPE(g_model.moduleData[x].getMultiProtocol(true)) ? (uint8_t)2 : (uint8_t)1
-#define MULTIMODULE_RFPROTO_ROWS(x)     (g_model.moduleData[x].multi.customProto) ? (uint8_t) 1 :MULTIMODULE_HAS_SUBTYPE(g_model.moduleData[x].getMultiProtocol(true)) ? (uint8_t) 0 : HIDDEN_ROW
+#define MULTIMODULE_MODE_ROWS(x)        (g_model.moduleData[x].multi.customProto) ? (uint8_t) 3 :MULTIMODULE_HAS_SUBTYPE(g_model.moduleData[x].getMultiProtocol()) ? (uint8_t)2 : (uint8_t)1
+#define MULTIMODULE_RFPROTO_ROWS(x)     (g_model.moduleData[x].multi.customProto) ? (uint8_t) 1 :MULTIMODULE_HAS_SUBTYPE(g_model.moduleData[x].getMultiProtocol()) ? (uint8_t) 0 : HIDDEN_ROW
 #define MULTIMODULE_SUBTYPE_ROWS(x)     isModuleMultimodule(x) ? MULTIMODULE_RFPROTO_ROWS(x) : HIDDEN_ROW,
 #define MULTIMODULE_HAS_SUBTYPE(x)      (getMultiProtocolDefinition(x)->maxSubtype > 0)
 #define MULTIMODULE_HASOPTIONS(x)       (getMultiProtocolDefinition(x)->optionsstr != nullptr)
-#define MULTI_MAX_RX_NUM(x)             (g_model.moduleData[x].getMultiProtocol(true) == MM_RF_PROTO_OLRS ? 4 : 15)
-#define MULTIMODULE_HASFAILSAFE(x)      (isModuleMultimodule(x) && multiModuleStatus.isValid() && multiModuleStatus.supportsFailsafe())
-#define MULTIMODULE_OPTIONS_ROW         (isModuleMultimodule(EXTERNAL_MODULE) && MULTIMODULE_HASOPTIONS(g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol(true))) ? (uint8_t) 0: HIDDEN_ROW
+#define MULTI_MAX_RX_NUM(x)             (g_model.moduleData[x].getMultiProtocol() == MODULE_SUBTYPE_MULTI_OLRS ? 4 : 15)
+#define MULTIMODULE_HASFAILSAFE(x)      (isModuleMultimodule(x) && getMultiModuleStatus(x).isValid() && getMultiModuleStatus(x).supportsFailsafe())
+#define MULTIMODULE_OPTIONS_ROW         (isModuleMultimodule(EXTERNAL_MODULE) && MULTIMODULE_HASOPTIONS(g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol())) ? (uint8_t) 0: HIDDEN_ROW
 
-// When using packed, the pointer in here end up not being aligned, which clang and gcc complain about
-// Keep the order of the fields that the so that the size stays small
-struct mm_protocol_definition {
-  uint8_t protocol;
-  uint8_t maxSubtype;
-  bool failsafe;
-  const pm_char *subTypeString;
-  const char *optionsstr;
-};
-
-const mm_protocol_definition *getMultiProtocolDefinition (uint8_t protocol);
 #else
 #define MULTIMODULE_STATUS_ROWS
 #define MULTIMODULE_MODULE_ROWS
