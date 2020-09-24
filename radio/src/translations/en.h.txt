@@ -120,7 +120,7 @@
 #endif
 
 #define LEN_MODULE_PROTOCOLS  "\014"
-#define TR_MODULE_PROTOCOLS   "OFF\0        ""PPM\0        ""XJT\0        ""ISRM\0       ""DSM2\0       ""CRSF\0       ""MULTI\0      ""R9M\0        ""R9M ACCESS\0 " TR_MODULE_R9M_LITE "R9ML ACCESS\0""AFHDS2\0     ""R9MLP ACCESS""SBUS\0       ""XJT Lite\0   ""AFHDS3\0       ""R9MLP"
+#define TR_MODULE_PROTOCOLS   "OFF\0        ""PPM\0        ""XJT\0        ""AFHDS2\0     ""DSM2\0       ""CRSF\0       ""MULTI\0      ""R9M\0        ""SBUS\0       ""AFHDS3\0       ""R9M ACCESS\0 " TR_MODULE_R9M_LITE "R9ML ACCESS\0""ISRM\0       ""R9MLP ACCESS""XJT Lite\0   ""R9MLP"
 
 #define LEN_TELEMETRY_PROTOCOLS        "\017"
 #define TR_TELEMETRY_PROTOCOLS         "FrSky S.PORT\0  ""FrSky D\0       ""FrSky D (cable)""TBS Crossfire\0 ""Spektrum\0      ""AFHDS2A IBUS\0  ""Multi Telemetry"
