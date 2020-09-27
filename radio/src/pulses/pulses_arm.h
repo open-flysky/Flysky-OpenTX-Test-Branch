@@ -339,13 +339,13 @@ void extmoduleStop();
 void extramodulePpmStart();
 #endif
 #if defined AFHDS2
-void setupPulsesAFHDS2(uint8_t port);
-void resetPulsesAFHDS2(uint8_t port);
-void setFlyskyState(uint8_t port, uint8_t state);
-void onFlySkyBindReceiver(uint8_t port);
-void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn);
+void setupPulsesAFHDS2();
+void resetPulsesAFHDS2();
+void setFlyskyState(uint8_t state);
+void onFlySkyBindReceiver();
+void onFlySkyModuleSetPower(bool isPowerOn);
 void intmoduleSendBufferDMA(uint8_t * data, uint8_t size);
-void onFlySkyGetVersionInfoStart(uint8_t port, uint8_t isRfTransfer);
+void onFlySkyGetVersionInfoStart(uint8_t isRfTransfer);
 void usbDownloadTransmit(uint8_t *buffer, uint32_t size);
 #endif
 
@@ -471,7 +471,7 @@ enum FlySkyModuleState_E {
   STATE_SET_RANGE_TEST = 14,
   STATE_RANGE_TEST_RUNNING = 15,
   STATE_IDLE = 16,
-  STATE_DEFAULT = 17,
+  STATE_SEND_CHANNELS = 17,
 };
 
 #define BIND_TELEM_ALLOWED(idx)      (!isModuleR9M_LBT(idx) || g_model.moduleData[idx].pxx.power == R9M_LBT_POWER_25)

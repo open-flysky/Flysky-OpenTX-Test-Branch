@@ -291,7 +291,7 @@ void hallStickUpdatefwEnd( void )
 }
 
 static int parse_ps_state = 0;
-void Parse_Character(STRUCT_HALL *hallBuffer, unsigned char ch)
+void parseFlyskyData(STRUCT_HALL *hallBuffer, unsigned char ch)
 {
     if (parse_ps_state != 0) return;
     parse_ps_state = 1;
@@ -475,7 +475,7 @@ void hallStick_GetTxDataFromUSB( void )
 
     while( HallGetByteTx(&abyte) )
     {
-        Parse_Character(&HallProtocolTx, abyte );
+        parseFlyskyData(&HallProtocolTx, abyte );
 
         if ( HallProtocolTx.msg_OK )
         {
@@ -516,13 +516,13 @@ void hallStick_GetTxDataFromUSB( void )
 
                 if ( 0xAE == HallProtocolTx.hallID.ID && HallProtocolTx.length == 0 )
                 {
-                    setFlyskyState(INTERNAL_MODULE, STATE_UPDATE_RF_FIRMWARE);
+                    setFlyskyState(STATE_UPDATE_RF_FIRMWARE);
                     break;
                 }
 
                 if ( 0x0D == HallProtocolTx.hallID.hall_Id.packetID && HallProtocolTx.data[0] == 1 )
                 {
-                    onFlySkyGetVersionInfoStart(INTERNAL_MODULE, 1);
+                    onFlySkyGetVersionInfoStart(1);
                     break;
                 }
 
@@ -562,7 +562,7 @@ void hall_stick_loop(void)
     {
         HallProtocol.index++;
 
-        Parse_Character(&HallProtocol, byte);
+        parseFlyskyData(&HallProtocol, byte);
 
         if ( HallProtocol.msg_OK )
         {

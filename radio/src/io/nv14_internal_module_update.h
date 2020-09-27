@@ -103,6 +103,17 @@ PACK(union updateData {
 	char raw[256];
 });
 
+
+/*
+
+Send frame 
+Req start update: 0x01 0x0c 0x00
+Resp 0x11 0x0C
+
+
+
+*/
+
 /*
 
 FirmwareKey = 0x12345678;
