@@ -311,6 +311,7 @@ union TrainerPulsesData {
 extern TrainerPulsesData trainerPulsesData;
 extern const uint16_t CRCTable[];
 #if defined(INTMODULE) || (HARDWARE_INTERNAL_MODULE)
+extern bool internalModuleUpdate;
 bool setupPulsesInternalModule();
 #endif
 bool setupPulsesExternalModule();
@@ -344,9 +345,42 @@ void resetPulsesAFHDS2();
 void setFlyskyState(uint8_t state);
 void onFlySkyBindReceiver();
 void onFlySkyModuleSetPower(bool isPowerOn);
-void intmoduleSendBufferDMA(uint8_t * data, uint8_t size);
+void afhds2Command(uint8_t type, uint8_t cmd);
+void intmoduleSendBufferDMA(uint8_t * data, uint16_t size);
+bool intmoduleActiveDMA();
 void onFlySkyGetVersionInfoStart(uint8_t isRfTransfer);
 void usbDownloadTransmit(uint8_t *buffer, uint32_t size);
+
+#define END                             0xC0
+#define ESC                             0xDB
+#define ESC_END                         0xDC
+#define ESC_ESC                         0xDD
+
+#define FRAME_TYPE_REQUEST_ACK          0x01
+#define FRAME_TYPE_REQUEST_NACK         0x02
+#define FRAME_TYPE_ANSWER               0x10
+
+enum FlySkyModuleCommandID {
+  CMD_NONE,
+  CMD_RF_INIT,
+  CMD_BIND,
+  CMD_SET_RECEIVER_ID,
+  CMD_RF_GET_CONFIG,
+  CMD_SEND_CHANNEL_DATA,
+  CMD_RX_SENSOR_DATA,
+  CMD_SET_RX_PWM_PPM,
+  CMD_SET_RX_SERVO_FREQ,
+  CMD_GET_VERSION_INFO,
+  CMD_SET_RX_IBUS_SBUS,
+  CMD_SET_RX_IBUS_SERVO_EXT,
+  CMD_UPDATE_RF_FIRMWARE = 0x0C,
+  CMD_SET_TX_POWER = 0x0D,
+  CMD_SET_RF_PROTOCOL,
+  CMD_TEST_RANGE,
+  CMD_TEST_RF_RESERVED,
+  CMD_UPDATE_RX_FIRMWARE = 0x20,
+  CMD_LAST
+};
 #endif
 
 #if defined(AFHDS3)

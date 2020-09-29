@@ -545,10 +545,10 @@ void processInternalFlySkyTelemetryData(uint8_t byte)
 #if !defined(SIMU)
         uint8_t port = INTERNAL_MODULE;
         parseFlyskyData(&rfProtocolRx, byte );
-        if ( rfProtocolRx.msg_OK )
+        if (rfProtocolRx.valid)
         {
             rfRxCount++;
-            rfProtocolRx.msg_OK = 0;
+            rfProtocolRx.valid = 0;
             uint8_t *pt = (uint8_t*)&rfProtocolRx;
             //rfProtocolRx.head = HALL_PROTOLO_HEAD;
             pt[rfProtocolRx.length + 3] = rfProtocolRx.checkSum & 0xFF;

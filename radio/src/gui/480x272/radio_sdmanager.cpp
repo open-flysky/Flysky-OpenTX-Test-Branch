@@ -24,6 +24,7 @@
 #include "page.h"
 // #include "io/frsky_firmware_update.h"
 #include "io/multi_firmware_update.h"
+#include "io/nv14_internal_module_update.h"
 
 class FileNameEditWindow : public Page {
   public:
@@ -185,6 +186,7 @@ void RadioSdManagerPage::build(Window * window)
           else if (!READ_ONLY() && !strcasecmp(ext, MULTI_FIRMWARE_EXT)) {
             char* fullPath = getFullPath(name);
             MultiFirmwareInformation information;
+           
             if (information.readMultiFirmwareInformation(fullPath) == nullptr) {
 #if defined(INTERNAL_MODULE_MULTI)
               menu->addLine(STR_FLASH_INTERNAL_MULTI, [=]() {
@@ -197,7 +199,18 @@ void RadioSdManagerPage::build(Window * window)
                 runProgressScreen();
               });
             }
+#if defined(PCBNV14)
+            Nv14FirmwareInformation nv14Info;
+            if (nv14Info.read(fullPath) == nullptr && nv14Info.valid()) {
+              menu->addLine(STR_FLASH_INTERNAL_MODULE, [=]() {
+                internalModuleUpdate = true;
+                nv14FlashFirmware(fullPath);
+                internalModuleUpdate = false;
+                runProgressScreen();
+              });
+            }
           }
+#endif 
 #endif
         }
         if (!READ_ONLY()) {

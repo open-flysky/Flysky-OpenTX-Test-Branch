@@ -141,7 +141,7 @@ if(BOOTLOADER)
 endif()
 
 
-
+set(SRC ${SRC} io/nv14_internal_module_update.cpp)
 
 set(PULSES_SRC
   ${PULSES_SRC}

@@ -182,11 +182,6 @@ inline bool isSportLineUsedByInternalModule()
 }
 #endif
 
-
-
-
-
-
 #if defined(CPUARM)
 inline uint8_t modelTelemetryProtocol()
 {
@@ -312,8 +307,7 @@ class OutputTelemetryBuffer {
     uint8_t destination;
 };
 
-extern OutputTelemetryBuffer outputTelemetryBuffer __DMA;
-
+extern OutputTelemetryBuffer outputTelemetryBuffer __DMA; 
 
 #if defined(LUA) || defined(CROSSFIRE_NATIVE)
 #define LUA_TELEMETRY_INPUT_FIFO_SIZE  256

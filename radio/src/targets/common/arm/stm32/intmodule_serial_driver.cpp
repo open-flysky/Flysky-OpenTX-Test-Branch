@@ -156,12 +156,18 @@ extern "C" void INTMODULE_USART_IRQHandler(void)
   }
 }
 
+static bool txDmaActive = false;
+bool intmoduleActiveDMA() {
+  return txDmaActive;
+}
+
 extern "C" void INTMODULE_TX_DMA_Stream_IRQHandler(void)
 {
   DEBUG_INTERRUPT(INT_DMA2S7);
   if (DMA_GetITStatus(INTMODULE_TX_DMA_STREAM, INTMODULE_TX_DMA_FLAG_TC)) {
     // TODO we could send the 8 next channels here (when needed)
     DMA_ClearITPendingBit(INTMODULE_TX_DMA_STREAM, INTMODULE_TX_DMA_FLAG_TC);
+    txDmaActive = false;
   }
 }
 
@@ -177,44 +183,40 @@ uint8_t intmoduleGetByte(uint8_t * byte)
 #endif
 }
 
-static uint8_t dmaBuffer[254] __DMA;
-void intmoduleSendBufferDMA(uint8_t * data, uint8_t size)
+static uint8_t dmaBuffer[512] __DMA;
+
+void intmoduleSendBufferDMA(uint8_t * data, uint16_t size)
 {
-  if (IS_PXX_PROTOCOL(moduleState[INTERNAL_MODULE].protocol) || IS_FLYSKY_PROTOCOL(moduleState[INTERNAL_MODULE].protocol)) {
-    if (size > 0 && size <= 254) {
-#if !defined(SIMU)
-      for (uint8_t idx = 0; idx < size; idx++) {
-          dmaBuffer[idx] = data[idx];
-      }
-#endif
-      DMA_InitTypeDef DMA_InitStructure;
-      DMA_DeInit(INTMODULE_TX_DMA_STREAM);
-      DMA_InitStructure.DMA_Channel = INTMODULE_DMA_CHANNEL;
-      DMA_InitStructure.DMA_PeripheralBaseAddr = CONVERT_PTR_UINT(&INTMODULE_USART->DR);
-      DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-      DMA_InitStructure.DMA_Memory0BaseAddr = CONVERT_PTR_UINT(dmaBuffer);
-      DMA_InitStructure.DMA_BufferSize = size;
-      DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-      DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-      DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-      DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-      DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-      DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
-      DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
-      DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_Full;
-      DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
-      DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-      DMA_Init(INTMODULE_TX_DMA_STREAM, &DMA_InitStructure);
-      DMA_Cmd(INTMODULE_TX_DMA_STREAM, ENABLE);
-      USART_DMACmd(INTMODULE_USART, USART_DMAReq_Tx, ENABLE);
-    }
-  }
+  if (size ==0 || size > 512) return;
+  memcpy(dmaBuffer, data, size);
+  DMA_InitTypeDef DMA_InitStructure;
+  DMA_DeInit(INTMODULE_TX_DMA_STREAM);
+  DMA_InitStructure.DMA_Channel = INTMODULE_DMA_CHANNEL;
+  DMA_InitStructure.DMA_PeripheralBaseAddr = CONVERT_PTR_UINT(&INTMODULE_USART->DR);
+  DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+  DMA_InitStructure.DMA_Memory0BaseAddr = CONVERT_PTR_UINT(dmaBuffer);
+  DMA_InitStructure.DMA_BufferSize = size;
+  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+  DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+  DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
+  DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
+  DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_Full;
+  DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+  DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+  DMA_Init(INTMODULE_TX_DMA_STREAM, &DMA_InitStructure);
+  txDmaActive = true;
+  DMA_Cmd(INTMODULE_TX_DMA_STREAM, ENABLE);
+  USART_DMACmd(INTMODULE_USART, USART_DMAReq_Tx, ENABLE);
 }
+
 
 void intmoduleSendNextFrame()
 {
     uint8_t * data;
-    uint8_t size;
+    uint16_t size;
   switch(moduleState[INTERNAL_MODULE].protocol) {
 #if defined(AFHDS2)
     case PROTOCOL_CHANNELS_AFHDS2:

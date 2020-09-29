@@ -153,7 +153,7 @@ set(SRC
   telemetry/frsky_d_arm.cpp
   telemetry/frsky_sport.cpp
   telemetry/flysky_nv14.cpp
-  crc16.cpp
+  crc.cpp
   vario.cpp
   )
 

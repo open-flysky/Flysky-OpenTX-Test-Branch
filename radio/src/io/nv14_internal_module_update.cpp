@@ -17,22 +17,143 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
- 
+
 #include "opentx.h"
 #include "nv14_internal_module_update.h"
 
 static const Nv14UpdateDriver nv14UpdateDriver;
+static const char* ReadError = "Error opening file";
 
 bool Nv14FirmwareInformation::valid() const {
-  return true;
+  return crcValid;
 }
 
-const char * Nv14FirmwareInformation::read(FIL * file) const {
+const char * Nv14FirmwareInformation::read(const char * filename) {
+  FIL file;
+  if (f_open(&file, filename, FA_READ) != FR_OK)
+    return ReadError;
+  UINT size = f_size(&file) - 2;
+
+  uint8_t buffer[128];
+ 
+  UINT readTotal = 0;
+  UINT readCount = 0;
+  UINT remaining = 0;
+  UINT fragmentSize = 0;
+  uint16_t crcResult = 0xffff;
+  while(readTotal < size) {
+    remaining = size - readTotal;
+    fragmentSize = sizeof(buffer);
+    if (remaining < sizeof(buffer)) {
+      fragmentSize = remaining;
+    }
+    if (f_read(&file, buffer, fragmentSize, &readCount) != FR_OK) {
+      return ReadError;
+    }
+    readTotal += readCount;
+    crcResult = crc16(CRC_1021, (const uint8_t*)buffer, fragmentSize, crcResult);
+  }
+
+  if (f_read(&file, buffer, 2, &readCount) != FR_OK) {
+    return ReadError;
+  }
+  crcValid = (((uint16_t)buffer[1]) << 8 | (uint16_t)buffer[0]) == crcResult;
+
+  TRACE("CRC 0x%04x valid %d", crcResult, crcValid);
+  f_close(&file);
+
   return nullptr;
 }
 
-uint16_t Nv14FirmwareInformation::getCrc16(const char * buffer) const {
-  return 0;
+
+static int parseState = 0;
+static void parseData(STRUCT_HALL *buffer, unsigned char ch)
+{
+    if (parseState != 0) return;
+    parseState = 1;
+
+    switch (buffer->status)
+    {
+      case GET_START:
+      {
+        if (HALL_PROTOLO_HEAD == ch)
+        {
+          buffer->head = HALL_PROTOLO_HEAD;
+          buffer->status = GET_ID;
+          buffer->valid = 0;
+        }
+        break;
+      }
+      case GET_ID:
+      {
+        buffer->hallID.ID = ch;
+        buffer->status = GET_LENGTH;
+        break;
+      }
+      case GET_LENGTH:
+      {
+        buffer->length = ch;
+        buffer->dataIndex = 0;
+        buffer->status = GET_DATA;
+        if (0 == buffer->length)
+        {
+          buffer->status = GET_CHECKSUM;
+          buffer->checkSum=0;
+        }
+        break;
+      }
+      case GET_DATA:
+      {
+        buffer->data[buffer->dataIndex++] = ch;
+        if (buffer->dataIndex >= buffer->length)
+        {
+          buffer->checkSum = 0;
+          buffer->dataIndex = 0;
+          buffer->status = GET_STATE;
+        }
+        break;
+      }
+      case GET_STATE:
+      {
+        buffer->checkSum = 0;
+        buffer->dataIndex = 0;
+        buffer->status = GET_CHECKSUM;
+      }
+      case GET_CHECKSUM:
+      {
+        buffer->checkSum |= ch << ((buffer->dataIndex++) * 8);
+        if (buffer->dataIndex >= 2 )
+        {
+          buffer->dataIndex = 0;
+          buffer->status = CHECKSUM;
+        }
+        else
+        {
+          break;
+        }
+      }
+      case CHECKSUM:
+      {
+        if(buffer->checkSum == crc16(CRC_1021, (const uint8_t*)&buffer->head, buffer->length + 3, 0xffff))
+        {
+          buffer->valid = 1;
+          goto Label_restart;
+        }
+        else
+        {
+          goto Label_error;
+        }
+      }
+    }
+
+    goto exit;
+
+    Label_error:
+    Label_restart:
+        buffer->status = GET_START;
+exit: 
+    parseState = 0;
+    return ;
 }
 
 void Nv14UpdateDriver::sendPacket(STRUCT_HALL* tx, uint8_t senderID, uint8_t receiverID, uint8_t packetID, uint8_t* payload, uint16_t length) const {
@@ -44,14 +165,9 @@ void Nv14UpdateDriver::sendPacket(STRUCT_HALL* tx, uint8_t senderID, uint8_t rec
     return;
   }
 	memcpy(tx->data, payload, length);
-  *((uint16_t*)(tx->data+length)) = calc_crc16(tx, length + 3);
+  *((uint16_t*)(tx->data+length)) = crc16(CRC_1021, (const uint8_t*)tx, length + 3, 0xffff);
   intmoduleSendBufferDMA((uint8_t*)tx, length + 5);
   while(intmoduleActiveDMA());
-
-}
-
-void Nv14UpdateDriver::sendResetRequest(STRUCT_HALL* tx) {
-  
 }
 
 bool getResponse(STRUCT_HALL* rx, uint16_t timeoutMs) {
@@ -59,7 +175,7 @@ bool getResponse(STRUCT_HALL* rx, uint16_t timeoutMs) {
   while ((uint16_t)(getTmr2MHz() - time) < ((timeoutMs *2)*1000)) {
     uint8_t data = 0;
     if(intmoduleGetByte(&data)) {
-      parseFlyskyData(rx, data);
+      parseData(rx, data);
       if (rx->valid) {
         rx->valid = false;
         if (rx->hallID.hall_Id.receiverID != RemoteController) continue;
@@ -70,10 +186,87 @@ bool getResponse(STRUCT_HALL* rx, uint16_t timeoutMs) {
   return false;
 }
 
+void debug(const uint8_t* rxBuffer, uint8_t rxBufferCount){
+  // debug print the content of the packet
+  char buffer[160];
+  char* pos = buffer;
+  for (int i=0; i < rxBufferCount; i++) {
+    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
+  }
+  (*pos) = 0;
+  TRACE("count [%d] data: %s", rxBufferCount, buffer);
+}
+
+void sendModuleCommand(uint8_t type, uint8_t cmd) {
+  afhds2Command(type, cmd);
+  uint8_t* data = intmodulePulsesData.flysky.pulses;
+  uint16_t size = intmodulePulsesData.flysky.ptr - data;
+  intmoduleSendBufferDMA(data, size);
+  debug(data, size);
+  while(intmoduleActiveDMA());
+}
+
+bool getResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) {
+  uint16_t time = getTmr2MHz();
+  uint16_t index = 0;
+  bool escape = false;
+  while ((uint16_t)(getTmr2MHz() - time) < ((timeoutMs *2)*1000)) {
+    uint8_t byte = 0;
+    if(!intmoduleGetByte(&byte)) continue;
+    TRACE("%02X", byte);
+    if (byte == END && index > 0) {
+      return true;
+    } else {
+      if (byte == ESC) escape = true;
+      else {
+        if (escape) {
+          escape = false;
+          if (byte == ESC_END) byte = END;
+          else if (byte == ESC_ESC) byte = ESC;
+        }
+      }
+      data[index++] = byte;
+      if (index >= maxSize) index = 0;
+    }
+  }
+  return false;
+}
+
+#define MAX_ATTEMPTS 5
 const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FIL* file, const char* label) const {
-  //reset module to bootloader
-  //init
-  //set start update command
+  TRACE("INIT INTERNAL MODULE");
+  intmoduleSerialStart(INTMODULE_USART_AFHDS2_BAUDRATE, true, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
+  
+  int attempt = 1;
+  watchdogSuspend(500 /*6s*/);
+  while (attempt <= MAX_ATTEMPTS) {
+    TRACE("CMD_RF_INIT %d", attempt);
+    sendModuleCommand(FRAME_TYPE_REQUEST_ACK, CMD_RF_INIT);
+    if (getResponse(rx->data, sizeof(rx->data), 1000)) {
+      break;
+    }
+    attempt++;
+  }
+
+  if (attempt == MAX_ATTEMPTS) {
+    return "RF INIT FAILED";
+  }
+
+  attempt = 1;
+  watchdogSuspend(500 /*6s*/);
+  while(attempt <= MAX_ATTEMPTS) {
+    TRACE("CMD_UPDATE_RF_FIRMWARE %d", attempt);
+    sendModuleCommand(FRAME_TYPE_REQUEST_ACK, CMD_UPDATE_RF_FIRMWARE);
+    if (getResponse(rx->data, sizeof(rx->data), 1000)) {
+      break;
+    }
+    attempt++;
+  }
+
+  if (attempt == MAX_ATTEMPTS) {
+    return "ENTER UPDATE MODE FAILED";
+  }
+
   uint32_t fwLength = (uint32_t)file->obj.objsize;
 
   updateInfo info = {
@@ -83,7 +276,8 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
   };
 
   //Wait for ACK and firmware key
-  if (getResponse(rx, 10000) && rx->hallID.hall_Id.packetID == UpdateID) {
+  watchdogSuspend(500);
+  if (getResponse(rx, 5000) && rx->hallID.hall_Id.packetID == UpdateID) {
     updateDetails* u = (updateDetails*)&rx->data;
     if (u->request.type == tUpdateRequest) {
       memcpy(info.firmwareKey, u->request.UID, sizeof(info.firmwareKey));
@@ -94,8 +288,8 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
   unsigned long magic = info.firmwareKey[0] + info.firmwareKey[1] + info.firmwareKey[2] + info.firmwareKey[3];
 
   //clear flash
+  watchdogSuspend(3000);
   sendPacket(tx, RemoteController, RF_Internal, UpdateID, (uint8_t*)(&info), sizeof(info));
-
   if (!getResponse(rx, 30000) || rx->hallID.hall_Id.packetID != UpdateID || rx->data[0] != tUpdateAck) {
     return "Clearing chip failed";
   }
@@ -127,6 +321,7 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
         ((unsigned long *)packet.firmware)[i] ^= magic;
       }
     }
+    watchdogSuspend(1000);
     sendPacket(tx, RemoteController, RF_Internal, UpdateID, (uint8_t*)(&packet), sizeof(packet));
     if (getResponse(rx, 10000) && rx->hallID.hall_Id.packetID == UpdateID) {
       updateDetails* u = (updateDetails*)&rx->data;
@@ -151,18 +346,18 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
 
 bool nv14FlashFirmware(const char * filename) {
   FIL file;
-
   if (f_open(&file, filename, FA_READ) != FR_OK) {
     raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);
     return false;
   }
 
-  Nv14FirmwareInformation firmwareFile;
+  //Nv14FirmwareInformation firmwareFile;
+  /*
   if (firmwareFile.read(&file) || !firmwareFile.valid()) {
     f_close(&file);
     raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);
     return false;
-  }
+  }*/
   f_lseek(&file, 0);
 
   pausePulses();

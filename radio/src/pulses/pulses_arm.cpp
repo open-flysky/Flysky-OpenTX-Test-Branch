@@ -30,7 +30,7 @@ InternalModulePulsesData intmodulePulsesData __DMA;
 ExternalModulePulsesData extmodulePulsesData __DMA;
 TrainerPulsesData trainerPulsesData __DMA;
 
-// OS_FlagID pulseFlag = 0;
+bool internalModuleUpdate = false;
 
 //use only for PXX
 void ModuleState::startBind(BindInformation * destination, ModuleCallback bindCallback)

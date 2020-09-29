@@ -22,36 +22,6 @@
 
 #include "opentx.h"
 
-#define END                             0xC0
-#define ESC                             0xDB
-#define ESC_END                         0xDC
-#define ESC_ESC                         0xDD
-
-#define FRAME_TYPE_REQUEST_ACK          0x01
-#define FRAME_TYPE_REQUEST_NACK         0x02
-#define FRAME_TYPE_ANSWER               0x10
-
-enum FlySkyModuleCommandID {
-  CMD_NONE,
-  CMD_RF_INIT,
-  CMD_BIND,
-  CMD_SET_RECEIVER_ID,
-  CMD_RF_GET_CONFIG,
-  CMD_SEND_CHANNEL_DATA,
-  CMD_RX_SENSOR_DATA,
-  CMD_SET_RX_PWM_PPM,
-  CMD_SET_RX_SERVO_FREQ,
-  CMD_GET_VERSION_INFO,
-  CMD_SET_RX_IBUS_SBUS,
-  CMD_SET_RX_IBUS_SERVO_EXT,
-  CMD_UPDATE_RF_FIRMWARE = 0x0C,
-  CMD_SET_TX_POWER = 0x0D,
-  CMD_SET_RF_PROTOCOL,
-  CMD_TEST_RANGE,
-  CMD_TEST_RF_RESERVED,
-  CMD_UPDATE_RX_FIRMWARE = 0x20,
-  CMD_LAST
-};
 #define IS_VALID_COMMAND_ID(id)         ((id) < CMD_LAST)
 
 #ifndef custom_log
@@ -292,7 +262,7 @@ inline void putFlySkyFrameHeader()
 {
   initFlySkyArray();
   *intmodulePulsesData.flysky.ptr++ = END;
-   putFlySkyFrameByte(intmodulePulsesData.flysky.frame_index);
+  putFlySkyFrameByte(intmodulePulsesData.flysky.frame_index);
 }
 
 inline void putFlySkyFrameFooter()
@@ -302,6 +272,13 @@ inline void putFlySkyFrameFooter()
   }
   putFlySkyByte(intmodulePulsesData.flysky.crc ^ 0xff);
   *intmodulePulsesData.flysky.ptr++ = END;
+}
+
+void afhds2Command(uint8_t type, uint8_t cmd)
+{
+  putFlySkyFrameHeader();
+  putFlySkyFrameCmd(type, cmd);
+  putFlySkyFrameFooter();
 }
 
 inline void putFlySkySendChannelData()
@@ -501,9 +478,9 @@ void processInternalFlySkyTelemetryData(uint8_t byte)
 #if !defined(SIMU)
   parseFlyskyData(&rxBuffer, byte);
 #endif
-  if (rxBuffer.msg_OK) {
+  if (rxBuffer.valid) {
     rfRxCount++;
-    rxBuffer.msg_OK = 0;
+    rxBuffer.valid = 0;
     uint8_t *pt = (uint8_t*)&rxBuffer;
     //rxBuffer.head = HALL_PROTOLO_HEAD;
     pt[rxBuffer.length + 3] = rxBuffer.checkSum & 0xFF;
@@ -514,8 +491,8 @@ void processInternalFlySkyTelemetryData(uint8_t byte)
               rxBuffer.checkSum, calc_crc16(pt, rxBuffer.length+3));
     }
 
-    if ( 0x01 == rxBuffer.length &&
-       ( 0x05 == rxBuffer.data[0] || 0x06 == rxBuffer.data[0]) ) {
+    //FW UPDATE done
+    if (0x01 == rxBuffer.length && (0x05 == rxBuffer.data[0] || 0x06 == rxBuffer.data[0])) {
         setFlyskyState(STATE_INIT);
         rf_info.fw_state = 0;
     }
@@ -558,6 +535,17 @@ void resetPulsesAFHDS2()
   if (50 > rx_freq || 400 < rx_freq) {
     g_model.moduleData[INTERNAL_MODULE].romData.rx_freq[0] = 50;
   }
+}
+
+void debugFrame(const uint8_t* rxBuffer, uint8_t rxBufferCount){
+  // debug print the content of the packet
+  char buffer[160];
+  char* pos = buffer;
+  for (int i=0; i < rxBufferCount; i++) {
+    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
+  }
+  (*pos) = 0;
+  TRACE("count [%d] data: %s", rxBufferCount, buffer);
 }
 
 void setupPulsesAFHDS2()
@@ -688,6 +676,11 @@ void setupPulsesAFHDS2()
 
   putFlySkyFrameFooter();
 
+
+  if(intmodulePulsesData.flysky.state < STATE_SEND_CHANNELS) {
+    uint8_t size = intmodulePulsesData.flysky.ptr - intmodulePulsesData.flysky.pulses;
+    debugFrame(intmodulePulsesData.flysky.pulses, size);
+  }
   if ((DEBUG_RF_FRAME_PRINT & TX_FRAME_ONLY)) {
     /* print each command, except channel data by interval */
     uint8_t * data = intmodulePulsesData.flysky.pulses;

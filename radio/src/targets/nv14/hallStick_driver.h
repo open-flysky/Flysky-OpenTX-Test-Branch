@@ -121,7 +121,7 @@ typedef  struct
     unsigned char completeFlg;
     unsigned char status;
     unsigned char recevied;
-    unsigned char msg_OK;
+    unsigned char valid;
 } STRUCT_HALL;
 
 enum
@@ -196,7 +196,7 @@ extern void hall_stick_init(uint32_t baudrate);
 extern void hall_stick_loop( void );
 extern uint16_t get_hall_adc_value(uint8_t ch);
 extern void hallSerialPutc(char c);
-unsigned short  calc_crc16(void *pBuffer,unsigned char BufferSize);
+unsigned short  calc_crc16(void *pBuffer, uint32_t bufferSize);
 void parseFlyskyData(STRUCT_HALL *hallBuffer, unsigned char ch);
 extern bool isFlySkyUsbDownload(void);
 extern void onFlySkyUsbDownloadStart(uint8_t fw_state);

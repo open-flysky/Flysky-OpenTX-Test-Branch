@@ -116,9 +116,9 @@ PACK(union updateData {
 class Nv14FirmwareInformation {
   public:
     bool valid() const;
-    const char* read(FIL * file) const;
+    const char* read(const char * filename);
   private:
-    uint16_t getCrc16(const char * buffer) const;
+    bool crcValid;
 };
 
 class Nv14UpdateDriver {
@@ -126,9 +126,7 @@ class Nv14UpdateDriver {
     const char* flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FIL* file, const char* label) const;
   private:
     void sendPacket(STRUCT_HALL* tx, uint8_t senderID, uint8_t receiverID, uint8_t packetID, uint8_t* payload, uint16_t length) const;
-    void sendResetRequest(STRUCT_HALL* tx);
 };
-
 
 bool nv14FlashFirmware(const char * filename);
 
