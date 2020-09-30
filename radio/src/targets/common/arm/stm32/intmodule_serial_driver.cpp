@@ -156,18 +156,12 @@ extern "C" void INTMODULE_USART_IRQHandler(void)
   }
 }
 
-static bool txDmaActive = false;
-bool intmoduleActiveDMA() {
-  return txDmaActive;
-}
-
 extern "C" void INTMODULE_TX_DMA_Stream_IRQHandler(void)
 {
   DEBUG_INTERRUPT(INT_DMA2S7);
   if (DMA_GetITStatus(INTMODULE_TX_DMA_STREAM, INTMODULE_TX_DMA_FLAG_TC)) {
     // TODO we could send the 8 next channels here (when needed)
     DMA_ClearITPendingBit(INTMODULE_TX_DMA_STREAM, INTMODULE_TX_DMA_FLAG_TC);
-    txDmaActive = false;
   }
 }
 
@@ -207,7 +201,6 @@ void intmoduleSendBufferDMA(uint8_t * data, uint16_t size)
   DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
   DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
   DMA_Init(INTMODULE_TX_DMA_STREAM, &DMA_InitStructure);
-  txDmaActive = true;
   DMA_Cmd(INTMODULE_TX_DMA_STREAM, ENABLE);
   USART_DMACmd(INTMODULE_USART, USART_DMAReq_Tx, ENABLE);
 }

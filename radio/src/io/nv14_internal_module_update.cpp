@@ -167,34 +167,35 @@ void Nv14UpdateDriver::sendPacket(STRUCT_HALL* tx, uint8_t senderID, uint8_t rec
 	memcpy(tx->data, payload, length);
   *((uint16_t*)(tx->data+length)) = crc16(CRC_1021, (const uint8_t*)tx, length + 3, 0xffff);
   intmoduleSendBufferDMA((uint8_t*)tx, length + 5);
-  while(intmoduleActiveDMA());
-}
-
-bool getResponse(STRUCT_HALL* rx, uint16_t timeoutMs) {
-  uint16_t time = getTmr2MHz();
-  while ((uint16_t)(getTmr2MHz() - time) < ((timeoutMs *2)*1000)) {
-    uint8_t data = 0;
-    if(intmoduleGetByte(&data)) {
-      parseData(rx, data);
-      if (rx->valid) {
-        rx->valid = false;
-        if (rx->hallID.hall_Id.receiverID != RemoteController) continue;
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 void debug(const uint8_t* rxBuffer, uint8_t rxBufferCount){
   // debug print the content of the packet
-  char buffer[160];
+  char buffer[240];
   char* pos = buffer;
   for (int i=0; i < rxBufferCount; i++) {
     pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
   }
   (*pos) = 0;
-  TRACE("count [%d] data: %s", rxBufferCount, buffer);
+  TRACE("count [%d] data: %s \r\n", rxBufferCount, buffer);
+}
+
+bool getBootloaderResponse(STRUCT_HALL* rx, uint16_t timeoutMs, bool checkReceiverID = true) {
+  uint16_t time = getTmr2MHz();
+  while ((uint16_t)(getTmr2MHz() - time) < ((timeoutMs *2)*1000)) {
+    uint8_t byte = 0;
+    if(intmoduleGetByte(&byte)) {
+      parseData(rx, byte);
+      if (rx->valid) { 
+        rx->valid = false;
+        TRACE("VALID PACKET ID %02X Sender %02X Reciever %02X \r\n", rx->hallID.hall_Id.packetID, rx->hallID.hall_Id.senderID, rx->hallID.hall_Id.receiverID);
+        debug((const uint8_t*)rx, rx->length + 3);
+        //if (checkReceiverID && rx->hallID.hall_Id.receiverID != RemoteController) continue;
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 void sendModuleCommand(uint8_t type, uint8_t cmd) {
@@ -203,17 +204,15 @@ void sendModuleCommand(uint8_t type, uint8_t cmd) {
   uint16_t size = intmodulePulsesData.flysky.ptr - data;
   intmoduleSendBufferDMA(data, size);
   debug(data, size);
-  while(intmoduleActiveDMA());
 }
 
-bool getResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) {
+bool getModuleResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) {
   uint16_t time = getTmr2MHz();
   uint16_t index = 0;
   bool escape = false;
   while ((uint16_t)(getTmr2MHz() - time) < ((timeoutMs *2)*1000)) {
     uint8_t byte = 0;
     if(!intmoduleGetByte(&byte)) continue;
-    TRACE("%02X", byte);
     if (byte == END && index > 0) {
       return true;
     } else {
@@ -236,35 +235,24 @@ bool getResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) {
 const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FIL* file, const char* label) const {
   TRACE("INIT INTERNAL MODULE");
   intmoduleSerialStart(INTMODULE_USART_AFHDS2_BAUDRATE, true, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
-  
+  intmodulePulsesData.flysky.frame_index = 1;
   int attempt = 1;
-  watchdogSuspend(500 /*6s*/);
-  while (attempt <= MAX_ATTEMPTS) {
-    TRACE("CMD_RF_INIT %d", attempt);
-    sendModuleCommand(FRAME_TYPE_REQUEST_ACK, CMD_RF_INIT);
-    if (getResponse(rx->data, sizeof(rx->data), 1000)) {
-      break;
+  uint8_t commands[] {
+    CMD_RF_INIT,
+    CMD_UPDATE_RF_FIRMWARE
+  };
+
+  for (unsigned i = 0; i < sizeof(commands); i++) {
+    watchdogSuspend(500 /*6s*/);
+    while (attempt <= MAX_ATTEMPTS) {
+      TRACE("CMD_RF_INIT %d", attempt);
+      sendModuleCommand(FRAME_TYPE_REQUEST_ACK, commands[i]);
+      if (getModuleResponse(rx->data, sizeof(rx->data), 1000)) {
+        break;
+      }
+      attempt++;
     }
-    attempt++;
-  }
-
-  if (attempt == MAX_ATTEMPTS) {
-    return "RF INIT FAILED";
-  }
-
-  attempt = 1;
-  watchdogSuspend(500 /*6s*/);
-  while(attempt <= MAX_ATTEMPTS) {
-    TRACE("CMD_UPDATE_RF_FIRMWARE %d", attempt);
-    sendModuleCommand(FRAME_TYPE_REQUEST_ACK, CMD_UPDATE_RF_FIRMWARE);
-    if (getResponse(rx->data, sizeof(rx->data), 1000)) {
-      break;
-    }
-    attempt++;
-  }
-
-  if (attempt == MAX_ATTEMPTS) {
-    return "ENTER UPDATE MODE FAILED";
+    if (attempt == MAX_ATTEMPTS) return "RF INIT FAILED";
   }
 
   uint32_t fwLength = (uint32_t)file->obj.objsize;
@@ -275,24 +263,41 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
     .firmwareKey = {0}
   };
 
-  //Wait for ACK and firmware key
-  watchdogSuspend(500);
-  if (getResponse(rx, 5000) && rx->hallID.hall_Id.packetID == UpdateID) {
-    updateDetails* u = (updateDetails*)&rx->data;
-    if (u->request.type == tUpdateRequest) {
-      memcpy(info.firmwareKey, u->request.UID, sizeof(info.firmwareKey));
+  TRACE("update key");
+  attempt = 1;
+  while(attempt <= MAX_ATTEMPTS) {
+    watchdogSuspend(500);
+    if (getBootloaderResponse(rx, 5000)) {
+      TRACE("Attempt %d", attempt);
+      if(rx->hallID.hall_Id.packetID == UpdateID) {
+        updateDetails* u = (updateDetails*)&rx->data;
+        if (u->request.type == tUpdateRequest) {
+          memcpy(info.firmwareKey, u->request.UID, sizeof(info.firmwareKey));
+          break;
+        }
+      }
     }
+    attempt++;
   }
-
-  if (!info.firmwareKey[0]) return "ACK timeout";
+  if (attempt == MAX_ATTEMPTS) return "ACK timeout";
   unsigned long magic = info.firmwareKey[0] + info.firmwareKey[1] + info.firmwareKey[2] + info.firmwareKey[3];
 
+  TRACE("Magic %d", magic);
+
   //clear flash
-  watchdogSuspend(3000);
-  sendPacket(tx, RemoteController, RF_Internal, UpdateID, (uint8_t*)(&info), sizeof(info));
-  if (!getResponse(rx, 30000) || rx->hallID.hall_Id.packetID != UpdateID || rx->data[0] != tUpdateAck) {
-    return "Clearing chip failed";
+  attempt = 1;
+  while(attempt <= MAX_ATTEMPTS) {
+    watchdogSuspend(3000);
+    sendPacket(tx, RemoteController, RF_Internal, UpdateID, (uint8_t*)(&info), sizeof(info));
+    if (getBootloaderResponse(rx, 30000)) {
+      TRACE("PacketID %d type %d", rx->hallID.hall_Id.packetID, rx->data[0]);
+      if(rx->hallID.hall_Id.packetID == UpdateID && rx->data[0] == tUpdateAck) {
+        break;
+      }
+    }
+    attempt++;
   }
+  if (attempt == MAX_ATTEMPTS) return "Clearing chip failed";
   
   updatePacket packet = {
     .type = tUpdatePacket,
@@ -323,10 +328,12 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
     }
     watchdogSuspend(1000);
     sendPacket(tx, RemoteController, RF_Internal, UpdateID, (uint8_t*)(&packet), sizeof(packet));
-    if (getResponse(rx, 10000) && rx->hallID.hall_Id.packetID == UpdateID) {
+    if (getBootloaderResponse(rx, 10000) && rx->hallID.hall_Id.packetID == UpdateID) {
       updateDetails* u = (updateDetails*)&rx->data;
+      TRACE("Written %d ack %d", packetNb, u->ack.type);
       switch(u->ack.type) {
         case tUpdateAck:
+        case tUpdateRequest: //should not be but it seems responses are using this value
           drawProgressScreen(label, STR_WRITING, file->fptr, file->obj.objsize);
           continue;
         break;
@@ -338,11 +345,8 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
       }
     }
   }
-
   return nullptr;
 }
-
-
 
 bool nv14FlashFirmware(const char * filename) {
   FIL file;
@@ -350,32 +354,19 @@ bool nv14FlashFirmware(const char * filename) {
     raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);
     return false;
   }
-
-  //Nv14FirmwareInformation firmwareFile;
-  /*
-  if (firmwareFile.read(&file) || !firmwareFile.valid()) {
-    f_close(&file);
-    raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);
-    return false;
-  }*/
   f_lseek(&file, 0);
-
   pausePulses();
-
   uint8_t intPwr = IS_INTERNAL_MODULE_ON();
   INTERNAL_MODULE_OFF();
-
   uint8_t extPwr = IS_EXTERNAL_MODULE_ON();
   EXTERNAL_MODULE_OFF();
-
   uint8_t spuPwr = IS_SPORT_UPDATE_POWER_ON();
   SPORT_UPDATE_POWER_OFF();
-
   drawProgressScreen(getBasename(filename), STR_DEVICE_RESET, 0, 0);
 
   /* wait 2s off */
-  watchdogSuspend(500 /*5s*/);
-  RTOS_WAIT_MS(3000);
+  watchdogSuspend(200 /*2s*/);
+  RTOS_WAIT_MS(1000);
   STRUCT_HALL rx = {0};
   STRUCT_HALL tx = {0};
   const char * result = nv14UpdateDriver.flashFirmware(&tx, &rx, &file, getBasename(filename));
@@ -388,8 +379,8 @@ bool nv14FlashFirmware(const char * filename) {
   SPORT_UPDATE_POWER_OFF();
 
   /* wait 2s off */
-  watchdogSuspend(500 /*5s*/);
-  RTOS_WAIT_MS(2000);
+  watchdogSuspend(200 /*5s*/);
+  RTOS_WAIT_MS(1000);
 
   // reset telemetry protocol
   telemetryInit(255);
