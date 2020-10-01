@@ -178,10 +178,6 @@ enum TRANSFER_DIR_E {
 #define HALL_RX_DMA_Stream_IRQHandler     DMA1_Stream2_IRQHandler
 #define HALL_TX_DMA_Stream_IRQHandler     DMA1_Stream4_IRQHandler
 
-//#include "fifo.h"
-//extern Fifo<uint8_t, HALLSTICK_BUFF_SIZE> hallStickTxFifo;
-
-
 /***************************************************************************************************
                                          interface function
 ***************************************************************************************************/

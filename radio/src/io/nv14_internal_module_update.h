@@ -125,6 +125,10 @@ class Nv14UpdateDriver {
   public:
     const char* flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FIL* file, const char* label) const;
   private:
+    bool getModuleResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) const;
+    void sendModuleCommand(uint8_t type, uint8_t cmd) const;
+    bool getBootloaderResponse(STRUCT_HALL* rx, uint16_t timeoutMs, bool checkReceiverID = true) const;
+    void debug(const uint8_t* rxBuffer, uint8_t rxBufferCount) const;
     void sendPacket(STRUCT_HALL* tx, uint8_t senderID, uint8_t receiverID, uint8_t packetID, uint8_t* payload, uint16_t length) const;
 };
 

@@ -346,7 +346,7 @@ void drawProgressScreen(const char * title, const char * message, int num, int d
   }
 
   progressDialog->setProgress(title, message, num, den, false);
-  BACKLIGHT_ENABLE();
+  backlightOn();
   wdt_reset();
   mainWindow.run();
 }
@@ -354,6 +354,7 @@ void drawProgressScreen(const char * title, const char * message, int num, int d
 void drawProgressScreenDone(bool success, const char * title, const char * message) {
   if(progressDialog) {
     progressDialog->setProgress(title, message, 100, 100, true);
+    backlightOn();
   }
 
 }

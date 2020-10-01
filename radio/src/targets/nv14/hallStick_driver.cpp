@@ -20,11 +20,13 @@
 
 #include "opentx.h"
 #include "crc.h"
+#include "hallStick_parser.h"
 
 DMAFifo<HALLSTICK_BUFF_SIZE> hallDMAFifo __DMA (HALL_DMA_Stream_RX);
 Fifo<uint8_t, HALLSTICK_BUFF_SIZE> hallStickTxFifo;
 static uint8_t hallStickSendState = HALLSTICK_SEND_STATE_IDLE;
 unsigned char HallCmd[264] __DMA;
+static hallStickParser parser;
 
 STRUCT_HALL HallProtocol = { 0 };
 STRUCT_HALL HallProtocolTx = { 0 };
@@ -246,93 +248,10 @@ void hallStickUpdatefwEnd( void )
     HallSendBuffer( HallCmd, 6);// 94 DD
 }
 
-static int parse_ps_state = 0;
+
 void parseFlyskyData(STRUCT_HALL *hallBuffer, unsigned char ch)
 {
-    if (parse_ps_state != 0) return;
-    parse_ps_state = 1;
-
-    switch( hallBuffer->status )
-    {
-        case GET_START:
-        {
-            if ( HALL_PROTOLO_HEAD == ch )
-            {
-                hallBuffer->head  = HALL_PROTOLO_HEAD;
-                hallBuffer->status = GET_ID;
-                hallBuffer->valid = 0;
-            }
-            break;
-        }
-        case GET_ID:
-        {
-            hallBuffer->hallID.ID = ch;
-            hallBuffer->status = GET_LENGTH;
-            break;
-        }
-        case GET_LENGTH:
-        {
-            hallBuffer->length = ch;
-            hallBuffer->dataIndex = 0;
-            hallBuffer->status = GET_DATA;
-            if( 0 == hallBuffer->length )
-            {
-                hallBuffer->status = GET_CHECKSUM;
-                hallBuffer->checkSum=0;
-            }
-            break;
-        }
-        case GET_DATA:
-        {
-            hallBuffer->data[hallBuffer->dataIndex++] = ch;
-            if( hallBuffer->dataIndex >= hallBuffer->length)
-            {
-                hallBuffer->checkSum = 0;
-                hallBuffer->dataIndex = 0;
-                hallBuffer->status = GET_STATE;
-            }
-            break;
-        }
-        case GET_STATE:
-        {
-            hallBuffer->checkSum = 0;
-            hallBuffer->dataIndex = 0;
-            hallBuffer->status = GET_CHECKSUM;
-        }
-        case GET_CHECKSUM:
-        {
-            hallBuffer->checkSum |= ch << ((hallBuffer->dataIndex++) * 8);
-            if( hallBuffer->dataIndex >= 2 )
-            {
-                hallBuffer->dataIndex = 0;
-                hallBuffer->status = CHECKSUM;
-            }
-            else
-            {
-                break;
-            }
-        }
-        case CHECKSUM:
-        {
-            if(hallBuffer->checkSum == calc_crc16( (U8*)&hallBuffer->head, hallBuffer->length + 3 ) )
-            {
-                hallBuffer->valid = 1;
-                goto Label_restart;
-            }
-            else
-            {
-                goto Label_error;
-            }
-        }
-    }
-
-    goto exit;
-
-    Label_error:
-    Label_restart:
-        hallBuffer->status = GET_START;
-exit: parse_ps_state = 0;
-    return ;
+  parser.parse(hallBuffer, ch);
 }
 
 #define ERROR_OFFSET      10
@@ -431,7 +350,7 @@ void hallStick_GetTxDataFromUSB( void )
 
     while( HallGetByteTx(&abyte) )
     {
-        parseFlyskyData(&HallProtocolTx, abyte );
+        parser.parse(&HallProtocolTx, abyte );
 
         if ( HallProtocolTx.valid )
         {
@@ -518,7 +437,7 @@ void hall_stick_loop(void)
     {
         HallProtocol.index++;
 
-        parseFlyskyData(&HallProtocol, byte);
+        parser.parse(&HallProtocol, byte);
 
         if ( HallProtocol.valid )
         {
