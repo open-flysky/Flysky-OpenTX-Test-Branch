@@ -106,7 +106,6 @@ class GridNxMLayout {
     {
       coord_t width = (LCD_W - (lineMarginRight + lineMarginRight + (columns - 1) * lineSpacing)) / columns;
       coord_t height = (LCD_H - (topMargin + bottomMargin + (rows - 1) * lineSpacing)) / rows;
-      TRACE("w %d index %d", width, (index % columns));
       coord_t left = lineMarginLeft + ((width + lineSpacing) * (index % columns));
       if (index && !(index % columns)) {
         if (columns == rows) currentY += width + lineSpacing;

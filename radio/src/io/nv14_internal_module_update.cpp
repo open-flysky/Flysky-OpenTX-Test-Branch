@@ -80,7 +80,7 @@ void Nv14UpdateDriver::sendPacket(STRUCT_HALL* tx, uint8_t senderID, uint8_t rec
   *((uint16_t*)(tx->data+length)) = crc16(CRC_1021, (const uint8_t*)tx, length + 3, 0xffff);
   intmoduleSendBufferDMA((uint8_t*)tx, length + 5);
   
-  debug((uint8_t*)tx, length + 5);
+  //debug((uint8_t*)tx, length + 5);
 }
 
 void Nv14UpdateDriver::debug(const uint8_t* rxBuffer, uint8_t rxBufferCount) const {
@@ -106,7 +106,7 @@ bool Nv14UpdateDriver::getBootloaderResponse(STRUCT_HALL* rx, uint16_t timeoutMs
       if (rx->valid) { 
         rx->valid = false;
         TRACE("RX PacketID %d Type %d Sender %02X Reciever %02X Length %d", rx->hallID.hall_Id.packetID, rx->data[0], rx->hallID.hall_Id.senderID, rx->hallID.hall_Id.receiverID, rx->length);
-        debug((uint8_t*)rx, rx->length + 5);
+        //debug((uint8_t*)rx, rx->length + 5);
         //if (checkReceiverID && rx->hallID.hall_Id.receiverID != RemoteController) continue;
         return true;
       }
@@ -120,7 +120,7 @@ void Nv14UpdateDriver::sendModuleCommand(uint8_t type, uint8_t cmd) const {
   uint8_t* data = intmodulePulsesData.flysky.pulses;
   uint16_t size = intmodulePulsesData.flysky.ptr - data;
   intmoduleSendBufferDMA(data, size);
-  debug(data, size);
+  //(data, size);
 }
 
 bool Nv14UpdateDriver::getModuleResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) const {
@@ -130,7 +130,6 @@ bool Nv14UpdateDriver::getModuleResponse(uint8_t* data, uint16_t maxSize, uint16
   while (getTmr2MHz() < timeout) {
     uint8_t byte = 0;
     if(!intmoduleGetByte(&byte)) continue;
-    TRACE("%02X", byte);
     if (byte == END && index > 0) {
       return true;
     } else {
