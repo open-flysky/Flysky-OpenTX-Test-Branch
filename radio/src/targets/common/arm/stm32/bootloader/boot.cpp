@@ -66,11 +66,10 @@ FlashCheckRes Valid;
 
 MemoryType memoryType;
 uint32_t   unlocked = 0;
+BootloaderState state = ST_START;
 
 void interrupt10ms(void)
 {
-  Tenms |= 1;     // 10 mS has passed
-
   uint8_t index = 0;
   uint8_t in = readKeys();
   for (uint8_t i = 1; i != uint8_t(1 << TRM_BASE); i <<= 1) {
@@ -111,7 +110,8 @@ void init10msTimer()
 extern "C" void INTERRUPT_xMS_IRQHandler()
 {
   INTERRUPT_xMS_TIMER->SR &= ~TIM_SR_UIF;
-  interrupt10ms();
+  Tenms |= 1;     // 10 mS has passed
+  if(state != ST_FLASHING) interrupt10ms();
 }
 
 uint32_t isValidBufferStart(const uint8_t * buffer)
@@ -201,7 +201,6 @@ void jumpTo(uint32_t address )
 }
 int main()
 {
-  BootloaderState state = ST_START;
   uint32_t vpos = 0;
   uint8_t index = 0;
   FRESULT fr;
