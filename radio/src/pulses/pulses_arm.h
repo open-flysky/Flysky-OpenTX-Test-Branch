@@ -350,6 +350,8 @@ void intmoduleSendBufferDMA(uint8_t * data, uint16_t size);
 void onFlySkyGetVersionInfoStart(uint8_t isRfTransfer);
 void usbDownloadTransmit(uint8_t *buffer, uint32_t size);
 
+extern uint32_t NV14internalModuleFwVersion;
+
 #define END                             0xC0
 #define ESC                             0xDB
 #define ESC_END                         0xDC
@@ -489,22 +491,23 @@ inline bool isModuleInBeepMode()
 enum FlySkyModuleState_E {
   STATE_SET_TX_POWER = 0,
   STATE_INIT = 1,
-  STATE_BIND = 2,
-  STATE_SET_RECEIVER_ID = 3,
-  STATE_SET_RX_PWM_PPM = 4,
-  STATE_SET_RX_IBUS_SBUS = 5,
-  STATE_SET_RX_FREQUENCY = 6,
-  STATE_UPDATE_RF_FIRMWARE = 7,
-  STATE_UPDATE_RX_FIRMWARE = 8,
-  STATE_UPDATE_HALL_FIRMWARE = 9,
-  STATE_UPDATE_RF_PROTOCOL = 10,
-  STATE_GET_RECEIVER_CONFIG = 11,
-  STATE_GET_RX_VERSION_INFO = 12,
-  STATE_GET_RF_VERSION_INFO = 13,
-  STATE_SET_RANGE_TEST = 14,
-  STATE_RANGE_TEST_RUNNING = 15,
-  STATE_IDLE = 16,
-  STATE_SEND_CHANNELS = 17,
+  STATE_GET_FW_VERSION_INIT = 2,
+  STATE_BIND = 3,
+  STATE_SET_RECEIVER_ID = 4,
+  STATE_SET_RX_PWM_PPM = 5,
+  STATE_SET_RX_IBUS_SBUS = 6,
+  STATE_SET_RX_FREQUENCY = 7,
+  STATE_UPDATE_RF_FIRMWARE = 8,
+  STATE_UPDATE_RX_FIRMWARE = 9,
+  STATE_UPDATE_HALL_FIRMWARE = 10,
+  STATE_UPDATE_RF_PROTOCOL = 11,
+  STATE_GET_RECEIVER_CONFIG = 12,
+  STATE_GET_RX_VERSION_INFO = 13,
+  STATE_GET_RF_VERSION_INFO = 14,
+  STATE_SET_RANGE_TEST = 15,
+  STATE_RANGE_TEST_RUNNING = 16,
+  STATE_IDLE = 17,
+  STATE_SEND_CHANNELS = 18,
 };
 
 #define BIND_TELEM_ALLOWED(idx)      (!isModuleR9M_LBT(idx) || g_model.moduleData[idx].pxx.power == R9M_LBT_POWER_25)

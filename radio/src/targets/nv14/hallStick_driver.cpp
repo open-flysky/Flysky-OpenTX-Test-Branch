@@ -20,7 +20,7 @@
 
 #include "opentx.h"
 #include "crc.h"
-#include "hallStick_parser.h"
+#include "io/hallStick_parser.h"
 
 DMAFifo<HALLSTICK_BUFF_SIZE> hallDMAFifo __DMA (HALL_DMA_Stream_RX);
 Fifo<uint8_t, HALLSTICK_BUFF_SIZE> hallStickTxFifo;
@@ -342,6 +342,18 @@ bool isHallProtocolTxMsgOK( void )
     return isMsgOK;
 }
 
+
+void debugFrame2(const uint8_t* rxBuffer, uint8_t rxBufferCount){
+  char buffer[320];
+  char* pos = buffer;
+  for (int i=0; i < rxBufferCount; i++) {
+    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X", rxBuffer[i]);
+  }
+  (*pos) = 0;
+  TRACE("count [%d] data: %s", rxBufferCount, buffer);
+}
+
+
 /* HallStick send main program */
 void hallStick_GetTxDataFromUSB( void )
 {
@@ -388,7 +400,7 @@ void hallStick_GetTxDataFromUSB( void )
 
             case TRANSFER_DIR_RFMODULE:
                 onFlySkyUsbDownloadStart(TRANSFER_DIR_RFMODULE);
-
+                debugFrame2((const uint8_t*)&HallProtocolTx, HallProtocolTx.length + 5);
                 if ( 0xAE == HallProtocolTx.hallID.ID && HallProtocolTx.length == 0 )
                 {
                     setFlyskyState(STATE_UPDATE_RF_FIRMWARE);
@@ -456,7 +468,7 @@ void hall_stick_loop(void)
                 }
                 break;
             case TRANSFER_DIR_HOSTPC:
-                if (HallProtocol.length == 0x01 && (HallProtocol.data[0] == 0x05 || HallProtocol.data[0] == 0x06) )
+                if (HallProtocol.length == 0x01 && (HallProtocol.data[0] == 0x05 || HallProtocol.data[0] == 0x06))
                 {
                     hallStickSendState = HALLSTICK_SEND_STATE_IDLE;
                 }

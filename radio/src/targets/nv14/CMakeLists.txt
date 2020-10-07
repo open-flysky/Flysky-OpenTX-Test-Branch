@@ -40,7 +40,7 @@ set(TARGET_SRC
   ../common/arm/stm32/adc_driver.cpp
   )
 
-set(FIRMWARE_TARGET_SRC ${FIRMWARE_TARGET_SRC} hallStick_driver.cpp hallStick_parser.cpp)
+set(FIRMWARE_TARGET_SRC ${FIRMWARE_TARGET_SRC} hallStick_driver.cpp)
 
 set(BITMAPS_TARGET nv14_bitmaps)
 set(FONTS_TARGET x10_fonts)

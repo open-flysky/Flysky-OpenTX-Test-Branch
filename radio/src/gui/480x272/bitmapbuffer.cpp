@@ -18,6 +18,29 @@
  * GNU General Public License for more details.
  */
 
+
+/*
+Copyright (c) 2013 Adafruit Industries.  All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
 #include "opentx.h"
 
 void BitmapBuffer::drawAlphaPixel(display_t * p, uint8_t opacity, uint16_t color)
@@ -71,12 +94,17 @@ void BitmapBuffer::drawHorizontalLine(coord_t x, coord_t y, coord_t w, uint8_t p
   }
 }
 
-void BitmapBuffer::drawVerticalLine(coord_t x, coord_t y, coord_t h, uint8_t pat, LcdFlags att)
+void BitmapBuffer::drawVerticalLine(coord_t x, coord_t y, coord_t h, uint8_t pat, LcdFlags att, bool applyOffset)
 {
-  APPLY_OFFSET();
+  if(applyOffset) {
+    APPLY_OFFSET();
+  }
 
-  if (x < xmin || x >= xmax)
+
+  if (x < xmin || x >= xmax) {
     return;
+  }
+   
 
   if (h < 0) {
     y += h;
@@ -92,8 +120,10 @@ void BitmapBuffer::drawVerticalLine(coord_t x, coord_t y, coord_t h, uint8_t pat
     h = ymax - y;
   }
 
-  if (h <= 0)
+  if (h <= 0) {
     return;
+  }
+
 
   display_t color = lcdColorTable[COLOR_IDX(att)];
   uint8_t opacity = 0x0F - (att >> 24);
@@ -120,6 +150,8 @@ void BitmapBuffer::drawVerticalLine(coord_t x, coord_t y, coord_t h, uint8_t pat
     }
   }
 }
+
+
 
 void BitmapBuffer::drawRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t thickness, uint8_t pat, LcdFlags att)
 {
@@ -159,6 +191,87 @@ void BitmapBuffer::drawSolidFilledRect(coord_t x, coord_t y, coord_t w, coord_t 
     return;
 
   DMAFillRect(data, width, height, x, y, w, h, lcdColorTable[COLOR_IDX(flags)]);
+}
+
+/**************************************************************************/
+/*
+part of https://github.com/adafruit/Adafruit-GFX-Library/blob/master/Adafruit_GFX.cpp
+*/
+/*!
+    @brief  Quarter-circle drawer with fill, used for circles and roundrects
+    @param  x0       Center-point x coordinate
+    @param  y0       Center-point y coordinate
+    @param  r        Radius of circle
+    @param  corners  Mask bits indicating which quarters we're doing
+    @param  delta    Offset from center-point, used for round-rects
+*/
+/**************************************************************************/
+void BitmapBuffer::fillCircleHelper(coord_t x0, coord_t y0, coord_t r, uint8_t corners, coord_t delta, LcdFlags flags) {
+  coord_t f = 1 - r;
+  coord_t ddF_x = 1;
+  coord_t ddF_y = -2 * r;
+  coord_t x = 0;
+  coord_t y = r;
+  coord_t px = x;
+  coord_t py = y;
+
+  delta++; // Avoid some +1's in the loop
+
+  while (x < y) {
+    if (f >= 0) {
+      y--;
+      ddF_y += 2;
+      f += ddF_y;
+    }
+    x++;
+    ddF_x += 2;
+    f += ddF_x;
+    if (x < (y + 1)) {
+      if (corners & 1)
+        drawVerticalLine(x0 + x, y0 - y, 2 * y + delta, SOLID, flags, false);
+      if (corners & 2)
+        drawVerticalLine(x0 - x, y0 - y, 2 * y + delta, SOLID, flags, false);
+    }
+    if (y != py) {
+      if (corners & 1)
+        drawVerticalLine(x0 + py, y0 - px, 2 * px + delta, SOLID, flags, false);
+      if (corners & 2)
+        drawVerticalLine(x0 - py, y0 - px, 2 * px + delta, SOLID, flags, false);
+      py = y;
+    }
+    px = x;
+  }
+}
+
+void BitmapBuffer::drawSolidFilledRectRadius(coord_t x, coord_t y, coord_t w, coord_t h, coord_t radius, LcdFlags flags) {
+  APPLY_OFFSET();
+
+  if (x >= xmax || y >= ymax)
+    return;
+
+  if (h < 0) {
+    y += h;
+    h = -h;
+  }
+  if (y < ymin) {
+    h += y-ymin;
+    y = ymin;
+  }
+  if (x < xmin) {
+    w += x - xmin;
+    x = xmin;
+  }
+  if (y + h > ymax)
+    h = ymax - y;
+  if (x + w > xmax)
+    w = xmax - x;
+
+  if (!data || h<=0 || w<=0)
+    return;
+
+  DMAFillRect(data, width, height, x + radius, y, w - (2*radius), h, lcdColorTable[COLOR_IDX(flags)]);
+  fillCircleHelper(x + w - radius - 1, y + radius, radius, 1, h - 2 * radius - 1, flags);
+  fillCircleHelper(x + radius, y + radius, radius, 2, h - 2 * radius - 1, flags);
 }
 
 void BitmapBuffer::drawFilledRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t pat, LcdFlags att)

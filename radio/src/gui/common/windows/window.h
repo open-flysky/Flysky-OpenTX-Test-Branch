@@ -42,6 +42,7 @@ extern RadioData g_eeGeneral;
 
 class Window {
   friend class GridLayout;
+  friend class GridNxMLayout;
   public:
     Window(Window * parent, const rect_t & rect, uint8_t flags=0);
 

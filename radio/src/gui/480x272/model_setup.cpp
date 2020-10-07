@@ -307,7 +307,15 @@ class ModuleWindow : public Window {
           return isModuleTypeAllowed(moduleIndex, moduleType);
         });
       }
-      
+#if defined(AFHDS2)
+      if (isModuleFlysky(moduleIndex) && NV14internalModuleFwVersion) {
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), STR_FW_VERSION);
+        sprintf(reusableBuffer.moduleSetup.msg, "%d.%d.%d", (NV14internalModuleFwVersion >> 16) & 0xFF, (NV14internalModuleFwVersion >> 8) & 0xFF,  NV14internalModuleFwVersion & 0xFF);
+        new StaticText(this, grid.getFieldSlot(), reusableBuffer.moduleSetup.msg);
+      }
+#endif
+              
       // Module parameters
       if (isModuleFlysky(moduleIndex) || isModuleAFHDS3(moduleIndex)) {
         grid.nextLine();

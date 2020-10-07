@@ -94,4 +94,47 @@ class GridLayout {
     coord_t lineMarginRight = 10;
 };
 
+
+class GridNxMLayout {
+  public:
+    GridNxMLayout(coord_t col, coord_t row) : columns(col), rows(row), index(0)
+    {
+      currentY += topMargin;
+    }
+
+    rect_t getNextFieldSlot()
+    {
+      coord_t width = (LCD_W - (lineMarginRight + lineMarginRight + (columns - 1) * lineSpacing)) / columns;
+      coord_t height = (LCD_H - (topMargin + bottomMargin + (rows - 1) * lineSpacing)) / rows;
+      TRACE("w %d index %d", width, (index % columns));
+      coord_t left = lineMarginLeft + ((width + lineSpacing) * (index % columns));
+      if (index && !(index % columns)) {
+        if (columns == rows) currentY += width + lineSpacing;
+        else currentY += height + lineSpacing;
+      }
+      index++;
+      return {left, currentY, width, width};
+    }
+
+    void spacer(coord_t height=lineSpacing)
+    {
+      currentY += height;
+    }
+
+    coord_t getWindowHeight() const
+    {
+      return currentY;
+    }
+
+  protected:
+    coord_t currentY = 0;
+    coord_t topMargin = 8;
+    coord_t bottomMargin = 8;
+    coord_t lineMarginLeft = 6;
+    coord_t lineMarginRight = 10;
+    coord_t columns;
+    coord_t rows;
+    coord_t index;
+};
+
 #endif

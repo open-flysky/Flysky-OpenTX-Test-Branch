@@ -83,21 +83,6 @@ enum FlySkyPulseProtocol_E {
 #define AfhdsPwmMode    (gRomData.mode < 2 ? FLYSKY_PWM: FLYSKY_PPM)
 #define AfhdsIbusMode   (gRomData.mode & 1 ? FLYSKY_SBUS: FLYSKY_IBUS)
 
-struct rx_ibus_t {
-  uint8_t id[2];
-  uint8_t channel[2];
-} rx_ibus_t;
-
-
-typedef struct fw_info_t {
-  uint32_t fw_id;
-  uint32_t fw_len;
-  uint32_t hw_rev;
-  uint32_t fw_rev;
-  uint32_t fw_pkg_addr;
-  uint32_t fw_pkg_len;
-  uint8_t pkg_data[255];
-} fw_info_t;
 
 struct rf_info_t {
   uint8_t bind_power;
@@ -108,14 +93,15 @@ struct rf_info_t {
 static STRUCT_HALL rxBuffer = {0};
 static uint32_t rfRxCount = 0;
 static uint8_t lastState = STATE_IDLE;
+static uint32_t set_loop_cnt = 0;
+
+uint32_t NV14internalModuleFwVersion;
 
 static rf_info_t rf_info = {
   .bind_power       = BIND_LOW_POWER,
   .protocol         = FLYSKY_AFHDS2A, //never updated currently
   .fw_state         = 0,
 };
-
-static fw_info_t fw_info[2] = { {0}, {0} };
 
 typedef struct __attribute__ ((packed)) rxParams {
   uint8_t outputMode;
@@ -128,11 +114,6 @@ typedef struct __attribute__ ((packed)) fwVersion {
   uint32_t version;
 } fwVersion;
 
-union afhds2FrameData {
-  rxParams rx;
-  fwVersion versionInfo;
-};
-
 struct __attribute__ ((packed)) afhds2Resp {
   uint8_t startByte;
   uint8_t frame_number;
@@ -141,7 +122,7 @@ struct __attribute__ ((packed)) afhds2Resp {
   uint8_t value;
 };
 
-static uint32_t set_loop_cnt = 0;
+
 
 bool isFlySkyUsbDownload(void)
 {
@@ -353,6 +334,18 @@ bool checkFlySkyFrameCrc(const uint8_t * ptr, uint8_t size)
   return (crc ^ 0xff) == ptr[size];
 }
 
+
+void debugFrame(const uint8_t* rxBuffer, uint8_t rxBufferCount){
+  // debug print the content of the packet
+  char buffer[160];
+  char* pos = buffer;
+  for (int i=0; i < rxBufferCount; i++) {
+    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
+  }
+  (*pos) = 0;
+  TRACE("count [%d] data: %s", rxBufferCount, buffer);
+}
+
 inline void parseResponse()
 {
   const afhds2Resp* resp = reinterpret_cast<afhds2Resp*>(intmodulePulsesData.flysky.telemetry);
@@ -375,7 +368,7 @@ inline void parseResponse()
      intmodulePulsesData.flysky.frame_index = resp->frame_number;
   }
 
-  TRACE("cmd %02X, frame %d type  %02X", resp->command_id, resp->frame_number, resp->frame_type);
+  debugFrame(&resp->value, dataLen - 3);
   switch (resp->command_id) {
     default:
       if (moduleState[INTERNAL_MODULE].mode == MODULE_MODE_NORMAL && intmodulePulsesData.flysky.state >= STATE_IDLE) {
@@ -386,7 +379,7 @@ inline void parseResponse()
     case CMD_RF_INIT: 
       if (resp->value == 0x01) { // action only RF ready
           if (moduleState[INTERNAL_MODULE].mode == MODULE_MODE_BIND) setFlyskyState(STATE_BIND);
-          else setFlyskyState(STATE_SET_RECEIVER_ID);
+          else setFlyskyState(STATE_GET_FW_VERSION_INIT); //get version first
       }
       else {
         //Try one more time;
@@ -451,10 +444,14 @@ inline void parseResponse()
       break;
     }
     case CMD_GET_VERSION_INFO: {
+      if (intmodulePulsesData.flysky.state == STATE_GET_FW_VERSION_INIT) {
+        memcpy(&NV14internalModuleFwVersion, &resp->value + 1, sizeof(NV14internalModuleFwVersion));
+        setFlyskyState(STATE_SET_RECEIVER_ID);
+        break;
+      }
+
       if (dataLen > 4) {
-        auto frameData = reinterpret_cast<const afhds2FrameData*>(&resp->value);
-        uint8_t* version = (uint8_t*)(&(frameData->versionInfo.version));
-        usbSetFrameTransmit(0x08, version, dataLen - 4 );
+        usbSetFrameTransmit(0x08, (uint8_t*) &resp->value + 1, dataLen - 4);
       }
 
       if (lastState == STATE_GET_RF_VERSION_INFO || lastState == STATE_GET_RX_VERSION_INFO) {
@@ -487,8 +484,7 @@ void processInternalFlySkyTelemetryData(uint8_t byte)
     pt[rxBuffer.length + 4] = rxBuffer.checkSum >> 8;
 
     if((DEBUG_RF_FRAME_PRINT & RF_FRAME_ONLY)) {
-        TRACE("RF: %02X %02X %02X ...%04X; CRC:%04X", pt[0], pt[1], pt[2],
-              rxBuffer.checkSum, calc_crc16(pt, rxBuffer.length+3));
+        TRACE("RF: %02X %02X %02X ...%04X; CRC:%04X", pt[0], pt[1], pt[2], rxBuffer.checkSum, calc_crc16(pt, rxBuffer.length+3));
     }
 
     //FW UPDATE done
@@ -537,16 +533,6 @@ void resetPulsesAFHDS2()
   }
 }
 
-void debugFrame(const uint8_t* rxBuffer, uint8_t rxBufferCount){
-  // debug print the content of the packet
-  char buffer[160];
-  char* pos = buffer;
-  for (int i=0; i < rxBufferCount; i++) {
-    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
-  }
-  (*pos) = 0;
-  TRACE("count [%d] data: %s", rxBufferCount, buffer);
-}
 
 void setupPulsesAFHDS2()
 {
@@ -646,6 +632,7 @@ void setupPulsesAFHDS2()
           putFlySkyFrameByte(FLYSKY_RX_FIRMWARE);
         }
         break;
+        case STATE_GET_FW_VERSION_INIT:
         case STATE_GET_RF_VERSION_INFO:
         {
           putFlySkyFrameCmd(FRAME_TYPE_REQUEST_ACK, CMD_GET_VERSION_INFO);

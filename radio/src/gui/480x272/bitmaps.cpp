@@ -84,6 +84,18 @@ const uint8_t LBM_RSCALE[] = {
 #include "mask_rscale.lbm"
 };
 
+const uint8_t LBM_FILE[] = {
+#include "mask_file.lbm"
+};
+
+const uint8_t LBM_BIG_FOLDER[] = {
+#include "mask_big_folder.lbm"
+};
+
+const uint8_t LBM_UNDO[] = {
+#include "mask_undo.lbm"
+};
+
 /*
  *  Model selection screen bitmaps
  */

@@ -78,6 +78,8 @@ const FlyskyNv14Sensor Nv14Sensor[]=
 
 FlyskyNv14Sensor defaultNv14Sensor = {0, 0, "UNKNOWN", UNIT_RAW, 0, 0, 2, false};
 
+extern uint32_t nv14internalModuleFwVersion;
+
 extern int32_t getALT(uint32_t value);
 
 signed short CalculateAltitude(unsigned int pressure)

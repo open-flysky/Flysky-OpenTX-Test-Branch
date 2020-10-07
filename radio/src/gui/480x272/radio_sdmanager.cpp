@@ -107,9 +107,7 @@ const char * getBasename(const char * path)
 
 void RadioSdManagerPage::build(Window * window)
 {
-  GridLayout grid;
-  grid.spacer(8);
-
+  GridNxMLayout grid(4,4);
   FILINFO fno;
   DIR dir;
   std::list<std::string> files;
@@ -142,17 +140,16 @@ void RadioSdManagerPage::build(Window * window)
     files.sort(compare_nocase);
 
     for (auto name: directories) {
-      new TextButton(window, grid.getLineSlot(), name, [=]() -> uint8_t {
+      new FileButton(window, grid.getNextFieldSlot(), name, true, [=]() -> uint8_t {
         f_chdir(name.data());
         window->clear();
         build(window);
         return 0;
       });
-      grid.nextLine();
     }
     
     for (auto name: files) {
-      new TextButton(window, grid.getLineSlot(), name, [=]() -> uint8_t {
+      new FileButton(window, grid.getNextFieldSlot(), name, false, [=]() -> uint8_t {
         auto menu = new Menu();
         const char * ext = getFileExtension(name.data());
         if (ext) {
@@ -242,7 +239,6 @@ void RadioSdManagerPage::build(Window * window)
         }
         return 0;
       });
-      grid.nextLine();
     }
   }
 
