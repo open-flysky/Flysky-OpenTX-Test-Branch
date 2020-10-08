@@ -1406,6 +1406,8 @@ union ReusableBuffer
     uint16_t offset;
     uint16_t count;
     char originalName[SD_SCREEN_FILE_LENGTH+1];
+    char changedName[SD_SCREEN_FILE_LENGTH+1+12];
+    char ext[12];
   } sdmanager;
 #endif
 

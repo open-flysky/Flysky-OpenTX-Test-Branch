@@ -48,22 +48,28 @@ class FileNameEditWindow : public Page {
     {
       GridLayout grid;
       grid.spacer(8);
-	  
-      const char * ext = getFileExtension(name.c_str());
-	  std::string extStr(ext);
-	  int nameLength = name.length() - extStr.length();
-	  if(nameLength > SD_SCREEN_FILE_LENGTH)
-		  nameLength = SD_SCREEN_FILE_LENGTH;
+      int nameLength = name.length();
+      int extLength = 0;
+      size_t extIndex = name.rfind(".");
+      *reusableBuffer.sdmanager.ext = 0;
+      if (extIndex != std::string::npos) {
+        extLength = (nameLength - extIndex);
+        strncpy(reusableBuffer.sdmanager.ext, name.c_str() + extIndex, nameLength);
+      }
+      nameLength -= extLength;
+	    if (nameLength > SD_SCREEN_FILE_LENGTH) nameLength = SD_SCREEN_FILE_LENGTH;
 
-	  strncpy(reusableBuffer.sdmanager.originalName, name.c_str(), nameLength);
-	  reusableBuffer.sdmanager.originalName[nameLength] = 0;
+	    strncpy(reusableBuffer.sdmanager.originalName, name.c_str(), nameLength);
+	    reusableBuffer.sdmanager.originalName[nameLength] = 0;
 
-	  new TextEdit(window, grid.getLineSlot(), reusableBuffer.sdmanager.originalName, SD_SCREEN_FILE_LENGTH, 0, [=](char* newValue) {
-		    std::string newName(newValue);
-			newName += extStr;
-			f_rename(name.c_str(), newName.c_str() );
-		}, 
-		false);	  
+	    new TextEdit(window, grid.getLineSlot(), reusableBuffer.sdmanager.originalName, SD_SCREEN_FILE_LENGTH, 0, [=](char* newValue) {
+        size_t totalSisze = sizeof(reusableBuffer.sdmanager.changedName);
+        strncpy(reusableBuffer.sdmanager.changedName, newValue, totalSisze);
+        if (extLength) {
+          strncpy(reusableBuffer.sdmanager.changedName + strlen(newValue), reusableBuffer.sdmanager.ext, totalSisze-strlen(newValue));  
+        } 
+			  f_rename(name.c_str(), reusableBuffer.sdmanager.changedName);
+		  }, false);	  
 	}
 };
 
@@ -160,7 +166,7 @@ void RadioSdManagerPage::build(Window * window)
             });
           }
           else if (isExtensionMatching(ext, BITMAPS_EXT)) {
-            // TODO
+            
           }
           else if (!strcasecmp(ext, TEXT_EXT)) {
             menu->addLine(STR_VIEW_TEXT, [=]() {
@@ -229,8 +235,10 @@ void RadioSdManagerPage::build(Window * window)
             });
           }
           menu->addLine(STR_RENAME_FILE, [=]() {
-            new FileNameEditWindow(name);
-			      rebuild(window);
+            auto few = new FileNameEditWindow(name);
+			      few->setCloseHandler([=]() {
+              rebuild(window);
+            });
           });
           menu->addLine(STR_DELETE_FILE, [=]() {
             f_unlink(getFullPath(name));

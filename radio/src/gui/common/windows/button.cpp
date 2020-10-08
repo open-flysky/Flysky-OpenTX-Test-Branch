@@ -99,36 +99,62 @@ void FileButton::setColorByExtension()
   }
 }
 
+void fitToRect(char* t, uint16_t w, LcdFlags flags, bool addDots) {
+  while(getTextWidth(t, strlen(t), flags) > w) {
+    int last = strlen(t)-1;
+    if (addDots) {
+      if (last == 2) return;
+      t[last-3] = '.';
+      t[last-2] = '.';
+      t[last-1] = '.';
+    }
+    t[last] = 0;
+  }
+}
 void FileButton::paint(BitmapBuffer * dc)
 {
   coord_t bottom = rect.h / 4;
   bottom = rect.h - bottom;
+  const char* t = text.c_str();
+  char displayText[32];
+  strncpy(displayText, t, sizeof(displayText));
+  int lastChar = sizeof(displayText) -1;
+  if (displayText[lastChar] != 0) displayText[lastChar] = 0;
+
+  LcdFlags textFlags = TINSIZE;
+  fitToRect(displayText, rect.w, textFlags, true);
   if (folder) {
     if(!text.compare("..")) {
        lcdDrawBitmapPattern(0, 0, LBM_UNDO, CENTERED);
     } else {
       lcdSetColor(RGB(255, 209, 85));
       lcdDrawBitmapPattern(0, 0, !text.compare("..") ? LBM_UNDO : LBM_BIG_FOLDER, CUSTOM_COLOR | CENTERED);
-      dc->drawText(0, bottom, text.c_str(), TINSIZE | 0);
+      dc->drawText(0, bottom, displayText, textFlags);
     }
   }
   else {
     coord_t iconWidth = (rect.w * 2) / 3;
     coord_t margin = (rect.w - iconWidth) / 2;
     lcdSetColor(RGB(226, 229, 231));
-    dc->drawSolidFilledRectRadius(margin, 0, rect.w - (margin*2), bottom, rect.w >> 4, CUSTOM_COLOR);
+    dc->drawSolidFilledRectRadius(margin, 0, rect.w - (margin*2), bottom, rect.w / 10, CUSTOM_COLOR);
     coord_t h = rect.h / 5;
     coord_t w = (iconWidth * 2) / 3;
     coord_t top = (rect.h / 2) - (h / 2);
     coord_t marginFileName = margin * 3 / 5;
+    
     size_t extIndex = text.rfind(".");
     if (extIndex != std::string::npos) {
+      displayText[extIndex] = 0;
+    }
+    dc->drawText(0, bottom, displayText, textFlags);
+    if (extIndex != std::string::npos) {
+      strncpy(displayText, text.substr(extIndex + 1).c_str(), sizeof(displayText));
       setColorByExtension();
       dc->drawSolidFilledRectRadius(marginFileName, top, w, h, h / 4, CUSTOM_COLOR);
+      fitToRect(displayText, w, textFlags, false);
       lcdSetColor(RGB(255, 255, 255));
-      dc->drawText(marginFileName + w / 8, top, text.substr(extIndex + 1).c_str(), TINSIZE | CUSTOM_COLOR);
-    }
-    dc->drawText(0, bottom, text.c_str(), TINSIZE | 0);
+      dc->drawText(marginFileName + w / 8, top, displayText, textFlags | CUSTOM_COLOR);
+    } 
   }
 }
 
