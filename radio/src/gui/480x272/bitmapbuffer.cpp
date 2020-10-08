@@ -266,9 +266,12 @@ void BitmapBuffer::drawSolidFilledRectRadius(coord_t x, coord_t y, coord_t w, co
   if (x + w > xmax)
     w = xmax - x;
 
-  if (!data || h<=0 || w<=0)
+  if (!data || h <= 0 || w <= 0 || x + w > width || y + w > height)
     return;
 
+  if (w < (2*radius) || h < (2 * radius - 1)) 
+    return;
+    
   DMAFillRect(data, width, height, x + radius, y, w - (2*radius), h, lcdColorTable[COLOR_IDX(flags)]);
   fillCircleHelper(x + w - radius - 1, y + radius, radius, 1, h - 2 * radius - 1, flags);
   fillCircleHelper(x + radius, y + radius, radius, 2, h - 2 * radius - 1, flags);
