@@ -54,7 +54,7 @@ class FileNameEditWindow : public Page {
       *reusableBuffer.sdmanager.ext = 0;
       if (extIndex != std::string::npos) {
         extLength = (nameLength - extIndex);
-        strncpy(reusableBuffer.sdmanager.ext, name.c_str() + extIndex, nameLength);
+        strncpy(reusableBuffer.sdmanager.ext, name.c_str() + extIndex, sizeof(reusableBuffer.sdmanager.ext));
       }
       nameLength -= extLength;
 	    if (nameLength > SD_SCREEN_FILE_LENGTH) nameLength = SD_SCREEN_FILE_LENGTH;

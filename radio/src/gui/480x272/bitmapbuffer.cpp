@@ -207,6 +207,8 @@ part of https://github.com/adafruit/Adafruit-GFX-Library/blob/master/Adafruit_GF
 */
 /**************************************************************************/
 void BitmapBuffer::fillCircleHelper(coord_t x0, coord_t y0, coord_t r, uint8_t corners, coord_t delta, LcdFlags flags) {
+
+
   coord_t f = 1 - r;
   coord_t ddF_x = 1;
   coord_t ddF_y = -2 * r;
@@ -227,16 +229,20 @@ void BitmapBuffer::fillCircleHelper(coord_t x0, coord_t y0, coord_t r, uint8_t c
     ddF_x += 2;
     f += ddF_x;
     if (x < (y + 1)) {
-      if (corners & 1)
+      if (corners & 1) {
         drawVerticalLine(x0 + x, y0 - y, 2 * y + delta, SOLID, flags, false);
-      if (corners & 2)
+      }
+      if (corners & 2) {
         drawVerticalLine(x0 - x, y0 - y, 2 * y + delta, SOLID, flags, false);
+      }
     }
     if (y != py) {
-      if (corners & 1)
+      if (corners & 1) {
         drawVerticalLine(x0 + py, y0 - px, 2 * px + delta, SOLID, flags, false);
-      if (corners & 2)
+      }
+      if (corners & 2) {
         drawVerticalLine(x0 - py, y0 - px, 2 * px + delta, SOLID, flags, false);
+      }
       py = y;
     }
     px = x;
@@ -244,6 +250,11 @@ void BitmapBuffer::fillCircleHelper(coord_t x0, coord_t y0, coord_t r, uint8_t c
 }
 
 void BitmapBuffer::drawSolidFilledRectRadius(coord_t x, coord_t y, coord_t w, coord_t h, coord_t radius, LcdFlags flags) {
+
+  if(w > (2*radius)) {
+    drawSolidFilledRect(x + radius, y, w - (2*radius), h, flags);
+  }
+
   APPLY_OFFSET();
 
   if (x >= xmax || y >= ymax)
@@ -253,28 +264,22 @@ void BitmapBuffer::drawSolidFilledRectRadius(coord_t x, coord_t y, coord_t w, co
     y += h;
     h = -h;
   }
-  if (y < ymin) {
-    h += y-ymin;
-    y = ymin;
-  }
-  if (x < xmin) {
-    w += x - xmin;
-    x = xmin;
-  }
-  if (y + h > ymax)
-    h = ymax - y;
-  if (x + w > xmax)
-    w = xmax - x;
 
-  if (!data || h <= 0 || w <= 0 || x + w > width || y + w > height)
-    return;
+  coord_t leftX = x + radius;
+  coord_t leftY = y + radius;
+  coord_t leftH = h - 2 * radius - 1;
 
-  if (w < (2*radius) || h < (2 * radius - 1)) 
-    return;
-    
-  DMAFillRect(data, width, height, x + radius, y, w - (2*radius), h, lcdColorTable[COLOR_IDX(flags)]);
-  fillCircleHelper(x + w - radius - 1, y + radius, radius, 1, h - 2 * radius - 1, flags);
-  fillCircleHelper(x + radius, y + radius, radius, 2, h - 2 * radius - 1, flags);
+  if (leftX < xmax && leftY < ymax) {
+    fillCircleHelper(leftX, leftY, radius, 2, leftH, flags);
+  }
+  
+  coord_t rightX = x + w - radius - 1;
+  coord_t rightY = y + radius;
+  coord_t rightH = h - 2 * radius - 1;
+
+  if (rightX < xmax && rightY < ymax) {
+    fillCircleHelper(rightX, rightY, radius, 1, rightH, flags);
+  }
 }
 
 void BitmapBuffer::drawFilledRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t pat, LcdFlags att)
