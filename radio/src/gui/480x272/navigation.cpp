@@ -91,7 +91,7 @@ void onSwitchLongEnterPress(const char *result)
 
 int checkIncDec(event_t event, int val, int i_min, int i_max, unsigned int i_flags, IsValueAvailable isValueAvailable, const CheckIncDecStops &stops)
 {
-
+  return 0;
 }
 
 #define CURSOR_NOT_ALLOWED_IN_ROW(row) ((int8_t)MAXCOL(row) < 0)

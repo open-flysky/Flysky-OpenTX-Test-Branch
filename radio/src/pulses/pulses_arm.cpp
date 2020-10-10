@@ -30,7 +30,7 @@ InternalModulePulsesData intmodulePulsesData __DMA;
 ExternalModulePulsesData extmodulePulsesData __DMA;
 TrainerPulsesData trainerPulsesData __DMA;
 
-// OS_FlagID pulseFlag = 0;
+bool internalModuleUpdate = false;
 
 //use only for PXX
 void ModuleState::startBind(BindInformation * destination, ModuleCallback bindCallback)
@@ -119,7 +119,7 @@ void setModuleFlag(uint8_t port, uint8_t value) {
   if(moduleState[port].mode == value) return;
   moduleState[port].mode = value;
   if (value == MODULE_MODE_NORMAL && isModuleFlysky(port) && moduleState[port].protocol == PROTOCOL_CHANNELS_AFHDS2)
-    resetPulsesAFHDS2(port);
+    resetPulsesAFHDS2();
 #if defined(AFHDS3)
   if (isModuleAFHDS3(port) && moduleState[port].protocol == PROTOCOL_CHANNELS_AFHDS3) {
     switch (value) {
@@ -480,7 +480,7 @@ static void enablePulsesInternalModule(uint8_t protocol)
 #endif
 #if defined(AFHDS2)
     case PROTOCOL_CHANNELS_AFHDS2:
-      resetPulsesAFHDS2(INTERNAL_MODULE);
+      resetPulsesAFHDS2();
       intmoduleSerialStart(INTMODULE_USART_AFHDS2_BAUDRATE, true, USART_Parity_No, USART_StopBits_1, USART_WordLength_8b);
       schedulerPeriodUs = AFHDS2_PERIOD;
       break;
@@ -551,7 +551,7 @@ bool setupPulsesInternalModule(uint8_t protocol)
       ModuleSyncStatus& status = getModuleSyncStatus(INTERNAL_MODULE);
       mixerSchedulerSetPeriod(INTERNAL_MODULE, status.isValid() ? status.getAdjustedRefreshRate() : AFHDS2_PERIOD);
       status.invalidate();
-      setupPulsesAFHDS2(INTERNAL_MODULE);
+      setupPulsesAFHDS2();
       return true;
     }
 #endif

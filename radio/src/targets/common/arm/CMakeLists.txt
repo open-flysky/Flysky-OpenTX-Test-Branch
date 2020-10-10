@@ -95,6 +95,9 @@ if(MULTIMODULE)
   set(SRC ${SRC} pulses/multi_arm.cpp telemetry/spektrum.cpp telemetry/hitec.cpp telemetry/hott.cpp telemetry/flysky_ibus.cpp telemetry/multi.cpp)
   set(SRC ${SRC} io/multi_firmware_update.cpp)
 endif()
+if(AFHDS2)
+  set(SRC ${SRC} io/hallStick_parser.cpp io/hallStick_parser.cpp)
+endif()
 if(MULTIMODULE OR AFHDS3)
   set(SRC ${SRC} telemetry/flysky_ibus.cpp)
 endif()
@@ -153,7 +156,7 @@ set(SRC
   telemetry/frsky_d_arm.cpp
   telemetry/frsky_sport.cpp
   telemetry/flysky_nv14.cpp
-  crc16.cpp
+  crc.cpp
   vario.cpp
   )
 

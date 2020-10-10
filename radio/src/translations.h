@@ -678,6 +678,7 @@ extern const pm_char STR_WRITING[];
 extern const pm_char STR_DEVICE_RESET[];
 extern const pm_char STR_FIRMWARE_UPDATE_SUCCESS[];
 extern const pm_char STR_RFPOWER_AFHDS2[];
+extern const pm_char STR_FW_VERSION[];
 #if defined(AFHDS3)
 extern const pm_char STR_RFPOWER_AFHDS3[];
 extern const pm_char STR_BIND_POWER_AFHDS3[];

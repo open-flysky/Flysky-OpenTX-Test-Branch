@@ -311,6 +311,7 @@ union TrainerPulsesData {
 extern TrainerPulsesData trainerPulsesData;
 extern const uint16_t CRCTable[];
 #if defined(INTMODULE) || (HARDWARE_INTERNAL_MODULE)
+extern bool internalModuleUpdate;
 bool setupPulsesInternalModule();
 #endif
 bool setupPulsesExternalModule();
@@ -339,14 +340,48 @@ void extmoduleStop();
 void extramodulePpmStart();
 #endif
 #if defined AFHDS2
-void setupPulsesAFHDS2(uint8_t port);
-void resetPulsesAFHDS2(uint8_t port);
-void setFlyskyState(uint8_t port, uint8_t state);
-void onFlySkyBindReceiver(uint8_t port);
-void onFlySkyModuleSetPower(uint8_t port, bool isPowerOn);
-void intmoduleSendBufferDMA(uint8_t * data, uint8_t size);
-void onFlySkyGetVersionInfoStart(uint8_t port, uint8_t isRfTransfer);
+void setupPulsesAFHDS2();
+void resetPulsesAFHDS2();
+void setFlyskyState(uint8_t state);
+void onFlySkyBindReceiver();
+void onFlySkyModuleSetPower(bool isPowerOn);
+void afhds2Command(uint8_t type, uint8_t cmd);
+void intmoduleSendBufferDMA(uint8_t * data, uint16_t size);
+void onFlySkyGetVersionInfoStart(uint8_t isRfTransfer);
 void usbDownloadTransmit(uint8_t *buffer, uint32_t size);
+
+extern uint32_t NV14internalModuleFwVersion;
+
+#define END                             0xC0
+#define ESC                             0xDB
+#define ESC_END                         0xDC
+#define ESC_ESC                         0xDD
+
+#define FRAME_TYPE_REQUEST_ACK          0x01
+#define FRAME_TYPE_REQUEST_NACK         0x02
+#define FRAME_TYPE_ANSWER               0x10
+
+enum FlySkyModuleCommandID {
+  CMD_NONE,
+  CMD_RF_INIT,
+  CMD_BIND,
+  CMD_SET_RECEIVER_ID,
+  CMD_RF_GET_CONFIG,
+  CMD_SEND_CHANNEL_DATA,
+  CMD_RX_SENSOR_DATA,
+  CMD_SET_RX_PWM_PPM,
+  CMD_SET_RX_SERVO_FREQ,
+  CMD_GET_VERSION_INFO,
+  CMD_SET_RX_IBUS_SBUS,
+  CMD_SET_RX_IBUS_SERVO_EXT,
+  CMD_UPDATE_RF_FIRMWARE = 0x0C,
+  CMD_SET_TX_POWER = 0x0D,
+  CMD_SET_RF_PROTOCOL,
+  CMD_TEST_RANGE,
+  CMD_TEST_RF_RESERVED,
+  CMD_UPDATE_RX_FIRMWARE = 0x20,
+  CMD_LAST
+};
 #endif
 
 #if defined(AFHDS3)
@@ -456,22 +491,23 @@ inline bool isModuleInBeepMode()
 enum FlySkyModuleState_E {
   STATE_SET_TX_POWER = 0,
   STATE_INIT = 1,
-  STATE_BIND = 2,
-  STATE_SET_RECEIVER_ID = 3,
-  STATE_SET_RX_PWM_PPM = 4,
-  STATE_SET_RX_IBUS_SBUS = 5,
-  STATE_SET_RX_FREQUENCY = 6,
-  STATE_UPDATE_RF_FIRMWARE = 7,
-  STATE_UPDATE_RX_FIRMWARE = 8,
-  STATE_UPDATE_HALL_FIRMWARE = 9,
-  STATE_UPDATE_RF_PROTOCOL = 10,
-  STATE_GET_RECEIVER_CONFIG = 11,
-  STATE_GET_RX_VERSION_INFO = 12,
-  STATE_GET_RF_VERSION_INFO = 13,
-  STATE_SET_RANGE_TEST = 14,
-  STATE_RANGE_TEST_RUNNING = 15,
-  STATE_IDLE = 16,
-  STATE_DEFAULT = 17,
+  STATE_GET_FW_VERSION_INIT = 2,
+  STATE_BIND = 3,
+  STATE_SET_RECEIVER_ID = 4,
+  STATE_SET_RX_PWM_PPM = 5,
+  STATE_SET_RX_IBUS_SBUS = 6,
+  STATE_SET_RX_FREQUENCY = 7,
+  STATE_UPDATE_RF_FIRMWARE = 8,
+  STATE_UPDATE_RX_FIRMWARE = 9,
+  STATE_UPDATE_HALL_FIRMWARE = 10,
+  STATE_UPDATE_RF_PROTOCOL = 11,
+  STATE_GET_RECEIVER_CONFIG = 12,
+  STATE_GET_RX_VERSION_INFO = 13,
+  STATE_GET_RF_VERSION_INFO = 14,
+  STATE_SET_RANGE_TEST = 15,
+  STATE_RANGE_TEST_RUNNING = 16,
+  STATE_IDLE = 17,
+  STATE_SEND_CHANNELS = 18,
 };
 
 #define BIND_TELEM_ALLOWED(idx)      (!isModuleR9M_LBT(idx) || g_model.moduleData[idx].pxx.power == R9M_LBT_POWER_25)

@@ -24,6 +24,7 @@
 #include "page.h"
 // #include "io/frsky_firmware_update.h"
 #include "io/multi_firmware_update.h"
+#include "io/nv14_internal_module_update.h"
 
 class FileNameEditWindow : public Page {
   public:
@@ -47,22 +48,28 @@ class FileNameEditWindow : public Page {
     {
       GridLayout grid;
       grid.spacer(8);
-	  
-      const char * ext = getFileExtension(name.c_str());
-	  std::string extStr(ext);
-	  int nameLength = name.length() - extStr.length();
-	  if(nameLength > SD_SCREEN_FILE_LENGTH)
-		  nameLength = SD_SCREEN_FILE_LENGTH;
+      int nameLength = name.length();
+      int extLength = 0;
+      size_t extIndex = name.rfind(".");
+      *reusableBuffer.sdmanager.ext = 0;
+      if (extIndex != std::string::npos) {
+        extLength = (nameLength - extIndex);
+        strncpy(reusableBuffer.sdmanager.ext, name.c_str() + extIndex, sizeof(reusableBuffer.sdmanager.ext));
+      }
+      nameLength -= extLength;
+	    if (nameLength > SD_SCREEN_FILE_LENGTH) nameLength = SD_SCREEN_FILE_LENGTH;
 
-	  strncpy(reusableBuffer.sdmanager.originalName, name.c_str(), nameLength);
-	  reusableBuffer.sdmanager.originalName[nameLength] = 0;
+	    strncpy(reusableBuffer.sdmanager.originalName, name.c_str(), nameLength);
+	    reusableBuffer.sdmanager.originalName[nameLength] = 0;
 
-	  new TextEdit(window, grid.getLineSlot(), reusableBuffer.sdmanager.originalName, SD_SCREEN_FILE_LENGTH, 0, [=](char* newValue) {
-		    std::string newName(newValue);
-			newName += extStr;
-			f_rename(name.c_str(), newName.c_str() );
-		}, 
-		false);	  
+	    new TextEdit(window, grid.getLineSlot(), reusableBuffer.sdmanager.originalName, SD_SCREEN_FILE_LENGTH, 0, [=](char* newValue) {
+        size_t totalSisze = sizeof(reusableBuffer.sdmanager.changedName);
+        strncpy(reusableBuffer.sdmanager.changedName, newValue, totalSisze);
+        if (extLength) {
+          strncpy(reusableBuffer.sdmanager.changedName + strlen(newValue), reusableBuffer.sdmanager.ext, totalSisze-strlen(newValue));  
+        } 
+			  f_rename(name.c_str(), reusableBuffer.sdmanager.changedName);
+		  }, false);	  
 	}
 };
 
@@ -106,9 +113,7 @@ const char * getBasename(const char * path)
 
 void RadioSdManagerPage::build(Window * window)
 {
-  GridLayout grid;
-  grid.spacer(8);
-
+  GridNxMLayout grid(4,4);
   FILINFO fno;
   DIR dir;
   std::list<std::string> files;
@@ -141,17 +146,16 @@ void RadioSdManagerPage::build(Window * window)
     files.sort(compare_nocase);
 
     for (auto name: directories) {
-      new TextButton(window, grid.getLineSlot(), name, [=]() -> uint8_t {
+      new FileButton(window, grid.getNextFieldSlot(), name, true, [=]() -> uint8_t {
         f_chdir(name.data());
         window->clear();
         build(window);
         return 0;
       });
-      grid.nextLine();
     }
     
     for (auto name: files) {
-      new TextButton(window, grid.getLineSlot(), name, [=]() -> uint8_t {
+      new FileButton(window, grid.getNextFieldSlot(), name, false, [=]() -> uint8_t {
         auto menu = new Menu();
         const char * ext = getFileExtension(name.data());
         if (ext) {
@@ -162,7 +166,7 @@ void RadioSdManagerPage::build(Window * window)
             });
           }
           else if (isExtensionMatching(ext, BITMAPS_EXT)) {
-            // TODO
+            
           }
           else if (!strcasecmp(ext, TEXT_EXT)) {
             menu->addLine(STR_VIEW_TEXT, [=]() {
@@ -185,6 +189,7 @@ void RadioSdManagerPage::build(Window * window)
           else if (!READ_ONLY() && !strcasecmp(ext, MULTI_FIRMWARE_EXT)) {
             char* fullPath = getFullPath(name);
             MultiFirmwareInformation information;
+           
             if (information.readMultiFirmwareInformation(fullPath) == nullptr) {
 #if defined(INTERNAL_MODULE_MULTI)
               menu->addLine(STR_FLASH_INTERNAL_MULTI, [=]() {
@@ -197,7 +202,18 @@ void RadioSdManagerPage::build(Window * window)
                 runProgressScreen();
               });
             }
+#if defined(PCBNV14)
+            Nv14FirmwareInformation nv14Info;
+            if (nv14Info.read(fullPath) == nullptr && nv14Info.valid()) {
+              menu->addLine(STR_FLASH_INTERNAL_MODULE, [=]() {
+                internalModuleUpdate = true;
+                nv14FlashFirmware(fullPath);
+                internalModuleUpdate = false;
+                runProgressScreen();
+              });
+            }
           }
+#endif 
 #endif
         }
         if (!READ_ONLY()) {
@@ -219,8 +235,10 @@ void RadioSdManagerPage::build(Window * window)
             });
           }
           menu->addLine(STR_RENAME_FILE, [=]() {
-            new FileNameEditWindow(name);
-			      rebuild(window);
+            auto few = new FileNameEditWindow(name);
+			      few->setCloseHandler([=]() {
+              rebuild(window);
+            });
           });
           menu->addLine(STR_DELETE_FILE, [=]() {
             f_unlink(getFullPath(name));
@@ -229,7 +247,6 @@ void RadioSdManagerPage::build(Window * window)
         }
         return 0;
       });
-      grid.nextLine();
     }
   }
 

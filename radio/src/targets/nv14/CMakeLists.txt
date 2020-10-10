@@ -40,10 +40,7 @@ set(TARGET_SRC
   ../common/arm/stm32/adc_driver.cpp
   )
 
-set(FIRMWARE_TARGET_SRC
-  ${FIRMWARE_TARGET_SRC}
-  hallStick_driver.cpp
-  )
+set(FIRMWARE_TARGET_SRC ${FIRMWARE_TARGET_SRC} hallStick_driver.cpp)
 
 set(BITMAPS_TARGET nv14_bitmaps)
 set(FONTS_TARGET x10_fonts)
@@ -141,7 +138,7 @@ if(BOOTLOADER)
 endif()
 
 
-
+set(SRC ${SRC} io/nv14_internal_module_update.cpp)
 
 set(PULSES_SRC
   ${PULSES_SRC}

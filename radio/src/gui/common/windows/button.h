@@ -162,6 +162,42 @@ class IconButton: public Button {
   protected:
     uint8_t icon;
 };
+enum FileType {
+  Audio,
+  Gfx,
+  Bin,
+  Text,
+  Other
+};
+
+class FileButton: public Button {
+  public:
+    FileButton(Window * parent, const rect_t & rect, std::string text, bool folder, std::function<uint8_t(void)> onPress, uint8_t flags=0):
+      Button(parent, rect, onPress, flags), text(std::move(text)), folder(folder)
+    {
+
+    }
+
+#if defined(DEBUG_WINDOWS)
+    std::string getName() override
+    {
+      return "FileButton(" + std::to_string(icon) + ")";
+    }
+#endif
+
+    void paint(BitmapBuffer * dc) override;
+
+  protected:
+    static const std::list<std::string> fileTypeBin;
+    static const std::list<std::string> fileTypeAudio;
+    static const std::list<std::string> fileTypeGfx;
+    static const std::list<std::string> fileTypeTxt;
+    void setColorByExtension();
+
+    uint8_t icon;
+    std::string text;
+    bool folder;
+};
 
 class FabIconButton: public Button {
   public:

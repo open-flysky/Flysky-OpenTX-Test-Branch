@@ -21,23 +21,25 @@
 #ifndef _MODULES_CONSTANTS_H_
 #define _MODULES_CONSTANTS_H_
 
+//order different than Opentx to ensure no conversion will be necessary
+//no more protocols possible because of 4 bits value
 enum ModuleType {
   MODULE_TYPE_NONE = 0,
   MODULE_TYPE_PPM,
   MODULE_TYPE_XJT_PXX1,
-  MODULE_TYPE_ISRM_PXX2,
+  MODULE_TYPE_FLYSKY,
   MODULE_TYPE_DSM2,
   MODULE_TYPE_CROSSFIRE,
   MODULE_TYPE_MULTIMODULE,
   MODULE_TYPE_R9M_PXX1,
+  MODULE_TYPE_SBUS,
+  MODULE_TYPE_AFHDS3, 
   MODULE_TYPE_R9M_PXX2,
   MODULE_TYPE_R9M_LITE_PXX1,
   MODULE_TYPE_R9M_LITE_PXX2,
-  MODULE_TYPE_FLYSKY, // to avoid conversion in place of  MODULE_TYPE_R9M_LITE_PRO_PXX1  
+  MODULE_TYPE_ISRM_PXX2, // to avoid conversion in place of  MODULE_TYPE_R9M_LITE_PRO_PXX1  
   MODULE_TYPE_R9M_LITE_PRO_PXX2,
-  MODULE_TYPE_SBUS,
   MODULE_TYPE_XJT_LITE_PXX2,
-  MODULE_TYPE_AFHDS3, //no more protocols possible because of 4 bits value
   MODULE_TYPE_R9M_LITE_PRO_PXX1, // Doesn't exist
   MODULE_TYPE_COUNT,
   MODULE_TYPE_MAX = MODULE_TYPE_COUNT - 1

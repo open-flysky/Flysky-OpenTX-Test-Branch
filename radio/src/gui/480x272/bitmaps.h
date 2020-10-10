@@ -41,6 +41,11 @@ extern const uint8_t LBM_TIMER_BACKGROUND[];
 extern const uint8_t LBM_TIMER[];
 extern const uint8_t LBM_RSCALE[];
 
+//File browser
+extern const uint8_t LBM_FILE[];
+extern const uint8_t LBM_BIG_FOLDER[];
+extern const uint8_t LBM_UNDO[];
+
 // Model selection icons
 extern const uint8_t LBM_LIBRARY_SLOT[];
 extern const uint8_t LBM_ACTIVE_MODEL[];

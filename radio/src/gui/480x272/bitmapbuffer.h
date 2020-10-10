@@ -268,7 +268,7 @@ class BitmapBuffer: public BitmapBufferBase<uint16_t>
 
     void drawHorizontalLine(coord_t x, coord_t y, coord_t w, uint8_t pat, LcdFlags att);
 
-    void drawVerticalLine(coord_t x, coord_t y, coord_t h, uint8_t pat, LcdFlags att);
+    void drawVerticalLine(coord_t x, coord_t y, coord_t h, uint8_t pat, LcdFlags att, bool applyOffset = true);
 
     inline void drawSolidHorizontalLine(coord_t x, coord_t y, coord_t w, LcdFlags att)
     {
@@ -282,6 +282,8 @@ class BitmapBuffer: public BitmapBufferBase<uint16_t>
 
     void drawRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t thickness, uint8_t pat, LcdFlags att);
 
+    void drawSolidFilledRectRadius(coord_t x, coord_t y, coord_t w, coord_t h, coord_t radius, LcdFlags flags);
+
     void drawSolidFilledRect(coord_t x, coord_t y, coord_t w, coord_t h, LcdFlags flags);
 
     void drawFilledRect(coord_t x, coord_t y, coord_t w, coord_t h, uint8_t pat, LcdFlags att);
@@ -291,6 +293,8 @@ class BitmapBuffer: public BitmapBufferBase<uint16_t>
     void drawCircle(int x0, int y0, int radius);
 
     void drawPie(int x0, int y0, int radius, int startAngle, int endAngle);
+
+    void fillCircleHelper(coord_t x0, coord_t y0, coord_t r, uint8_t corners, coord_t delta, LcdFlags flags);
 
     void drawBitmapPie(int x0, int y0, const uint16_t * img, int startAngle, int endAngle);
 

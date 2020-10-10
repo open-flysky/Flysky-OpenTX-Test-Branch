@@ -22,9 +22,10 @@
 #define OPENTX_NV14_INTERNAL_MOD_FIRMWARE_H
 
 #include "definitions.h"
-
+#include "hallStick_driver.h"
+#include "ff.h"
 	
-#define MS_Start_bit 								0x55
+#define StartByte 								  0x55
 #define HallStick										0x00
 #define RemoteController						0x01
 #define PersonalComputer						0x02
@@ -52,23 +53,33 @@ PACK(struct updateCommand {
   unsigned char Reset;
 });
 
-PACK(struct sPC_Command {
+PACK(struct pcCommand {
 	unsigned char getFactoryInfo;
 	unsigned char getFactoryConfig;
 	unsigned char getUID;
 	unsigned char Reset;
 });
 
-PACK(union uPC_Payload {
-	sFactoryInfo info;
-	sFactoryConfig config;
+
+PACK(struct factoryInfo{
+	unsigned char type;
+	short productorNameLen;
+	short productorName[7];
+	short productorNumberLen;
+	short productorNumber[19];
+	long long time;
+	unsigned short CRC16;
+});
+
+PACK(union pcPayload {
+	factoryInfo info;
 	unsigned long UID[8];
 });
 
 PACK(struct updateInfo {
 	unsigned char type;
-	unsigned long FirmwareLength;
-	unsigned long FirmwareKey[8];
+	unsigned long firmwareLength;
+	unsigned long firmwareKey[8];
 });
 
 PACK(struct updatePacket {
@@ -96,139 +107,31 @@ PACK(union updateDetails {
 	updateRequest request;
 });
 
-
 PACK(union updateData {
 	updateCommand command;
 	updateDetails update;
 	char raw[256];
 });
 
-/*
+class Nv14FirmwareInformation {
+  public:
+    bool valid() const;
+    const char* read(const char * filename);
+  private:
+    bool crcValid;
+};
 
-FirmwareKey = 0x12345678;
+class Nv14UpdateDriver {
+  public:
+    const char* flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FIL* file, const char* label) const;
+  private:
+    bool getModuleResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) const;
+    void sendModuleCommand(uint8_t type, uint8_t cmd) const;
+    bool getBootloaderResponse(STRUCT_HALL* rx, uint16_t timeoutMs, bool checkReceiverID = true) const;
+    void debug(const uint8_t* rxBuffer, uint8_t rxBufferCount) const;
+    void sendPacket(STRUCT_HALL* tx, uint8_t senderID, uint8_t receiverID, uint8_t packetID, uint8_t* payload, uint16_t length) const;
+};
 
-		update.type = tUpdateRequest;
-		update.request.UID[0] = UID_0^0x12345678;
-		update.request.UID[1] = UID_1^update.request.UID[0];
-		update.request.UID[2] = UID_2^update.request.UID[1];
-		update.request.UID[3] = FirmwareVersion;
-		update.request.UID[4] = HardwareVersion;
-		
-		update.request.UID[5] = FIRMWARE_SIGNATURE_1^RESET_SIGNATURE_1;
-		update.request.UID[6] = FIRMWARE_SIGNATURE_2^RESET_SIGNATURE_2;
-		update.request.UID[7] = RESET_SIGNATURE_1^RESET_SIGNATURE_2;
-		FirmwareKey = update.request.UID[0]+update.request.UID[1]+update.request.UID[2]+update.request.UID[3];
-		SendMSPacket(&TxMsg,RF_Internal,updateMode,UpdateID,(unsigned char *)&update,sizeof(updateRequest));
-*/
+bool nv14FlashFirmware(const char * filename);
 
-//update info tUpdateInfo
-/*
-FirmwareKey = 0x12345678;
-FirmwareLength = Update.info.FirmwareLength;
-
-			FinalFirmwareKey = FirmwareKey;
-			
-			PageCnt = (FirmwareLength%FLASE_PAGE)?(FirmwareLength/FLASE_PAGE):((FirmwareLength/FLASE_PAGE)-1);
-				
-			for(int i = 0;i<=PageCnt;i++)
-			{
-				FLH_ErasePage(FLASH_BASE_ADDRESS+BOOTLOADER_SIZE+i*FLASE_PAGE);
-			}
-			
-			updateMode = Msg->u.s.SenderID;
-			EndPacketNb = (FirmwareLength%128)?(FirmwareLength/128):((FirmwareLength/128)-1);
-			SendAck();
-*/
-
-/* tUpdatePacket
-static BOOL getMapByIndex(int index)
-{
-	return 1&(CheckMap[index>>3]>>(index&0x7));
-}
-
-static void setMapByIndex(int index,BOOL val)
-{
-	if(val)
-	{
-		CheckMap[index>>3]|=1<<(index&0x7);
-	}else
-	{
-		CheckMap[index>>3]&=~(1<<(index&0x7));
-	}
-}
-
-	if(FirmwareLength!=0x12345678)
-			{
-				if(getMapByIndex(Update.packet.PacketNb)==FALSE)
-				{
-					#if 1
-					if(Update.packet.PacketNb>=2)
-					{
-						for(int i=0;i<32;i++)
-						{
-							((__packed unsigned long*)Update.packet.firmware)[i] ^= FinalFirmwareKey;
-						}
-					}
-					#endif
-					FLH_Program(FLASH_BASE_ADDRESS + BOOTLOADER_SIZE+Update.packet.PacketNb*128,Update.packet.firmware,128);
-					setMapByIndex(Update.packet.PacketNb,1);
-				}
-
-        
-*/
-
-/*
-	if(updateMode!=RF_Internal)
-	{
-		if(EndPacketNb!=0x12345678)
-		{
-			unsigned char couldReset = TRUE;
-			for(int i = 0;i<=EndPacketNb;i++)
-			{
-				if(getMapByIndex(i)==FALSE)
-				{
-					couldReset = FALSE;
-					break;
-				}
-			}
-			if(couldReset)
-			{
-				if(Timeout)
-				{
-					update.type = tUpdateFailed+HandlerCheck();
-					SendMSPacket(&TxMsg,RF_Internal,updateMode,UpdateID,(unsigned char *)&update,sizeof(unsigned char));
-				}else
-				{
-					ResetSignature[0]=0;
-					ResetSignature[1]=0;
-					NVIC_SystemReset();
-				}
-				Timeout --;
-				return;
-			}
-		}
-		else
-		{
-			return;
-		}
-		update.type = tUpdateAck;
-		memcpy(update.ack.map,CheckMap,sizeof(update.ack.map));
-		SendMSPacket(&TxMsg,RF_Internal,updateMode,UpdateID,(unsigned char *)&update,sizeof(updateAck));
-	}
-	else
-	{
-		update.type = tUpdateRequest;
-		update.request.UID[0] = UID_0^0x12345678;
-		update.request.UID[1] = UID_1^update.request.UID[0];
-		update.request.UID[2] = UID_2^update.request.UID[1];
-		update.request.UID[3] = FirmwareVersion;
-		update.request.UID[4] = HardwareVersion;
-		
-		update.request.UID[5] = FIRMWARE_SIGNATURE_1^RESET_SIGNATURE_1;
-		update.request.UID[6] = FIRMWARE_SIGNATURE_2^RESET_SIGNATURE_2;
-		update.request.UID[7] = RESET_SIGNATURE_1^RESET_SIGNATURE_2;
-		FirmwareKey = update.request.UID[0]+update.request.UID[1]+update.request.UID[2]+update.request.UID[3];
-		SendMSPacket(&TxMsg,RF_Internal,updateMode,UpdateID,(unsigned char *)&update,sizeof(updateRequest));
-	}
-  */
 #endif

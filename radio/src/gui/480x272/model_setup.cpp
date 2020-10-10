@@ -299,7 +299,7 @@ class ModuleWindow : public Window {
               g_model.moduleData[moduleIndex].type = newValue;
               SET_DIRTY();
               resetModuleSettings(moduleIndex);
-              onFlySkyModuleSetPower(moduleIndex, newValue == MODULE_TYPE_FLYSKY);
+              onFlySkyModuleSetPower(newValue == MODULE_TYPE_FLYSKY);
               update();
               moduleChoice->setFocus();
             });
@@ -307,7 +307,15 @@ class ModuleWindow : public Window {
           return isModuleTypeAllowed(moduleIndex, moduleType);
         });
       }
-      
+#if defined(AFHDS2)
+      if (isModuleFlysky(moduleIndex) && NV14internalModuleFwVersion) {
+        grid.nextLine();
+        new StaticText(this, grid.getLabelSlot(true), STR_FW_VERSION);
+        sprintf(reusableBuffer.moduleSetup.msg, "%d.%d.%d", (NV14internalModuleFwVersion >> 16) & 0xFF, (NV14internalModuleFwVersion >> 8) & 0xFF,  NV14internalModuleFwVersion & 0xFF);
+        new StaticText(this, grid.getFieldSlot(), reusableBuffer.moduleSetup.msg);
+      }
+#endif
+              
       // Module parameters
       if (isModuleFlysky(moduleIndex) || isModuleAFHDS3(moduleIndex)) {
         grid.nextLine();
@@ -318,7 +326,7 @@ class ModuleWindow : public Window {
                      else g_model.moduleData[moduleIndex].afhds3.mode = newValue;
                      SET_DIRTY();
                      setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
-                     setFlyskyState(moduleIndex, STATE_SET_RX_PWM_PPM);
+                     setFlyskyState(STATE_SET_RX_PWM_PPM);
                    });
         
       }
@@ -572,7 +580,7 @@ class ModuleWindow : public Window {
                          g_model.moduleData[moduleIndex].romData.rx_freq[1] = newValue >> 8;
                          SET_DIRTY();
                          setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
-                         setFlyskyState(moduleIndex, STATE_SET_RX_FREQUENCY);
+                         setFlyskyState(STATE_SET_RX_FREQUENCY);
                        });
         grid.nextLine();
       }
@@ -623,7 +631,7 @@ class ModuleWindow : public Window {
           if (moduleState[moduleIndex].mode == MODULE_MODE_BIND) {
             bindButton->setText(STR_MODULE_BIND);
             setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
-            if (isModuleFlysky(moduleIndex)) resetPulsesAFHDS2(moduleIndex);
+            if (isModuleFlysky(moduleIndex)) resetPulsesAFHDS2();
             return 0;
           }
           else {
@@ -675,8 +683,8 @@ class ModuleWindow : public Window {
 #endif
             }
             if (isModuleFlysky(moduleIndex)) {
-              resetPulsesAFHDS2(moduleIndex);
-              setFlyskyState(moduleIndex, STATE_INIT);
+              resetPulsesAFHDS2();
+              setFlyskyState(STATE_INIT);
             }
             return 1;
             }
@@ -703,7 +711,7 @@ class ModuleWindow : public Window {
           }
           if (moduleState[moduleIndex].mode != MODULE_MODE_RANGECHECK) {
             setModuleFlag(moduleIndex, MODULE_MODE_RANGECHECK);
-            if(isModuleFlysky(moduleIndex)) resetPulsesAFHDS2(moduleIndex);
+            if(isModuleFlysky(moduleIndex)) resetPulsesAFHDS2();
             MessageBox* mb = new MessageBox(WARNING_TYPE_INFO, DialogResult::Cancel, "Range check", "",
               [=](DialogResult result) {
                 setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
@@ -756,7 +764,7 @@ class ModuleWindow : public Window {
             GET_DEFAULT(g_model.moduleData[moduleIndex].romData.rfPower),
             [=](int32_t newValue) -> void {
           g_model.moduleData[moduleIndex].romData.rfPower = newValue;
-          onFlySkyModuleSetPower(moduleIndex, true);
+          onFlySkyModuleSetPower(true);
         });
       }
       if (isModuleAFHDS3(moduleIndex)) {

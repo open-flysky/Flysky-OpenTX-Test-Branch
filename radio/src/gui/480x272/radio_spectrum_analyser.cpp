@@ -112,11 +112,15 @@ class SpectrumView : public Window {
 };
 
 RadioSpectrumAnalyserPage::RadioSpectrumAnalyserPage():
-  PageTab(STR_MENU_SPECTRUM_ANALYSER, ICON_RADIO_SPECTRUM_ANALYSER) { }
+  PageTab(STR_MENU_SPECTRUM_ANALYSER, ICON_RADIO_SPECTRUM_ANALYSER) { 
+      moduleIndex=-1;
+      started = false;
+
+  }
 
 bool RadioSpectrumAnalyserPage::leave(std::function<void()> handler) {
   leaveHandler = std::move(handler);
-  if (moduleState[moduleIndex].mode != MODULE_MODE_SPECTRUM_ANALYSER) {
+  if (moduleIndex < 0 || moduleState[moduleIndex].mode != MODULE_MODE_SPECTRUM_ANALYSER) {
     return false;
   }
   started = false;
