@@ -206,9 +206,9 @@ void RadioSdManagerPage::build(Window * window)
             Nv14FirmwareInformation nv14Info;
             if (nv14Info.read(fullPath) == nullptr && nv14Info.valid()) {
               menu->addLine(STR_FLASH_INTERNAL_MODULE, [=]() {
-                internalModuleUpdate = true;
+                setInternalModuleUpdateStatus(true);
                 nv14FlashFirmware(fullPath);
-                internalModuleUpdate = false;
+                setInternalModuleUpdateStatus(false);
                 runProgressScreen();
               });
             }

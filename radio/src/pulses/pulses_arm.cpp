@@ -30,8 +30,6 @@ InternalModulePulsesData intmodulePulsesData __DMA;
 ExternalModulePulsesData extmodulePulsesData __DMA;
 TrainerPulsesData trainerPulsesData __DMA;
 
-bool internalModuleUpdate = false;
-
 //use only for PXX
 void ModuleState::startBind(BindInformation * destination, ModuleCallback bindCallback)
 {
@@ -575,6 +573,20 @@ bool setupPulsesInternalModule()
   else {
     return setupPulsesInternalModule(protocol);
   }
+}
+
+bool internalModuleUpdate = false;
+
+void setInternalModuleUpdateStatus(bool active) {
+  internalModuleUpdate = active;
+  if (!active) { //restart protocol
+    moduleState[INTERNAL_MODULE].protocol = PROTOCOL_CHANNELS_NONE;
+    setupPulsesInternalModule();
+  }
+}
+
+bool internalModuleUpdateActive() {
+  return internalModuleUpdate;
 }
 #endif
 

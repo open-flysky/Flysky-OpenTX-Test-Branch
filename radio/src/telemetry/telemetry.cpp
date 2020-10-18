@@ -113,7 +113,7 @@ void telemetryWakeup()
     } while (telemetryGetByte(&data));
   }
 #if defined(PCBNV14)
-  if(!internalModuleUpdate && moduleState[INTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_AFHDS2 && intmoduleGetByte(&data)) {
+  if(!internalModuleUpdateActive() && moduleState[INTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_AFHDS2 && intmoduleGetByte(&data)) {
     do {
       processInternalFlySkyTelemetryData(data);
       LOG_TELEMETRY_WRITE_BYTE(data);

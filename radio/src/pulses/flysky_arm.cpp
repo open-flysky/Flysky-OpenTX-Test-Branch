@@ -523,6 +523,7 @@ void processInternalFlySkyTelemetryData(uint8_t byte)
 
 void resetPulsesAFHDS2()
 {
+  NV14internalModuleFwVersion = 0;
   intmodulePulsesData.flysky.frame_index = 1;
   setFlyskyState(STATE_SET_TX_POWER);
   intmodulePulsesData.flysky.timeout = 0;

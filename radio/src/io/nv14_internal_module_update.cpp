@@ -98,8 +98,8 @@ void Nv14UpdateDriver::debug(const uint8_t* rxBuffer, uint8_t rxBufferCount) con
 }
 
 bool Nv14UpdateDriver::getBootloaderResponse(STRUCT_HALL* rx, uint16_t timeoutMs, bool checkReceiverID) const {
-  uint16_t time = getTmr2MHz();
-  while ((uint16_t)(getTmr2MHz() - time) < ((timeoutMs *2)*1000)) {
+  uint16_t timeout = get_tmr10ms() + timeoutMs / 10;
+  while (get_tmr10ms() < timeout) {
     uint8_t byte = 0;
     if(intmoduleGetByte(&byte)) {
       parser.parse(rx, byte);
@@ -126,10 +126,11 @@ void Nv14UpdateDriver::sendModuleCommand(uint8_t type, uint8_t cmd) const {
 bool Nv14UpdateDriver::getModuleResponse(uint8_t* data, uint16_t maxSize, uint16_t timeoutMs) const {
   uint16_t index = 0;
   bool escape = false;
-  uint16_t timeout = getTmr2MHz() + (timeoutMs *2)*1000;
-  while (getTmr2MHz() < timeout) {
+  uint16_t timeout = get_tmr10ms() + timeoutMs / 10;
+  while (get_tmr10ms() < timeout) {
     uint8_t byte = 0;
     if(!intmoduleGetByte(&byte)) continue;
+    TRACE("%02X", byte);
     if (byte == END && index > 0) {
       return true;
     } else {
@@ -166,8 +167,8 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
     while (attempt <= MAX_ATTEMPTS) {
       TRACE("CMD %02X %d", commands[i], attempt);
       sendModuleCommand(FRAME_TYPE_REQUEST_ACK, commands[i]);
-      watchdogSuspend(100);
-      if (getModuleResponse(rx->data, sizeof(rx->data), 200)) {
+      watchdogSuspend(51);
+      if (getModuleResponse(rx->data, sizeof(rx->data), 500)) {
         break;
       }
       attempt++;
@@ -175,7 +176,9 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
   }
 
   //there will be no response in case RF firmware is not working
-  //if (attempt == MAX_ATTEMPTS) return "RF INIT FAILED";
+  if (attempt == MAX_ATTEMPTS) {
+    return "RF INIT FAILED";
+  }
 
   updateInfo info = {
     .type = tUpdateInfo,
@@ -187,8 +190,8 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
 
   attempt = 1;
   while(attempt <= MAX_ATTEMPTS) {
-    watchdogSuspend(510);
-    if (getBootloaderResponse(rx, 5000)) {
+    watchdogSuspend(110);
+    if (getBootloaderResponse(rx, 1000)) {
       if(rx->hallID.hall_Id.packetID && rx->hallID.hall_Id.packetID == UpdateID) {
 
         updateDetails* u = (updateDetails*)&rx->data;
@@ -201,7 +204,10 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
     }
     attempt++;
   }
-  if (attempt > MAX_ATTEMPTS) return "ACK timeout";
+  if (attempt > MAX_ATTEMPTS) {
+    TRACE("ACK timeout");
+    return "ACK timeout";
+  }
 
   unsigned long magic = info.firmwareKey[0] + info.firmwareKey[1] + info.firmwareKey[2] + info.firmwareKey[3];
 

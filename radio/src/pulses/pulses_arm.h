@@ -311,8 +311,9 @@ union TrainerPulsesData {
 extern TrainerPulsesData trainerPulsesData;
 extern const uint16_t CRCTable[];
 #if defined(INTMODULE) || (HARDWARE_INTERNAL_MODULE)
-extern bool internalModuleUpdate;
+bool internalModuleUpdateActive();
 bool setupPulsesInternalModule();
+void setInternalModuleUpdateStatus(bool active);
 #endif
 bool setupPulsesExternalModule();
 void setupPulsesDSM2();
