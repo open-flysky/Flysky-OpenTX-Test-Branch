@@ -176,9 +176,9 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
   }
 
   //there will be no response in case RF firmware is not working
-  if (attempt == MAX_ATTEMPTS) {
-    return "RF INIT FAILED";
-  }
+  //if (attempt >= MAX_ATTEMPTS) {
+  //  return "RF INIT FAILED";
+  //}
 
   updateInfo info = {
     .type = tUpdateInfo,
