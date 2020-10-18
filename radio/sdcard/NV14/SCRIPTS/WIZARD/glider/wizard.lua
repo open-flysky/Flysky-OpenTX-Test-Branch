@@ -155,6 +155,9 @@ local function runFieldsPage(event, x, y)
     end
   elseif event == EVT_ENTER_BREAK or event == EVT_ROT_BREAK then -- toggle editing/selecting current field
     if fields[current][5] ~= nil then
+      if fields[current][3] == BUTTON then
+        return fields[current][8]()
+      end
       edit = not edit
       if edit == false then
         updateField(fields[current])
