@@ -190,6 +190,7 @@ const char* Nv14UpdateDriver::flashFirmware(STRUCT_HALL* tx, STRUCT_HALL* rx, FI
     watchdogSuspend(510);
     if (getBootloaderResponse(rx, 5000)) {
       if(rx->hallID.hall_Id.packetID && rx->hallID.hall_Id.packetID == UpdateID) {
+
         updateDetails* u = (updateDetails*)&rx->data;
         if (u->request.type == tUpdateRequest) {
           TRACE("COPY FW key %s", sizeof(info.firmwareKey));

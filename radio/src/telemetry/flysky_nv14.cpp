@@ -19,6 +19,7 @@
  */
 
 #include "opentx.h"
+#include "flysky_ibus.h"
 
 #define FLYSKY_FIXED_RX_VOLTAGE (uint8_t)(FLYSKY_SENSOR_RX_VOLTAGE + (uint8_t)0xA0)
 
@@ -169,19 +170,32 @@ void flySkyNv14Sync(int16_t delayValue) {
     }
   }
 }
-void flySkyNv14ProcessTelemetryPacket(const uint8_t * ptr, uint8_t sensorID )
-{
+void flySkyNv14ProcessTelemetryPacket(const uint8_t * ptr, uint8_t size)
+{ 
+  uint8_t sensorID = ptr[0];
+  uint8_t instnace = ptr[1];
   int sensorCount = 0;
-  uint8_t instnace = *ptr++;
-  if(sensorID == FLYSKY_SENSOR_RX_VOLTAGE) sensorID = FLYSKY_FIXED_RX_VOLTAGE;
-  for (const FlyskyNv14Sensor sensor : Nv14Sensor) {
-    if (sensor.id == sensorID) {
-      int32_t value = GetSensorValueFlySkyNv14(&sensor, ptr);
-      setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_NV14, sensor.id, sensor.subId, instnace, value, sensor.unit, sensor.precision);
-      if(sensor.id == FLYSKY_SENSOR_SYNC) {
-        flySkyNv14Sync(value);
+  if(sensorID != FLYSKY_SENSOR_SYNC) sensorCount++;
+  
+  //native telemetry for 1.1.2
+  if(NV14internalModuleFwVersion >= 0x010102) {
+    if(sensorID == FLYSKY_SENSOR_SYNC) flySkyNv14Sync((int16_t)(ptr[3] << 8 | ptr[2]));
+    uint8_t frameType = 0xAA;
+    if (size > 4) {
+      frameType = 0xAC;
+    } else if(size != 4) {
+      return;
+    } 
+    processFlySkySensor(ptr, frameType);
+  }
+  else {
+    if(sensorID == FLYSKY_SENSOR_RX_VOLTAGE) sensorID = FLYSKY_FIXED_RX_VOLTAGE;
+    for (const FlyskyNv14Sensor sensor : Nv14Sensor) {
+      if (sensor.id == sensorID) {
+        int32_t value = GetSensorValueFlySkyNv14(&sensor, ptr + 2);
+        setTelemetryValue(PROTOCOL_TELEMETRY_FLYSKY_NV14, sensor.id, sensor.subId, instnace, value, sensor.unit, sensor.precision);
+        if(sensor.id == FLYSKY_SENSOR_SYNC) flySkyNv14Sync(value);
       }
-      else sensorCount++;
     }
   }
   if (sensorCount) {

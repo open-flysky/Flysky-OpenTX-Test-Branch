@@ -545,7 +545,6 @@ uint16_t ModuleSyncStatus::getAdjustedRefreshRate()
   int32_t newRefreshRate = refreshRate;
 
   if (lag == 0) {
-    TRACE("[SYNC] rate = %dus", refreshRate);
     return refreshRate;
   }
 
@@ -558,7 +557,7 @@ uint16_t ModuleSyncStatus::getAdjustedRefreshRate()
     newRefreshRate = MAX_REFRESH_RATE;
   }
 
-  TRACE("[SYNC] rate = %dus",newRefreshRate);
+  TRACE("[SYNC] rate = %dus", newRefreshRate);
 
   currentLag -= newRefreshRate - refreshRate;
   return (uint16_t)newRefreshRate;
