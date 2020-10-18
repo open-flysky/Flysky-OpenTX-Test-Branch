@@ -155,7 +155,6 @@ void flySkyNv14Sync(int16_t delayValue) {
   }
   if (currentSyncIndex++ == AFHDS2_SYNC_SAMPLES) {
     currentSyncIndex = 0;
-    TRACE("min %d max %d", syncAfhds2min, syncAfhds2max);
     //check against to late delivered frames up to 800us, some frames still in range
     if (syncAfhds2min < 0 && syncAfhds2max < SAFE_SYNC_LAG) {
       getModuleSyncStatus(INTERNAL_MODULE).update(AFHDS2_PERIOD, (syncAfhds2min-100)+SAFE_SYNC_LAG);

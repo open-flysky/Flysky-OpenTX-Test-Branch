@@ -270,6 +270,7 @@ int main()
   }
 #endif
 #endif
+  bool ignoreEvent = true;
   for (;;) {
     wdt_reset();
 
@@ -472,6 +473,7 @@ int main()
         else if ((memoryType == MEM_FLASH) &&
                  (firmwareWritten >= FLASHSIZE - BOOTLOADER_SIZE)) {
           state = ST_FLASH_DONE; // Backstop
+          
         }
 #if defined(EEPROM)
         else if ((memoryType == MEM_EEPROM) &&
@@ -486,10 +488,14 @@ int main()
           flashLock();
           unlocked = 0;
         }
-
+        
         if (event == EVT_KEY_BREAK(KEY_EXIT) || event == EVT_KEY_BREAK(KEY_ENTER)) {
-          state = ST_START;
-          vpos = 0;
+          if (ignoreEvent) {
+            ignoreEvent = false;
+          } else {
+            state = ST_START;
+            vpos = 0;
+          }
         }
 
         bootloaderDrawScreen(state, 100);
