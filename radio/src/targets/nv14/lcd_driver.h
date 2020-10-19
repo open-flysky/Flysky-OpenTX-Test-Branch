@@ -78,16 +78,14 @@
 #define LCD_ILI9481_ID      ( 0x9481 )
 #define LCD_ILI9486_ID      ( 0x9486 )
 #define LCD_ILI9488_ID      ( 0x9488 )
-#define LCD_HX8357D_ID      ( 0x99 )
+#define LCD_HX8357D_ID      ( 0x0099 )
 
 #define LCD_DELAY()         LCD_Delay()
 
 typedef void (*lcdSpiInitFucPtr)(void);
-typedef unsigned int  LcdReadIDFucPtr( void );
 
 extern void GPIO_SetDirection( GPIO_TypeDef *GPIOx, unsigned char Pin, unsigned char IsInput );
 
-extern lcdSpiInitFucPtr lcdInitFunction;
 extern lcdSpiInitFucPtr lcdOffFunction;
 extern lcdSpiInitFucPtr lcdOnFunction;
 
@@ -108,16 +106,16 @@ extern lcdSpiInitFucPtr lcdOnFunction;
 
 #define SET_LCD_CS()                  GPIO_WriteBit(PORT_LCD_CS, LCD_CS_PIN, Bit_SET)
 #define CLR_LCD_CS()                  GPIO_WriteBit(PORT_LCD_CS, LCD_CS_PIN, Bit_RESET)
-#define SET_LCD_CS_OUTPUT()           SET_IO_OUTPUT( PORT_LCD_CS, PIN_LCD_CS )
+#define SET_LCD_CS_OUTPUT()           SET_IO_OUTPUT(PORT_LCD_CS, PIN_LCD_CS )
 
-#define SET_LCD_CLK()                 GPIO_WriteBit( PORT_LCD_CLK, LCD_CLK_PIN, Bit_SET )
-#define CLR_LCD_CLK()                 GPIO_WriteBit( PORT_LCD_CLK, LCD_CLK_PIN, Bit_RESET )
-#define SET_LCD_CLK_OUTPUT()          SET_IO_OUTPUT( PORT_LCD_CLK, PIN_LCD_CLK )
+#define SET_LCD_CLK()                 GPIO_WriteBit(PORT_LCD_CLK, LCD_CLK_PIN, Bit_SET)
+#define CLR_LCD_CLK()                 GPIO_WriteBit(PORT_LCD_CLK, LCD_CLK_PIN, Bit_RESET)
+#define SET_LCD_CLK_OUTPUT()          SET_IO_OUTPUT(PORT_LCD_CLK, PIN_LCD_CLK)
 
-#define SET_LCD_DATA()                GPIO_WriteBit( PORT_LCD_MOSI, LCD_MOSI_PIN, Bit_SET )
-#define CLR_LCD_DATA()                GPIO_WriteBit( PORT_LCD_MOSI, LCD_MOSI_PIN, Bit_RESET )
-#define SET_LCD_DATA_INPUT()          SET_IO_INPUT( PORT_LCD_MOSI, PIN_LCD_MOSI )
-#define SET_LCD_DATA_OUTPUT()         SET_IO_OUTPUT( PORT_LCD_MOSI, PIN_LCD_MOSI )
+#define SET_LCD_DATA()                GPIO_WriteBit(PORT_LCD_MOSI, LCD_MOSI_PIN, Bit_SET)
+#define CLR_LCD_DATA()                GPIO_WriteBit(PORT_LCD_MOSI, LCD_MOSI_PIN, Bit_RESET)
+#define SET_LCD_DATA_INPUT()          SET_IO_INPUT(PORT_LCD_MOSI, PIN_LCD_MOSI)
+#define SET_LCD_DATA_OUTPUT()         SET_IO_OUTPUT(PORT_LCD_MOSI, PIN_LCD_MOSI)
 
 #define READ_LCD_DATA_PIN()           GPIO_ReadInputDataBit(PORT_LCD_MOSI, LCD_MOSI_PIN)
 
