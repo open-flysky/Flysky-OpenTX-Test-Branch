@@ -26,9 +26,9 @@ uint8_t LCD_BACKUP_FRAME_BUFFER[DISPLAY_BUFFER_SIZE] __SDRAM;
 
 uint32_t CurrentLayer = LCD_FIRST_LAYER;
 
-lcdSpiInitFucPtr lcdInitFunction;
-lcdSpiInitFucPtr lcdOffFunction;
-lcdSpiInitFucPtr lcdOnFunction;
+lcdFucPtr lcdInitFunction;
+lcdFucPtr lcdOffFunction;
+lcdFucPtr lcdOnFunction;
 
 volatile U8 LCD_ReadBuffer[24] = { 0, 0 };
 
@@ -270,257 +270,75 @@ void lcdWriteData(uint8_t data) {
   lcdWriteByte(1, data);
 }
 
-void LCD_HX8357D_Init(void) {
-#if 0
-  lcdWriteCommand(0x11);
-  delay_ms(200);
-
-  lcdWriteCommand(0xB9);
-  lcdWriteData(0xFF);
-  lcdWriteData(0x83);
-  lcdWriteData(0x57);
-
-  lcdWriteCommand(0xB1);
-  lcdWriteData(0x00);
-  lcdWriteData(0x14);
-  lcdWriteData(0x1C);
-  lcdWriteData(0x1C);
-  lcdWriteData(0xC7);
-  lcdWriteData(0x21);
-
-  lcdWriteCommand(0xB3);
-  lcdWriteData(0x83);
-  lcdWriteData(0x00);
-  lcdWriteData(0x06);
-  lcdWriteData(0x06);
-
-  lcdWriteCommand(0xB4);
-  lcdWriteData(0x11);
-  lcdWriteData(0x40);
-  lcdWriteData(0x00);
-  lcdWriteData(0x2A);
-  lcdWriteData(0x2A);
-  lcdWriteData(0x20);
-  lcdWriteData(0x4E);
-
-  lcdWriteCommand(0xB5);
-  lcdWriteData(0x03);
-  lcdWriteData(0x03);
-
-  lcdWriteCommand(0xB6);
-  lcdWriteData(0x38);
-
-  lcdWriteCommand(0xC0);
-  lcdWriteData(0x24);
-  lcdWriteData(0x24);
-  lcdWriteData(0x00);
-  lcdWriteData(0x10);
-  lcdWriteData(0xc8);
-  lcdWriteData(0x08);
-
-  lcdWriteCommand(0xC2);
-  lcdWriteData(0x00);
-  lcdWriteData(0x08);
-  lcdWriteData(0x04);
-
-  lcdWriteCommand(0xCC);
-  lcdWriteData(0x00);
-
-//GAMMA 2.5"
-  lcdWriteCommand(0xE0);
-  lcdWriteData(0x00);
-  lcdWriteData(0x06);
-  lcdWriteData(0x0D);
-  lcdWriteData(0x18);
-  lcdWriteData(0x23);
-  lcdWriteData(0x3B);
-  lcdWriteData(0x45);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x46);
-  lcdWriteData(0x40);
-  lcdWriteData(0x37);
-  lcdWriteData(0x34);
-  lcdWriteData(0x2F);
-  lcdWriteData(0x2B);
-  lcdWriteData(0x21);
-  lcdWriteData(0x00);
-  lcdWriteData(0x06);
-  lcdWriteData(0x0D);
-  lcdWriteData(0x18);
-  lcdWriteData(0x23);
-  lcdWriteData(0x3B);
-  lcdWriteData(0x45);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x46);
-  lcdWriteData(0x40);
-  lcdWriteData(0x37);
-  lcdWriteData(0x34);
-  lcdWriteData(0x2F);
-  lcdWriteData(0x2B);
-  lcdWriteData(0x21);
-  lcdWriteData(0x00);
-  lcdWriteData(0x01);
-
-  lcdWriteCommand(0x3A);
-  lcdWriteData(0x66);
-
-  lcdWriteCommand(0x36);
-  lcdWriteData(0x08);
-
-  lcdWriteCommand(0x29);
-  delay_ms(10);
-#else
-  delay_ms(50);
-  lcdWriteCommand(0xB9); //EXTC
-  lcdWriteData(0xFF); //EXTC
-  lcdWriteData(0x83); //EXTC
-  lcdWriteData(0x57); //EXTC
-  delay_ms(5);
-
-  lcdWriteCommand(0x3A);
-  lcdWriteData(0x65); //262k
-
-  lcdWriteCommand(0xB3); //COLOR FORMAT
-  lcdWriteData(0x83); //SDO_EN,BYPASS,EPF[1:0],0,0,RM,DM  //43
-
-  lcdWriteCommand(0xB6); //
-  lcdWriteData(0x5a); //VCOMDC
-
-  lcdWriteCommand(0x35); // TE ON
-  lcdWriteData(0x01);
-
-  lcdWriteCommand(0xB0);
-  lcdWriteData(0x68); //70Hz
-
-  lcdWriteCommand(0xCC); // Set Panel
-  lcdWriteData(0x00); //
-
-  lcdWriteCommand(0xB1); //
-  lcdWriteData(0x00); //
-  lcdWriteData(0x11); //BT
-  lcdWriteData(0x1C); //VSPR
-  lcdWriteData(0x1C); //VSNR
-  lcdWriteData(0x83); //AP
-  lcdWriteData(0x48); //FS  0xAA
-
-  lcdWriteCommand(0xB4); //
-  lcdWriteData(0x02); //NW
-  lcdWriteData(0x40); //RTN
-  lcdWriteData(0x00); //DIV
-  lcdWriteData(0x2A); //DUM
-  lcdWriteData(0x2A); //DUM
-  lcdWriteData(0x0D); //GDON
-  lcdWriteData(0x78); //GDOFF  0x4F
-  lcdWriteCommand(0xC0); //STBA
-  lcdWriteData(0x50); //OPON
-  lcdWriteData(0x50); //OPON
-  lcdWriteData(0x01); //
-  lcdWriteData(0x3C); //
-  lcdWriteData(0x1E); //
-  lcdWriteData(0x08); //GEN
-
-  /*
-   lcdWriteCommand(0xE0); //
-   lcdWriteData(0x02); //1
-   lcdWriteData(0x06); //2
-   lcdWriteData(0x09); //3
-   lcdWriteData(0x1C); //4
-   lcdWriteData(0x27); //5
-   lcdWriteData(0x3C); //6
-   lcdWriteData(0x48); //7
-   lcdWriteData(0x50); //8
-   lcdWriteData(0x49); //9
-   lcdWriteData(0x42); //10
-   lcdWriteData(0x3E); //11
-   lcdWriteData(0x35); //12
-   lcdWriteData(0x31); //13
-   lcdWriteData(0x2A); //14
-   lcdWriteData(0x28); //15
-   lcdWriteData(0x03); //16
-   lcdWriteData(0x02); //17 v1
-   lcdWriteData(0x06); //18
-   lcdWriteData(0x09); //19
-   lcdWriteData(0x1C); //20
-   lcdWriteData(0x27); //21
-   lcdWriteData(0x3C); //22
-   lcdWriteData(0x48); //23
-   lcdWriteData(0x50); //24
-   lcdWriteData(0x49); //25
-   lcdWriteData(0x42); //26
-   lcdWriteData(0x3E); //27
-   lcdWriteData(0x35); //28
-   lcdWriteData(0x31); //29
-   lcdWriteData(0x2A); //30
-   lcdWriteData(0x28); //31
-   lcdWriteData(0x03); //32
-   lcdWriteData(0x44); //33
-   lcdWriteData(0x01); //34
-   */
-  lcdWriteCommand(0xE0);
-  lcdWriteData(0x00);
-  lcdWriteData(0x06);
-  lcdWriteData(0x0D);
-  lcdWriteData(0x18);
-  lcdWriteData(0x23);
-  lcdWriteData(0x3B);
-  lcdWriteData(0x45);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x46);
-  lcdWriteData(0x40);
-  lcdWriteData(0x37);
-  lcdWriteData(0x34);
-  lcdWriteData(0x2F);
-  lcdWriteData(0x2B);
-  lcdWriteData(0x21);
-  lcdWriteData(0x00);
-  lcdWriteData(0x06);
-  lcdWriteData(0x0D);
-  lcdWriteData(0x18);
-  lcdWriteData(0x23);
-  lcdWriteData(0x3B);
-  lcdWriteData(0x45);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x4D);
-  lcdWriteData(0x46);
-  lcdWriteData(0x40);
-  lcdWriteData(0x37);
-  lcdWriteData(0x34);
-  lcdWriteData(0x2F);
-  lcdWriteData(0x2B);
-  lcdWriteData(0x21);
-  lcdWriteData(0x00);
-  lcdWriteData(0x01);
-  lcdWriteCommand(0x36);
-  lcdWriteData(0x18);
-
-  lcdWriteCommand(0x11); // SLPOUT
-  delay_ms(200);
-
-  lcdWriteCommand(0x29); // Display On
-  delay_ms(25);
-  lcdWriteCommand(0x2C);
-
-#endif
-
-}
-
-void LCD_HX8357D_On(void) {
-  lcdWriteCommand(0x29);
-  lcdWriteCommand(0x22);
-}
-
-void LCD_HX8357D_Off(void) {
-  lcdWriteCommand(0x22);
+void LCD_ILI9486_Off(void) {
   lcdWriteCommand(0x28);
 }
 
-unsigned int LCD_HX8357D_ReadID(void) {
+unsigned int LCD_ILI9481_ReadID(void) {
   int ID = 0;
+  volatile int Data;
+  CLR_LCD_CS();
+  lcdWriteByte(0, 0xBF);
+  Data = LCD_ReadByteOnFallingEdge();
+  Data = LCD_ReadByteOnFallingEdge();
+  ID = LCD_ReadByteOnFallingEdge();
+  ID <<= 8;
+  ID |= LCD_ReadByteOnFallingEdge();
+  Data = LCD_ReadByteOnFallingEdge();
+  Data = LCD_ReadByteOnFallingEdge();
+  SET_LCD_CS();
+  LCD_DELAY();
+  LCD_DELAY();
+  LCD_DELAY();
+  lcdWriteCommand(0xC6);
+  lcdWriteData(0x82);
+  //lcdWriteData(0x9b);
+  TRACE("ID 9481 %04X", ID);
+  return(ID);
+}
 
-  return (ID);
+unsigned int LCD_ILI948X_ReadID(uint8_t prefix) {
+  int ID = 0;
+  lcdWriteCommand(0XF7);
+  lcdWriteData(0xA9);
+  lcdWriteData(0x51);
+  lcdWriteData(0x2C);
+  lcdWriteData(0x82);
+  lcdWriteCommand(0XB0);
+  lcdWriteData(0X80);
+
+  lcdWriteCommand(0XFB);
+  lcdWriteData(prefix | 0x00);
+  ID = LCD_ReadRegister(0xd3);
+
+  lcdWriteCommand(0XFB);
+  lcdWriteData(prefix | 0x01);
+  ID = LCD_ReadRegister(0xd3);
+
+  lcdWriteCommand(0XFB);
+  lcdWriteData(prefix | 0x02);
+  ID = LCD_ReadRegister(0xd3);
+  ID <<= 8;
+  lcdWriteCommand(0XFB);
+  lcdWriteData(prefix | 0x03);
+  ID |= LCD_ReadRegister(0xd3);
+
+  lcdWriteCommand(0XFB);
+  lcdWriteData(0x00);
+  TRACE("ID %04X", ID);
+  return ID;
+}
+
+unsigned int LCD_ILI9486_ReadID(void) {
+  return LCD_ILI948X_ReadID(0x10);
+}
+
+unsigned int LCD_ILI9488_ReadID(void) {
+  return LCD_ILI948X_ReadID(0x80);
+}
+
+unsigned int LCD_ST7796S_ReadID(void) {
+  return LCD_ILI948X_ReadID(0x10);
 }
 
 void LCD_ILI9481_Init(void) {
@@ -601,9 +419,9 @@ void LCD_ILI9481_Init(void) {
 
   delay_ms(120);
 
-  lcdWriteCommand(0x21);
-  lcdWriteCommand(0x29);
-  lcdWriteCommand(0x2C);
+  lcdWriteCommand(0x21); //Display Inversion ON
+  lcdWriteCommand(0x29); //Display ON
+  lcdWriteCommand(0x2C); //Write_memory_start 
 
 }
 
@@ -613,28 +431,6 @@ void LCD_ILI9481_On(void) {
 
 void LCD_ILI9481_Off(void) {
   lcdWriteCommand(0x28);
-}
-
-unsigned int LCD_ILI9481_ReadID(void) {
-  int ID = 0;
-  volatile int Data;
-  CLR_LCD_CS();
-  lcdWriteByte(0, 0xBF);
-  Data = LCD_ReadByteOnFallingEdge();
-  Data = LCD_ReadByteOnFallingEdge();
-  ID = LCD_ReadByteOnFallingEdge();
-  ID <<= 8;
-  ID |= LCD_ReadByteOnFallingEdge();
-  Data = LCD_ReadByteOnFallingEdge();
-  Data = LCD_ReadByteOnFallingEdge();
-  SET_LCD_CS();
-  LCD_DELAY();
-  LCD_DELAY();
-  LCD_DELAY();
-  lcdWriteCommand(0xC6);
-  lcdWriteData(0x82);
-  //lcdWriteData(0x9b);
-  return(ID);
 }
 
 void LCD_ILI9486_On(void) {
@@ -669,14 +465,6 @@ void LCD_ILI9486_Init(void) {
   lcdWriteData(0x00);
   lcdWriteData(0x08);
   lcdWriteCommand(0x36);
-//  if(IsHorizontal )
-//  {
-//      lcdWriteData(0x08);
-//  }
-//  else
-//  {
-//      lcdWriteData(0x18);
-//  }
   lcdWriteData(0x08);
 
   lcdWriteCommand(0x3a);
@@ -746,43 +534,6 @@ void LCD_ILI9486_Init(void) {
   lcdWriteCommand(0x11);
   delay_ms(120);
   lcdWriteCommand(0x28);
-}
-
-void LCD_ILI9486_Off(void) {
-  lcdWriteCommand(0x28);
-}
-
-unsigned int LCD_ILI9486_ReadID(void) {
-  int ID = 0;
-
-  lcdWriteCommand(0XF7);
-  lcdWriteData(0xA9);
-  lcdWriteData(0x51);
-  lcdWriteData(0x2C);
-  lcdWriteData(0x82);
-  lcdWriteCommand(0XB0);
-  lcdWriteData(0X80);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x00);
-  ID = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x01);
-  ID = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x02);
-  ID = LCD_ReadRegister(0xd3);
-  ID <<= 8;
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x03);
-  ID |= LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x00);
-
-  return ID;
 }
 
 void LCD_ILI9488_On(void) {
@@ -885,93 +636,6 @@ void LCD_ILI9488_Off(void) {
   lcdWriteCommand(0x28);
 }
 
-void LCD_ILI9488_ReadDevice(void) {
-  int Index = 0;
-  int Parameter = 0x80;
-
-#if 1
-
-#if 1
-  lcdWriteCommand(0XF7);
-  lcdWriteData(0xA9);
-  lcdWriteData(0x51);
-  lcdWriteData(0x2C);
-  lcdWriteData(0x82);
-
-  lcdWriteCommand(0XB0);
-  lcdWriteData(0X80);
-
-#endif
-  lcdWriteCommand(0XFB);
-  lcdWriteData(Parameter | 0x00);
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-
-  //lcdWriteCommand(0X2E);
-  lcdWriteCommand(0XFB);
-  lcdWriteData(Parameter | 0x01);        //Parameter2=0X88
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(Parameter | 0x02);        //Parameter2=0X88
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(Parameter | 0x03);        //Parameter2=0X88
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-#endif
-
-#if 0
-  lcdWriteCommand(0XFB);
-  lcdWriteData(Parameter|0x00);        //Parameter3=0X94
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-  lcdWriteData(Parameter|0x01);//Parameter3=0X94
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-  lcdWriteCommand(0XFB);
-  lcdWriteData(Parameter|0x02);//Parameter3=0X94
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(Parameter|0x03);//Parameter4=0X88
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-#else
-  //lcdWriteCommand(0xd0);
-  //lcdWriteData(Parameter|0x03);        //Parameter4=0X88
-  //LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd0);
-#endif
-}
-
-unsigned int LCD_ILI9488_ReadID(void) {
-  int ID = 0;
-
-  lcdWriteCommand(0XF7);
-  lcdWriteData(0xA9);
-  lcdWriteData(0x51);
-  lcdWriteData(0x2C);
-  lcdWriteData(0x82);
-  lcdWriteCommand(0XB0);
-  lcdWriteData(0X80);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x80 | 0x00);
-  ID = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x80 | 0x01);
-  ID = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x80 | 0x02);
-  ID = LCD_ReadRegister(0xd3);
-  ID <<= 8;
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x80 | 0x03);
-  ID |= LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x00);
-  return ID;
-}
 
 void LCD_ST7796S_On(void) {
   lcdWriteCommand(0x29);
@@ -980,52 +644,52 @@ void LCD_ST7796S_On(void) {
 void LCD_ST7796S_Init(void) {
   delay_ms(120);
 
-  lcdWriteCommand(0x11);
-  lcdWriteCommand(0x21); //////
+  lcdWriteCommand(0x11);          //Sleep Out 
+  lcdWriteCommand(0x21);          //Display Inversion On 
 
-  delay_ms(120);                //Delay 120ms
+  delay_ms(120);                  //Delay 120ms
 
-  lcdWriteCommand(0x36);     // Memory Data Access Control MY,MX~~
-  lcdWriteData(0x18);//0x10
+  lcdWriteCommand(0x36);          //Memory Data Access Control MY,MX~~
+  lcdWriteData(0x18);             //0x10
 
-  lcdWriteCommand(0x3A);
-  lcdWriteData(0x66);   //SPI_WriteData(0x66);
+  lcdWriteCommand(0x3A);          //Interface Pixel Format 
+  lcdWriteData(0x66);             //SPI_WriteData(0x66);
 
-  lcdWriteCommand(0xF0);     // Command Set Control
+  lcdWriteCommand(0xF0);          //Command Set Control
   lcdWriteData(0xC3);
 
-  lcdWriteCommand(0xF0);
+  lcdWriteCommand(0xF0);          //Command Set Control
   lcdWriteData(0x96);
 
-  lcdWriteCommand(0xB4);
+  lcdWriteCommand(0xB4);          //Display Inversion Control
   lcdWriteData(0x00);
 
-  lcdWriteCommand(0xB0);
+  lcdWriteCommand(0xB0);          //Interface Mode Control 
   lcdWriteData(0x00);
 
-  lcdWriteCommand(0xB6);
+  lcdWriteCommand(0xB6);          //Display Function Control
   lcdWriteData(0xA0);
   lcdWriteData(0x02);
   lcdWriteData(0x3b);
 
 
-  lcdWriteCommand(0xB7);
+  lcdWriteCommand(0xB7);          //Entry Mode Set 
   lcdWriteData(0xC6);
 
-  lcdWriteCommand(0xC0);
+  lcdWriteCommand(0xC0);          //Power Control 1
   lcdWriteData(0x80);
   lcdWriteData(0x45);
 
-  lcdWriteCommand(0xC1);
-  lcdWriteData(0x13);   //18  //00
+  lcdWriteCommand(0xC1);          //Power Control 2
+  lcdWriteData(0x13);             //18  //00
 
-  lcdWriteCommand(0xC2);
+  lcdWriteCommand(0xC2);          //Power Control 3
   lcdWriteData(0xA7);
 
-  lcdWriteCommand(0xC5);
+  lcdWriteCommand(0xC5);          //VCOM Control
   lcdWriteData(0x0A);
 
-  lcdWriteCommand(0xE8);
+  lcdWriteCommand(0xE8);          //Display Output Ctrl Adjust 
   lcdWriteData(0x40);
   lcdWriteData(0x8A);
   lcdWriteData(0x00);
@@ -1035,7 +699,7 @@ void LCD_ST7796S_Init(void) {
   lcdWriteData(0xA5);
   lcdWriteData(0x33);
 
-  lcdWriteCommand(0xE0);
+  lcdWriteCommand(0xE0);          //Positive Gamma Control
   lcdWriteData(0xD0);
   lcdWriteData(0x08);
   lcdWriteData(0x0F);
@@ -1051,7 +715,7 @@ void LCD_ST7796S_Init(void) {
   lcdWriteData(0x2B);
   lcdWriteData(0x31);
 
-  lcdWriteCommand(0xE1);
+  lcdWriteCommand(0xE1);          //Negative Gamma Control 
   lcdWriteData(0xD0);
   lcdWriteData(0x0A);
   lcdWriteData(0x11);
@@ -1067,62 +731,27 @@ void LCD_ST7796S_Init(void) {
   lcdWriteData(0x2C);
   lcdWriteData(0x32);
 
-  lcdWriteCommand(0xF0);
+  lcdWriteCommand(0xF0);          //Command Set Control 
   lcdWriteData(0x3C);
 
-  lcdWriteCommand(0xF0);
+  lcdWriteCommand(0xF0);          //Command Set Control 
   lcdWriteData(0x69);
   delay_ms(120);
 
-  lcdWriteCommand(0x29);
+  lcdWriteCommand(0x29);          //Display On 
 }
 
 void LCD_ST7796S_Off(void) {
   lcdWriteCommand(0x28);
 }
 
-unsigned int LCD_ST7796S_ReadID(void) {
-  int ID = 0;
-
-  lcdWriteCommand(0XF7);
-  lcdWriteData(0xA9);
-  lcdWriteData(0x51);
-  lcdWriteData(0x2C);
-  lcdWriteData(0x82);
-  lcdWriteCommand(0XB0);
-  lcdWriteData(0X80);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x00);
-  ID = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x01);
-  ID = LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x02);
-  ID = LCD_ReadRegister(0xd3);
-  ID <<= 8;
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x10 | 0x03);
-  ID |= LCD_ReadRegister(0xd3);
-
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x00);
-
-  return (ID);
-}
-
 static void lcdReset() {
   LCD_NRST_HIGH();
-  delay_ms(1);
-
-  LCD_NRST_LOW(); // RESET();
-  delay_ms(100);
-
+  delay_ms(20);
+  LCD_NRST_LOW();
+  delay_ms(50);
   LCD_NRST_HIGH();
-  delay_ms(100);
+  delay_ms(50);
 }
 
 void LCD_Init_LTDC(uint32_t pllsain) {
@@ -1293,6 +922,27 @@ void LCD_SetTransparency(uint8_t transparency) {
   LTDC_ReloadConfig (LTDC_IMReload);
 }
 
+
+const STRUCT_LCD_DRIVER lcdDesc[] = 
+{
+    { 
+        .ID = 0x9486, .Width = 320, .Height = 480, .DotClock = 12000000,
+        .pLCD_Init = LCD_ILI9486_Init, .pLCD_On = LCD_ILI9486_On, .pLCD_Off = LCD_ILI9486_Off, .pLCD_ReadID = LCD_ILI9486_ReadID,
+    },
+    { 
+        .ID = 0x9481, .Width = 320, .Height = 480, .DotClock = 12000000,
+        .pLCD_Init = LCD_ILI9481_Init, .pLCD_On = LCD_ILI9481_On, .pLCD_Off = LCD_ILI9481_Off, .pLCD_ReadID = LCD_ILI9481_ReadID,
+    },
+    { 
+        .ID = 0x9488, .Width = 320, .Height = 480, .DotClock = 12000000,
+        .pLCD_Init = LCD_ILI9488_Init, .pLCD_On = LCD_ILI9488_On, .pLCD_Off = LCD_ILI9488_Off, .pLCD_ReadID = LCD_ILI9488_ReadID,
+    },
+    { 
+        .ID = 0x7796, .Width = 320, .Height = 480, .DotClock = 14000000,
+        .pLCD_Init = LCD_ST7796S_Init, .pLCD_On = LCD_ST7796S_On, .pLCD_Off = LCD_ST7796S_Off, .pLCD_ReadID = LCD_ST7796S_ReadID,
+    },
+};
+
 void lcdInit(void) {
   /* Configure the LCD SPI+RESET pins */
   lcdSpiConfig();
@@ -1302,41 +952,34 @@ void lcdInit(void) {
 
   /* Configure the LCD Control pins */
   LCD_AF_GPIOConfig();
-  uint32_t pllsain = 192;
-  /* Send LCD initializaiton commands */
-  if (LCD_ST7796S_ReadID() == LCD_ST7796S_ID) {
-    TRACE("LCD INIT (default): ST7796S");
-    lcdInitFunction = LCD_ST7796S_Init;
-    lcdOffFunction = LCD_ST7796S_Off;
-    lcdOnFunction = LCD_ST7796S_On;
-    pllsain = 224;
+  
+ 
+  unsigned itemsCount = sizeof(lcdDesc)/sizeof(lcdDesc[0]);
+  const STRUCT_LCD_DRIVER* lcdInfo = &lcdDesc[itemsCount - 1];
+  unsigned index = 0;
+  for (index = 0; index < itemsCount; index++ )
+  {
+      lcdReset();
+      if (lcdDesc[index].pLCD_ReadID) 
+      {
+          if (lcdDesc[index].pLCD_ReadID() == lcdDesc[index].ID)
+          {
+              lcdInfo = &lcdDesc[index];
+              break;
+          }
+      }
   }
-  else if (LCD_ILI9486_ReadID() == LCD_ILI9486_ID) {
-    TRACE("LCD INIT: ILI9486");
-    lcdInitFunction = LCD_ILI9486_Init;
-    lcdOffFunction = LCD_ILI9486_Off;
-    lcdOnFunction = LCD_ILI9486_On;
-  } else if (LCD_ILI9488_ReadID() == LCD_ILI9488_ID) {
-    TRACE("LCD INIT: ILI9488");
-    lcdInitFunction = LCD_ILI9488_Init;
-    lcdOffFunction = LCD_ILI9488_Off;
-    lcdOnFunction = LCD_ILI9488_On;
-  } else if (LCD_ILI9481_ReadID() == LCD_ILI9481_ID) {
-    TRACE("LCD INIT: ILI9481");
-    lcdInitFunction = LCD_ILI9481_Init;
-    lcdOffFunction = LCD_ILI9481_Off;
-    lcdOnFunction = LCD_ILI9481_On;
-  }  
-  else {
-    TRACE("LCD INIT: HX8357D");
-    lcdInitFunction = LCD_HX8357D_Init;
-    lcdOffFunction = LCD_HX8357D_Off;
-    lcdOnFunction = LCD_HX8357D_On;
-  }
+  uint32_t pllsain = (lcdInfo->DotClock / 1000000) * 16;
+  lcdReset(); 
+  
+  TRACE("LCD INIT %04X pllsain %d", lcdInfo->ID, pllsain);
+
+  lcdInitFunction = lcdInfo->pLCD_Init;
+  lcdOffFunction = lcdInfo->pLCD_Off;
+  lcdOnFunction = lcdInfo->pLCD_On;
+
   lcdInitFunction();
-
   LCD_Init_LTDC(pllsain);
-
   LCD_LayerInit();
 
   /* Enable LCD display */

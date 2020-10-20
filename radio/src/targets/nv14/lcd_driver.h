@@ -72,22 +72,15 @@
 #define LCD_DOTCLK_PIN      ( GPIO_Pin_7 )
 #define PIN_LCD_DOTCLK      ( 7 )
 
-#define SUPPORTED_LCD_CNT   ( 5 )
-
-#define LCD_ST7796S_ID      ( 0x7796 )
-#define LCD_ILI9481_ID      ( 0x9481 )
-#define LCD_ILI9486_ID      ( 0x9486 )
-#define LCD_ILI9488_ID      ( 0x9488 )
-#define LCD_HX8357D_ID      ( 0x0099 )
-
 #define LCD_DELAY()         LCD_Delay()
 
-typedef void (*lcdSpiInitFucPtr)(void);
+typedef void (*lcdFucPtr)(void);
+typedef unsigned int (*lcdReadIDFucPtr)(void);
 
 extern void GPIO_SetDirection( GPIO_TypeDef *GPIOx, unsigned char Pin, unsigned char IsInput );
 
-extern lcdSpiInitFucPtr lcdOffFunction;
-extern lcdSpiInitFucPtr lcdOnFunction;
+extern lcdFucPtr lcdOffFunction;
+extern lcdFucPtr lcdOnFunction;
 
 #define SET_IO_INPUT( PORT, PIN )            GPIO_SetDirection( PORT, PIN, 1 )
 #define SET_IO_OUTPUT( PORT, PIN )           GPIO_SetDirection( PORT, PIN, 0 )
@@ -119,7 +112,17 @@ extern lcdSpiInitFucPtr lcdOnFunction;
 
 #define READ_LCD_DATA_PIN()           GPIO_ReadInputDataBit(PORT_LCD_MOSI, LCD_MOSI_PIN)
 
-
+typedef struct 
+{
+  unsigned int ID;
+  unsigned int Width;
+  unsigned int Height;
+  unsigned int DotClock;
+  lcdFucPtr pLCD_Init;
+  lcdFucPtr pLCD_On;
+  lcdFucPtr pLCD_Off;
+  lcdReadIDFucPtr pLCD_ReadID;
+} STRUCT_LCD_DRIVER;
 
 #if 1
 #define HORIZONTAL_SYNC_WIDTH 			       ( 4 )

@@ -311,7 +311,7 @@ class ModuleWindow : public Window {
       if (isModuleFlysky(moduleIndex) && NV14internalModuleFwVersion) {
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), STR_FW_VERSION);
-        sprintf(reusableBuffer.moduleSetup.msg, "%d.%d.%d", (NV14internalModuleFwVersion >> 16) & 0xFF, (NV14internalModuleFwVersion >> 8) & 0xFF,  NV14internalModuleFwVersion & 0xFF);
+        sprintf(reusableBuffer.moduleSetup.msg, "%lu.%lu.%lu", (NV14internalModuleFwVersion >> 16) & 0xFF, (NV14internalModuleFwVersion >> 8) & 0xFF,  NV14internalModuleFwVersion & 0xFF);
         new StaticText(this, grid.getFieldSlot(), reusableBuffer.moduleSetup.msg);
       }
 #endif
