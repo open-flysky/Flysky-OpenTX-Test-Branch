@@ -687,13 +687,9 @@ void LCD_ILI9486_Init(void) {
   lcdWriteData(0x00);
   lcdWriteData(0x27);
   lcdWriteData(0x80);
-  lcdWriteCommand(0xb6); //Display Function Control (B6h)
-#if 1  //解决很切屏 中间断层问题
-  lcdWriteData(0xb2); //10110010 Direct to shift register | DE Mode | GRAM = RGB interface | operation mode = RGB interface 
-#else
-  lcdWriteData(0x22); //00100010 Memory | DE Mode | GRAM = RGB interface | GRAM = RGB interface  | operation mode = Internal system clock
-#endif
-  lcdWriteData(0x42);//0x02
+  lcdWriteCommand(0xb6);
+  lcdWriteData(0xb2);
+  lcdWriteData(0x42);
   lcdWriteData(0x3b);
   lcdWriteCommand(0xb1);
   lcdWriteData(0xb0);
