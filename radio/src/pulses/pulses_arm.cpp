@@ -611,6 +611,41 @@ bool setupPulsesExternalModule()
   }
 }
 
+void disconnectModel() {
+  bool wait = false;
+  uint8_t ext = getRequiredProtocol(EXTERNAL_MODULE);
+  switch(ext) {
+#if defined(AFHDS3)
+    case PROTOCOL_CHANNELS_AFHDS3:
+      afhds3uart.stop();
+      wait = true;
+      break;
+#endif
+    default:
+    break;
+  }
+#if defined(HARDWARE_INTERNAL_MODULE)
+  uint8_t internal = getRequiredProtocol(INTERNAL_MODULE);
+  switch(internal) {
+#if defined(AFHDS2)
+    case PROTOCOL_CHANNELS_AFHDS2:
+      setFlyskyState(STATE_DISCONNECT);
+      wait = true;
+      break;
+#endif
+#endif
+    default:
+    break;
+  }
+  if (wait) {
+    watchdogSuspend(20);
+    RTOS_WAIT_MS(200);
+  }
+
+  pausePulses();
+}
+
+
 void setCustomFailsafe(uint8_t moduleIndex)
 {
   if (moduleIndex < NUM_MODULES) {

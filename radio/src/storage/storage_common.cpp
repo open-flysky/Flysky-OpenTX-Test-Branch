@@ -51,7 +51,7 @@ void preModelLoad()
 #endif
 
   if (pulsesStarted()) {
-    pausePulses();
+    disconnectModel();
   }
 
   pauseMixerCalculations();

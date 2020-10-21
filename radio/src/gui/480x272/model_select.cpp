@@ -380,12 +380,11 @@ ModelselectButton::ModelselectButton(ModelselectPage* page, Window * parent, con
                  // we store the latest changes if any
                  storageFlushCurrentModel();
                  storageCheck(true);
+                 
                  memcpy(g_eeGeneral.currModelFilename, modelCell->modelFilename, LEN_MODEL_FILENAME);
-                 loadModel(g_eeGeneral.currModelFilename, false);
+                 loadModel(g_eeGeneral.currModelFilename, true);
                  storageDirty(EE_GENERAL);
                  storageCheck(true);
-                 // chainMenu(menuMainView);
-                 postModelLoad(true);
                  modelslist.setCurrentModel(modelCell);
                  page->updateModels(modelslist.getModelIndex(modelCell));
                });

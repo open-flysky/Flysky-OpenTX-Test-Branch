@@ -337,6 +337,7 @@ void extmodulePxx1SerialStart();
 void extmodulePpmStart();
 void intmoduleStop();
 void extmoduleStop();
+void disconnectModel();
 #if defined(HARDWARE_EXTRA_MODULE)
 void extramodulePpmStart();
 #endif
@@ -508,7 +509,8 @@ enum FlySkyModuleState_E {
   STATE_SET_RANGE_TEST = 15,
   STATE_RANGE_TEST_RUNNING = 16,
   STATE_IDLE = 17,
-  STATE_SEND_CHANNELS = 18,
+  STATE_DISCONNECT = 18,
+  STATE_SEND_CHANNELS = 19,
 };
 
 #define BIND_TELEM_ALLOWED(idx)      (!isModuleR9M_LBT(idx) || g_model.moduleData[idx].pxx.power == R9M_LBT_POWER_25)

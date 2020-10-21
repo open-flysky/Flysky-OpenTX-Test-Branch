@@ -123,6 +123,7 @@ struct __attribute__ ((packed)) afhds2Resp {
 };
 
 
+uint8_t emptyRxID[] = { 0, 0, 0, 0 };
 
 bool isFlySkyUsbDownload(void)
 {
@@ -539,7 +540,12 @@ void resetPulsesAFHDS2()
 void setupPulsesAFHDS2()
 {
   putFlySkyFrameHeader();
-  if (intmodulePulsesData.flysky.state < STATE_SEND_CHANNELS) {
+  if (intmodulePulsesData.flysky.state == STATE_DISCONNECT) {
+    TRACE("STATE_DISCONNECT");
+    putFlySkyFrameCmd(FRAME_TYPE_REQUEST_ACK, CMD_SET_RECEIVER_ID);
+    putFlySkyFrameBytes(emptyRxID, 4);
+  }
+  else if (intmodulePulsesData.flysky.state < STATE_SEND_CHANNELS) {
     if (++intmodulePulsesData.flysky.timeout >= FLYSKY_MODULE_TIMEOUT / FLYSKY_PERIOD) {
 
       intmodulePulsesData.flysky.timeout = 0;
