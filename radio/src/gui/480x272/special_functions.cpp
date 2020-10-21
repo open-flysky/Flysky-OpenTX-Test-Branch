@@ -48,6 +48,7 @@ class SpecialFunctionEditWindow : public Page {
 
     void checkEvents() override
     {
+      Page::checkEvents();
       if (active != isActive()) {
         invalidate();
         headerSF->setFlags(isActive() ? BOLD|WARNING_COLOR : MENU_TITLE_COLOR);
@@ -299,8 +300,7 @@ class SpecialFunctionEditWindow : public Page {
       new StaticText(window, grid.getLabelSlot(), STR_SWITCH);
       auto swicthchoice = new SwitchChoice(window, grid.getFieldSlot(), SWSRC_FIRST, SWSRC_LAST, GET_SET_DEFAULT(CFN_SWITCH(cfn)));
       swicthchoice->setAvailableHandler([=](int value) {
-        return (functions == g_model.customFn ? isSwitchAvailable(value, ModelCustomFunctionsContext) : isSwitchAvailable(value,
-                                                                                                                          GeneralCustomFunctionsContext));
+        return (functions == g_model.customFn ? isSwitchAvailable(value, ModelCustomFunctionsContext) : isSwitchAvailable(value, GeneralCustomFunctionsContext));
       });
       grid.nextLine();
 

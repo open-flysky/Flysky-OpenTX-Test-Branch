@@ -39,49 +39,45 @@ class SwitchChoiceMenuToolbar : public MenuToolbar<SwitchChoice> {
 void SwitchChoice::checkEvents()
 {
   Window::checkEvents();
-  if (menu != nullptr)
-  {
-    unsigned value = getValue();
-    swsrc_t val = static_cast<swsrc_t>(value);
-    swsrc_t swtch = getMovedSwitch();
-    if (!swtch) return;
+  if (this->menu == nullptr) return;
+  unsigned value = getValue();
+  swsrc_t val = static_cast<swsrc_t>(value);
+  swsrc_t swtch = getMovedSwitch();
+  if (!swtch) return;
 #if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
-    div_t info = switchInfo(swtch);
-    if (IS_CONFIG_TOGGLE(info.quot))
+  div_t info = switchInfo(swtch);
+  if (IS_CONFIG_TOGGLE(info.quot))
+  {
+    if (info.rem != 0)
     {
-      if (info.rem != 0)
-      {
-        val = (val == swtch ? swtch-2 : swtch);
-      }
+      val = (val == swtch ? swtch-2 : swtch);
     }
-    else
-    {
-      val = swtch;
-    }
+  }
+  else
+  {
+    val = swtch;
+  }
 #else
-    if (IS_CONFIG_TOGGLE(swtch) && swtch == val)
-    {
-      val = -val;
-    }
-    else
-    {
-      val = swtch;
-    }
+  if (IS_CONFIG_TOGGLE(swtch) && swtch == val)
+  {
+    val = -val;
+  }
+  else
+  {
+    val = swtch;
+  }
 #endif
 
-    if (static_cast<swsrc_t>(value) != val)
+  if (static_cast<swsrc_t>(value) != val)
+  {
+    if (isValueAvailable && !isValueAvailable(val))
+      return;
+
+    auto it = valueIndexMap.find(static_cast<int>(val));
+    if (it != valueIndexMap.end() && it->second >= 0)
     {
-      if (isValueAvailable && !isValueAvailable(val))
-        return;
-
-      auto it = valueIndexMap.find(static_cast<int>(val));
-      if (it != valueIndexMap.end() && it->second >= 0)
-      {
-        TRACE("EVENTS CHECK - change detected");
-        setValue(static_cast<int16_t>(val));
-        menu->select(it->second);
-      }
-
+      setValue(static_cast<int16_t>(val));
+      this->menu->select(it->second);
     }
   }
 }
@@ -100,13 +96,12 @@ void SwitchChoice::paint(BitmapBuffer * dc)
   drawSolidRect(dc, 0, 0, rect.w, rect.h, 1, lineColor);
 }
 
-void SwitchChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
+void SwitchChoice::fillMenu(Menu * menuLocal, std::function<bool(int16_t)> filter)
 {
   auto value = getValue();
   int count = 0;
   int current = -1;
-
-  menu->removeLines();
+  menuLocal->removeLines();
   valueIndexMap.clear();
   for (int i = vmin; i <= vmax; ++i) {
     if (filter && !filter(i))
@@ -114,7 +109,7 @@ void SwitchChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
     if (isValueAvailable && !isValueAvailable(i))
       continue;
     valueIndexMap[i] = count;
-    menu->addLine(getSwitchString(i), [=]() {
+    menuLocal->addLine(getSwitchString(i), [=]() {
       setValue(i);
     });
     if (value == i) {
@@ -124,17 +119,17 @@ void SwitchChoice::fillMenu(Menu * menu, std::function<bool(int16_t)> filter)
   }
 
   if (current >= 0) {
-    menu->select(current);
+    menuLocal->select(current);
   }
 }
 
 bool SwitchChoice::onTouchEnd(coord_t, coord_t)
 {
   AUDIO_KEY_PRESS();
-  menu = new Menu();
-  fillMenu(menu);
-  menu->setToolbar(new SwitchChoiceMenuToolbar(this, menu));
-  menu->setCloseHandler(std::bind(&SwitchChoice::deleteMenu, this));
+  this->menu = new Menu();
+  fillMenu(this->menu);
+  this->menu->setToolbar(new SwitchChoiceMenuToolbar(this, this->menu));
+  this->menu->setCloseHandler(std::bind(&SwitchChoice::deleteMenu, this));
   setFocus();
   return true;
 }
