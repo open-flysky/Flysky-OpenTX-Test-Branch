@@ -48,34 +48,6 @@ enum SportUpdateState {
 uint8_t  sportUpdateState = SPORT_IDLE;
 uint32_t sportUpdateAddr = 0;
 
-void sportOutputPushByte(uint8_t byte)
-{
-  if (byte == 0x7E || byte == 0x7D) {
-    outputTelemetryBuffer.pushByte(0x7D);
-    outputTelemetryBuffer.pushByte(0x20 ^ byte);
-  }
-  else {
-    outputTelemetryBuffer.pushByte(byte);
-  }
-}
-
-// TODO merge it with S.PORT update function when finished
-void sportOutputPushPacket(SportTelemetryPacket * packet)
-{
-  // uint16_t crc = 0;
-
-  // for (uint8_t i=1; i<sizeof(SportTelemetryPacket); i++) {
-  //   uint8_t byte = packet->raw[i];
-  //   sportOutputPushByte(byte);
-  //   crc += byte; // 0-1FF
-  //   crc += crc >> 8; // 0-100
-  //   crc &= 0x00ff;
-  // }
-
-  // outputTelemetryBuffer.pushByte(0xFF-crc);
-  // telemetryOutputSetTrigger(packet->raw[0]); // physicalId
-}
-
 void sportProcessUpdatePacket(uint8_t * packet)
 {
   // if (packet[0]==0x5E && packet[1]==0x50) {
@@ -349,12 +321,12 @@ void sportFlashDevice(ModuleIndex module, const char * filename)
 
 void sportProcessPacket(uint8_t * packet)
 {
-// #if defined(STM32)
-//   if (sportUpdateState != SPORT_IDLE) {
-//     sportProcessUpdatePacket(packet);	// Uses different chksum
-//     return;
-//   }
-// #endif
+#if defined(STM32)
+  if (sportUpdateState != SPORT_IDLE) {
+    sportProcessUpdatePacket(packet);	// Uses different chksum
+    return;
+  }
+#endif
 
-//   sportProcessTelemetryPacket(packet);
+  sportProcessTelemetryPacket(packet);
 }

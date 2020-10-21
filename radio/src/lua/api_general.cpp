@@ -432,7 +432,15 @@ static int luaSportTelemetryPush(lua_State * L)
     packet.primId = luaL_checkunsigned(L, 2);
     packet.dataId = luaL_checkunsigned(L, 3);
     packet.value = luaL_checkunsigned(L, 4);
-    sportOutputPushPacket(&packet);
+    outputTelemetryBuffer.pushSportPacketWithBytestuffing(packet);
+
+#if defined(PXX2)
+      uint8_t destination = (IS_INTERNAL_MODULE_ON() ? INTERNAL_MODULE : EXTERNAL_MODULE);
+      outputTelemetryBuffer.setDestination(isModulePXX2(destination) ? (destination << 2) : TELEMETRY_ENDPOINT_SPORT);
+#else
+      outputTelemetryBuffer.setDestination(TELEMETRY_ENDPOINT_SPORT);
+#endif
+
     lua_pushboolean(L, true);
   }
   else {
