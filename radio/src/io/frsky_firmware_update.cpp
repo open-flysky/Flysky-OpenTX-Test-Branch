@@ -501,13 +501,7 @@ const char * FrskyDeviceFirmwareUpdate::flashFirmware(const char * filename)
   AUDIO_PLAY(AU_SPECIAL_SOUND_BEEP1 );
   BACKLIGHT_ENABLE();
 
-  if (result) {
-    POPUP_WARNING(STR_FIRMWARE_UPDATE_ERROR);
-    SET_WARNING_INFO(result, strlen(result), 0);
-  }
-  else {
-    POPUP_INFORMATION(STR_FIRMWARE_UPDATE_SUCCESS);
-  }
+  drawProgressScreenDone(result == 0, result ? STR_FIRMWARE_UPDATE_ERROR : STR_FIRMWARE_UPDATE_SUCCESS, result);
 
 #if defined(HARDWARE_INTERNAL_MODULE)
   INTERNAL_MODULE_OFF();
@@ -773,14 +767,8 @@ const char * FrskyChipFirmwareUpdate::flashFirmware(const char * filename, bool 
   AUDIO_PLAY(AU_SPECIAL_SOUND_BEEP1);
   BACKLIGHT_ENABLE();
 
-  if (result) {
-    POPUP_WARNING(STR_FIRMWARE_UPDATE_ERROR);
-    SET_WARNING_INFO(result, strlen(result), 0);
-  }
-  else {
-    POPUP_INFORMATION(STR_FIRMWARE_UPDATE_SUCCESS);
-  }
-
+  drawProgressScreenDone(result == 0, result ? STR_FIRMWARE_UPDATE_ERROR : STR_FIRMWARE_UPDATE_SUCCESS, result);
+  
   /* wait 2s off */
   watchdogSuspend(1000 /*10s*/);
   RTOS_WAIT_MS(2000);

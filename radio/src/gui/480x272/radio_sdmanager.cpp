@@ -22,7 +22,7 @@
 #include "opentx.h"
 #include "libwindows.h"
 #include "page.h"
-// #include "io/frsky_firmware_update.h"
+#include "io/frsky_firmware_update.h"
 #include "io/multi_firmware_update.h"
 #include "io/nv14_internal_module_update.h"
 
@@ -175,7 +175,9 @@ void RadioSdManagerPage::build(Window * window)
           }
           else if (!READ_ONLY() && !strcasecmp(ext, SPORT_FIRMWARE_EXT)) {
             menu->addLine(STR_FLASH_EXTERNAL_DEVICE, [=]() {
-              sportFlashDevice(EXTERNAL_MODULE, getFullPath(name));
+              FrskyDeviceFirmwareUpdate device(EXTERNAL_MODULE);
+              device.flashFirmware(getFullPath(name));
+              runProgressScreen();
             });
           }
 #if defined(LUA)

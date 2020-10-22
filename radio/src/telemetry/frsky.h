@@ -503,5 +503,5 @@ void frskyUpdateCells();
 #endif
 
 void processFrskyTelemetryData(uint8_t data);
-
+bool pushFrskyTelemetryData(uint8_t data); // returns true when end of frame detected
 #endif // _FRSKY_H_

@@ -24,7 +24,7 @@
 #include "dataconstants.h"
 #include "definitions.h"
 #include "frsky_pxx2.h"
-#include "pulses/modules_helpers.h"
+//#include "pulses/modules_helpers.h"
 #include "ff.h"
 
 enum FrskyFirmwareProductFamily {

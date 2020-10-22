@@ -115,6 +115,14 @@ void telemetryPortSetDirectionInput()
   TELEMETRY_USART->CR1 |= USART_CR1_RE;                   // turn on receiver
 }
 
+void sportSendByte(uint8_t byte)
+{
+  telemetryPortSetDirectionOutput();
+
+  while (!(TELEMETRY_USART->SR & USART_SR_TXE));
+  USART_SendData(TELEMETRY_USART, byte);
+}
+
 void sportSendByteLoop(uint8_t byte)
 {
   telemetryPortSetDirectionOutput();
