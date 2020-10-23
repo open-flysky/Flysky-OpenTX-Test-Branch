@@ -42,13 +42,11 @@ class PageTab {
     {
     }
 
-    virtual void build(Window * window) = 0;
+    virtual void build(Window * window) = 0;    
     //leave page called when page is switched or leaved 
     //if false is retuned it can be removed/leaved immedtly
     //otherweise leave function will call action specified after it is possibile
-    virtual bool leave(std::function<void()> handler) {
-      return false;
-    }
+    virtual void leave() {}
 
     virtual void checkEvents()
     {
@@ -117,8 +115,6 @@ class TabsGroupHeader: public Window {
     }
 
   protected:
-    void deleteMenu();
-    TabsGroup * menu;
     IconButton back;
     TabsCarousel carousel;
     const char * title = nullptr;
@@ -129,6 +125,7 @@ class TabsGroup: public Window {
     friend class TabsGroupHeader;
   public:
     TabsGroup();
+
     ~TabsGroup();
 
 #if defined(DEBUG_WINDOWS)
@@ -158,9 +155,6 @@ class TabsGroup: public Window {
     bool onTouchEnd(coord_t x, coord_t y) override;
 
   protected:
-    void switchTab();
-    //a flag used to check if page switch was not blocked
-    bool switching;
     TabsGroupHeader header;
     Window body;
     std::vector<PageTab *> tabs;
