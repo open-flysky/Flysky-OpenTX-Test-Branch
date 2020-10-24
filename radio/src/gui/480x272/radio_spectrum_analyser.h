@@ -24,7 +24,6 @@ class RadioSpectrumAnalyserPage: public PageTab {
   public:
     RadioSpectrumAnalyserPage();
     ~RadioSpectrumAnalyserPage() {
-      leaveHandler = nullptr;
     }
     void build(Window * window) override;
     void leave() override; 
