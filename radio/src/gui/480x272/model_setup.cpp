@@ -30,6 +30,7 @@ void resetModuleSettings(uint8_t module)
   g_model.moduleData[module].channelsStart = 0;
   g_model.moduleData[module].channelsCount = defaultModuleChannels_M8(module);
   g_model.moduleData[module].rfProtocol = 0;
+  g_model.moduleData[module].failsafeMode = FAILSAFE_NOT_SET;
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
   }
