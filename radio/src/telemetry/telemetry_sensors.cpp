@@ -434,27 +434,46 @@ int lastUsedTelemetryIndex()
   return -1;
 }
 
+
+bool isSameInstance(TelemetrySensor& sensor, TelemetryProtocol protocol, uint8_t instance)
+{
+  if (sensor.instance == instance)
+    return true;
+
+  if (protocol == PROTOCOL_TELEMETRY_FRSKY_SPORT) {
+#if defined(SIMU)
+    if (((sensor.instance ^ instance) & 0x1F) == 0)
+      return true;
+#else
+    if (((sensor.instance ^ instance) & 0x9F) == 0 && (sensor.instance >> 5) != TELEMETRY_ENDPOINT_SPORT && (instance >> 5) != TELEMETRY_ENDPOINT_SPORT) {
+      sensor.instance = instance; // update the instance in case we had telemetry switching
+      return true;
+    }
+#endif
+  }
+
+  return false;
+}
+
 int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
                       uint8_t subId, uint8_t instance,
                       int32_t value, uint32_t unit, uint32_t prec)
 {
-  bool available = false;
+  bool sensorFound = false;
 
-  for (int index=0; index<MAX_TELEMETRY_SENSORS; index++)
-  {
+  for (int index = 0; index < MAX_TELEMETRY_SENSORS; index++) {
     TelemetrySensor & telemetrySensor = g_model.telemetrySensors[index];
 
     if ( telemetrySensor.type == TELEM_TYPE_CUSTOM && telemetrySensor.id == id && telemetrySensor.subId == subId
-         && (telemetrySensor.instance == instance  || g_model.ignoreSensorIds)
+         && (isSameInstance(telemetrySensor, protocol, instance)  || g_model.ignoreSensorIds)
         )
     {
       telemetryItems[index].setValue(telemetrySensor, value, unit, prec);
-      available = true;
+      sensorFound = true;
       // we continue search here, because sensors can share the same id and instance
     }
   }
-
-  if (available || !allowNewSensors) {
+  if (sensorFound || !allowNewSensors) {
     return -1;
   }
 

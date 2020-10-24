@@ -44,9 +44,6 @@ extern RTOS_DEFINE_STACK(menusStack, MENUS_STACK_SIZE);
 extern RTOS_TASK_HANDLE mixerTaskId;
 extern RTOS_DEFINE_STACK(mixerStack, MIXER_STACK_SIZE);
 
-extern RTOS_TASK_HANDLE telemetryTaskId;
-extern RTOS_DEFINE_STACK(telemetryStack, TELEMETRY_STACK_SIZE);
-
 extern RTOS_TASK_HANDLE audioTaskId;
 extern RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);
 
