@@ -153,6 +153,7 @@ void sportSendByteLoop(uint8_t byte)
 
 void sportSendBuffer(uint8_t * buffer, uint32_t count)
 {
+  TRACE("sportSendBuffer");
   telemetryPortSetDirectionOutput();
 
   DMA_InitTypeDef DMA_InitStructure;

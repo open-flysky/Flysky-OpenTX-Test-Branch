@@ -404,6 +404,15 @@ inline bool isModuleTypeAllowed(uint8_t idx, uint8_t type)
   return true;
 }
 
+inline bool isR9MModeAvailable(int mode)
+{
+#if defined(MODULE_PROTOCOL_FLEX)
+  return true;
+#else
+  return mode <= MODULE_SUBTYPE_R9M_EU;
+#endif
+}
+
 //TBD
 inline bool isModuleNeedingReceiverNumber(uint8_t idx)
 {

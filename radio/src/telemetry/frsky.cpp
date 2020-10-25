@@ -38,8 +38,6 @@ extern uint8_t TezRotary;
 
 NOINLINE void processFrskyTelemetryData(uint8_t data)
 {
-  static uint8_t dataState = STATE_DATA_IDLE;
-
 #if defined(PCBSKY9X) && defined(BLUETOOTH)
   // TODO if (g_model.bt_telemetry)
   btPushByte(data);
@@ -63,6 +61,7 @@ if (pushFrskyTelemetryData(data)) {
     else {
       frskyDProcessPacket(telemetryRxBuffer);
     }
+    memset(telemetryRxBuffer, 0, sizeof(telemetryRxBuffer));
   }
 }
 

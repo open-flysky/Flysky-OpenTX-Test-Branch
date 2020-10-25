@@ -24,6 +24,7 @@
 uint16_t telemetryStreaming = 0;
 uint8_t telemetryRxBuffer[TELEMETRY_RX_PACKET_SIZE];   // Receive buffer. 9 bytes (full packet), worst case 18 bytes with byte-stuffing (+1)
 uint8_t telemetryRxBufferCount = 0;
+TelemetryFilterDecorator<TelemetryValue> telemetryRSSI;
 
 #if defined(WS_HOW_HIGH)
 uint8_t wshhStreaming = 0;
@@ -34,8 +35,6 @@ uint8_t link_counter = 0;
 #if defined(CPUARM)
 uint8_t telemetryState = TELEMETRY_INIT;
 #endif
-
-TelemetryData telemetryData;
 
 #if defined(CPUARM)
 uint8_t telemetryProtocol = 255;
@@ -56,6 +55,8 @@ lcdint_t applyChannelRatio(source_t channel, lcdint_t val)
   return ((int32_t)val+g_model.frsky.channels[channel].offset) * getChannelRatio(channel) * 2 / 51;
 }
 #endif
+  
+#define FRSKY_BAD_ANTENNA()            (isRasValueValid() && telemetryData.swrExternal.value() > 0x33)
 
 void processTelemetryData(uint8_t data)
 {
@@ -120,8 +121,6 @@ void telemetryWakeup()
     } while (intmoduleGetByte(&data));
   }
  #endif
-  
-
 #elif defined(PCBSKY9X)
   if (telemetryProtocol == PROTOCOL_TELEMETRY_FRSKY_D_SECONDARY) {
     uint8_t data;
@@ -162,8 +161,6 @@ void telemetryWakeup()
     varioWakeup();
   }
 #endif
-  
-#define FRSKY_BAD_ANTENNA()            (IS_RAS_VALUE_VALID() && telemetryData.swr.value > 0x33)
 
 #if defined(CPUARM)
   static tmr10ms_t alarmsCheckTime = 0;
@@ -302,12 +299,7 @@ void telemetryInterrupt10ms()
   }
   else {
 #if !defined(SIMU)
-#if defined(CPUARM)
-    telemetryData.rssi.reset();
-#else
-    telemetryData.rssi[0].set(0);
-    telemetryData.rssi[1].set(0);
-#endif
+    telemetryRSSI.reset();
 #endif
   }
 }

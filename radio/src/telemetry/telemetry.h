@@ -55,7 +55,18 @@
 #if defined(PCBNV14)
   #include "flysky_nv14.h"
 #endif
+#include "telemetry_holders.h"
+
 extern uint16_t telemetryStreaming; // >0 (true) == data is streaming in. 0 = no data detected for some time
+
+inline bool TELEMETRY_STREAMING()
+{
+  return telemetryStreaming > 0;
+}
+
+extern TelemetryFilterDecorator<TelemetryValue> telemetryRSSI;
+
+#define TELEMETRY_RSSI()                telemetryRSSI.value()
 
 #if defined(WS_HOW_HIGH)
 extern uint8_t wshhStreaming;
@@ -130,6 +141,8 @@ PACK(struct CellValue
 });
 
 int setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t subId, uint8_t instance, int32_t value, uint32_t unit, uint32_t prec);
+int setTelemetryText(TelemetryProtocol protocol, uint16_t id, uint8_t subId, uint8_t instance, const char * text);
+
 void delTelemetryIndex(uint8_t index);
 int8_t availableTelemetryIndex();
 int lastUsedTelemetryIndex();

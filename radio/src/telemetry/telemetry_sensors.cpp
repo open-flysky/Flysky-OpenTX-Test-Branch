@@ -440,6 +440,7 @@ bool isSameInstance(TelemetrySensor& sensor, TelemetryProtocol protocol, uint8_t
   if (sensor.instance == instance)
     return true;
 
+  
   if (protocol == PROTOCOL_TELEMETRY_FRSKY_SPORT) {
 #if defined(SIMU)
     if (((sensor.instance ^ instance) & 0x1F) == 0)
@@ -455,6 +456,13 @@ bool isSameInstance(TelemetrySensor& sensor, TelemetryProtocol protocol, uint8_t
   return false;
 }
 
+int setTelemetryText(TelemetryProtocol protocol, uint16_t id, uint8_t subId, uint8_t instance, const char * text)
+{
+  return 0;
+  //implement template first
+  //return setTelemetryValue<const char *>(protocol, id, subId, instance, text);
+}
+
 int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
                       uint8_t subId, uint8_t instance,
                       int32_t value, uint32_t unit, uint32_t prec)
@@ -463,8 +471,7 @@ int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
 
   for (int index = 0; index < MAX_TELEMETRY_SENSORS; index++) {
     TelemetrySensor & telemetrySensor = g_model.telemetrySensors[index];
-
-    if ( telemetrySensor.type == TELEM_TYPE_CUSTOM && telemetrySensor.id == id && telemetrySensor.subId == subId
+    if (telemetrySensor.type == TELEM_TYPE_CUSTOM && telemetrySensor.id == id && telemetrySensor.subId == subId
          && (isSameInstance(telemetrySensor, protocol, instance)  || g_model.ignoreSensorIds)
         )
     {
@@ -476,6 +483,7 @@ int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
   if (sensorFound || !allowNewSensors) {
     return -1;
   }
+  //TRACE("id %04X, sub %d, inst %d", id, subId, instance);
 
   int index = availableTelemetryIndex();
   if (index >= 0) {

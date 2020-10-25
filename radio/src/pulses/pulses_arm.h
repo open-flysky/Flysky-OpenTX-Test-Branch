@@ -483,12 +483,12 @@ inline bool isModuleInBeepMode()
   return false;
 }
 
-#define LEN_R9M_MODES                  "\007"
-#define TR_R9M_MODES                   "FCC\0   ""LBT(EU)"
-#define LEN_R9M_FCC_POWER_VALUES       "\006"
-#define LEN_R9M_LBT_POWER_VALUES       "\006"
-#define TR_R9M_FCC_POWER_VALUES        "10 mW\0" "100 mW" "500 mW" "1 W\0"
-#define TR_R9M_LBT_POWER_VALUES        "25 mW\0" "500 mW"
+#define LEN_R9M_MODES                  "\006"
+#define TR_R9M_MODES                   "FCC\0  ""EU\0   ""868MHz""915MHz"
+#define LEN_R9M_FCC_POWER_VALUES       "\011"
+#define LEN_R9M_LBT_POWER_VALUES       "\014"
+#define TR_R9M_FCC_POWER_VALUES        "10mW\0    " "100mW\0   " "500mW\0   " "1W (auto)"
+#define TR_R9M_LBT_POWER_VALUES        "25mW 8CH\0   ""25mW 16CH\0  ""200mW NoTele""500mW NoTele"
 
 enum FlySkyModuleState_E {
   STATE_SET_TX_POWER = 0,
