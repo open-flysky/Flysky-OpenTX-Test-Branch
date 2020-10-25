@@ -451,6 +451,10 @@ bool isSameInstance(TelemetrySensor& sensor, TelemetryProtocol protocol, uint8_t
       return true;
     }
 #endif
+#if defined(PCBNV14)
+    TRACE("Instance error %02X", instance);
+    return true;
+#endif
   }
 
   return false;
@@ -483,8 +487,6 @@ int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
   if (sensorFound || !allowNewSensors) {
     return -1;
   }
-  //TRACE("id %04X, sub %d, inst %d", id, subId, instance);
-
   int index = availableTelemetryIndex();
   if (index >= 0) {
     switch (protocol) {

@@ -176,13 +176,8 @@ void sportProcessTelemetryPacketWithoutCrc(uint8_t origin, const uint8_t * packe
       moduleIndex = (origin >> 2);
       originMask = 0x01 << moduleIndex;
     }
-    uint8_t instance = physicalId + (origin << 5);
-
-    if (dataId == ACCZ_FIRST_ID && physicalId != 0x1B) {
-      debugFrame(physicalId, instance, packet, 9);
-    }
-    
-
+    uint8_t instance = physicalId; + (origin << 5);
+    debugFrame(physicalId, instance, packet, FRSKY_SPORT_PACKET_SIZE);
     if (dataId == RSSI_ID) {
       data = SPORT_DATA_U8(packet);
       if (data > 0) {

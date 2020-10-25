@@ -86,15 +86,43 @@ void frskyUpdateCells(void)
 }
 #endif
 
+static uint8_t dataState = STATE_DATA_IDLE;
+//#define DEBUG_SPORT
+#if defined(DEBUG_SPORT)
+#define TRACE_SPORT(f_, ...)        debugPrintf((f_ "\r\n"), ##__VA_ARGS__)
+#else
+#define TRACE_SPORT(...)
+#endif
+
+inline void setStateFrsky(enum FrSkyDataState target) {
+    dataState = (uint8_t)target;
+    switch(dataState) {
+    case STATE_DATA_IDLE:
+      TRACE_SPORT("SPORT SET IDLE [%d]", telemetryRxBufferCount);
+    break;
+    case STATE_DATA_START:
+      TRACE_SPORT("SPORT SET START [%d]", telemetryRxBufferCount);
+    break;
+    case STATE_DATA_IN_FRAME:
+      TRACE_SPORT("SPORT SET FRAME [%d]", telemetryRxBufferCount);
+    break;
+    case STATE_DATA_XOR:
+      TRACE_SPORT("SPORT SET XOR [%d]", telemetryRxBufferCount);
+      break;
+    default:
+      TRACE_SPORT("SPORT SET UNKOWN [%d]", telemetryRxBufferCount);
+    break;
+  }
+}
+
 bool pushFrskyTelemetryData(uint8_t data)
 {
-  static uint8_t dataState = STATE_DATA_IDLE;
-
   switch (dataState) {
     case STATE_DATA_START:
+      TRACE_SPORT("SPORT START[%d] %02X", telemetryRxBufferCount, data);
       if (data == START_STOP) {
         if (IS_FRSKY_SPORT_PROTOCOL()) {
-          dataState = STATE_DATA_IN_FRAME ;
+          setStateFrsky(STATE_DATA_IN_FRAME);
           telemetryRxBufferCount = 0;
         }
       }
@@ -102,22 +130,26 @@ bool pushFrskyTelemetryData(uint8_t data)
         if (telemetryRxBufferCount < TELEMETRY_RX_PACKET_SIZE) {
           telemetryRxBuffer[telemetryRxBufferCount++] = data;
         }
-        dataState = STATE_DATA_IN_FRAME;
+        setStateFrsky(STATE_DATA_IN_FRAME);
       }
       break;
 
     case STATE_DATA_IN_FRAME:
+      TRACE_SPORT("SPORT FRAME[%d] %02X", telemetryRxBufferCount, data);
       if (data == BYTE_STUFF) {
-        dataState = STATE_DATA_XOR; // XOR next byte
+        setStateFrsky(STATE_DATA_XOR); // XOR next byte
       }
       else if (data == START_STOP) {
         if (IS_FRSKY_SPORT_PROTOCOL()) {
-          dataState = STATE_DATA_IN_FRAME ;
+          setStateFrsky(STATE_DATA_IN_FRAME);
           telemetryRxBufferCount = 0;
+          TRACE_SPORT("SPORT RESET");
         }
         else {
           // end of frame detected
-          dataState = STATE_DATA_IDLE;
+          setStateFrsky(STATE_DATA_IDLE);
+          telemetryRxBufferCount = 0;
+          TRACE_SPORT("SPORT RESET");
           return true;
         }
         break;
@@ -126,26 +158,32 @@ bool pushFrskyTelemetryData(uint8_t data)
         telemetryRxBuffer[telemetryRxBufferCount++] = data;
       }
       break;
-
     case STATE_DATA_XOR:
+      TRACE_SPORT("SPORT XOR[%d] %02X", telemetryRxBufferCount, data);
       if (telemetryRxBufferCount < TELEMETRY_RX_PACKET_SIZE) {
         telemetryRxBuffer[telemetryRxBufferCount++] = data ^ STUFF_MASK;
       }
-      dataState = STATE_DATA_IN_FRAME;
+      setStateFrsky(STATE_DATA_IN_FRAME);
       break;
 
     case STATE_DATA_IDLE:
+      TRACE_SPORT("SPORT IDLE[%d] %02X", telemetryRxBufferCount, data);
       if (data == START_STOP) {
+        setStateFrsky(STATE_DATA_START);
         telemetryRxBufferCount = 0;
-        dataState = STATE_DATA_START;
+        TRACE_SPORT("SPORT RESET");
       }
       break;
-
+    default:
+      TRACE_SPORT("SPORT UNKOWN[%d] %02X", telemetryRxBufferCount, data);
+      break;
   } // switch
 
-  if (IS_FRSKY_SPORT_PROTOCOL() && telemetryRxBufferCount >= FRSKY_SPORT_PACKET_SIZE) {
+  if (IS_FRSKY_SPORT_PROTOCOL() && dataState == STATE_DATA_IN_FRAME && telemetryRxBufferCount >= FRSKY_SPORT_PACKET_SIZE) {
     // end of frame detected
-    dataState = STATE_DATA_IDLE;
+    setStateFrsky(STATE_DATA_IDLE);
+    telemetryRxBufferCount = 0;
+    TRACE_SPORT("SPORT RESET");
     return true;
   }
 
