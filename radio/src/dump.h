@@ -28,6 +28,7 @@ void dumpEnd();
 void dump(const uint8_t * data, unsigned int size);
 #else
 #define dump(data, size)
+#define dumpBody(data, size)
 #endif
 
 #endif // _DUMP_H_
