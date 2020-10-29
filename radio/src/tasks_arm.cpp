@@ -31,6 +31,9 @@ RTOS_DEFINE_STACK(mixerStack, MIXER_STACK_SIZE);
 RTOS_TASK_HANDLE audioTaskId;
 RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);
 
+RTOS_TASK_HANDLE telemetryTaskId;
+RTOS_DEFINE_STACK(telemetryStack, TELEMETRY_STACK_SIZE);
+
 RTOS_MUTEX_HANDLE audioMutex;
 RTOS_MUTEX_HANDLE mixerMutex;
 
@@ -39,6 +42,7 @@ RTOS_FLAG_HANDLE openTxInitCompleteFlag;
 enum TaskIndex {
   MENU_TASK_INDEX,
   MIXER_TASK_INDEX,
+  TELEMETRY_TASK_INDEX,
   AUDIO_TASK_INDEX,
   CLI_TASK_INDEX,
   TOUCH_TASK_INDEX,
@@ -52,6 +56,7 @@ void stackPaint()
   menusStack.paint();
   mixerStack.paint();
   audioStack.paint();
+  telemetryStack.paint();
 #if defined(CLI)
   cliStack.paint();
 #endif
@@ -125,11 +130,33 @@ void sendSynchronousPulses()
   }
 }
 
+RTOS_FLAG_HANDLE telemetryFlag;
+
+TASK_FUNCTION(telemetryTask)
+{
+  while(1) {
+#if defined(SIMU)
+  if (pwrCheck() == e_power_off || main_thread_running == 0) {
+    TASK_RETURN();
+  }
+#endif
+  // if(!telemetryFlag) 
+  //   break;
+  RTOS_CLEAR_FLAG(telemetryFlag);
+  RTOS_WAIT_FLAG(telemetryFlag, 10);
+  DEBUG_TIMER_START(debugTimerTelemetryWakeup);
+  telemetryWakeup();
+  DEBUG_TIMER_STOP(debugTimerTelemetryWakeup);
+  }
+}
+
+
 TASK_FUNCTION(mixerTask)
 {
   s_pulses_paused = true;
   mixerSchedulerInit();
   mixerSchedulerStart();
+  RTOS_CREATE_FLAG(telemetryFlag);
   while(1) {
 #if defined(SBUS_TRAINER)
     processSbusInput();
@@ -137,6 +164,8 @@ TASK_FUNCTION(mixerTask)
 #if defined(BLUETOOTH)
     bluetoothWakeup();
 #endif
+  //process telemetry when waiting
+  RTOS_ISR_SET_FLAG(telemetryFlag);
   // run mixer at least every 30ms
   bool timeout = mixerSchedulerWaitForTrigger(30);
   // re-enable trigger
@@ -168,9 +197,9 @@ TASK_FUNCTION(mixerTask)
       }
 #endif
 
-      DEBUG_TIMER_START(debugTimerTelemetryWakeup);
-      telemetryWakeup();
-      DEBUG_TIMER_STOP(debugTimerTelemetryWakeup);
+      // DEBUG_TIMER_START(debugTimerTelemetryWakeup);
+      // telemetryWakeup();
+      // DEBUG_TIMER_STOP(debugTimerTelemetryWakeup);
 
       if (heartbeat == HEART_WDT_CHECK) {
         wdt_reset();
@@ -295,6 +324,7 @@ void tasksStart()
 #endif
 
   RTOS_CREATE_TASK(mixerTaskId, mixerTask, "Mixer", mixerStack, MIXER_STACK_SIZE, MIXER_TASK_PRIO);
+  RTOS_CREATE_TASK(telemetryTaskId, telemetryTask, "Telemetry", telemetryStack, TELEMETRY_STACK_SIZE, TELEMETRY_TASK_PRIO);
   RTOS_CREATE_TASK(menusTaskId, menusTask, "Menus", menusStack,  MENUS_STACK_SIZE, MENUS_TASK_PRIO);
 
 #if !defined(SIMU)
