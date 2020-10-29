@@ -187,7 +187,7 @@ bool pushFrskyTelemetryData(uint8_t data)
       if (data == START_STOP) {
         setStateFrsky(STATE_DATA_START);
         telemetryRxBufferCount = 0;
-        TRACE_SPORT("SPORT START");
+ 
       }
       break;
     default:
