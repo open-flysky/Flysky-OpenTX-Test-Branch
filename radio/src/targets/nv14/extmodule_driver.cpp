@@ -294,8 +294,9 @@ void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength,
 #if defined(PXX1)
 void extmodulePxx1PulsesStart() {
   EXTERNAL_MODULE_ON();
-
-  GPIO_SetBits(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN);
+  bool inverted = false;
+  GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_SET : BitAction::Bit_RESET);
+  //GPIO_SetBits(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN);
   GPIO_PinAFConfig(EXTMODULE_TX_GPIO, EXTMODULE_TX_GPIO_PinSource, EXTMODULE_TX_GPIO_AF);
 
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -416,6 +417,7 @@ void extmoduleSendNextFrame()
   }
 #if defined(PXX1)
   else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_PXX1_PULSES) {
+    TRACE("PROTOCOL_CHANNELS_PXX1_PULSES");
     EXTMODULE_TIMER->CCR2 = extmodulePulsesData.pxx.getLast() - 4000; // 2mS in advance
     EXTMODULE_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
     EXTMODULE_DMA_STREAM->CR |= EXTMODULE_DMA_CHANNEL | DMA_SxCR_DIR_0 | DMA_SxCR_MINC | DMA_SxCR_PSIZE_0 | DMA_SxCR_MSIZE_0 | DMA_SxCR_PL_0 | DMA_SxCR_PL_1;
@@ -426,7 +428,9 @@ void extmoduleSendNextFrame()
   }
 #endif
 #if defined(PXX1) && defined(EXTMODULE_USART)
-   else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_PXX1_SERIAL) {
+   else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_PXX1_SERIAL) { 
+    TRACE("PXX1");
+    dumpBody(extmodulePulsesData.pxx_uart.getData(), extmodulePulsesData.pxx_uart.getSize());
     extmoduleSendBuffer(extmodulePulsesData.pxx_uart.getData(), extmodulePulsesData.pxx_uart.getSize());
    }
 #endif
