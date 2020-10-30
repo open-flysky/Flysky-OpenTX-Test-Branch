@@ -294,9 +294,8 @@ void extmoduleSerialStart(uint32_t baudRate, bool inverted, uint16_t wordLength,
 #if defined(PXX1)
 void extmodulePxx1PulsesStart() {
   EXTERNAL_MODULE_ON();
-  bool inverted = false;
-  GPIO_WriteBit(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN, inverted ? BitAction::Bit_SET : BitAction::Bit_RESET);
-  //GPIO_SetBits(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN);
+  //Not inverted
+  GPIO_ResetBits(EXTMODULE_TX_INVERT_GPIO, EXTMODULE_TX_INVERT_GPIO_PIN);
   GPIO_PinAFConfig(EXTMODULE_TX_GPIO, EXTMODULE_TX_GPIO_PinSource, EXTMODULE_TX_GPIO_AF);
 
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -310,17 +309,16 @@ void extmodulePxx1PulsesStart() {
   EXTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
   EXTMODULE_TIMER->PSC = EXTMODULE_TIMER_FREQ / 2000000 - 1; // 0.5uS (2Mhz)
 
-  EXTMODULE_TIMER->CCR1 = 18;
+  EXTMODULE_TIMER->CCR3 = 0;
   EXTMODULE_TIMER->CCER = TIM_CCER_CC1E | TIM_CCER_CC1P | TIM_CCER_CC1NE | TIM_CCER_CC1NP; //  TIM_CCER_CC1E | TIM_CCER_CC1P;
-  EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_0; // Force O/P high
   EXTMODULE_TIMER->BDTR = TIM_BDTR_MOE; // Enable outputs
+  EXTMODULE_TIMER->CCR1 = 18;
+  EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_0; // Force O/P high
   EXTMODULE_TIMER->EGR = 1; // Restart
-  EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2;
-
-  EXTMODULE_TIMER->ARR = 45000;
-  EXTMODULE_TIMER->CCR2 = 40000; // The first frame will be sent in 20ms
+  EXTMODULE_TIMER->CCMR1 = TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2; // 0 TOGGLE / 2 PWM1
+  EXTMODULE_TIMER->ARR = 40000;
   EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-  EXTMODULE_TIMER->DIER |= TIM_DIER_UDE | TIM_DIER_CC2IE; // Enable DMA on update
+  EXTMODULE_TIMER->DIER |= TIM_DIER_UDE; // Enable DMA on update
   EXTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
 
   NVIC_EnableIRQ(EXTMODULE_DMA_IRQn);
@@ -417,13 +415,19 @@ void extmoduleSendNextFrame()
   }
 #if defined(PXX1)
   else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_PXX1_PULSES) {
-    EXTMODULE_TIMER->CCR2 = extmodulePulsesData.pxx.getLast() - 4000; // 2mS in advance
+    if (EXTMODULE_DMA_STREAM->CR & DMA_SxCR_EN)
+      return;
+    // disable timer
+    EXTMODULE_TIMER->CR1 &= ~TIM_CR1_CEN;
     EXTMODULE_DMA_STREAM->CR &= ~DMA_SxCR_EN; // Disable DMA
     EXTMODULE_DMA_STREAM->CR |= EXTMODULE_DMA_CHANNEL | DMA_SxCR_DIR_0 | DMA_SxCR_MINC | DMA_SxCR_PSIZE_0 | DMA_SxCR_MSIZE_0 | DMA_SxCR_PL_0 | DMA_SxCR_PL_1;
     EXTMODULE_DMA_STREAM->PAR = CONVERT_PTR_UINT(&EXTMODULE_TIMER->ARR);
     EXTMODULE_DMA_STREAM->M0AR = CONVERT_PTR_UINT(extmodulePulsesData.pxx.getData());
     EXTMODULE_DMA_STREAM->NDTR = extmodulePulsesData.pxx.getSize();
     EXTMODULE_DMA_STREAM->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE; // Enable DMA | DMA_SxCR_TEIE | DMA_SxCR_DMEIE
+    // re-init timer
+    EXTMODULE_TIMER->EGR = 1;
+    EXTMODULE_TIMER->CR1 |= TIM_CR1_CEN;
   }
 #endif
 #if defined(PXX1) && defined(EXTMODULE_USART)
@@ -520,7 +524,6 @@ extern "C" void EXTMODULE_USART_TX_DMA_IRQHandler(void)
   }
   if(startTimer) {
     switch (moduleState[EXTERNAL_MODULE].protocol) {
-      case PROTOCOL_CHANNELS_PXX1_PULSES: 
       case PROTOCOL_CHANNELS_PPM:
         EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
         EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE; // Enable this interrupt
@@ -547,7 +550,6 @@ extern "C" void EXTMODULE_DMA_IRQHandler()
 
   if(startTimer) {
     switch (moduleState[EXTERNAL_MODULE].protocol) {
-      case PROTOCOL_CHANNELS_PXX1_PULSES: 
       case PROTOCOL_CHANNELS_PPM:
         EXTMODULE_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
         EXTMODULE_TIMER->DIER |= TIM_DIER_CC2IE; // Enable this interrupt

@@ -106,6 +106,7 @@ bool isModuleSynchronous(uint8_t moduleIdx)
     case PROTOCOL_CHANNELS_PXX1_SERIAL:
     return true;
 #endif
+    case PROTOCOL_CHANNELS_PXX1_PULSES:
 #if defined(DSM2)
     case PROTOCOL_CHANNELS_SBUS:
     case PROTOCOL_CHANNELS_DSM2_LP45:
