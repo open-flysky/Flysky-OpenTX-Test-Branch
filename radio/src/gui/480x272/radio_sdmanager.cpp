@@ -176,7 +176,9 @@ void RadioSdManagerPage::build(Window * window)
           else if (!READ_ONLY() && !strcasecmp(ext, SPORT_FIRMWARE_EXT)) {
             menu->addLine(STR_FLASH_EXTERNAL_DEVICE, [=]() {
               FrskyDeviceFirmwareUpdate device(EXTERNAL_MODULE);
+              setModuleUpdateStatus(EXTERNAL_MODULE, true);
               device.flashFirmware(getFullPath(name));
+              setModuleUpdateStatus(EXTERNAL_MODULE, true);
               runProgressScreen();
             });
           }
@@ -208,9 +210,9 @@ void RadioSdManagerPage::build(Window * window)
             Nv14FirmwareInformation nv14Info;
             if (nv14Info.read(fullPath) == nullptr && nv14Info.valid()) {
               menu->addLine(STR_FLASH_INTERNAL_MODULE, [=]() {
-                setInternalModuleUpdateStatus(true);
+                setModuleUpdateStatus(INTERNAL_MODULE, true);
                 nv14FlashFirmware(fullPath);
-                setInternalModuleUpdateStatus(false);
+                setModuleUpdateStatus(INTERNAL_MODULE, false);
                 runProgressScreen();
               });
             }

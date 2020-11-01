@@ -161,13 +161,14 @@ const uint8_t * FrskyDeviceFirmwareUpdate::readFullDuplexFrame(ModuleFifo & fifo
 const uint8_t * FrskyDeviceFirmwareUpdate::readHalfDuplexFrame(uint32_t timeout)
 {
   for (int i = timeout; i >= 0; i--) {
+    watchdogSuspend(2);
     uint8_t byte ;
     while (telemetryGetByte(&byte)) {
       if (pushFrskyTelemetryData(byte)) {
         return telemetryRxBuffer;
       }
     }
-    RTOS_WAIT_MS(1);
+    RTOS_WAIT_MS(3);
   }
   return nullptr;
 }
@@ -175,7 +176,7 @@ const uint8_t * FrskyDeviceFirmwareUpdate::readHalfDuplexFrame(uint32_t timeout)
 const uint8_t * FrskyDeviceFirmwareUpdate::readFrame(uint32_t timeout)
 {
   RTOS_WAIT_MS(1);
-
+  
   switch (module) {
 #if defined(INTERNAL_MODULE_PXX2)
     case INTERNAL_MODULE:
@@ -199,7 +200,6 @@ bool FrskyDeviceFirmwareUpdate::waitState(State newState, uint32_t timeout)
   }
   return true;
 #else
-  watchdogSuspend(timeout / 10);
 
   const uint8_t * frame = readFrame(timeout);
   if (!frame) {
@@ -250,11 +250,12 @@ const char * FrskyDeviceFirmwareUpdate::sendPowerOn()
 {
   state = SPORT_POWERUP_REQ;
 
-  RTOS_WAIT_MS(50);
+  RTOS_WAIT_MS(100);
   telemetryClearFifo();
 
-  for (int i=0; i<10; i++) {
-    // max 10 attempts
+  for (int i=0; i<20; i++) {
+    telemetryClearFifo();
+    // max 20 attempts
     startFrame(PRIM_REQ_POWERUP);
     sendFrame();
     if (waitState(SPORT_POWERUP_ACK, 100))

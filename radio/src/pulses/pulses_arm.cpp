@@ -575,20 +575,22 @@ bool setupPulsesInternalModule()
   }
 }
 
-bool internalModuleUpdate = false;
+#endif
 
-void setInternalModuleUpdateStatus(bool active) {
-  internalModuleUpdate = active;
+bool moduleUpdate[NUM_MODULES];
+
+void setModuleUpdateStatus(uint8_t module, bool active) {
+  moduleUpdate[module] = active;
   if (!active) { //restart protocol
-    moduleState[INTERNAL_MODULE].protocol = PROTOCOL_CHANNELS_NONE;
-    setupPulsesInternalModule();
+    moduleState[module].protocol = PROTOCOL_CHANNELS_NONE;
+    if (module == INTERNAL_MODULE) setupPulsesInternalModule();
+    if (module == EXTERNAL_MODULE) setupPulsesExternalModule();
   }
 }
 
-bool internalModuleUpdateActive() {
-  return internalModuleUpdate;
+bool moduleUpdateActive(uint8_t module) {
+  return moduleUpdate[module];
 }
-#endif
 
 
 bool setupPulsesExternalModule()

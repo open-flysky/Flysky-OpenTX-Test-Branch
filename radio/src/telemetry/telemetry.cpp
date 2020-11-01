@@ -106,7 +106,7 @@ void telemetryWakeup()
 
 #if defined(STM32)
   uint8_t data;
-  if (telemetryGetByte(&data)) {
+  if (!moduleUpdateActive(EXTERNAL_MODULE) && telemetryGetByte(&data)) {
     LOG_TELEMETRY_WRITE_START();
     do {
       processTelemetryData(data);
@@ -114,7 +114,7 @@ void telemetryWakeup()
     } while (telemetryGetByte(&data));
   }
 #if defined(PCBNV14)
-  if(!internalModuleUpdateActive() && moduleState[INTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_AFHDS2 && intmoduleGetByte(&data)) {
+  if(!moduleUpdateActive(INTERNAL_MODULE) && moduleState[INTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_AFHDS2 && intmoduleGetByte(&data)) {
     do {
       processInternalFlySkyTelemetryData(data);
       LOG_TELEMETRY_WRITE_BYTE(data);
