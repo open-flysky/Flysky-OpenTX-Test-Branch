@@ -178,7 +178,7 @@ void RadioSdManagerPage::build(Window * window)
               FrskyDeviceFirmwareUpdate device(EXTERNAL_MODULE);
               setModuleUpdateStatus(EXTERNAL_MODULE, true);
               device.flashFirmware(getFullPath(name));
-              setModuleUpdateStatus(EXTERNAL_MODULE, true);
+              setModuleUpdateStatus(EXTERNAL_MODULE, false);
               runProgressScreen();
             });
           }
