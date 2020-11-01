@@ -208,9 +208,13 @@ void RadioCalibrationPage::nextStep()
     case CALIB_MOVE_STICKS:
       button->setText(STR_MOVESTICKSPOTS);
       break;
-
     case CALIB_STORE:
       button->setText("Done!");
+#if defined(STICK_DEAD_ZONE)
+      if (initial) {
+        g_eeGeneral.stickDeadZone = 2;
+      }
+#endif
       g_eeGeneral.chkSum = evalChkSum();
       storageDirty(EE_GENERAL);
       menuCalibrationState = CALIB_FINISHED;
