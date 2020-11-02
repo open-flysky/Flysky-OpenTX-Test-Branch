@@ -747,19 +747,19 @@ class ModuleWindow : public Window {
       }
 
       // R9M Power
-      if (isModuleR9M_FCC(moduleIndex)) {
-        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new Choice(this, grid.getFieldSlot(), STR_R9M_FCC_POWER_VALUES, 0, R9M_FCC_POWER_MAX,
+      if(isModuleR9MNonAccess(moduleIndex)) {
+        if (isModuleR9M_FCC(moduleIndex)) {
+          new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
+          new Choice(this, grid.getFieldSlot(), STR_R9M_FCC_POWER_VALUES, 0, R9M_FCC_POWER_MAX,
                    GET_SET_DEFAULT(g_model.moduleData[moduleIndex].pxx.power));
-      }
-
-      if (isModuleR9M_LBT(moduleIndex)) {
-        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new Choice(this, grid.getFieldSlot(), STR_R9M_LBT_POWER_VALUES, 0, R9M_LBT_POWER_MAX,
+        }
+        else {
+          new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
+          new Choice(this, grid.getFieldSlot(), STR_R9M_LBT_POWER_VALUES, 0, R9M_LBT_POWER_MAX,
                    GET_DEFAULT(min<uint8_t>(g_model.moduleData[moduleIndex].pxx.power, R9M_LBT_POWER_MAX)),
                    SET_DEFAULT(g_model.moduleData[moduleIndex].pxx.power));
+        }
       }
-
       if (isModuleFlysky(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
         new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS2, 0, 1,
