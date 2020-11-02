@@ -30,7 +30,6 @@
 #define AFHDS3_BAUDRATE 1500000
 
 extern uint16_t failsafeCounter[NUM_MODULES];
-extern void sendExtModuleNow();
 
 namespace afhds3 {
 
