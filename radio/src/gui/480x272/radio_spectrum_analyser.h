@@ -24,14 +24,12 @@ class RadioSpectrumAnalyserPage: public PageTab {
   public:
     RadioSpectrumAnalyserPage();
     ~RadioSpectrumAnalyserPage() {
-      leaveHandler = nullptr;
     }
     void build(Window * window) override;
-    bool leave(std::function<void()> handler) override; 
+    void leave() override; 
     
   protected:
     bool prepare(Window * window);
-    std::function<void()> leaveHandler;
     int moduleIndex;
     bool started;
 };

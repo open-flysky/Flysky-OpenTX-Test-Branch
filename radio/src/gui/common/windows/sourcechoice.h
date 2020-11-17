@@ -39,6 +39,7 @@ class SourceChoice : public Window {
       getValue(std::move(getValue)),
       setValue(std::move(setValue))
     {
+      this->menu = nullptr;
     }
 
 #if defined(DEBUG_WINDOWS)

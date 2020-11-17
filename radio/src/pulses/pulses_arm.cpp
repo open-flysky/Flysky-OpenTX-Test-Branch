@@ -30,8 +30,6 @@ InternalModulePulsesData intmodulePulsesData __DMA;
 ExternalModulePulsesData extmodulePulsesData __DMA;
 TrainerPulsesData trainerPulsesData __DMA;
 
-bool internalModuleUpdate = false;
-
 //use only for PXX
 void ModuleState::startBind(BindInformation * destination, ModuleCallback bindCallback)
 {
@@ -576,7 +574,23 @@ bool setupPulsesInternalModule()
     return setupPulsesInternalModule(protocol);
   }
 }
+
 #endif
+
+bool moduleUpdate[NUM_MODULES];
+
+void setModuleUpdateStatus(uint8_t module, bool active) {
+  moduleUpdate[module] = active;
+  if (!active) { //restart protocol
+    moduleState[module].protocol = PROTOCOL_CHANNELS_NONE;
+    if (module == INTERNAL_MODULE) setupPulsesInternalModule();
+    if (module == EXTERNAL_MODULE) setupPulsesExternalModule();
+  }
+}
+
+bool moduleUpdateActive(uint8_t module) {
+  return moduleUpdate[module];
+}
 
 
 bool setupPulsesExternalModule()
@@ -598,6 +612,41 @@ bool setupPulsesExternalModule()
     return setupPulsesExternalModule(protocol);
   }
 }
+
+void disconnectModel() {
+  bool wait = false;
+  uint8_t ext = getRequiredProtocol(EXTERNAL_MODULE);
+  switch(ext) {
+#if defined(AFHDS3)
+    case PROTOCOL_CHANNELS_AFHDS3:
+      afhds3uart.stop();
+      wait = true;
+      break;
+#endif
+    default:
+    break;
+  }
+#if defined(HARDWARE_INTERNAL_MODULE)
+  uint8_t internal = getRequiredProtocol(INTERNAL_MODULE);
+  switch(internal) {
+#if defined(AFHDS2)
+    case PROTOCOL_CHANNELS_AFHDS2:
+      setFlyskyState(STATE_DISCONNECT);
+      wait = true;
+      break;
+#endif
+#endif
+    default:
+    break;
+  }
+  if (wait) {
+    watchdogSuspend(20);
+    RTOS_WAIT_MS(200);
+  }
+
+  pausePulses();
+}
+
 
 void setCustomFailsafe(uint8_t moduleIndex)
 {

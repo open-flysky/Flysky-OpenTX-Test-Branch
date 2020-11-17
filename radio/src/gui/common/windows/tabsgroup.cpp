@@ -28,28 +28,14 @@
 TabsGroupHeader::TabsGroupHeader(TabsGroup * parent):
   Window(parent, { 0, 0, LCD_W, MENU_BODY_TOP }, OPAQUE),
   back(this, { 0, 0, TOPBAR_BUTTON_WIDTH, TOPBAR_BUTTON_WIDTH }, ICON_BACK,
-       [&]() -> uint8_t {
-        bool switching = false;
-        if (menu) {
-          switching = menu->switching;
-          if (!switching && menu->currentTab) {
-            menu->switching = switching = menu->currentTab->leave(std::bind(&TabsGroupHeader::deleteMenu, this));
-          }
-          if (!switching) {
-            deleteMenu();
-          }
-        }
-        return !switching;
+       [=]() -> uint8_t {
+         if (parent->currentTab) parent->currentTab->leave();
+         parent->deleteLater();
+         return 1;
        }, BUTTON_NOFOCUS),
   carousel(this, parent)
 {
-  menu = parent;
-}
 
-void TabsGroupHeader::deleteMenu() {
-  menu->switching = false;
-  menu->deleteLater();
-  menu = nullptr;
 }
 
 void TabsGroupHeader::paint(BitmapBuffer * dc)
@@ -137,31 +123,18 @@ void TabsGroup::removeTab(unsigned index)
 
 void TabsGroup::setCurrentTab(PageTab * tab)
 {
-  if (tab != currentTab && !switching) {
+  if (tab != currentTab) {
     clearFocus();
     body.clear();
     TextKeyboard::instance()->disable(false);
     NumberKeyboard::instance()->disable(false);
     CurveKeyboard::instance()->disable(false);
-    if (currentTab) {
-      switching = currentTab->leave([=]() {
-        currentTab = tab;
-        switchTab();
-      });
-    }
-    if (!switching) {
-      currentTab = tab;
-      switchTab();
-    }
-  }
-}
-void TabsGroup::switchTab() {
-  if (currentTab) {
-    currentTab->build(&body);
-    header.setTitle(currentTab->title.c_str());
+    if (currentTab) currentTab->leave();
+    currentTab = tab;
+    tab->build(&body);
+    header.setTitle(tab->title.c_str());
     invalidate();
   }
-  switching = false;
 }
 
 void TabsGroup::checkEvents()

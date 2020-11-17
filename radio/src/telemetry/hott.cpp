@@ -216,7 +216,7 @@ void processHottPacket(const uint8_t * packet)
         // RX_RSSI
         setTelemetryValue(PROTOCOL_TELEMETRY_HOTT, HOTT_RX_RSSI_ID, 0, 0, processHoTTdBm(packet[7]), UNIT_DB, 0);
         // RX_LQI
-        telemetryData.rssi.set(packet[8]);
+        telemetryRSSI.set(packet[8]);
         if (packet[8] > 0)
           telemetryStreaming = TELEMETRY_TIMEOUT10ms;
         setTelemetryValue(PROTOCOL_TELEMETRY_HOTT, HOTT_RX_LQI_ID, 0, 0, packet[8], UNIT_RAW, 0);

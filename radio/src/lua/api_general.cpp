@@ -432,7 +432,15 @@ static int luaSportTelemetryPush(lua_State * L)
     packet.primId = luaL_checkunsigned(L, 2);
     packet.dataId = luaL_checkunsigned(L, 3);
     packet.value = luaL_checkunsigned(L, 4);
-    sportOutputPushPacket(&packet);
+    outputTelemetryBuffer.pushSportPacketWithBytestuffing(packet);
+
+#if defined(PXX2)
+      uint8_t destination = (IS_INTERNAL_MODULE_ON() ? INTERNAL_MODULE : EXTERNAL_MODULE);
+      outputTelemetryBuffer.setDestination(isModulePXX2(destination) ? (destination << 2) : TELEMETRY_ENDPOINT_SPORT);
+#else
+      outputTelemetryBuffer.setDestination(TELEMETRY_ENDPOINT_SPORT);
+#endif
+
     lua_pushboolean(L, true);
   }
   else {
@@ -662,8 +670,8 @@ This is just a hardware pass/fail measure and does not represent the quality of 
 */
 static int luaGetRAS(lua_State * L)
 {
-  if (IS_RAS_VALUE_VALID()) {
-    lua_pushinteger(L, telemetryData.swr.value);
+  if (isRasValueValid()) {
+    lua_pushinteger(L, telemetryData.swrExternal.value());
   }
   else {
     lua_pushnil(L);

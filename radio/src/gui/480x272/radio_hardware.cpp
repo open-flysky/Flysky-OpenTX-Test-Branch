@@ -141,6 +141,7 @@ void RadioHardwarePage::build(Window * window)
   deadZone->setDisplayHandler([](BitmapBuffer * dc, LcdFlags flags, int32_t value) {
     drawNumber(dc, 2, Y_ENLARGEABLE, value ? 2 << (value -1) : 0, flags);
   });
+  deadZone->setDefault(2);
   grid.nextLine();
 #endif
   // Bat calibration

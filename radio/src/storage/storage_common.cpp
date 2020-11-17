@@ -51,7 +51,7 @@ void preModelLoad()
 #endif
 
   if (pulsesStarted()) {
-    pausePulses();
+    disconnectModel();
   }
 
   pauseMixerCalculations();
@@ -62,6 +62,8 @@ static void fixUpModel()
   // Ensure that when rfProtocol is RF_PROTO_OFF the type of the module is MODULE_TYPE_NONE
   if (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT_PXX1 && g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF)
     g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_NONE;
+  if (g_model.moduleData[INTERNAL_MODULE].failsafeMode > FAILSAFE_LAST) g_model.moduleData[INTERNAL_MODULE].failsafeMode = FAILSAFE_NOT_SET;
+  if (g_model.moduleData[EXTERNAL_MODULE].failsafeMode > FAILSAFE_LAST) g_model.moduleData[EXTERNAL_MODULE].failsafeMode = FAILSAFE_NOT_SET;
 }
 #endif
 

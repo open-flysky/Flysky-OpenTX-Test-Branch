@@ -176,7 +176,9 @@ void Dialog::setProgress(const char * title, const char * message, int num, int 
 void Dialog::runForever()
 {
   running = true;
-
+  mainWindow.invalidate();
+  mainWindow.refresh();
+  mainWindow.invalidate();
   while (running) {
     auto check = pwrCheck();
     if (check == e_power_off) {
@@ -191,6 +193,8 @@ void Dialog::runForever()
     wdt_reset();
 
     RTOS_WAIT_MS(20);
+    
+
     mainWindow.run();
   }
 

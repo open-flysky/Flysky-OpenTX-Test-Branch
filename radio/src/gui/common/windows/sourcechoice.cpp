@@ -70,21 +70,18 @@ void SourceChoice::paint(BitmapBuffer * dc)
 void SourceChoice::checkEvents()
 {
   Window::checkEvents();
-  if (this->menu != nullptr)
-  {
-    int8_t value = getValue();
-    int8_t source = getMovedSource(vmin);
-    if (!source)
-      return;
+  if (this->menu == nullptr) return;
+  int8_t value = getValue();
+  int8_t source = getMovedSource(vmin);
+  if (!source) return;
 
-    if(value != source)
+  if(value != source)
+  {
+    std::map<int, int>::iterator it = valueIndexMap.find(static_cast<int>(source));
+    if (it != valueIndexMap.end() && it->second >= 0)
     {
-      std::map<int, int>::iterator it = valueIndexMap.find(static_cast<int>(source));
-      if (it != valueIndexMap.end() && it->second >= 0)
-      {
-        setValue(static_cast<int16_t>(source));
-        this->menu->select(it->second);
-      }
+      setValue(static_cast<int16_t>(source));
+      this->menu->select(it->second);
     }
   }
 }
@@ -94,7 +91,6 @@ void SourceChoice::fillMenu(Menu * menuLocal, std::function<bool(int16_t)> filte
   auto value = getValue();
   int count = 0;
   int current = -1;
-
   menuLocal->removeLines();
   valueIndexMap.clear();
   for (int i = vmin; i <= vmax; ++i) {

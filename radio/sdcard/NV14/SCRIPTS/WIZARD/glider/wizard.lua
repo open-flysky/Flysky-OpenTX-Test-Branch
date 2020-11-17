@@ -155,6 +155,9 @@ local function runFieldsPage(event, x, y)
     end
   elseif event == EVT_ENTER_BREAK or event == EVT_ROT_BREAK then -- toggle editing/selecting current field
     if fields[current][5] ~= nil then
+      if fields[current][3] == BUTTON then
+        return fields[current][8]()
+      end
       edit = not edit
       if edit == false then
         updateField(fields[current])
@@ -545,9 +548,9 @@ local function run(event, x, y)
   if event == nil then
     error("Cannot be run as a model script!")
     return 2
-  elseif (event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST or event == EVT_SLIDE_LEFT or (event == EVT_TOUCH_UP and x >= NAV_BUTTON_NEXT_LEFT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page < #pages-1 then
+  elseif (event == EVT_PAGE_BREAK or event == EVT_PAGEUP_FIRST or event == EVT_SLIDE_LEFT or (event == EVT_TOUCH_UP and x >= NAV_BUTTON_NEXT_LEFT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page < #pages-1 then
     selectPage(1)
-  elseif (event == EVT_PAGE_LONG or event == EVT_PAGEUP_FIRST or event == EVT_SLIDE_RIGHT or (event == EVT_TOUCH_UP and x <= NAV_BUTTON_PREV_RIGHT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page > 1 then
+  elseif (event == EVT_PAGE_LONG or event == EVT_PAGEDN_FIRST or event == EVT_SLIDE_RIGHT or (event == EVT_TOUCH_UP and x <= NAV_BUTTON_PREV_RIGHT  and y >= NAV_BUTTON_TOP  and y <= NAV_BUTTON_BOTTOM )) and page > 1 then
     killEvents(event);
     selectPage(-1)
   end

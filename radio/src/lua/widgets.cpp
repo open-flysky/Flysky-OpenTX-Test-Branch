@@ -285,6 +285,13 @@ void l_pushtableint(const char * key, int value)
   lua_settable(lsWidgets, -3);
 }
 
+void l_pushtableuint(const char * key, uint value)
+{
+  lua_pushstring(lsWidgets, key);
+  lua_pushunsigned(lsWidgets, value);
+  lua_settable(lsWidgets, -3);
+}
+
 class LuaWidgetFactory: public WidgetFactory
 {
   friend void luaLoadWidgetCallback();
@@ -387,12 +394,15 @@ void LuaWidget::refresh(event_ext_t event)
   LuaWidgetFactory * factory = (LuaWidgetFactory *)this->factory;
   lua_rawgeti(lsWidgets, LUA_REGISTRYINDEX, factory->refreshFunction);
   lua_rawgeti(lsWidgets, LUA_REGISTRYINDEX, widgetData);
-  lua_pushinteger(lsWidgets, event.evt);
+
+  lua_newtable(lsWidgets);
+  l_pushtableuint("event", event.evt);
+  char index[8] = {0};
   for(int i=0; i<event.paramsCount(); i++) {
-    //tbd check type and push it with correct type
-    lua_pushunsigned(lsWidgets, event.params[i]);
+    snprintf(index, 8, "%d", i);
+    l_pushtableuint(index, (uint)event.params[i]);
   }
-  if (lua_pcall(lsWidgets, event.paramsCount() + 1, 0, 0) != 0) {
+  if (lua_pcall(lsWidgets, 2, 0, 0) != 0) {
     setErrorMessage("refresh()");
   }
 }

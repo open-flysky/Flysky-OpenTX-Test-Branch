@@ -179,11 +179,11 @@ void processFlySkySensor(const uint8_t *packet, uint8_t type)
   }
   else if(id == AFHDS2A_ID_RX_ERR_RATE) {
     value = 100 - value;
-    telemetryData.rssi.set(value);
+    telemetryRSSI.set(value);
     if(value>0) telemetryStreaming = TELEMETRY_TIMEOUT10ms;
   }
   else if(id == AFHDS2A_ID_RX_SIG_AFHDS3) {
-    telemetryData.rssi.set(value);
+    telemetryRSSI.set(value);
     if(value>0) telemetryStreaming = TELEMETRY_TIMEOUT10ms;
   }
   else if(id == AFHDS2A_ID_PRES && value) {

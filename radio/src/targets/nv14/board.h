@@ -176,10 +176,10 @@ void sdramInit(void);
 #define IS_INTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(INTMODULE_PWR_GPIO, INTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_EXTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_UART_MODULE(port)            (port == INTERNAL_MODULE)
-#define SPORT_UPDATE_POWER_ON()
-#define SPORT_UPDATE_POWER_OFF()
+#define SPORT_UPDATE_POWER_ON()        EXTERNAL_MODULE_ON()
+#define SPORT_UPDATE_POWER_OFF()       EXTERNAL_MODULE_OFF()
 #define SPORT_UPDATE_POWER_INIT()
-#define IS_SPORT_UPDATE_POWER_ON()     (false)
+#define IS_SPORT_UPDATE_POWER_ON()     IS_EXTERNAL_MODULE_ON()
 
 void EXTERNAL_MODULE_ON();
 void EXTERNAL_MODULE_OFF();
@@ -348,8 +348,7 @@ void watchdogInit(unsigned int duration);
   #endif
   #define WAS_RESET_BY_WATCHDOG()               (RCC->CSR & (RCC_CSR_WDGRSTF | RCC_CSR_WWDGRSTF))
   #define WAS_RESET_BY_SOFTWARE()               (RCC->CSR & RCC_CSR_SFTRSTF)
-  //#define WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()   (RCC->CSR & (RCC_CSR_WDGRSTF | RCC_CSR_WWDGRSTF | RCC_CSR_SFTRSTF))
-  #define WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()   (false)
+  #define WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()   (RCC->CSR & (RCC_CSR_WDGRSTF | RCC_CSR_WWDGRSTF | RCC_CSR_SFTRSTF))
 #endif
 
 // ADC driver
@@ -527,14 +526,12 @@ int32_t getVolume(void);
 #define TELEMETRY_FIFO_SIZE             512
 void telemetryPortInit(uint32_t baudrate, uint8_t mode);
 void telemetryPortSetDirectionOutput(void);
+void telemetryPortSetDirectionInput(void);
 void sportSendBuffer(uint8_t * buffer, uint32_t count);
+void sportSendByte(uint8_t byte);
 uint8_t telemetryGetByte(uint8_t * byte);
 uint8_t heartbeatTelemetryGetByte(uint8_t * byte);
 extern uint32_t telemetryErrors;
-
-// Sport update driver
-#define SPORT_UPDATE_POWER_ON()
-#define SPORT_UPDATE_POWER_OFF()
 
 // Haptic driver
 void hapticInit(void);

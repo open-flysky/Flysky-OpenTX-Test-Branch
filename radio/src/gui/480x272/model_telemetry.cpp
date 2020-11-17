@@ -472,7 +472,7 @@ void ModelTelemetryPage::build(Window * window, int8_t focusSensorIndex)
 
   if (isModuleFlysky(INTERNAL_MODULE)) {
     new StaticText(window, grid.getLabelSlot(), STR_FLYSKY_TELEMETRY);
-    new CheckBox(window, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.rssiAlarms.flysky_telemetry));
+    new CheckBox(window, grid.getFieldSlot(), GET_SET_DEFAULT(g_model.rssiAlarms.native));
     grid.nextLine();
   }
   // Sensors

@@ -59,6 +59,7 @@ class CostomScriptsEditWindow: public Page {
 
     void checkEvents() override
     {
+      Page::checkEvents();
       invalidate();
 
       if (refreshDelay) {

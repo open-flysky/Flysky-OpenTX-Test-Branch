@@ -61,7 +61,7 @@ void menuRadioDiagAnalogs(event_t event)
   if (isModuleXJT(EXTERNAL_MODULE) && !IS_INTERNAL_MODULE_ON()) {
     coord_t y = MENU_HEADER_HEIGHT + 1 + (NUM_STICKS+NUM_POTS+NUM_SLIDERS+1)/2 * FH + 1 * FH + 2;
     lcdDrawText(1, y, "RAS:");
-    lcdDrawNumber(1 + 4*FW, y, telemetryData.swr.value, LEFT);
+    lcdDrawNumber(1 + 4*FW, y, telemetryData.swrExternal.value(), LEFT);
   }
 #elif defined(CPUARM)
   if (isModuleXJT(EXTERNAL_MODULE)) {
@@ -69,7 +69,7 @@ void menuRadioDiagAnalogs(event_t event)
     uint8_t x = ((NUM_STICKS+NUM_POTS+NUM_SLIDERS) & 1) ? (LCD_W/2)+FW : 0;
 
     lcdDrawText(x, y, "RAS:");
-    lcdDrawNumber(x + 4*FW, y, telemetryData.swr.value, LEFT);
+    lcdDrawNumber(x + 4*FW, y, telemetryData.swrExternal.value(), LEFT);
   }
 #endif
 

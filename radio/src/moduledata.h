@@ -75,6 +75,14 @@ PACK2(struct ModuleData {
       uint8_t rfPower:1;
       uint8_t reserved:4;
       uint8_t rx_freq[2];
+
+      void setDefault() {
+        rx_id[0] = rx_id[1] = rx_id[2] = rx_id[3] = 0;
+        mode = 2;
+        rfPower = 0;
+        rx_freq[0] = 50;
+        rx_freq[1] = 0;
+      }
     } romData;
 
     NOBACKUP2(struct {
@@ -96,7 +104,15 @@ PACK2(struct ModuleData {
       void setMode(bool pwm, bool sBus) {
         mode = (sBus ? 1 : 0) | (pwm ? 0 : 2);
       }
-
+      void setDefault() {
+        bindPower = 0;
+        runPower = 0;
+        emi = 0;
+        telemetry = 0;
+        setMode(false, false);
+        failsafeTimeout = 0;
+        rxFreq = 50;
+      }
     } afhds3);
     NOBACKUP2(struct {
       uint8_t power:2;                  // 0=10 mW, 1=100 mW, 2=500 mW, 3=1W

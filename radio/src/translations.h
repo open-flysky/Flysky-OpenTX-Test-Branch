@@ -667,6 +667,7 @@ extern pm_char STR_MULTI_RFCHAN[];
 extern pm_char STR_EXT_MULTI_SPEC[];
 extern pm_char STR_INT_MULTI_SPEC[];
 extern pm_char STR_FLASH_EXTERNAL_MULTI[];
+extern pm_char STR_FLASH_WRITE[];
 
 extern const pm_char STR_MODULE_SYNC[];
 extern const pm_char STR_MULTI_SERVOFREQ[];

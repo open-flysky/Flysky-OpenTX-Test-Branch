@@ -311,9 +311,10 @@ union TrainerPulsesData {
 extern TrainerPulsesData trainerPulsesData;
 extern const uint16_t CRCTable[];
 #if defined(INTMODULE) || (HARDWARE_INTERNAL_MODULE)
-extern bool internalModuleUpdate;
 bool setupPulsesInternalModule();
 #endif
+bool moduleUpdateActive(uint8_t module);
+void setModuleUpdateStatus(uint8_t module, bool active);
 bool setupPulsesExternalModule();
 void setupPulsesDSM2();
 void setupPulsesCrossfire();
@@ -336,6 +337,7 @@ void extmodulePxx1SerialStart();
 void extmodulePpmStart();
 void intmoduleStop();
 void extmoduleStop();
+void disconnectModel();
 #if defined(HARDWARE_EXTRA_MODULE)
 void extramodulePpmStart();
 #endif
@@ -481,12 +483,12 @@ inline bool isModuleInBeepMode()
   return false;
 }
 
-#define LEN_R9M_MODES                  "\007"
-#define TR_R9M_MODES                   "FCC\0   ""LBT(EU)"
-#define LEN_R9M_FCC_POWER_VALUES       "\006"
-#define LEN_R9M_LBT_POWER_VALUES       "\006"
-#define TR_R9M_FCC_POWER_VALUES        "10 mW\0" "100 mW" "500 mW" "1 W\0"
-#define TR_R9M_LBT_POWER_VALUES        "25 mW\0" "500 mW"
+#define LEN_R9M_MODES                  "\006"
+#define TR_R9M_MODES                   "FCC\0  ""EU\0   ""868MHz""915MHz"
+#define LEN_R9M_FCC_POWER_VALUES       "\011"
+#define LEN_R9M_LBT_POWER_VALUES       "\014"
+#define TR_R9M_FCC_POWER_VALUES        "10mW\0    " "100mW\0   " "500mW\0   " "1W (auto)"
+#define TR_R9M_LBT_POWER_VALUES        "25mW 8CH\0   ""25mW 16CH\0  ""200mW NoTele""500mW NoTele"
 
 enum FlySkyModuleState_E {
   STATE_SET_TX_POWER = 0,
@@ -507,7 +509,8 @@ enum FlySkyModuleState_E {
   STATE_SET_RANGE_TEST = 15,
   STATE_RANGE_TEST_RUNNING = 16,
   STATE_IDLE = 17,
-  STATE_SEND_CHANNELS = 18,
+  STATE_DISCONNECT = 18,
+  STATE_SEND_CHANNELS = 19,
 };
 
 #define BIND_TELEM_ALLOWED(idx)      (!isModuleR9M_LBT(idx) || g_model.moduleData[idx].pxx.power == R9M_LBT_POWER_25)

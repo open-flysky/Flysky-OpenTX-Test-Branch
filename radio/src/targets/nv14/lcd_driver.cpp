@@ -975,6 +975,7 @@ void LCD_ST7796S_Init(void) {
   lcdWriteData(0x00);
 
   lcdWriteCommand(0x11);
+  lcdWriteCommand(0x21);
   delay_ms(120);
   lcdWriteCommand(0x13);
 
@@ -984,19 +985,7 @@ void LCD_ST7796S_Init(void) {
   lcdWriteData(0x96);
 
   lcdWriteCommand(0x36);
-
-#if defined( LCD_DIRECTION ) && ( LCD_DIRECTION == LCD_VERTICAL )
-
-  lcdWriteData( 0x08 );
-
-#else
-#if defined( LCD_DEBUG ) && ( LCD_DEBUG == ON )
-  lcdWriteData( 0xcc );
-#else
-  lcdWriteData(0xb8);
-#endif
-
-#endif
+  lcdWriteData(0x08 );
 
   lcdWriteCommand(0x3A);
   lcdWriteData(0x65);
@@ -1324,11 +1313,6 @@ void lcdInit(void) {
     lcdInitFunction = LCD_ILI9488_Init;
     lcdOffFunction = LCD_ILI9488_Off;
     lcdOnFunction = LCD_ILI9488_On;
-  } else if (LCD_HX8357D_ReadID() == LCD_HX8357D_ID) {
-    lcdInitFunction = LCD_HX8357D_Init;
-    lcdOffFunction = LCD_HX8357D_Off;
-    lcdOnFunction = LCD_HX8357D_On;
-    TRACE("LCD INIT: HX8357D");
   } else { //if (LCD_ST7796S_ReadID() == LCD_ST7796S_ID)
     /* Default is ST7796S */
     TRACE("LCD INIT (default): ST7796S");

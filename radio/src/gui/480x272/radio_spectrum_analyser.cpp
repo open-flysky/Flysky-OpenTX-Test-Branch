@@ -118,10 +118,9 @@ RadioSpectrumAnalyserPage::RadioSpectrumAnalyserPage():
 
   }
 
-bool RadioSpectrumAnalyserPage::leave(std::function<void()> handler) {
-  leaveHandler = std::move(handler);
+void RadioSpectrumAnalyserPage::leave() {
   if (moduleIndex < 0 || moduleState[moduleIndex].mode != MODULE_MODE_SPECTRUM_ANALYSER) {
-    return false;
+    return;
   }
   started = false;
    if (isModulePXX2(moduleIndex)) {
@@ -134,17 +133,6 @@ bool RadioSpectrumAnalyserPage::leave(std::function<void()> handler) {
     }
   }
   setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
-  tmr10ms_t start = get_tmr10ms();
-  auto mb = new MessageBox(WARNING_TYPE_INFO, (DialogResult)0, STR_STOPPING, "Releasing resources, please wait...",  [=](DialogResult result) { 
-      if(leaveHandler) leaveHandler();
-    });
-    mb->setCloseCondition([=]() -> DialogResult {
-      if (get_tmr10ms() >= start + 500) {
-        return DialogResult::OK;
-      }
-      return (DialogResult) 0;
-    });
-    return true;
 } 
 
 bool RadioSpectrumAnalyserPage::prepare(Window * window) {

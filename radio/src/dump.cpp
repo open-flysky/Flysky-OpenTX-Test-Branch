@@ -36,13 +36,14 @@ void dumpStart(unsigned int size)
 
 void dumpBody(const uint8_t *data, unsigned int size)
 {
-  for (unsigned int i=0; i<size; i++) {
-    dumpPrintf("%.2X ", data[i]);
-    dumpPosition++;
-    if ((dumpPosition & (32-1)) == 0) {
-      dumpPrintf("\r\n");
-    }
+  char buffer[64*3];
+  char* pos = buffer;
+  if (size * 3 > sizeof(buffer)) size = 64;
+  for (unsigned i=0; i < size; i++) {
+    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", data[i]);
   }
+  (*pos) = 0;
+  TRACE("%s", buffer);
 }
 
 void dumpEnd()

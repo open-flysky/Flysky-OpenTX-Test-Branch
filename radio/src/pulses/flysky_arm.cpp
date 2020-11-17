@@ -123,6 +123,7 @@ struct __attribute__ ((packed)) afhds2Resp {
 };
 
 
+uint8_t emptyRxID[] = { 0, 0, 0, 0 };
 
 bool isFlySkyUsbDownload(void)
 {
@@ -335,10 +336,11 @@ bool checkFlySkyFrameCrc(const uint8_t * ptr, uint8_t size)
 }
 
 
-void debugFrame(const uint8_t* rxBuffer, uint8_t rxBufferCount){
+inline void debugFrame(const uint8_t* rxBuffer, uint8_t rxBufferCount){
   // debug print the content of the packet
-  char buffer[160];
+  char buffer[64*3];
   char* pos = buffer;
+  if (rxBufferCount * 3 > sizeof(buffer)) rxBufferCount = 64;
   for (int i=0; i < rxBufferCount; i++) {
     pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", rxBuffer[i]);
   }
@@ -368,7 +370,7 @@ inline void parseResponse()
      intmodulePulsesData.flysky.frame_index = resp->frame_number;
   }
 
-  debugFrame(&resp->value, dataLen - 3);
+  //debugFrame(&resp->value, dataLen - 3);
   switch (resp->command_id) {
     default:
       if (moduleState[INTERNAL_MODULE].mode == MODULE_MODE_NORMAL && intmodulePulsesData.flysky.state >= STATE_IDLE) {
@@ -407,7 +409,7 @@ inline void parseResponse()
       intmodulePulsesData.flysky.timeout = FLYSKY_MODULE_TIMEOUT;
       break;
     case CMD_RX_SENSOR_DATA: 
-      flySkyNv14ProcessTelemetryPacket((&resp->value) + 1, resp->value);
+      flySkyNv14ProcessTelemetryPacket(&resp->value, dataLen - 3);
       if (moduleState[INTERNAL_MODULE].mode == MODULE_MODE_NORMAL && intmodulePulsesData.flysky.state >= STATE_IDLE) {
         setFlyskyState(STATE_SEND_CHANNELS);
       }
@@ -522,6 +524,7 @@ void processInternalFlySkyTelemetryData(uint8_t byte)
 
 void resetPulsesAFHDS2()
 {
+  NV14internalModuleFwVersion = 0;
   intmodulePulsesData.flysky.frame_index = 1;
   setFlyskyState(STATE_SET_TX_POWER);
   intmodulePulsesData.flysky.timeout = 0;
@@ -537,7 +540,12 @@ void resetPulsesAFHDS2()
 void setupPulsesAFHDS2()
 {
   putFlySkyFrameHeader();
-  if (intmodulePulsesData.flysky.state < STATE_SEND_CHANNELS) {
+  if (intmodulePulsesData.flysky.state == STATE_DISCONNECT) {
+    TRACE("STATE_DISCONNECT");
+    putFlySkyFrameCmd(FRAME_TYPE_REQUEST_ACK, CMD_SET_RECEIVER_ID);
+    putFlySkyFrameBytes(emptyRxID, 4);
+  }
+  else if (intmodulePulsesData.flysky.state < STATE_SEND_CHANNELS) {
     if (++intmodulePulsesData.flysky.timeout >= FLYSKY_MODULE_TIMEOUT / FLYSKY_PERIOD) {
 
       intmodulePulsesData.flysky.timeout = 0;
@@ -665,8 +673,8 @@ void setupPulsesAFHDS2()
 
 
   if(intmodulePulsesData.flysky.state < STATE_SEND_CHANNELS) {
-    uint8_t size = intmodulePulsesData.flysky.ptr - intmodulePulsesData.flysky.pulses;
-    debugFrame(intmodulePulsesData.flysky.pulses, size);
+    //uint8_t size = intmodulePulsesData.flysky.ptr - intmodulePulsesData.flysky.pulses;
+    //debugFrame(intmodulePulsesData.flysky.pulses, size);
   }
   if ((DEBUG_RF_FRAME_PRINT & TX_FRAME_ONLY)) {
     /* print each command, except channel data by interval */

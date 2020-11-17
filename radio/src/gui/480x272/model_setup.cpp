@@ -30,9 +30,20 @@ void resetModuleSettings(uint8_t module)
   g_model.moduleData[module].channelsStart = 0;
   g_model.moduleData[module].channelsCount = defaultModuleChannels_M8(module);
   g_model.moduleData[module].rfProtocol = 0;
+  g_model.moduleData[module].failsafeMode = FAILSAFE_NOT_SET;
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
   }
+#if defined(AFHDS2)
+  else if (isModuleFlysky(module)) {
+    g_model.moduleData[module].romData.setDefault();
+  }
+#endif
+#if defined(AFHDS3)
+  else if (isModuleAFHDS3(module)) {
+    g_model.moduleData[module].afhds3.setDefault();
+  }
+#endif
   setModuleFlag(module, MODULE_MODE_RESET_SETTINGS);
   setModuleFlag(module, MODULE_MODE_NORMAL);
 }
@@ -311,7 +322,7 @@ class ModuleWindow : public Window {
       if (isModuleFlysky(moduleIndex) && NV14internalModuleFwVersion) {
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), STR_FW_VERSION);
-        sprintf(reusableBuffer.moduleSetup.msg, "%d.%d.%d", (NV14internalModuleFwVersion >> 16) & 0xFF, (NV14internalModuleFwVersion >> 8) & 0xFF,  NV14internalModuleFwVersion & 0xFF);
+        sprintf(reusableBuffer.moduleSetup.msg, "%d.%d.%d", (int)((NV14internalModuleFwVersion >> 16) & 0xFF), (int)((NV14internalModuleFwVersion >> 8) & 0xFF), (int)(NV14internalModuleFwVersion & 0xFF));
         new StaticText(this, grid.getFieldSlot(), reusableBuffer.moduleSetup.msg);
       }
 #endif
@@ -510,7 +521,7 @@ class ModuleWindow : public Window {
 
       if (isModuleR9M(moduleIndex)) {
         grid.nextLine();
-        new Choice(this, grid.getFieldSlot(), STR_R9M_MODES, MODULE_SUBTYPE_R9M_FCC,
+        auto r9Choice = new Choice(this, grid.getFieldSlot(), STR_R9M_MODES, MODULE_SUBTYPE_R9M_FCC,
                    MODULE_SUBTYPE_R9M_LAST,
                    GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
                    [=](int32_t newValue) {
@@ -518,6 +529,7 @@ class ModuleWindow : public Window {
                      SET_DIRTY();
                      update();
                    });
+        r9Choice->setAvailableHandler(isR9MModeAvailable);
       }
 
       if (isPPM(moduleIndex)) {
@@ -644,24 +656,14 @@ class ModuleWindow : public Window {
                     bindButton->setText(STR_MODULE_BINDING);
                     setModuleFlag(moduleIndex, MODULE_MODE_BIND);
                   });
-                  if (isModuleR9M_LBT(moduleIndex)) {
-                      menu->addLine(STR_BINDING_25MW_CH1_8_TELEM_OFF);
-                      if (!IS_TELEMETRY_INTERNAL_MODULE()) {
-                          menu->addLine(STR_BINDING_25MW_CH1_8_TELEM_ON);
-                      }
-                      menu->addLine(STR_BINDING_500MW_CH1_8_TELEM_OFF);
-                      menu->addLine(STR_BINDING_500MW_CH9_16_TELEM_OFF);
+                  if (!(IS_TELEMETRY_INTERNAL_MODULE() && moduleIndex == EXTERNAL_MODULE)) {
+                    menu->addLine(STR_BINDING_1_8_TELEM_ON);
                   }
-                  else {
-                      if (!(IS_TELEMETRY_INTERNAL_MODULE() && moduleIndex == EXTERNAL_MODULE)) {
-                          menu->addLine(STR_BINDING_1_8_TELEM_ON);
-                      }
-                      menu->addLine(STR_BINDING_1_8_TELEM_OFF);
-                      if (!(IS_TELEMETRY_INTERNAL_MODULE() && moduleIndex == EXTERNAL_MODULE)) {
-                          menu->addLine(STR_BINDING_9_16_TELEM_ON);
-                      }
-                      menu->addLine(STR_BINDING_9_16_TELEM_OFF);
+                  menu->addLine(STR_BINDING_1_8_TELEM_OFF);
+                  if (!(IS_TELEMETRY_INTERNAL_MODULE() && moduleIndex == EXTERNAL_MODULE)) {
+                    menu->addLine(STR_BINDING_9_16_TELEM_ON);
                   }
+                  menu->addLine(STR_BINDING_9_16_TELEM_OFF);
                   return 1;
             }
             else if(isModuleAFHDS3(moduleIndex)) {
@@ -745,19 +747,19 @@ class ModuleWindow : public Window {
       }
 
       // R9M Power
-      if (isModuleR9M_FCC(moduleIndex)) {
-        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new Choice(this, grid.getFieldSlot(), STR_R9M_FCC_POWER_VALUES, 0, R9M_FCC_POWER_MAX,
+      if(isModuleR9MNonAccess(moduleIndex)) {
+        if (isModuleR9M_FCC(moduleIndex)) {
+          new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
+          new Choice(this, grid.getFieldSlot(), STR_R9M_FCC_POWER_VALUES, 0, R9M_FCC_POWER_MAX,
                    GET_SET_DEFAULT(g_model.moduleData[moduleIndex].pxx.power));
-      }
-
-      if (isModuleR9M_LBT(moduleIndex)) {
-        new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
-        new Choice(this, grid.getFieldSlot(), STR_R9M_LBT_POWER_VALUES, 0, R9M_LBT_POWER_MAX,
+        }
+        else {
+          new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
+          new Choice(this, grid.getFieldSlot(), STR_R9M_LBT_POWER_VALUES, 0, R9M_LBT_POWER_MAX,
                    GET_DEFAULT(min<uint8_t>(g_model.moduleData[moduleIndex].pxx.power, R9M_LBT_POWER_MAX)),
                    SET_DEFAULT(g_model.moduleData[moduleIndex].pxx.power));
+        }
       }
-
       if (isModuleFlysky(moduleIndex)) {
         new StaticText(this, grid.getLabelSlot(true), STR_MULTI_RFPOWER);
         new Choice(this, grid.getFieldSlot(), STR_RFPOWER_AFHDS2, 0, 1,
@@ -798,27 +800,7 @@ uint8_t g_moduleIndex;
 
 void onBindMenu(const char * result, uint8_t moduleIndex)
 {
-  if (strcmp(result, STR_BINDING_25MW_CH1_8_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_25_8CH;
-    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
-    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
-  }
-  else if (strcmp(result, STR_BINDING_25MW_CH1_8_TELEM_ON) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_25_8CH;
-    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = false;
-    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
-  }
-  else if (strcmp(result, STR_BINDING_500MW_CH1_8_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_500_16CH_NOTELEM;
-    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
-    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
-  }
-  else if (strcmp(result, STR_BINDING_500MW_CH9_16_TELEM_OFF) == 0) {
-    g_model.moduleData[moduleIndex].pxx.power = R9M_LBT_POWER_500_16CH_NOTELEM;
-    g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = true;
-    g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = true;
-  }
-  else if (strcmp(result, STR_BINDING_1_8_TELEM_ON) == 0) {
+  if (strcmp(result, STR_BINDING_1_8_TELEM_ON) == 0) {
     g_model.moduleData[moduleIndex].pxx.receiverTelemetryOff = false;
     g_model.moduleData[moduleIndex].pxx.receiverHigherChannels = false;
   }

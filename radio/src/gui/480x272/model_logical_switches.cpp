@@ -54,6 +54,7 @@ class LogicalSwitchEditWindow: public Page {
 
     void checkEvents() override
     {
+      Page::checkEvents();
       if (active != isActive()) {
         headerSwitchName->setFlags(isActive() ? BOLD|WARNING_COLOR : MENU_TITLE_COLOR);
         active = !active;

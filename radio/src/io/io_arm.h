@@ -35,9 +35,6 @@ PACK(union SportTelemetryPacket
   uint8_t raw[8];
 });
 
-void sportProcessPacket(uint8_t * packet);
-void sportOutputPushPacket(SportTelemetryPacket * packet);
-void sportFlashDevice(ModuleIndex module, const char * filename);
 #endif
 
 #if defined(STM32)

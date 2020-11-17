@@ -161,13 +161,14 @@ const uint8_t * FrskyDeviceFirmwareUpdate::readFullDuplexFrame(ModuleFifo & fifo
 const uint8_t * FrskyDeviceFirmwareUpdate::readHalfDuplexFrame(uint32_t timeout)
 {
   for (int i = timeout; i >= 0; i--) {
+    watchdogSuspend(2);
     uint8_t byte ;
     while (telemetryGetByte(&byte)) {
       if (pushFrskyTelemetryData(byte)) {
         return telemetryRxBuffer;
       }
     }
-    RTOS_WAIT_MS(1);
+    RTOS_WAIT_MS(3);
   }
   return nullptr;
 }
@@ -175,7 +176,7 @@ const uint8_t * FrskyDeviceFirmwareUpdate::readHalfDuplexFrame(uint32_t timeout)
 const uint8_t * FrskyDeviceFirmwareUpdate::readFrame(uint32_t timeout)
 {
   RTOS_WAIT_MS(1);
-
+  
   switch (module) {
 #if defined(INTERNAL_MODULE_PXX2)
     case INTERNAL_MODULE:
@@ -199,7 +200,6 @@ bool FrskyDeviceFirmwareUpdate::waitState(State newState, uint32_t timeout)
   }
   return true;
 #else
-  watchdogSuspend(timeout / 10);
 
   const uint8_t * frame = readFrame(timeout);
   if (!frame) {
@@ -250,11 +250,12 @@ const char * FrskyDeviceFirmwareUpdate::sendPowerOn()
 {
   state = SPORT_POWERUP_REQ;
 
-  RTOS_WAIT_MS(50);
+  RTOS_WAIT_MS(100);
   telemetryClearFifo();
 
-  for (int i=0; i<10; i++) {
-    // max 10 attempts
+  for (int i=0; i<20; i++) {
+    telemetryClearFifo();
+    // max 20 attempts
     startFrame(PRIM_REQ_POWERUP);
     sendFrame();
     if (waitState(SPORT_POWERUP_ACK, 100))
@@ -501,13 +502,7 @@ const char * FrskyDeviceFirmwareUpdate::flashFirmware(const char * filename)
   AUDIO_PLAY(AU_SPECIAL_SOUND_BEEP1 );
   BACKLIGHT_ENABLE();
 
-  if (result) {
-    POPUP_WARNING(STR_FIRMWARE_UPDATE_ERROR);
-    SET_WARNING_INFO(result, strlen(result), 0);
-  }
-  else {
-    POPUP_INFORMATION(STR_FIRMWARE_UPDATE_SUCCESS);
-  }
+  drawProgressScreenDone(result == 0, result ? STR_FIRMWARE_UPDATE_ERROR : STR_FIRMWARE_UPDATE_SUCCESS, result);
 
 #if defined(HARDWARE_INTERNAL_MODULE)
   INTERNAL_MODULE_OFF();
@@ -773,14 +768,8 @@ const char * FrskyChipFirmwareUpdate::flashFirmware(const char * filename, bool 
   AUDIO_PLAY(AU_SPECIAL_SOUND_BEEP1);
   BACKLIGHT_ENABLE();
 
-  if (result) {
-    POPUP_WARNING(STR_FIRMWARE_UPDATE_ERROR);
-    SET_WARNING_INFO(result, strlen(result), 0);
-  }
-  else {
-    POPUP_INFORMATION(STR_FIRMWARE_UPDATE_SUCCESS);
-  }
-
+  drawProgressScreenDone(result == 0, result ? STR_FIRMWARE_UPDATE_ERROR : STR_FIRMWARE_UPDATE_SUCCESS, result);
+  
   /* wait 2s off */
   watchdogSuspend(1000 /*10s*/);
   RTOS_WAIT_MS(2000);

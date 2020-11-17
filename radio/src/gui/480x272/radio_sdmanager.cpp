@@ -22,7 +22,7 @@
 #include "opentx.h"
 #include "libwindows.h"
 #include "page.h"
-// #include "io/frsky_firmware_update.h"
+#include "io/frsky_firmware_update.h"
 #include "io/multi_firmware_update.h"
 #include "io/nv14_internal_module_update.h"
 
@@ -175,7 +175,11 @@ void RadioSdManagerPage::build(Window * window)
           }
           else if (!READ_ONLY() && !strcasecmp(ext, SPORT_FIRMWARE_EXT)) {
             menu->addLine(STR_FLASH_EXTERNAL_DEVICE, [=]() {
-              sportFlashDevice(EXTERNAL_MODULE, getFullPath(name));
+              FrskyDeviceFirmwareUpdate device(EXTERNAL_MODULE);
+              setModuleUpdateStatus(EXTERNAL_MODULE, true);
+              device.flashFirmware(getFullPath(name));
+              setModuleUpdateStatus(EXTERNAL_MODULE, false);
+              runProgressScreen();
             });
           }
 #if defined(LUA)
@@ -206,9 +210,9 @@ void RadioSdManagerPage::build(Window * window)
             Nv14FirmwareInformation nv14Info;
             if (nv14Info.read(fullPath) == nullptr && nv14Info.valid()) {
               menu->addLine(STR_FLASH_INTERNAL_MODULE, [=]() {
-                internalModuleUpdate = true;
+                setModuleUpdateStatus(INTERNAL_MODULE, true);
                 nv14FlashFirmware(fullPath);
-                internalModuleUpdate = false;
+                setModuleUpdateStatus(INTERNAL_MODULE, false);
                 runProgressScreen();
               });
             }
