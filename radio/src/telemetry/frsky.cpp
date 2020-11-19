@@ -119,19 +119,19 @@ bool pushFrskyTelemetryData(uint8_t data)
 {
   static uint16_t lastSport = 0;
  
-  if (IS_FRSKY_SPORT_PROTOCOL()) {
-    uint16_t now = getTmr2MHz();
-    uint16_t timeDiff = now - lastSport;
-    bool timout = timeDiff > 20000;
-    lastSport = now;
-    if (timout && data != START_STOP) { //> 10ms
-      setStateFrsky(STATE_DATA_IDLE);
-      telemetryRxBufferCount = 0;
-      memset(telemetryRxBuffer, 0, sizeof(telemetryRxBuffer));
-      //TRACE("SPORT TIMEOUT %d", timeDiff/2000);
-      return false;
-    } 
-  }
+  // if (IS_FRSKY_SPORT_PROTOCOL()) {
+  //   uint16_t now = getTmr2MHz();
+  //   uint16_t timeDiff = now - lastSport;
+  //   bool timout = timeDiff > 20000;
+  //   lastSport = now;
+  //   if (timout && data != START_STOP) { //> 10ms
+  //     setStateFrsky(STATE_DATA_IDLE);
+  //     telemetryRxBufferCount = 0;
+  //     memset(telemetryRxBuffer, 0, sizeof(telemetryRxBuffer));
+  //     //TRACE("SPORT TIMEOUT %d", timeDiff/2000);
+  //     return false;
+  //   } 
+  // }
   switch (dataState) {
     case STATE_DATA_START:
       TRACE_SPORT("SPORT START[%d] %02X", telemetryRxBufferCount, data);
