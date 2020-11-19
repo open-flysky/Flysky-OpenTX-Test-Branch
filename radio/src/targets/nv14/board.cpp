@@ -191,7 +191,6 @@ void boardInit()
   uint32_t press_start = 0;
   uint32_t press_end = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
-
   while (boardState == BOARD_POWER_OFF)
   {
     uint32_t now = get_tmr10ms();
@@ -243,14 +242,17 @@ void boardInit()
 void boardOff()
 {
   BACKLIGHT_DISABLE();
-
+  INTERNAL_MODULE_OFF();
+  EXTERNAL_MODULE_OFF();
+  wdt_reset();
+  delay_ms(50);
   while (pwrPressed()) {
     wdt_reset();
   }
   lcd->drawFilledRect(0, 0, LCD_WIDTH, LCD_HEIGHT, SOLID, HEADER_BGCOLOR);
   SysTick->CTRL = 0; // turn off systick
   pwrOff();
-#if defined(PCBFLYSKY) && !defined (SIMU)
+#if !defined (SIMU)
   haptic.event( AU_ERROR );
   delay_ms(50);
   while(1)
