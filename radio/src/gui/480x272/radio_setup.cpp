@@ -318,7 +318,7 @@ void RadioSetupPage::build(Window * window)
 
     // Alarms warning
     new StaticText(window, grid.getLabelSlot(true), STR_ALARMWARNING);
-    new CheckBox(window, grid.getFieldSlot(), GET_SET_INVERTED(g_eeGeneral.disableAlarmWarning));
+    new CheckBox(window, grid.getFieldSlot(), GET_SET_DEFAULT(g_eeGeneral.disableAlarmWarning));
     grid.nextLine();
 
     // RSSI shutdown alarm

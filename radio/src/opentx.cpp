@@ -265,7 +265,6 @@ void generalDefault()
   g_eeGeneral.potsConfig = DEFAULT_POTS_CONFIG;
   g_eeGeneral.switchConfig = DEFAULT_SWITCH_CONFIG;
 
-
   // vBatWarn is voltage in 100mV, vBatMin is in 100mV but with -9V offset, vBatMax has a -12V offset
   g_eeGeneral.vBatWarn = BATTERY_WARN;
   if (BATTERY_MIN != 90)
@@ -1941,7 +1940,7 @@ void opentxStart(OPENTX_START_ARGS)
 #endif
   }
   else {
-    if (!g_eeGeneral.disableAlarmWarning && IS_SOUND_OFF()) {
+    if (g_eeGeneral.disableAlarmWarning || IS_SOUND_OFF()) {
       ALERT(STR_ALARMSWARN, STR_ALARMSDISABLED, AU_ERROR);
     }
     checkAll();
