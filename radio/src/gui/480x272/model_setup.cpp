@@ -305,7 +305,9 @@ class ModuleWindow : public Window {
               g_model.moduleData[moduleIndex].type = newValue;
               SET_DIRTY();
               resetModuleSettings(moduleIndex);
-              onFlySkyModuleSetPower(newValue == MODULE_TYPE_FLYSKY);
+              if(moduleIndex == INTERNAL_MODULE) {
+                onFlySkyModuleSetPower(newValue == MODULE_TYPE_FLYSKY);
+              }
               update();
               moduleChoice->setFocus();
             });
