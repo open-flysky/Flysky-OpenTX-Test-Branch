@@ -318,16 +318,42 @@ class ModuleWindow : public Window {
           return isModuleTypeAllowed(moduleIndex, moduleType);
         });
       }
+#if defined(DEBUG)
+      if (moduleIndex == EXTERNAL_MODULE) {
+         grid.nextLine();
+         new StaticText(this, grid.getLabelSlot(true), TR_POWER);
+         new CheckBox(this, grid.getFieldSlot(), [=] { return IS_EXTERNAL_MODULE_ON(); }, [=](int32_t newValue) {
+          if(IS_EXTERNAL_MODULE_ON()) {
+            EXTERNAL_MODULE_OFF();
+          } else {
+            EXTERNAL_MODULE_ON();
+          }
+        });
+      }
+#endif
 #if defined(AFHDS2)
       if (isModuleFlysky(moduleIndex) && NV14internalModuleFwVersion) {
         grid.nextLine();
         new StaticText(this, grid.getLabelSlot(true), STR_FW_VERSION);
         sprintf(reusableBuffer.moduleSetup.msg, "%d.%d.%d", (int)((NV14internalModuleFwVersion >> 16) & 0xFF), (int)((NV14internalModuleFwVersion >> 8) & 0xFF), (int)(NV14internalModuleFwVersion & 0xFF));
         new StaticText(this, grid.getFieldSlot(), reusableBuffer.moduleSetup.msg);
+
       }
 #endif
-              
       // Module parameters
+#if defined(DEBUG)
+      if (isModuleFlysky(moduleIndex)) {
+        grid.nextLine();
+        new Choice(this, grid.getFieldSlot(), STR_FLYSKY_MODES, 0, 2,
+                   GET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol),
+                   [=](int32_t newValue) -> void {
+                     g_model.moduleData[moduleIndex].rfProtocol = newValue;
+                     SET_DIRTY();
+                     setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
+                     setFlyskyState(STATE_UPDATE_RF_PROTOCOL);
+                   });
+      }
+#endif
       if (isModuleFlysky(moduleIndex) || isModuleAFHDS3(moduleIndex)) {
         grid.nextLine();
         new Choice(this, grid.getFieldSlot(), STR_FLYSKY_PROTOCOLS, 0, 3,
