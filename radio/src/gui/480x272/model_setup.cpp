@@ -34,11 +34,6 @@ void resetModuleSettings(uint8_t module)
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
   }
-#if defined(AFHDS2)
-  else if (isModuleFlysky(module)) {
-    g_model.moduleData[module].romData.setDefault();
-  }
-#endif
 #if defined(AFHDS3)
   else if (isModuleAFHDS3(module)) {
     g_model.moduleData[module].afhds3.setDefault();
