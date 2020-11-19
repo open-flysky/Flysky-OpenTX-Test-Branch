@@ -116,7 +116,7 @@ ModuleSettingsMode getModuleMode(int moduleIndex)
 void setModuleFlag(uint8_t port, uint8_t value) {
   if(moduleState[port].mode == value) return;
   moduleState[port].mode = value;
-  if (value == MODULE_MODE_NORMAL && isModuleFlysky(port) && moduleState[port].protocol == PROTOCOL_CHANNELS_AFHDS2)
+  if (value == MODULE_MODE_NORMAL && isModuleFlysky(port))
     resetPulsesAFHDS2();
 #if defined(AFHDS3)
   if (isModuleAFHDS3(port) && moduleState[port].protocol == PROTOCOL_CHANNELS_AFHDS3) {
@@ -640,8 +640,8 @@ void disconnectModel() {
     break;
   }
   if (wait) {
-    watchdogSuspend(20);
-    RTOS_WAIT_MS(200);
+    watchdogSuspend(50);
+    RTOS_WAIT_MS(500);
   }
 
   pausePulses();
