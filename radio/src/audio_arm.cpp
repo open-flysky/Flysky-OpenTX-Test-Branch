@@ -1078,7 +1078,7 @@ void audioEvent(unsigned int index)
       flashCounter = FLASH_DURATION;
     }
   }
-  if (!g_eeGeneral.disableAlarmWarning)
+  if (g_eeGeneral.disableAlarmWarning)
   {
     switch (index)
     {
