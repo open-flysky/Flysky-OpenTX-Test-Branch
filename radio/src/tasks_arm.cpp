@@ -102,9 +102,8 @@ bool isModuleSynchronous(uint8_t moduleIdx)
 #if defined(MULTIMODULE)
     case PROTOCOL_CHANNELS_MULTIMODULE:
 #endif
-#if defined(INTMODULE_USART) || defined(EXTMODULE_USART)
-    case PROTOCOL_CHANNELS_PXX1_SERIAL:
-    return true;
+#if defined(GHOST)
+    case PROTOCOL_CHANNELS_GHOST:
 #endif
     case PROTOCOL_CHANNELS_PXX1_PULSES:
 #if defined(DSM2)
@@ -114,6 +113,11 @@ bool isModuleSynchronous(uint8_t moduleIdx)
     case PROTOCOL_CHANNELS_DSM2_DSMX:
 #endif
       return true;
+#if defined(INTMODULE_USART) || defined(EXTMODULE_USART)
+    case PROTOCOL_CHANNELS_PXX1_SERIAL:
+    return true;
+#endif
+
   }
   return false;
 }

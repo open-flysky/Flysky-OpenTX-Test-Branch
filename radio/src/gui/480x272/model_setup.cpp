@@ -22,6 +22,8 @@
 #include "opentx.h"
 #include "libwindows.h"
 #include "model_crossfire.h"
+#include "radio_ghost_menu.h"
+
 #define SET_DIRTY()     storageDirty(EE_MODEL)
 #define STR_4BIND(v)    ((moduleState[moduleIndex].mode == MODULE_MODE_BIND) ? STR_MODULE_BINDING : (v))
 
@@ -803,8 +805,16 @@ class ModuleWindow : public Window {
       }
 #if defined (CROSSFIRE_NATIVE)
       if(isModuleCrossfire(moduleIndex)){
-          new TextButton(this, grid.getFieldSlot(), STR_CROSSFIRE_SETUP, [=]() -> uint8_t {
+          new TextButton(this, grid.getFieldSlot(), STR_SETUP, [=]() -> uint8_t {
               new CrossfireMenu();
+              return 1;
+          });
+      }
+#endif
+#if defined (GHOST)
+      if(isModuleGhost(moduleIndex)){
+          new TextButton(this, grid.getFieldSlot(), STR_SETUP, [=]() -> uint8_t {
+              new GhostMenu();
               return 1;
           });
       }

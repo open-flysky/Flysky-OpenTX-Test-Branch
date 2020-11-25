@@ -790,7 +790,7 @@ extern const pm_char STR_PASTE_BEFORE[];
 #endif
 
 extern const pm_char STR_RESET_BTN[];
-
+extern const pm_char STR_GHOST_MENU_LABEL[];
 #if defined(SDCARD)
   extern const pm_char STR_BACKUP_MODEL[];
   extern const pm_char STR_RESTORE_MODEL[];

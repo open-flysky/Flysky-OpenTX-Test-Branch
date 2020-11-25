@@ -18,44 +18,21 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _KEYBOARD_CURVE_H_
-#define _KEYBOARD_CURVE_H_
+#ifndef _JOYSTICK_TARGET_H_
+#define _JOYSTICK_TARGET_H_
 
-#include "keyboard_base.h"
-#include "curveedit.h"
-
-class Button;
-
-class CurveKeyboard : public Keyboard<CurveEdit> {
-  friend class CurveEdit;
-
+#include "window.h"
+class JoystickTarget : public Window {
+  friend class JoystickKeyboard;
   public:
-    CurveKeyboard();
-
-    ~CurveKeyboard();
-
-#if defined(DEBUG_WINDOWS)
-    std::string getName() override
-    {
-      return "CurveKeyboard";
-    }
-#endif
-
-    static CurveKeyboard * instance()
-    {
-      if (!_instance)
-        _instance = new CurveKeyboard();
-      return _instance;
-    }
-
-    void setField(CurveEdit * field);
-
-    void paint(BitmapBuffer * dc) override;
-
+  JoystickTarget(Window * parent, const rect_t & rect, uint8_t flags=0) : Window(parent, rect, flags) {}
   protected:
-    static CurveKeyboard * _instance;
-    Button * left = nullptr;
-    Button * right = nullptr;
+    virtual void up() = 0;
+    virtual void down() = 0;
+    virtual void right() = 0;
+    virtual void left() = 0;
+    virtual void enter() = 0;
+    virtual void escape() = 0;
 };
 
-#endif // _KEYBOARD_CURVE_H_
+#endif // _JOYSTICK_TARGET_H_

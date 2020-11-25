@@ -18,38 +18,37 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _KEYBOARD_NUMBER_H_
-#define _KEYBOARD_NUMBER_H_
+#include "tabsgroup.h"
+#include "libwindows.h"
+#include "joystick_target.h"
 
-#include "keyboard_base.h"
-#include "basenumberedit.h"
-
-class NumberKeyboard : public Keyboard<BaseNumberEdit> {
-  friend class BaseNumberEdit;
-
+class GhostConfig: public JoystickTarget {
   public:
-    NumberKeyboard();
-
-    ~NumberKeyboard() override;
-
-#if defined(DEBUG_WINDOWS)
-    std::string getName() override
-    {
-      return "NumberKeyboard";
-    }
-#endif
-
-    static NumberKeyboard * instance()
-    {
-      if (!_instance)
-        _instance = new NumberKeyboard();
-      return _instance;
-    }
-
+    GhostConfig(Window * parent, const rect_t & rect);
     void paint(BitmapBuffer * dc) override;
-
+    void checkEvents() override;
   protected:
-    static NumberKeyboard * _instance;
+    void up();
+    void down();
+    void right();
+    void left();
+    void enter();
+    void escape();
+    void doAction(uint8_t action, uint8_t menu);
 };
 
-#endif // _KEYBOARD_NUMBER_H_
+
+class GhostMenuPage: public PageTab{
+  public:
+    GhostMenuPage();
+    void build(Window * window) override;
+    void leave() override; 
+  private:
+    Window* target;
+};
+
+
+class GhostMenu: public TabsGroup {
+  public:
+    GhostMenu();
+};

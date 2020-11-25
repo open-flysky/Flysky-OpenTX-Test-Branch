@@ -247,6 +247,12 @@ PACK(struct CrossfirePulsesData {
   uint8_t length;
 });
 
+#define GHOST_FRAME_MAXLEN             16
+PACK(struct GhostPulsesData {
+  uint8_t pulses[GHOST_FRAME_MAXLEN];
+  uint8_t length;
+});
+
 union InternalModulePulsesData {
 
 #if defined(INTMODULE_USART)
@@ -292,6 +298,7 @@ union ExternalModulePulsesData {
   PpmPulsesData<pulse_duration_t> ppm;
 
   CrossfirePulsesData crossfire;
+  GhostPulsesData ghost;
 } __ALIGNED(4);
 
 /* The __ALIGNED keyword is required to align the struct inside the modulePulsesData below,
@@ -318,6 +325,7 @@ void setModuleUpdateStatus(uint8_t module, bool active);
 bool setupPulsesExternalModule();
 void setupPulsesDSM2();
 void setupPulsesCrossfire();
+void setupPulsesGhost();
 void setupPulsesMultiExternalModule();
 void setupPulsesMultiInternalModule();
 void setupPulsesSbus();
@@ -420,7 +428,8 @@ enum ChannelsProtocols {
   PROTOCOL_CHANNELS_PXX2_LOWSPEED,
   PROTOCOL_CHANNELS_PXX2_HIGHSPEED,
   PROTOCOL_CHANNELS_AFHDS3,
-  PROTOCOL_CHANNELS_AFHDS2
+  PROTOCOL_CHANNELS_AFHDS2,
+  PROTOCOL_CHANNELS_GHOST
 };
 
 inline void stopPulses()

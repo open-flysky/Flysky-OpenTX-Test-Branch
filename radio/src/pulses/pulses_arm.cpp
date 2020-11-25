@@ -184,7 +184,6 @@ uint8_t getRequiredProtocol(uint8_t module)
 
 #if defined(EXTMODULE_USART)
     case MODULE_TYPE_R9M_LITE_PXX1:
-    case MODULE_TYPE_R9M_LITE_PRO_PXX1:
       protocol = PROTOCOL_CHANNELS_PXX1_SERIAL;
       break;
 
@@ -192,8 +191,6 @@ uint8_t getRequiredProtocol(uint8_t module)
       protocol = PROTOCOL_CHANNELS_PXX2_LOWSPEED;
       break;
 #endif
-
-    case MODULE_TYPE_ISRM_PXX2:
     case MODULE_TYPE_R9M_PXX2:
 #if defined(EXTMODULE_USART)
     case MODULE_TYPE_XJT_LITE_PXX2:
@@ -247,7 +244,11 @@ uint8_t getRequiredProtocol(uint8_t module)
       protocol = PROTOCOL_CHANNELS_AFHDS3;
       break;
 #endif
-
+#if defined(GHOST)
+    case MODULE_TYPE_GHOST:
+      protocol = PROTOCOL_CHANNELS_GHOST;
+      break;
+#endif
     default:
       protocol = PROTOCOL_CHANNELS_NONE;
       break;
@@ -298,9 +299,17 @@ void enablePulsesExternalModule(uint8_t protocol)
 #if defined(CROSSFIRE)
     case PROTOCOL_CHANNELS_CROSSFIRE:
       EXTERNAL_MODULE_ON();
+      schedulerPeriodUs = GHOST_PERIOD;
+      break;
+#endif
+
+#if defined(GHOST)
+    case PROTOCOL_CHANNELS_GHOST:
+      EXTERNAL_MODULE_ON();
       schedulerPeriodUs = CROSSFIRE_PERIOD;
       break;
 #endif
+
 
 #if defined(PXX2) && defined(EXTMODULE_USART)
     case PROTOCOL_CHANNELS_PXX2_HIGHSPEED:
@@ -393,6 +402,13 @@ bool setupPulsesExternalModule(uint8_t protocol)
       return true;
     }
 #endif
+
+#if defined(GHOST)
+    case PROTOCOL_CHANNELS_GHOST:
+      setupPulsesGhost();
+      return true;
+#endif
+
 
 #if defined(MULTIMODULE)
     case PROTOCOL_CHANNELS_MULTIMODULE:

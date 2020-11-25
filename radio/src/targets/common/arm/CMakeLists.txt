@@ -17,6 +17,7 @@ option(XJT "XJT TX Module" ON)
 option(MODULE_SIZE_STD "Standard size TX Module" ON)
 option(PXX1 "PXX1 protocol support" ON)
 option(PXX2 "PXX2 protocol support" OFF)
+option(GHOST "Ghost TX Module" ON)
 option(MODULE_PROTOCOL_FCC "Add support for FCC modules" ON)
 option(MODULE_PROTOCOL_LBT "Add support for EU/LBT modules" ON)
 option(MODULE_PROTOCOL_FLEX "Add support for non certified FLEX modules" OFF)
@@ -140,6 +141,18 @@ if(PXX1)
   set(PULSES_SRC
     ${PULSES_SRC}
     pxx1.cpp
+    )
+endif()
+
+if(GHOST)
+  add_definitions(-DGHOST)
+  set(PULSES_SRC
+    ${PULSES_SRC}
+    ghost.cpp
+    )
+  set(SRC
+    ${SRC}
+    telemetry/ghost.cpp
     )
 endif()
 

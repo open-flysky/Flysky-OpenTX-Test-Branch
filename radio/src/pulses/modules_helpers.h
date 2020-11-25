@@ -34,6 +34,7 @@
 #endif
 
 #define CROSSFIRE_CHANNELS_COUNT        16
+#define GHOST_CHANNELS_COUNT            12
 
 #if defined(MULTIMODULE)
 // When using packed, the pointer in here end up not being aligned, which clang and gcc complain about
@@ -121,12 +122,12 @@ inline bool isModuleXJTD16(uint8_t idx)
 
 inline bool isModuleISRM(uint8_t idx)
 {
-  return g_model.moduleData[idx].type == MODULE_TYPE_ISRM_PXX2;
+  return false;
 }
 
 inline bool isModuleISRMD16(uint8_t idx)
 {
-  return g_model.moduleData[idx].type == MODULE_TYPE_ISRM_PXX2 && g_model.moduleData[idx].subType == MODULE_SUBTYPE_ISRM_PXX2_ACCST_D16;
+  return g_model.moduleData[idx].subType == MODULE_SUBTYPE_ISRM_PXX2_ACCST_D16;
 }
 
 inline bool isModuleD16(uint8_t idx)
@@ -136,7 +137,7 @@ inline bool isModuleD16(uint8_t idx)
 
 inline bool isModuleISRMAccess(uint8_t idx)
 {
-  return g_model.moduleData[idx].type == MODULE_TYPE_ISRM_PXX2 && g_model.moduleData[idx].subType == MODULE_SUBTYPE_ISRM_PXX2_ACCESS;
+  return g_model.moduleData[idx].subType == MODULE_SUBTYPE_ISRM_PXX2_ACCESS;
 }
 
 #if defined(CROSSFIRE)
@@ -179,7 +180,7 @@ inline bool isModulePPM(uint8_t moduleIdx)
 
 inline bool isModuleTypeR9MNonAccess(uint8_t type)
 {
-  return type == MODULE_TYPE_R9M_PXX1 || type == MODULE_TYPE_R9M_LITE_PXX1 || type == MODULE_TYPE_R9M_LITE_PRO_PXX1;
+  return type == MODULE_TYPE_R9M_PXX1 || type == MODULE_TYPE_R9M_LITE_PXX1;
 }
 
 inline bool isModuleR9MNonAccess(uint8_t idx)
@@ -219,7 +220,7 @@ inline bool isModuleR9MLiteNonPro(uint8_t idx)
 
 inline bool isModuleTypeR9MLitePro(uint8_t type)
 {
-  return type == MODULE_TYPE_R9M_LITE_PRO_PXX1 || type == MODULE_TYPE_R9M_LITE_PRO_PXX2;
+  return type == MODULE_TYPE_R9M_LITE_PRO_PXX2;
 }
 
 inline bool isModuleTypeR9MLite(uint8_t type)
@@ -323,6 +324,18 @@ inline bool isModulePxx2(uint8_t idx)
   return false;
 }
 
+#if defined(GHOST)
+inline bool isModuleGhost(uint8_t idx)
+{
+  return idx == EXTERNAL_MODULE && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_GHOST;
+}
+#else
+inline bool isModuleGhost(uint8_t idx)
+{
+  return false;
+}
+#endif
+
 // order is the same as in enum Protocols in myeeprom.h (none, ppm, pxx, pxx2, dsm, crossfire, multi, r9m, r9m2, sbus)
 //qba667 count is not matching!
 static const int8_t maxChannelsModules[] = { 0, 8, 8, 16, -2, 8, 4, 8, 16, 8, 10}; // relative to 8!
@@ -372,6 +385,8 @@ inline int8_t defaultModuleChannels_M8(uint8_t idx)
     return 4;  // 12 channels
   else if (isModulePXX2(idx))
     return 8; // 16 channels
+  else if (isModuleGhost(idx))
+    return 4; // 12 channels
   else
     return maxModuleChannels_M8(idx);
 }
@@ -385,6 +400,8 @@ inline int8_t sentModuleChannels(uint8_t idx)
 {
   if (isModuleCrossfire(idx))
     return CROSSFIRE_CHANNELS_COUNT;
+  else if (isModuleGhost(idx))
+    return GHOST_CHANNELS_COUNT;
   else if (isModuleMultimodule(idx) && !isModuleMultimoduleDSM2(idx))
     return 16;
   else if (isModuleSBUS(idx))
@@ -529,7 +546,7 @@ inline bool isTelemAllowedOnBind(uint8_t moduleIndex)
       return true;
   }
 
-  if (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_R9M_PXX1 || g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_R9M_LITE_PRO_PXX1) {
+  if (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_R9M_PXX1) {
     if (isModuleR9M_LBT(EXTERNAL_MODULE))
       return g_model.moduleData[EXTERNAL_MODULE].pxx.power < R9M_LBT_POWER_200_16CH_NOTELEM;
     else

@@ -2,7 +2,7 @@ option(DISK_CACHE "Enable SD card disk cache" YES)
 option(UNEXPECTED_SHUTDOWN "Enable the Unexpected Shutdown screen" YES)
 option(STICKS_DEAD_ZONE "Enable sticks dead zone" NO)
 set(PWR_BUTTON "PRESS" CACHE STRING "Pwr button type (PRESS/SWITCH)")
-
+option(GHOST "Ghost TX Module" ON)
 set(CPU_TYPE STM32F4)
 set(HSE_VALUE 12000000)
 set(SDCARD YES)
@@ -105,6 +105,12 @@ if(DISK_CACHE)
   set(SRC ${SRC} disk_cache.cpp)
   add_definitions(-DDISK_CACHE)
 endif()
+
+if(GHOST)
+  set(GUI_SRC ${GUI_SRC} radio_ghost_menu.cpp)
+endif()
+
+
 
 set(AUX_SERIAL_DRIVER ../common/arm/stm32/aux_serial_driver.cpp)
 
