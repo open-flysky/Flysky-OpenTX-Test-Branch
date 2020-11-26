@@ -65,13 +65,12 @@ class TextKeyboard : public Keyboard<TextEdit> {
     static TextKeyboard * _instance;
     coord_t cursorPos = 0;
     uint8_t cursorIndex = 0;
-    const char * const * layout;
+    uint8_t layoutIndex;
     coord_t x_space;
     coord_t x_spacebar;
     coord_t x_special;
     coord_t x_regular;
     coord_t x_enter;
-    uint8_t lines;
 };
 
 #endif // _KEYBOARD_TEXT_H_

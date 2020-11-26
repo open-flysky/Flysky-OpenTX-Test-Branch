@@ -241,6 +241,7 @@ void boardInit()
 
 void boardOff()
 {
+#if !defined (SIMU)
   BACKLIGHT_DISABLE();
   INTERNAL_MODULE_OFF();
   EXTERNAL_MODULE_OFF();
@@ -252,7 +253,7 @@ void boardOff()
   lcd->drawFilledRect(0, 0, LCD_WIDTH, LCD_HEIGHT, SOLID, HEADER_BGCOLOR);
   SysTick->CTRL = 0; // turn off systick
   pwrOff();
-#if !defined (SIMU)
+
   haptic.event( AU_ERROR );
   delay_ms(50);
   while(1)

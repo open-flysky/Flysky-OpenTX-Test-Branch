@@ -76,7 +76,7 @@ static void I2C_FreeBus(void) {
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(I2C_TOUCH_GPIO, &GPIO_InitStructure);
-
+    watchdogSuspend(2/*200ms*/);
     //send 100khz clock train for some 100ms
     tmr10ms_t until = get_tmr10ms() + 11;
     while(get_tmr10ms() < until){
@@ -113,6 +113,7 @@ static void I2C_FreeBus(void) {
 }
 static void Touch_DeInit(void)
 {
+  watchdogSuspend(2/*200ms*/);
   I2C_DeInit(I2C_TOUCH);
   (RCC->APB1RSTR |= (RCC_APB1RSTR_I2C1RST));
   delay_ms(150);

@@ -119,9 +119,10 @@ const char * const * LARGE_KEYBOARD_LAYOUTS[] = {
   LARGE_KEYBOARD_NUMBERS,
 };
 
+#define KEYBOARD_LINES 4
 TextKeyboard::TextKeyboard():
   Keyboard<TextEdit>(KEYBOARD_HEIGHT),
-  layout(KEYBOARD_LOWERCASE)
+  layoutIndex(1)
 {
   setSize();
 }
@@ -129,13 +130,12 @@ TextKeyboard::TextKeyboard():
 void TextKeyboard::setSize()
 {
   {
-    layout = KEYBOARD_LOWERCASE;
+    layoutIndex = 1;
     x_space = 15;
     x_spacebar = 135;
     x_special = 45;
     x_regular = 30;
     x_enter = 80;
-    lines = 4;
     setHeight(KEYBOARD_HEIGHT);
   }
   setTop(LCD_H - height());
@@ -148,9 +148,10 @@ TextKeyboard::~TextKeyboard()
 
 void TextKeyboard::setCursorPos(coord_t x)
 {
-  if (!field)
+  if (!field || !_instance)
     return;
-
+  if (layoutIndex >= sizeof(KEYBOARD_LAYOUTS)/sizeof(KEYBOARD_LAYOUTS[0]))
+    return;
   uint8_t size = field->getMaxLength();
   char * data = field->getData();
   bool isZChar = (field->lcdFlags & ZCHAR) != 0;
@@ -178,13 +179,18 @@ void TextKeyboard::setCursorPos(coord_t x)
 
 void TextKeyboard::paint(BitmapBuffer * dc)
 {
+  if (!_instance)
+    return;
+    TRACE("layoutIndex %d size %d", layoutIndex, sizeof(LARGE_KEYBOARD_LAYOUTS)/sizeof(LARGE_KEYBOARD_LAYOUTS[0]));
+  if (layoutIndex >= sizeof(KEYBOARD_LAYOUTS)/sizeof(KEYBOARD_LAYOUTS[0]))
+    return;
   lcdSetColor(RGB(0xE0, 0xE0, 0xE0));
   dc->clear(CUSTOM_COLOR);
-
-  for (uint8_t i=0; i<lines; i++) {
+ 
+  for (uint8_t i=0; i<KEYBOARD_LINES; i++) {
     coord_t y = 15 + i * 40;
     coord_t x = 15;
-    const char * c = layout[i];
+    const char * c = KEYBOARD_LAYOUTS[layoutIndex][i];
     while(*c) {
       if (*c == ' ') {
         x += x_space;
@@ -215,16 +221,16 @@ void TextKeyboard::paint(BitmapBuffer * dc)
 
 bool TextKeyboard::onTouchEnd(coord_t x, coord_t y)
 {
-  if (!field)
+  if (!field || !_instance)
+    return false;
+  if (layoutIndex >= sizeof(KEYBOARD_LAYOUTS)/sizeof(KEYBOARD_LAYOUTS[0]))
     return false;
   AUDIO_KEY_PRESS();
   uint8_t size = field->getMaxLength();
   char * data = field->getData();
-
   char c = 0;
-
-  uint8_t row = max<coord_t>(0, y - lines) / 40;
-  const char * key = layout[row];
+  uint8_t row = max<coord_t>(0, y - KEYBOARD_LINES) / 40;
+  const char * key = KEYBOARD_LAYOUTS[layoutIndex][row];
   field->textChaged();
   while(*key) {
     if (*key == ' '){
@@ -261,8 +267,11 @@ bool TextKeyboard::onTouchEnd(coord_t x, coord_t y)
           }
         }
         else {
-          layout = KEYBOARD_LAYOUTS[specialKey - 129];
-          invalidate();
+          uint8_t keyboardLayout = specialKey - 129;
+          if (keyboardLayout < sizeof(KEYBOARD_LAYOUTS)/sizeof(KEYBOARD_LAYOUTS[0])) {
+            layoutIndex = keyboardLayout;
+            invalidate();
+          }
         }
         break;
       }
