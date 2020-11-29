@@ -444,8 +444,8 @@ enum SwashType {
 #endif
 
 enum XJTRFProtocols {
-  RF_PROTO_OFF = -1,
-  RF_PROTO_X16,
+  RF_PROTO_FIRST,
+  RF_PROTO_X16 = RF_PROTO_FIRST,
   RF_PROTO_D8,
   RF_PROTO_LR12,
   RF_PROTO_LAST = RF_PROTO_LR12

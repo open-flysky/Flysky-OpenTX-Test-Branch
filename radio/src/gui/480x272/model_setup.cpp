@@ -32,7 +32,7 @@ void resetModuleSettings(uint8_t module)
   g_model.moduleData[module].channelsStart = 0;
   g_model.moduleData[module].channelsCount = defaultModuleChannels_M8(module);
   g_model.moduleData[module].rfProtocol = 0;
-  g_model.moduleData[module].subtype = 0;
+  g_model.moduleData[module].subType = 0;
   g_model.moduleData[module].failsafeMode = FAILSAFE_NOT_SET;
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
@@ -277,8 +277,6 @@ class ModuleWindow : public Window {
     void update()
     {
       GridLayout grid;
-      uint8_t moduleType = g_model.moduleData[moduleIndex].type;
-
       clear();
       moduleChoice = nullptr;
       bindButton = nullptr;
@@ -517,10 +515,12 @@ class ModuleWindow : public Window {
 
       if (isModuleXJT(moduleIndex)) {
         grid.nextLine();
-        auto xjtChoice = new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_OFF, RF_PROTO_LAST,
+        new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_FIRST, RF_PROTO_LAST,
                                     GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
                                     [=](int32_t newValue) {
+                                        //workaround for eeprom conversion
                                         g_model.moduleData[moduleIndex].subType = (int8_t)newValue;
+                                        g_model.moduleData[moduleIndex].rfProtocol = (int8_t)newValue;
                                         int8_t chStart = g_model.moduleData[moduleIndex].channelsStart;
                                         int8_t lastChannel = min<int8_t>(MAX_OUTPUT_CHANNELS, chStart + maxModuleChannels(moduleIndex));
                                         if (chStart + g_model.moduleData[moduleIndex].channelsCount + 8 > lastChannel) {
@@ -533,16 +533,17 @@ class ModuleWindow : public Window {
                                         SET_DIRTY();
                                         update();//reload fail safe and RX number
                                     });
-        xjtChoice->setAvailableHandler([](int index) {
-          return index != RF_PROTO_OFF;
-        });
-
       }
 
       if (isModuleDSM2(moduleIndex)) {
         grid.nextLine();
-        new Choice(this, grid.getFieldSlot(), STR_DSM_PROTOCOLS, DSM2_PROTO_LP45, DSM2_PROTO_DSMX,
-                   GET_SET_DEFAULT(g_model.moduleData[moduleIndex].subType));
+        new Choice(this, grid.getFieldSlot(), STR_DSM_PROTOCOLS, DSM2_PROTO_LP45, DSM2_PROTO_DSMX, 
+                   GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
+                   [=](int32_t newValue) {
+                      //workaround for eeprom conversion
+                      g_model.moduleData[moduleIndex].subType = (int8_t)newValue;
+                      g_model.moduleData[moduleIndex].rfProtocol = (int8_t)newValue;
+                   });
       }
 
       if (isModuleR9M(moduleIndex)) {

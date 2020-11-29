@@ -444,8 +444,7 @@ void ModelTelemetryPage::build(Window * window, int8_t focusSensorIndex)
   this->window = window;
 
   // RSSI
-  if (g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF &&
-      g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_MULTIMODULE &&
+  if (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_MULTIMODULE &&
       g_model.moduleData[EXTERNAL_MODULE].getMultiProtocol() == MODULE_SUBTYPE_MULTI_FS_AFHDS2A)
     new Subtitle(window, grid.getLineSlot(), "RSNR");
   else

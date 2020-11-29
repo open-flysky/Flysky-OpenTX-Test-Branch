@@ -625,7 +625,7 @@ bool isExternalModuleAvailable(int moduleType)
 bool isRfProtocolAvailable(int protocol)
 {
 #if defined(CROSSFIRE)
-  if (protocol != RF_PROTO_OFF && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_CROSSFIRE) {
+  if (protocol >= RF_PROTO_FIRST && protocol <= RF_PROTO_LAST && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_CROSSFIRE) {
     return false;
   }
 #endif

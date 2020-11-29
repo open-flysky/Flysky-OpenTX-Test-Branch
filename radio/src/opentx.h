@@ -347,7 +347,7 @@ void memswap(void * a, void * b, uint8_t size);
 #if defined (PCBFLYSKY)
   #define LOW_POWER_DOWN_10MILI_VOLT   360  // 3.6v power down
 
-  #define POWER_ON_DELAY               0 // 3s
+  #define POWER_ON_DELAY               100 // 1s
   #define LOW_POWER_SHUTDOWN_DELAY     300 // 3s
 #endif
 
