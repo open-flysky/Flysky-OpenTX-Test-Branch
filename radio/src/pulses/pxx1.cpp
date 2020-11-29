@@ -36,7 +36,7 @@ void Pxx1Pulses<PxxTransport>::addFlag1(uint8_t module, uint8_t sendFailsafe)
   if (sendFailsafe) {
     flag1 |= PXX_SEND_FAILSAFE;
   }
-
+  
   PxxTransport::addByte(flag1);
 }
 

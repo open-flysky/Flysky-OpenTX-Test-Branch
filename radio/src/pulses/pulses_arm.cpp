@@ -299,14 +299,14 @@ void enablePulsesExternalModule(uint8_t protocol)
 #if defined(CROSSFIRE)
     case PROTOCOL_CHANNELS_CROSSFIRE:
       EXTERNAL_MODULE_ON();
-      schedulerPeriodUs = GHOST_PERIOD;
+      schedulerPeriodUs = CROSSFIRE_PERIOD;
       break;
 #endif
 
 #if defined(GHOST)
     case PROTOCOL_CHANNELS_GHOST:
       EXTERNAL_MODULE_ON();
-      schedulerPeriodUs = CROSSFIRE_PERIOD;
+      schedulerPeriodUs = GHOST_PERIOD;
       break;
 #endif
 

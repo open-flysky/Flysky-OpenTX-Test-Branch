@@ -348,7 +348,7 @@ inline int8_t maxModuleChannels_M8(uint8_t idx)
   else if (idx == TRAINER_MODULE)
     return MAX_TRAINER_CHANNELS_M8;
   else if (isModuleXJT(idx))
-    return maxChannelsXJT[1 + g_model.moduleData[idx].rfProtocol];
+    return maxChannelsXJT[1 + g_model.moduleData[idx].subType];
   else
     return maxChannelsModules_M8[g_model.moduleData[idx].type];
 }
@@ -431,7 +431,7 @@ inline bool isR9MModeAvailable(int mode)
 inline bool isModuleNeedingReceiverNumber(uint8_t idx)
 {
   if(isModuleXJT(idx)) {
-    return g_model.moduleData[idx].rfProtocol != RF_PROTO_D8;
+    return g_model.moduleData[idx].subType != RF_PROTO_D8;
   }
   return isModulePXX(idx) || isModuleDSM2(idx) || isModuleMultimodule(idx);
 }
@@ -452,7 +452,7 @@ inline bool isModuleNeedingRangeButtons(uint8_t idx)
 inline bool isModuleNeedingFailsafeButton(uint8_t idx)
 {
   if(isModuleXJT(idx)){
-    return g_model.moduleData[idx].rfProtocol == RF_PROTO_X16;
+    return g_model.moduleData[idx].subType == RF_PROTO_X16;
   }
   return isModulePXX(idx) || isModuleR9M(idx) || isModuleFlysky(idx) || isModuleAFHDS3(idx);
 }

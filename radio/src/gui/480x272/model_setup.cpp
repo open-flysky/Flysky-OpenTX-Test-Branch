@@ -32,6 +32,7 @@ void resetModuleSettings(uint8_t module)
   g_model.moduleData[module].channelsStart = 0;
   g_model.moduleData[module].channelsCount = defaultModuleChannels_M8(module);
   g_model.moduleData[module].rfProtocol = 0;
+  g_model.moduleData[module].subtype = 0;
   g_model.moduleData[module].failsafeMode = FAILSAFE_NOT_SET;
   if (isModulePPM(module)) {
     SET_DEFAULT_PPM_FRAME_LENGTH(EXTERNAL_MODULE);
@@ -344,9 +345,9 @@ class ModuleWindow : public Window {
       if (isModuleFlysky(moduleIndex)) {
         grid.nextLine();
         new Choice(this, grid.getFieldSlot(), STR_FLYSKY_MODES, 0, 2,
-                   GET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol),
+                   GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
                    [=](int32_t newValue) -> void {
-                     g_model.moduleData[moduleIndex].rfProtocol = newValue;
+                     g_model.moduleData[moduleIndex].subType = newValue;
                      SET_DIRTY();
                      setModuleFlag(moduleIndex, MODULE_MODE_NORMAL);
                      setFlyskyState(STATE_UPDATE_RF_PROTOCOL);
@@ -517,9 +518,9 @@ class ModuleWindow : public Window {
       if (isModuleXJT(moduleIndex)) {
         grid.nextLine();
         auto xjtChoice = new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_OFF, RF_PROTO_LAST,
-                                    GET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol),
+                                    GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
                                     [=](int32_t newValue) {
-                                        g_model.moduleData[moduleIndex].rfProtocol = (int8_t)newValue;
+                                        g_model.moduleData[moduleIndex].subType = (int8_t)newValue;
                                         int8_t chStart = g_model.moduleData[moduleIndex].channelsStart;
                                         int8_t lastChannel = min<int8_t>(MAX_OUTPUT_CHANNELS, chStart + maxModuleChannels(moduleIndex));
                                         if (chStart + g_model.moduleData[moduleIndex].channelsCount + 8 > lastChannel) {
@@ -541,7 +542,7 @@ class ModuleWindow : public Window {
       if (isModuleDSM2(moduleIndex)) {
         grid.nextLine();
         new Choice(this, grid.getFieldSlot(), STR_DSM_PROTOCOLS, DSM2_PROTO_LP45, DSM2_PROTO_DSMX,
-                   GET_SET_DEFAULT(g_model.moduleData[moduleIndex].rfProtocol));
+                   GET_SET_DEFAULT(g_model.moduleData[moduleIndex].subType));
       }
 
       if (isModuleR9M(moduleIndex)) {
@@ -673,7 +674,7 @@ class ModuleWindow : public Window {
           }
           else {
 
-            if (isModuleR9M(moduleIndex) || (isModuleXJT(moduleIndex) && g_model.moduleData[moduleIndex].rfProtocol == RF_PROTO_X16)) {
+            if (isModuleR9M(moduleIndex) || (isModuleXJT(moduleIndex) && g_model.moduleData[moduleIndex].subType == RF_PROTO_X16)) {
                   Menu * menu = new Menu();
                   //use global handler
                   menu->setSelectHandler([=](const char* selected) {
