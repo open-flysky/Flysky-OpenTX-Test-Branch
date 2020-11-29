@@ -146,7 +146,7 @@ static int luaModelSetModule(lua_State *L)
       luaL_checktype(L, -2, LUA_TSTRING); // key is string
       const char * key = luaL_checkstring(L, -2);
       if (!strcmp(key, "rfProtocol")) {
-        module.rfProtocol = luaL_checkinteger(L, -1);
+        module.subType = luaL_checkinteger(L, -1);
       }
       else if (!strcmp(key, "modelId")) {
         g_model.header.modelId[idx] = luaL_checkinteger(L, -1);
