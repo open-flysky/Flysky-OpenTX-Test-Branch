@@ -277,6 +277,8 @@ class ModuleWindow : public Window {
     void update()
     {
       GridLayout grid;
+      uint8_t moduleType = g_model.moduleData[moduleIndex].type;
+
       clear();
       moduleChoice = nullptr;
       bindButton = nullptr;
@@ -515,7 +517,7 @@ class ModuleWindow : public Window {
 
       if (isModuleXJT(moduleIndex)) {
         grid.nextLine();
-        new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_FIRST, RF_PROTO_LAST,
+        auto xjtChoice = new Choice(this, grid.getFieldSlot(), STR_XJT_PROTOCOLS, RF_PROTO_OFF, RF_PROTO_LAST,
                                     GET_DEFAULT(g_model.moduleData[moduleIndex].subType),
                                     [=](int32_t newValue) {
                                         //workaround for eeprom conversion
@@ -533,6 +535,10 @@ class ModuleWindow : public Window {
                                         SET_DIRTY();
                                         update();//reload fail safe and RX number
                                     });
+        xjtChoice->setAvailableHandler([](int index) {
+          return index != RF_PROTO_OFF;
+        });
+
       }
 
       if (isModuleDSM2(moduleIndex)) {
