@@ -33,22 +33,22 @@ void GhostConfig::doAction(uint8_t action, uint8_t menu) {
 }
 
 void GhostConfig::up() {
-  doAction(GHST_BTN_JOYUP, GHST_MENU_CTRL_NONE);
+  doAction(GHST_BTN_JoyUp, GHST_MENU_CTRL_None);
 }
 void GhostConfig::down() {
-  doAction(GHST_BTN_JOYDOWN, GHST_MENU_CTRL_NONE);
+  doAction(GHST_BTN_JoyDown, GHST_MENU_CTRL_None);
 }
 void GhostConfig::right() {
-  doAction(GHST_BTN_JOYPRESS, GHST_MENU_CTRL_NONE);
+  doAction(GHST_BTN_JoyPress, GHST_MENU_CTRL_None);
 }
 void GhostConfig::left() {
-  doAction(GHST_BTN_JOYLEFT, GHST_MENU_CTRL_NONE);
+  doAction(GHST_BTN_JoyLeft, GHST_MENU_CTRL_None);
 }
 void GhostConfig::enter() {
-  doAction(GHST_BTN_JOYPRESS, GHST_MENU_CTRL_NONE);
+  doAction(GHST_BTN_JoyPress, GHST_MENU_CTRL_None);
 }
 void GhostConfig::escape() {
-  doAction(GHST_BTN_JOYLEFT, GHST_MENU_CTRL_NONE);
+  doAction(GHST_BTN_JoyLeft, GHST_MENU_CTRL_None);
 }
 
 void GhostConfig::checkEvents() {
@@ -70,21 +70,21 @@ void GhostConfig::paint(BitmapBuffer * dc)
     flags = 0;
     valid |= strlen(reusableBuffer.ghostMenu.line[line].menuText) > 0;
     if (reusableBuffer.ghostMenu.line[line].splitLine) {
-      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_LABEL_SELECT)
+      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_LabelSelect)
         flags = INVERS;
       dc->drawText(offset_ghost, offset_ghost + line * lineSpacing_ghost, reusableBuffer.ghostMenu.line[line].menuText, flags);
       flags = 0;
-      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_VALUE_SELECT)
+      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_ValueSelect)
         flags |= INVERS;
-      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_VALUE_EDIT)
+      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_ValueEdit)
         flags |= BLINK;
       dc->drawText(width()/2, offset_ghost + line * lineSpacing_ghost, &reusableBuffer.ghostMenu.line[line].menuText[reusableBuffer.ghostMenu.line[line].splitLine], flags);
     }
     else {
-      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_LABEL_SELECT) {
+      if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_LabelSelect) {
         dc->drawText(offset_ghost, offset_ghost + line * lineSpacing_ghost, reusableBuffer.ghostMenu.line[line].menuText, INVERS);
       }
-      else if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_VALUE_EDIT) {
+      else if (reusableBuffer.ghostMenu.line[line].lineFlags & GHST_LINE_FLAGS_ValueEdit) {
         if (BLINK_ON_PHASE) {
           dc->drawText(offset_ghost, offset_ghost + line * lineSpacing_ghost, reusableBuffer.ghostMenu.line[line].menuText, flags);
         }
@@ -96,7 +96,7 @@ void GhostConfig::paint(BitmapBuffer * dc)
   }
   if (!valid) {
     dc->drawText(offset_ghost, offset_ghost, "Waiting for module...", flags);
-    doAction(GHST_BTN_NONE, GHST_MENU_CTRL_OPEN);
+    doAction(GHST_MENU_CTRL_None, GHST_MENU_CTRL_Open);
   }
 }
 
@@ -104,8 +104,8 @@ GhostMenuPage::GhostMenuPage():
   PageTab(STR_GHOST_MENU_LABEL, ICON_RADIO_SPECTRUM_ANALYSER)
 {
   memclear(&reusableBuffer.ghostMenu, sizeof(reusableBuffer.ghostMenu));
-  reusableBuffer.ghostMenu.buttonAction = GHST_BTN_NONE;
-  reusableBuffer.ghostMenu.menuAction = GHST_MENU_CTRL_OPEN;
+  reusableBuffer.ghostMenu.buttonAction = GHST_MENU_CTRL_None;
+  reusableBuffer.ghostMenu.menuAction = GHST_MENU_CTRL_Open;
   moduleState[EXTERNAL_MODULE].counter = GHST_MENU_CONTROL;
 }
 
@@ -128,8 +128,8 @@ void GhostMenuPage::build(Window * window)
 void GhostMenuPage::leave() {
   JoystickKeyboard::instance()->disable(true);
   memclear(&reusableBuffer.ghostMenu, sizeof(reusableBuffer.ghostMenu));
-  reusableBuffer.ghostMenu.buttonAction = GHST_BTN_NONE;
-  reusableBuffer.ghostMenu.menuAction = GHST_MENU_CTRL_CLOSE;
+  reusableBuffer.ghostMenu.buttonAction = GHST_MENU_CTRL_None;
+  reusableBuffer.ghostMenu.menuAction = GHST_MENU_CTRL_Close;
   moduleState[EXTERNAL_MODULE].counter = GHST_MENU_CONTROL;
   RTOS_WAIT_MS(10);
 }
