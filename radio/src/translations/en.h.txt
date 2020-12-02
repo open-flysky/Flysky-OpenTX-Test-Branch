@@ -166,6 +166,7 @@
 #define TR_INT_MULTI_SPEC "stm-opentx-noinv"
 #define TR_EXT_MULTI_SPEC "opentx-inv"
 #define TR_FLASH_EXTERNAL_MULTI        TR("Flash Ext. Multi", "Flash External Multi")
+#define TR_FLASH_EXTERNAL_ELRS         TR("Flash Ext. ELRS", "Flash External ELRS")
 #define TR_FLASH_ERASE                 "Flash erase..."
 #define TR_FLASH_WRITE                 "Flash write..."
 #define TR_OTA_UPDATE                  "OTA update..."
