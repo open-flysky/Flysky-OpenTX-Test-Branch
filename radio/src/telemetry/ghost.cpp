@@ -96,14 +96,6 @@ void processGhostTelemetryValueString(const GhostSensor * sensor, const char * s
   if (TELEMETRY_STREAMING()) {
     setTelemetryText(PROTOCOL_TELEMETRY_GHOST, sensor->id, 0, 0, str);
   }
-/*
-  int i = 0;
-  if (TELEMETRY_STREAMING()) {
-    do {
-      setTelemetryValue(PROTOCOL_TELEMETRY_GHOST, sensor->id, 0, 0, str[i], UNIT_TEXT, i);
-    } while (str[i++] != 0);
-  }
-*/
 }
 
 bool checkGhostTelemetryFrameCRC()
@@ -148,7 +140,6 @@ void processGhostTelemetryFrame()
       // values are in units of 100ns
       update_interval /= 10;
       offset /= 10;
-
       getModuleSyncStatus(EXTERNAL_MODULE).update(update_interval, offset + SAFE_SYNC_LAG);
     }
     break;
@@ -180,6 +171,7 @@ void processGhostTelemetryFrame()
 
       processGhostTelemetryValue(GHOST_ID_TX_POWER, getTelemetryValue_u16_hiFirst(6));
       processGhostTelemetryValue(GHOST_ID_FRAME_RATE, getTelemetryValue_u16_hiFirst(8));
+
       processGhostTelemetryValue(GHOST_ID_TOTAL_LATENCY, getTelemetryValue_u16_hiFirst(10));
       uint8_t rfModeEnum = min<uint8_t>(telemetryRxBuffer[12], GHST_RF_PROFILE_MAX);
 

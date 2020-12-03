@@ -354,6 +354,8 @@ void enablePulsesExternalModule(uint8_t protocol)
     default:
       break;
   }
+  ModuleSyncStatus& status = getModuleSyncStatus(EXTERNAL_MODULE);
+  status.update(schedulerPeriodUs, SAFE_SYNC_LAG);
   mixerSchedulerSetPeriod(EXTERNAL_MODULE, schedulerPeriodUs);
 }
 
@@ -405,8 +407,12 @@ bool setupPulsesExternalModule(uint8_t protocol)
 
 #if defined(GHOST)
     case PROTOCOL_CHANNELS_GHOST:
+    {
+      ModuleSyncStatus& status = getModuleSyncStatus(EXTERNAL_MODULE);
+      mixerSchedulerSetPeriod(EXTERNAL_MODULE, status.getAdjustedRefreshRate());
       setupPulsesGhost();
       return true;
+    }
 #endif
 
 

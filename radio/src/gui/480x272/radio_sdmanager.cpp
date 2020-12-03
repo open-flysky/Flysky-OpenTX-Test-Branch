@@ -263,8 +263,7 @@ void RadioSdManagerPage::build(Window * window)
       });
     }
   }
-
-  window->setInnerHeight(grid.getWindowHeight());
+  window->setInnerHeight(grid.getWindowHeight() + 100);
 }
 
 #if 0
