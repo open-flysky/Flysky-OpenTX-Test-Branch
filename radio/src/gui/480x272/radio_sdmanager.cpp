@@ -207,16 +207,7 @@ void RadioSdManagerPage::build(Window * window)
                 runProgressScreen();
               });
             }
-          }
-          else if (!READ_ONLY() && !strcasecmp(ext, ELRS_FIRMWARE_EXT)) {
-            menu->addLine(STR_FLASH_EXTERNAL_ELRS, [=]() {
-                multiFlashFirmware(EXTERNAL_MODULE, fullPath, MULTI_TYPE_ELRS);
-                runProgressScreen();
-            });
-          }
-#endif
 #if defined(PCBNV14)
-          else if (!READ_ONLY() && !strcasecmp(ext, MULTI_FIRMWARE_EXT)) {
             Nv14FirmwareInformation nv14Info;
             if (nv14Info.read(fullPath) == nullptr && nv14Info.valid()) {
               menu->addLine(STR_FLASH_INTERNAL_MODULE, [=]() {
@@ -226,9 +217,15 @@ void RadioSdManagerPage::build(Window * window)
                 runProgressScreen();
               });
             }
-          }
 #endif 
-
+          }
+          else if (!READ_ONLY() && !strcasecmp(ext, ELRS_FIRMWARE_EXT)) {
+            menu->addLine(STR_FLASH_EXTERNAL_ELRS, [=]() {
+                multiFlashFirmware(EXTERNAL_MODULE, fullPath, MULTI_TYPE_ELRS);
+                runProgressScreen();
+            });
+          }
+#endif
         }
         if (!READ_ONLY()) {
           menu->addLine(STR_COPY_FILE, [=]() {
