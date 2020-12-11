@@ -1078,9 +1078,10 @@ void LCD_ST7796S_Init(void) {
   lcdWriteData(0x69);
 
   delay_ms(5);
-  lcdWriteCommand(0x28);
-  //lcdWriteCommand( 0x29 );
-  lcdWriteCommand(0x2C);
+
+  lcdWriteCommand(0x21); //Display Inversion On      
+  //lcdWriteCommand(0x28); //Display Off
+  //lcdWriteCommand(0x2C); Memory Write 
 
   LCD_ST7796S_On();
 }
@@ -1310,9 +1311,14 @@ void lcdInit(void) {
 
   /* Configure the LCD Control pins */
   LCD_AF_GPIOConfig();
-
+  if (true) {
+    TRACE("LCD INIT (default): ST7796S");
+    lcdInitFunction = LCD_ST7796S_Init;
+    lcdOffFunction = LCD_ST7796S_Off;
+    lcdOnFunction = LCD_ST7796S_On;
+  }
   /* Send LCD initializaiton commands */
-  if (LCD_ILI9481_ReadID() == LCD_ILI9481_ID) {
+  else if (LCD_ILI9481_ReadID() == LCD_ILI9481_ID) {
     TRACE("LCD INIT: ILI9481");
     lcdInitFunction = LCD_ILI9481_Init;
     lcdOffFunction = LCD_ILI9481_Off;
