@@ -971,47 +971,40 @@ void LCD_ST7796S_On(void) {
 }
 
 void LCD_ST7796S_Init(void) {
-  lcdWriteCommand(0XFB);
-  lcdWriteData(0x00);
+  delay_ms(120);                
 
-  lcdWriteCommand(0x11);
-  lcdWriteCommand(0x21);
-  delay_ms(120);
-  lcdWriteCommand(0x13);
+  lcdWriteCommand(0x11);     
 
-  lcdWriteCommand(0xf0);
-  lcdWriteData(0xc3);
-  lcdWriteCommand(0xf0);
-  lcdWriteData(0x96);
+  delay_ms(120);                
 
-  lcdWriteCommand(0x36);
-  lcdWriteData(0x08); //0x08 -> 0x88
+  lcdWriteCommand(0xF0);     
+  lcdWriteData(0xC3);   
 
-  lcdWriteCommand(0x3A);
-  lcdWriteData(0x66); //0x65 -> 0x66
+  lcdWriteCommand(0xF0);     
+  lcdWriteData(0x96);   
 
-  lcdWriteCommand(0xB0); //SET HS VS DE CLK 
+  lcdWriteCommand(0x36);     
+  lcdWriteData(0x88);   
+
+  lcdWriteCommand(0x3A);     
+  lcdWriteData(0x66);   
+
+  //SET RGB STRAT
+  lcdWriteCommand(0xB0);   //SET HS VS DE CLK 上升还是下降有效 
   lcdWriteData(0x80);
 
-  lcdWriteCommand(0xB4);
+  lcdWriteCommand(0xB4);  
   lcdWriteData(0x01);
 
-  /*
-  lcdWriteCommand(0xb5);
-  lcdWriteData (VERTICAL_FRONT_PORCH);
-  lcdWriteData(VERTICAL_BACK_PORCH + VERTICAL_SYNC_HEIGHT);
-  lcdWriteData(0x00);
-  lcdWriteData(HORIZONTAL_BACK_PORCH + 4);
- */
-  lcdWriteCommand(0xb6);
-  lcdWriteData(0x20); //old xe0
-  lcdWriteData(0x02); //old0x42
-  lcdWriteData(0x3b); 
+  lcdWriteCommand(0xB6);    
+  lcdWriteData(0x20);
+  lcdWriteData(0x02); 
+  lcdWriteData(0x3B); 
+  //SET RGB END
 
-  lcdWriteCommand(0xB7);
-  lcdWriteData(0xC6); //old 0x66
+  lcdWriteCommand(0xB7);     
+  lcdWriteData(0xC6);
 
-  //new config from flysky
   lcdWriteCommand(0xB9);     
   lcdWriteData(0x02);   
   lcdWriteData(0xE0);
@@ -1019,71 +1012,69 @@ void LCD_ST7796S_Init(void) {
   lcdWriteCommand(0xC0);     
   lcdWriteData(0x80);
   lcdWriteData(0x65);   
-  //end new commands
 
-  lcdWriteCommand(0xe8);
+  lcdWriteCommand(0xC1);     
+  lcdWriteData(0x0D);  
+
+  lcdWriteCommand(0xC2);     
+  lcdWriteData(0xA7);   
+
+  lcdWriteCommand(0xC5);     
+  lcdWriteData(0x14);   
+
+  lcdWriteCommand(0xE8);     
   lcdWriteData(0x40);
-  lcdWriteData(0x8a);
+  lcdWriteData(0x8A);
   lcdWriteData(0x00);
   lcdWriteData(0x00);
   lcdWriteData(0x29);
   lcdWriteData(0x19);
-  lcdWriteData(0xa5);
+  lcdWriteData(0xA5);
   lcdWriteData(0x33);
 
-  lcdWriteCommand(0xc1);
-  lcdWriteData(0x0D); //old 0x06
-
-  lcdWriteCommand(0xc2);
-  lcdWriteData(0xa7);
-
-  lcdWriteCommand(0xc5);
-  lcdWriteData(0x14); //0x18
-
-  lcdWriteCommand(0xe0); //Positive Voltage Gamma Control
-  lcdWriteData(0xD0); //0xf0
-  lcdWriteData(0x00); //0x09
-  lcdWriteData(0x04); //0x0b
-  lcdWriteData(0x05); //0x06
+  lcdWriteCommand(0xE0);
+  lcdWriteData(0xD0);
+  lcdWriteData(0x00);
   lcdWriteData(0x04);
-  lcdWriteData(0x21); //0x15
-  lcdWriteData(0x25); //0x2f
-  lcdWriteData(0x43); //0x54
-  lcdWriteData(0x3F); //0x42
-  lcdWriteData(0x37); //0x3c
-  lcdWriteData(0x13); //0x17
-  lcdWriteData(0x13); //0x14
-  lcdWriteData(0x29); //0x18
-  lcdWriteData(0x32); //0x1b
+  lcdWriteData(0x05);
+  lcdWriteData(0x04);
+  lcdWriteData(0x21);
+  lcdWriteData(0x25);
+  lcdWriteData(0x43);
+  lcdWriteData(0x3F);
+  lcdWriteData(0x37);
+  lcdWriteData(0x13);
+  lcdWriteData(0x13);
+  lcdWriteData(0x29);
+  lcdWriteData(0x32);
 
-  lcdWriteCommand(0xe1); //Negative Voltage Gamma Control
-  lcdWriteData(0xD0); //0xf0
-  lcdWriteData(0x04); //0x09
-  lcdWriteData(0x06); //0x0b
-  lcdWriteData(0x09); //0x06
-  lcdWriteData(0x06); //0x04
-  lcdWriteData(0x03); //0x03
-  lcdWriteData(0x25); //0x2d
-  lcdWriteData(0x32); //0x43
-  lcdWriteData(0x3E); //0x42
-  lcdWriteData(0x18); //0x3b
-  lcdWriteData(0x15); //0x16
-  lcdWriteData(0x15); //0x14
-  lcdWriteData(0x2B); //0x17
-  lcdWriteData(0x30); //0x1b
+  lcdWriteCommand(0xE1);
+  lcdWriteData(0xD0);
+  lcdWriteData(0x04);
+  lcdWriteData(0x06);
+  lcdWriteData(0x09);
+  lcdWriteData(0x06);
+  lcdWriteData(0x03);
+  lcdWriteData(0x25);
+  lcdWriteData(0x32);
+  lcdWriteData(0x3E);
+  lcdWriteData(0x18);
+  lcdWriteData(0x15);
+  lcdWriteData(0x15);
+  lcdWriteData(0x2B);
+  lcdWriteData(0x30);
 
-  lcdWriteCommand(0xf0);
-  lcdWriteData(0x3c);
-  lcdWriteCommand(0xf0);
-  lcdWriteData(0x69);
+  lcdWriteCommand(0xF0);     
+  lcdWriteData(0x3C);   
 
-  delay_ms(5);
+  lcdWriteCommand(0xF0);     
+  lcdWriteData(0x69);   
 
-  lcdWriteCommand(0x21); //Display Inversion On      
-  //lcdWriteCommand(0x28); //Display Off
-  //lcdWriteCommand(0x2C); Memory Write 
+  delay_ms(120);                
 
-  LCD_ST7796S_On();
+  lcdWriteCommand(0x21);     
+
+  lcdWriteCommand(0x29); 
 }
 
 void LCD_ST7796S_Off(void) {
