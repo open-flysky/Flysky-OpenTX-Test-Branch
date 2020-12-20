@@ -217,18 +217,17 @@ static uint16_t VCP_DataRx (uint8_t* Buf, uint32_t Len)
   //        the sender and we will receive the same packet at a later time.
 
   //copy data to the application FIFO
+  #if defined(CLI)
   for (uint32_t i = 0; i < Len; i++)
   {
-#if defined(CLI)
     cliRxFifo.push(Buf[i]);
-#endif
-
-#if defined(FLYSKY_HALL_STICKS)
-    extern Fifo<uint8_t, HALLSTICK_BUFF_SIZE> hallStickTxFifo;
-    if (USB_SERIAL_MODE == getSelectedUsbMode())
-      hallStickTxFifo.push(Buf[i]);
-#endif
   }
+  #endif
+  #if defined(FLYSKY_HALL_STICKS)
+    extern void hall_on_usb_data(uint8_t* Buf, uint32_t Len);
+    if (USB_SERIAL_MODE == getSelectedUsbMode())
+      hall_on_usb_data(Buf, Len);
+#endif
 
   return USBD_OK;
 }

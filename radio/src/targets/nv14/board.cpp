@@ -62,8 +62,9 @@ void init1msTimer()
 }
 
 // TODO use the same than board_sky9x.cpp
-void interrupt1ms()
+extern "C" void INTERRUPT_xMS_IRQHandler()
 {
+  INTERRUPT_xMS_TIMER->SR &= ~TIM_SR_UIF;
   static uint8_t pre_scale;       // Used to get 10 Hz counter
 
   ++pre_scale;
@@ -92,12 +93,6 @@ void interrupt1ms()
 
   DEBUG_TIMER_START(debugTimerRotEnc);
   DEBUG_TIMER_STOP(debugTimerRotEnc);
-}
-
-extern "C" void INTERRUPT_xMS_IRQHandler()
-{
-  INTERRUPT_xMS_TIMER->SR &= ~TIM_SR_UIF;
-  interrupt1ms();
   DEBUG_INTERRUPT(INT_1MS);
 }
 

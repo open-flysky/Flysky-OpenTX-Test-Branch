@@ -135,6 +135,9 @@ void hall_stick_init(uint32_t baudrate)
   reset_hall_stick();
 }
 
+
+
+
 void HallSendBuffer(uint8_t * buffer, uint32_t count)
 {
   for(uint32_t idx = 0; buffer != HallCmd && idx < count; idx++)
@@ -179,11 +182,6 @@ extern "C" void HALL_TX_DMA_Stream_IRQHandler(void)
   }
 }
 
-uint8_t HallGetByte(uint8_t * byte)
-{
-    return hallDMAFifo.pop(*byte);
-}
-
 void reset_hall_stick( void )
 {
     unsigned short crc16 = 0xffff;
@@ -218,7 +216,7 @@ void get_hall_config( void )
     HallSendBuffer( HallCmd, 6);
 }
 
-void get_hall_firmware_info()
+inline void get_hall_firmware_info()
 {
     unsigned short crc16 = 0xffff;
 
@@ -234,7 +232,7 @@ void get_hall_firmware_info()
     HallSendBuffer( HallCmd, 5);
 }
 
-void hallStickUpdatefwEnd( void )
+inline void hallStickUpdatefwEnd( void )
 {
     unsigned short crc16 = 0xffff;
 
@@ -278,7 +276,7 @@ inline void convert_hall_to_adcVaule( void )
         {
             value = (hall_calibration[channel].max - ERROR_OFFSET) - hall_calibration[channel].mid;
 
-            value = ( MIDDLE_ADC_CHANNLE_VALUE * (hall_raw_values[channel] - hall_calibration[channel].mid ) ) / (value );
+            value = (MIDDLE_ADC_CHANNLE_VALUE * (hall_raw_values[channel] - hall_calibration[channel].mid ) ) / (value);
 
             if (value >= MIDDLE_ADC_CHANNLE_VALUE )
             {
@@ -290,47 +288,22 @@ inline void convert_hall_to_adcVaule( void )
     }
 }
 
-uint8_t HallGetByteTx(uint8_t * byte)
-{
-    return hallStickTxFifo.pop(*byte);
-}
-
-bool isHallStickUpdateFirmware( void )
-{
-    return hallStickSendState == HALLSTICK_STATE_UPDATE_FW;
-}
-
-void hallstick_wait_send_done(uint32_t timeOut)
-{
-    static unsigned int startTime = get_tmr10ms();
-
-    while ( hallStickSendState != HALLSTICK_SEND_STATE_IDLE )
-    {
-        if ( (get_tmr10ms() - startTime) < timeOut )
-        {
-            break;
-        }
-    }
-}
-
 /* HallStick send main program */
-void hallStick_GetTxDataFromUSB( void )
+void hall_on_usb_data(uint8_t* buffer, uint32_t len)
 {
-    unsigned char byte;
     uint8_t *data = (uint8_t *)&HallProtocolTx;
-    while(HallGetByteTx(&byte))
+    for(uint32_t i=0; i < len; i++)
     {
-        parser.parse(&HallProtocolTx, byte);
+        parser.parse(&HallProtocolTx, buffer[i]);
         if (HallProtocolTx.valid)
         {
             HallProtocolTx.valid = 0;
             data[HallProtocolTx.length + 3] = HallProtocolTx.checkSum & 0xFF;
             data[HallProtocolTx.length + 4] = HallProtocolTx.checkSum >> 8;
-
             //TRACE("USB: %02X %02X %02X ...%04X; CRC:%04X", data[0], data[1], data[2],
             //      HallProtocolTx.checkSum, calc_crc16(data, HallProtocolTx.length+3));
 
-            switch ( HallProtocolTx.hallID.hall_Id.receiverID)
+            switch (HallProtocolTx.hallID.hall_Id.receiverID)
             {
             case TRANSFER_DIR_TXMCU:
                 break;
@@ -345,7 +318,6 @@ void hallStick_GetTxDataFromUSB( void )
                         hallStickSendState = HALLSTICK_STATE_SEND_RESET;
                         break;
                     }
-
                     else if (HallProtocolTx.length == 0x01 && 0x07 == HallProtocol.data[0] )
                     {
                         hallStickSendState = HALLSTICK_SEND_STATE_IDLE;
@@ -366,15 +338,10 @@ void hallStick_GetTxDataFromUSB( void )
                     onFlySkyGetVersionInfoStart(1);
                     break;
                 }
-
                 intmoduleSendBufferDMA(data, HallProtocolTx.length + 3 + 2);
                 break;
             }
         }
-    }
-    if ( !usbPlugged() )
-    {
-        onFlySkyUsbDownloadStart(0);
     }
 }
 
@@ -385,7 +352,6 @@ void hall_stick_loop(void)
     static uint8_t count = 0;
     static tmr10ms_t lastConfigTime = get_tmr10ms();
     bool log = 0;
-    hallStick_GetTxDataFromUSB();
     if (count > 10)
     {
         count = 0;
@@ -405,7 +371,7 @@ void hall_stick_loop(void)
     }
     count++;
     uint8_t byte;
-    while(HallGetByte(&byte))
+    while(hallDMAFifo.pop(byte))
     {
         HallProtocol.index++;
         parser.parse(&HallProtocol, byte);
