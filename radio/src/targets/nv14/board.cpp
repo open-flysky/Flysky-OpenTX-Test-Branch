@@ -79,12 +79,11 @@ void interrupt1ms()
     DEBUG_TIMER_STOP(debugTimerHaptic);
   }
 #endif
-
+#if !defined(SIMU)
+  if (boardState == BOARD_STARTED) hall_stick_loop();
+#endif
   if (pre_scale == 10) {
     pre_scale = 0;
-#if !defined(SIMU)
-    if (boardState == BOARD_STARTED) hall_stick_loop();
-#endif
     DEBUG_TIMER_START(debugTimerPer10ms);
     DEBUG_TIMER_SAMPLE(debugTimerPer10msPeriod);
     per10ms();
@@ -176,7 +175,7 @@ void boardInit()
   __enable_irq();
 
 #if defined(DEBUG)
-   auxSerialInit(0, 0); // default serial mode (None if DEBUG not defined)
+   //auxSerialInit(0, 0); // default serial mode (None if DEBUG not defined)
 #endif
   TRACE("\nNV14 board started :)");
   delay_ms(10);
