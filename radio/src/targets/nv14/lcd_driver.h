@@ -81,15 +81,7 @@
 #define LCD_HX8357D_ID      ( 0x99 )
 
 #define LCD_DELAY()         LCD_Delay()
-
-typedef void (*lcdSpiInitFucPtr)(void);
-typedef unsigned int  LcdReadIDFucPtr( void );
-
 extern void GPIO_SetDirection( GPIO_TypeDef *GPIOx, unsigned char Pin, unsigned char IsInput );
-
-extern lcdSpiInitFucPtr lcdInitFunction;
-extern lcdSpiInitFucPtr lcdOffFunction;
-extern lcdSpiInitFucPtr lcdOnFunction;
 
 #define SET_IO_INPUT( PORT, PIN )            GPIO_SetDirection( PORT, PIN, 1 )
 #define SET_IO_OUTPUT( PORT, PIN )           GPIO_SetDirection( PORT, PIN, 0 )
@@ -139,8 +131,24 @@ extern lcdSpiInitFucPtr lcdOnFunction;
 #define VERTICAL_FRONT_PORCH    	               ( 14 - VERTICAL_BACK_PORCH )
 #endif
 
+typedef void (*lcdMethod)(void);
+typedef unsigned int (*ldcRead)(void);
 
+typedef struct 
+{
+    unsigned int ID;
+    int Width;
+    int Height;
+    unsigned int DotClock;
+    lcdMethod LCD_Init;
+    lcdMethod LCD_On;
+    lcdMethod LCD_Off;
+    ldcRead LCD_ReadID;
+} STRUCT_LCD_DRIVER;
 
+extern const STRUCT_LCD_DRIVER LCD_Devices[];
+extern lcdMethod lcdOffFunction;
+extern lcdMethod lcdOnFunction;
 #endif
 
 
