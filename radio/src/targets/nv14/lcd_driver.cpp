@@ -798,423 +798,108 @@ void LCD_ST7796S_On(void)
 
 void LCD_ST7796S_Init(void)
 {
-#if 1
-    delay_ms(120);
-
-    Write(Command, 0x11);
-
-    delay_ms(120);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0xC3);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x96);
-
-    Write(Command, 0x36);
-    Write(Parameter, 0x88);
-
-    Write(Command, 0x3A);
-    Write(Parameter, 0x66);
-
-    //SET RGB STRAT
-    Write(Command, 0xB0); //SET HS VS DE CLK 上升还是下降有效
-    Write(Parameter, 0x80);
-
-    Write(Command, 0xB4);
-    Write(Parameter, 0x01);
-
-    Write(Command, 0xB6);
-    Write(Parameter, 0x20);
-    Write(Parameter, 0x02);
-    Write(Parameter, 0x3B);
-    //SET RGB END
-
-    Write(Command, 0xB7);
-    Write(Parameter, 0xC6);
-
-    Write(Command, 0xB9);
-    Write(Parameter, 0x02);
-    Write(Parameter, 0xE0);
-
-    Write(Command, 0xC0);
-    Write(Parameter, 0x80);
-    Write(Parameter, 0x65);
-
-    Write(Command, 0xC1);
-    Write(Parameter, 0x0D);
-
-    Write(Command, 0xC2);
-    Write(Parameter, 0xA7);
-
-    Write(Command, 0xC5);
-    Write(Parameter, 0x14);
-
-    Write(Command, 0xE8);
-    Write(Parameter, 0x40);
-    Write(Parameter, 0x8A);
-    Write(Parameter, 0x00);
-    Write(Parameter, 0x00);
-    Write(Parameter, 0x29);
-    Write(Parameter, 0x19);
-    Write(Parameter, 0xA5);
-    Write(Parameter, 0x33);
-
-    Write(Command, 0xE0);
-    Write(Parameter, 0xD0);
-    Write(Parameter, 0x00);
-    Write(Parameter, 0x04);
-    Write(Parameter, 0x05);
-    Write(Parameter, 0x04);
-    Write(Parameter, 0x21);
-    Write(Parameter, 0x25);
-    Write(Parameter, 0x43);
-    Write(Parameter, 0x3F);
-    Write(Parameter, 0x37);
-    Write(Parameter, 0x13);
-    Write(Parameter, 0x13);
-    Write(Parameter, 0x29);
-    Write(Parameter, 0x32);
-
-    Write(Command, 0xE1);
-    Write(Parameter, 0xD0);
-    Write(Parameter, 0x04);
-    Write(Parameter, 0x06);
-    Write(Parameter, 0x09);
-    Write(Parameter, 0x06);
-    Write(Parameter, 0x03);
-    Write(Parameter, 0x25);
-    Write(Parameter, 0x32);
-    Write(Parameter, 0x3E);
-    Write(Parameter, 0x18);
-    Write(Parameter, 0x15);
-    Write(Parameter, 0x15);
-    Write(Parameter, 0x2B);
-    Write(Parameter, 0x30);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x3C);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x69);
-
-    delay_ms(120);
-
-    Write(Command, 0x21);
-
-    Write(Command, 0x29);
-#elif 0
-    //HW_Reset();
-
-    delay_ms(120);
-
-    Write(Command, 0x11);
-
-    delay_ms(120);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0xC3);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x96);
-
-    Write(Command, 0x36);
-    Write(Parameter, 0x88);
-
-    Write(Command, 0x3A);
-    Write(Parameter, 0x66);
-
-    //SET RGB STRAT
-    Write(Command, 0xB0); //SET HS VS DE CLK 上升还是下降有效
-    Write(Parameter, 0x80);
-
-    Write(Command, 0xB4);
-    Write(Parameter, 0x01);
-
-    Write(Command, 0xB6);
-    Write(Parameter, 0x20);
-    Write(Parameter, 0x02);
-    Write(Parameter, 0x3B);
-    //SET RGB END
-
-    Write(Command, 0xB7);
-    Write(Parameter, 0xC6);
-
-    Write(Command, 0xB9);
-    Write(Parameter, 0x02);
-    Write(Parameter, 0xE0);
-
-    Write(Command, 0xC0);
-    Write(Parameter, 0x80);
-    Write(Parameter, 0x65);
-
-    Write(Command, 0xC1);
-    Write(Parameter, 0x06);
-
-    Write(Command, 0xC2);
-    Write(Parameter, 0xA7);
-
-    Write(Command, 0xC5);
-    Write(Parameter, 0x2D);
-
-    Write(Command, 0xE8);
-    Write(Parameter, 0x40);
-    Write(Parameter, 0x8A);
-    Write(Parameter, 0x00);
-    Write(Parameter, 0x00);
-    Write(Parameter, 0x29);
-    Write(Parameter, 0x19);
-    Write(Parameter, 0xA5);
-    Write(Parameter, 0x33);
-
-    Write(Command, 0xE0);
-    Write(Parameter, 0xD0);
-    Write(Parameter, 0x01);
-    Write(Parameter, 0x04);
-    Write(Parameter, 0x05);
-    Write(Parameter, 0x04);
-    Write(Parameter, 0x12);
-    Write(Parameter, 0x27);
-    Write(Parameter, 0x43);
-    Write(Parameter, 0x41);
-    Write(Parameter, 0x07);
-    Write(Parameter, 0x13);
-    Write(Parameter, 0x13);
-    Write(Parameter, 0x2A);
-    Write(Parameter, 0x32);
-
-    Write(Command, 0xE1);
-    Write(Parameter, 0xD0);
-    Write(Parameter, 0x04);
-    Write(Parameter, 0x07);
-    Write(Parameter, 0x09);
-    Write(Parameter, 0x07);
-    Write(Parameter, 0x04);
-    Write(Parameter, 0x26);
-    Write(Parameter, 0x33);
-    Write(Parameter, 0x40);
-    Write(Parameter, 0x38);
-    Write(Parameter, 0x15);
-    Write(Parameter, 0x15);
-    Write(Parameter, 0x2B);
-    Write(Parameter, 0x30);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x3C);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x69);
-
-    delay_ms(120);
-
-    Write(Command, 0x21);
-
-    Write(Command, 0x29);
-#elif 0
-    //HW_Reset();
-
-    delay_ms(120);
-
-    Write(Command, 0x11);
-
-    delay_ms(120);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0xC3);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x96);
-
-    Write(Command, 0x36);
-    Write(Parameter, 0x48);
-
-    Write(Command, 0x3A);
-    Write(Parameter, 0x66);
-
-    //SET RGB STRAT
-    Write(Command, 0xB0); //SET HS VS DE CLK 上升还是下降有效
-    Write(Parameter, 0x80);
-
-    Write(Command, 0xB4);
-    Write(Parameter, 0x01);
-
-    Write(Command, 0xB6);
-    Write(Parameter, 0x20);
-    Write(Parameter, 0x02);
-    Write(Parameter, 0x3B);
-    //SET RGB END
-
-    Write(Command, 0xB7);
-    Write(Parameter, 0xC6);
-
-    Write(Command, 0xB9);
-    Write(Parameter, 0x02);
-    Write(Parameter, 0xE0);
-
-    Write(Command, 0xC0);
-    Write(Parameter, 0x80);
-    Write(Parameter, 0x65);
-
-    Write(Command, 0xC1);
-    Write(Parameter, 0x09);
-
-    Write(Command, 0xC2);
-    Write(Parameter, 0xA7);
-
-    Write(Command, 0xC5);
-    Write(Parameter, 0x36);
-
-    Write(Command, 0xE8);
-    Write(Parameter, 0x40);
-    Write(Parameter, 0x8A);
-    Write(Parameter, 0x00);
-    Write(Parameter, 0x00);
-    Write(Parameter, 0x29);
-    Write(Parameter, 0x19);
-    Write(Parameter, 0xA5);
-    Write(Parameter, 0x33);
-
-    Write(Command, 0xE0);
-    Write(Parameter, 0xD0);
-    Write(Parameter, 0x08);
-    Write(Parameter, 0x0F);
-    Write(Parameter, 0x06);
-    Write(Parameter, 0x06);
-    Write(Parameter, 0x33);
-    Write(Parameter, 0x30);
-    Write(Parameter, 0x33);
-    Write(Parameter, 0x47);
-    Write(Parameter, 0x17);
-    Write(Parameter, 0x13);
-    Write(Parameter, 0x13);
-    Write(Parameter, 0x2B);
-    Write(Parameter, 0x31);
-
-    Write(Command, 0xE1);
-    Write(Parameter, 0xD0);
-    Write(Parameter, 0x0A);
-    Write(Parameter, 0x11);
-    Write(Parameter, 0x0B);
-    Write(Parameter, 0x09);
-    Write(Parameter, 0x07);
-    Write(Parameter, 0x2F);
-    Write(Parameter, 0x33);
-    Write(Parameter, 0x47);
-    Write(Parameter, 0x38);
-    Write(Parameter, 0x15);
-    Write(Parameter, 0x16);
-    Write(Parameter, 0x2C);
-    Write(Parameter, 0x32);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x3C);
-
-    Write(Command, 0xF0);
-    Write(Parameter, 0x69);
-
-    SYS_DelayMs(120);
-
-    Write(Command, 0x21);
-
-    Write(Command, 0x29);
-#else
-    SYS_DelayMs(120);
-
-    LCD_WriteCommand(0x11);
-    LCD_WriteCommand(0x21); //////
-
-    SYS_DelayMs(120); //Delay 120ms
-
-    LCD_WriteCommand(0x36); // Memory Data Access Control MY,MX~~
-    LCD_WriteData(0x18);    //0x10
-
-    LCD_WriteCommand(0x3A);
-    LCD_WriteData(0x66); //SPI_WriteData(0x66);
-
-    LCD_WriteCommand(0xF0); // Command Set Control
-    LCD_WriteData(0xC3);
-
-    LCD_WriteCommand(0xF0);
-    LCD_WriteData(0x96);
-
-    LCD_WriteCommand(0xB4);
-    LCD_WriteData(0x01);
-
-    LCD_WriteCommand(0xB0);
-    LCD_WriteData(0x00);
-
-    LCD_WriteCommand(0xB6);
-    LCD_WriteData(0xA0);
-    LCD_WriteData(0x02);
-    LCD_WriteData(0x3b);
-
-    LCD_WriteCommand(0xB7);
-    LCD_WriteData(0xC6);
-
-    LCD_WriteCommand(0xC0);
-    LCD_WriteData(0xA0);
-    LCD_WriteData(0x71);
-
-    LCD_WriteCommand(0xC1);
-    LCD_WriteData(0x13); //18  //00
-
-    LCD_WriteCommand(0xC2);
-    LCD_WriteData(0xA7);
-
-    LCD_WriteCommand(0xC5);
-    LCD_WriteData(0x0A);
-
-    LCD_WriteCommand(0xE8);
-    LCD_WriteData(0x40);
-    LCD_WriteData(0x8A);
-    LCD_WriteData(0x00);
-    LCD_WriteData(0x00);
-    LCD_WriteData(0x29);
-    LCD_WriteData(0x19);
-    LCD_WriteData(0xA5);
-    LCD_WriteData(0x33);
-
-    LCD_WriteCommand(0xE0);
-    LCD_WriteData(0xD0);
-    LCD_WriteData(0x08);
-    LCD_WriteData(0x0F);
-    LCD_WriteData(0x06);
-    LCD_WriteData(0x06);
-    LCD_WriteData(0x33);
-    LCD_WriteData(0x30);
-    LCD_WriteData(0x33);
-    LCD_WriteData(0x47);
-    LCD_WriteData(0x17);
-    LCD_WriteData(0x13);
-    LCD_WriteData(0x13);
-    LCD_WriteData(0x2B);
-    LCD_WriteData(0x31);
-
-    LCD_WriteCommand(0xE1);
-    LCD_WriteData(0xD0);
-    LCD_WriteData(0x0A);
-    LCD_WriteData(0x11);
-    LCD_WriteData(0x0B);
-    LCD_WriteData(0x09);
-    LCD_WriteData(0x07);
-    LCD_WriteData(0x2F);
-    LCD_WriteData(0x33);
-    LCD_WriteData(0x47);
-    LCD_WriteData(0x38);
-    LCD_WriteData(0x15);
-    LCD_WriteData(0x16);
-    LCD_WriteData(0x2C);
-    LCD_WriteData(0x32);
-
-    LCD_WriteCommand(0xF0);
-    LCD_WriteData(0x3C);
-
-    LCD_WriteCommand(0xF0);
-    LCD_WriteData(0x69);
-    SYS_DelayMs(120);
-
-    LCD_WriteCommand(0x29);
-#endif
+  delay_ms(120);
+
+  LCD_WriteCommand(0x11);
+  delay_ms(120);
+  LCD_WriteCommand(0xF0);
+  LCD_WriteData(0xC3);
+
+  LCD_WriteCommand(0xF0);
+  LCD_WriteData(0x96);
+
+  LCD_WriteCommand(0x36);
+  LCD_WriteData(0x88);
+
+  LCD_WriteCommand(0x3A);
+  LCD_WriteData(0x66);
+
+  //SET RGB STRAT
+  LCD_WriteCommand(0xB0); //SET HS VS DE CLK 上升还是下降有效
+  LCD_WriteData(0x80);
+
+  LCD_WriteCommand(0xB4);
+  LCD_WriteData(0x01);
+
+  LCD_WriteCommand(0xB6);
+  LCD_WriteData(0x20);
+  LCD_WriteData(0x02);
+  LCD_WriteData(0x3B);
+  //SET RGB END
+
+  LCD_WriteCommand(0xB7);
+  LCD_WriteData(0xC6);
+
+  LCD_WriteCommand(0xB9);
+  LCD_WriteData(0x02);
+  LCD_WriteData(0xE0);
+
+  LCD_WriteCommand(0xC0);
+  LCD_WriteData(0x80);
+  LCD_WriteData(0x65);
+
+  LCD_WriteCommand(0xC1);
+  LCD_WriteData(0x0D);
+
+  LCD_WriteCommand(0xC2);
+  LCD_WriteData(0xA7);
+
+  LCD_WriteCommand(0xC5);
+  LCD_WriteData(0x14);
+
+  LCD_WriteCommand(0xE8);
+  LCD_WriteData(0x40);
+  LCD_WriteData(0x8A);
+  LCD_WriteData(0x00);
+  LCD_WriteData(0x00);
+  LCD_WriteData(0x29);
+  LCD_WriteData(0x19);
+  LCD_WriteData(0xA5);
+  LCD_WriteData(0x33);
+
+  LCD_WriteCommand(0xE0);
+  LCD_WriteData(0xD0);
+  LCD_WriteData(0x00);
+  LCD_WriteData(0x04);
+  LCD_WriteData(0x05);
+  LCD_WriteData(0x04);
+  LCD_WriteData(0x21);
+  LCD_WriteData(0x25);
+  LCD_WriteData(0x43);
+  LCD_WriteData(0x3F);
+  LCD_WriteData(0x37);
+  LCD_WriteData(0x13);
+  LCD_WriteData(0x13);
+  LCD_WriteData(0x29);
+  LCD_WriteData(0x32);
+
+  LCD_WriteCommand(0xE1);
+  LCD_WriteData(0xD0);
+  LCD_WriteData(0x04);
+  LCD_WriteData(0x06);
+  LCD_WriteData(0x09);
+  LCD_WriteData(0x06);
+  LCD_WriteData(0x03);
+  LCD_WriteData(0x25);
+  LCD_WriteData(0x32);
+  LCD_WriteData(0x3E);
+  LCD_WriteData(0x18);
+  LCD_WriteData(0x15);
+  LCD_WriteData(0x15);
+  LCD_WriteData(0x2B);
+  LCD_WriteData(0x30);
+
+  LCD_WriteCommand(0xF0);
+  LCD_WriteData(0x3C);
+
+  LCD_WriteCommand(0xF0);
+  LCD_WriteData(0x69);
+
+  delay_ms(120);
+
+  LCD_WriteCommand(0x21);
+
+  LCD_WriteCommand(0x29);
 }
 
 void LCD_ST7796S_Off(void)
