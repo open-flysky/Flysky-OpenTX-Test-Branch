@@ -706,9 +706,6 @@ void LCD_ILI9488_ReadDevice(void)
   int Index = 0;
   int parameter = 0x80;
 
-#if 1
-
-#if 1
   LCD_WriteCommand(0XF7);
   LCD_WriteData(0xA9);
   LCD_WriteData(0x51);
@@ -718,7 +715,6 @@ void LCD_ILI9488_ReadDevice(void)
   LCD_WriteCommand(0XB0);
   LCD_WriteData(0X80);
 
-#endif
   LCD_WriteCommand(0XFB);
   LCD_WriteData(parameter | 0x00);
   LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
@@ -735,26 +731,6 @@ void LCD_ILI9488_ReadDevice(void)
   LCD_WriteCommand(0XFB);
   LCD_WriteData(parameter | 0x03); //Parameter2=0X88
   LCD_ReadBuffer[Index++] = LCD_ReadRegister(0xd3);
-#endif
-
-#if 0
-  LCD_WriteCommand( 0XFB );
-  LCD_WriteData( parameter|0x00 );        //Parameter3=0X94
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister( 0xd3 );
-  LCD_WriteData( parameter|0x01 );//Parameter3=0X94
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister( 0xd3 );
-  LCD_WriteCommand( 0XFB );
-  LCD_WriteData( parameter|0x02 );//Parameter3=0X94
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister( 0xd3 );
-
-  LCD_WriteCommand( 0XFB );
-  LCD_WriteData( parameter|0x03 );//Parameter4=0X88
-  LCD_ReadBuffer[Index++] = LCD_ReadRegister( 0xd3 );
-#else
-  //LCD_WriteCommand( 0xd0 );
-  //LCD_WriteData( parameter|0x03 );        //Parameter4=0X88
-  //LCD_ReadBuffer[Index++] = LCD_ReadRegister( 0xd0 );
-#endif
 }
 
 unsigned int LCD_ILI9488_ReadID(void)
@@ -952,7 +928,7 @@ static void lcdReset()
   LCD_NRST_HIGH();
   delay_ms(100);
 }
-
+const STRUCT_LCD_DRIVER* detectedLCD = 0;
 const STRUCT_LCD_DRIVER LCD_Devices[] = {
   {0x9486, 320, 480, 12000000, LCD_ILI9486_Init, LCD_ILI9486_On, LCD_ILI9486_Off, LCD_ILI9486_ReadID},
   {0x9481, 320, 480, 12000000, LCD_ILI9481_Init, LCD_ILI9481_On, LCD_ILI9481_Off, LCD_ILI9481_ReadID},
@@ -969,24 +945,11 @@ void LCD_Init_LTDC(unsigned int dotClock)
   /* PLLSAI_VCO Output = PLLSAI_VCO Input * PLLSAI_N = 192 Mhz */
   /* PLLLCDCLK = PLLSAI_VCO Output/PLL_LTDC = 192/3 = 64 Mhz */
   /* LTDC clock frequency = PLLLCDCLK / RCC_PLLSAIDivR = 64/4 = 16 Mhz */
+  dotClock = dotClock * 24; //PLLSAIR = 6  PLLSAIDivR = 4
+  dotClock = dotClock / 1000000;
 
-  dotClock <<= 2;
-  dotClock /= 1000000;
-
-  int Register = RCC->PLLSAICFGR;
-  Register &= ~(0x07UL << 28);
-  Register |= (0x02UL << 28);
-  Register &= 0xffff803f;
-  Register |= (dotClock << 6);
-  RCC->PLLSAICFGR = Register;
-
-  Register = RCC->DCKCFGR;
-  Register &= ~(0x03UL << 16);
-  Register |= 0x01UL << 16;
-  RCC->DCKCFGR = Register;
-
-  //RCC_PLLSAIConfig(192 * 2 / 3, 6, 3);
-  //RCC_LTDCCLKDivConfig (RCC_PLLSAIDivR_Div4);
+  RCC_PLLSAIConfig(dotClock, 6, 6); 
+  RCC_LTDCCLKDivConfig (RCC_PLLSAIDivR_Div4);
 
   /* Enable PLLSAI Clock */
   RCC_PLLSAICmd(ENABLE);
@@ -1012,21 +975,21 @@ void LCD_Init_LTDC(unsigned int dotClock)
   LTDC_InitStruct.LTDC_BackgroundBlueValue = 0;
 
   /* Configure horizontal synchronization width */
-  LTDC_InitStruct.LTDC_HorizontalSync = HSW;
+  LTDC_InitStruct.LTDC_HorizontalSync = HORIZONTAL_SYNC_WIDTH;
   /* Configure vertical synchronization height */
-  LTDC_InitStruct.LTDC_VerticalSync = VSH;
+  LTDC_InitStruct.LTDC_VerticalSync = VERTICAL_SYNC_HEIGHT;
   /* Configure accumulated horizontal back porch */
-  LTDC_InitStruct.LTDC_AccumulatedHBP = HBP;
+  LTDC_InitStruct.LTDC_AccumulatedHBP = HORIZONTAL_BACK_PORCH;
   /* Configure accumulated vertical back porch */
-  LTDC_InitStruct.LTDC_AccumulatedVBP = VBP;
+  LTDC_InitStruct.LTDC_AccumulatedVBP = VERTICAL_BACK_PORCH;
   /* Configure accumulated active width */
-  LTDC_InitStruct.LTDC_AccumulatedActiveW = LCD_W + HBP;
+  LTDC_InitStruct.LTDC_AccumulatedActiveW = LCD_W + HORIZONTAL_BACK_PORCH;
   /* Configure accumulated active height */
-  LTDC_InitStruct.LTDC_AccumulatedActiveH = LCD_H + VBP;
+  LTDC_InitStruct.LTDC_AccumulatedActiveH = LCD_H + VERTICAL_BACK_PORCH;
   /* Configure total width */
-  LTDC_InitStruct.LTDC_TotalWidth = LCD_W + HBP + HFP;
+  LTDC_InitStruct.LTDC_TotalWidth = LCD_W + HORIZONTAL_BACK_PORCH + HORIZONTAL_FRONT_PORCH;
   /* Configure total height */
-  LTDC_InitStruct.LTDC_TotalHeigh = LCD_H + VBP + VFP;
+  LTDC_InitStruct.LTDC_TotalHeigh = LCD_H + VERTICAL_BACK_PORCH + VERTICAL_FRONT_PORCH;
 
   LTDC_Init(&LTDC_InitStruct);
 
@@ -1060,10 +1023,10 @@ void LCD_LayerInit()
    Horizontal stop = Horizontal start + window width -1 = 30 + 240 -1
    Vertical start   = vertical synchronization + vertical back porch     = 4
    Vertical stop   = Vertical start + window height -1  = 4 + 320 -1      */
-  LTDC_Layer_InitStruct.LTDC_HorizontalStart = HBP + 1;
-  LTDC_Layer_InitStruct.LTDC_HorizontalStop = (LCD_W + HBP);
-  LTDC_Layer_InitStruct.LTDC_VerticalStart = VBP + 1;
-  LTDC_Layer_InitStruct.LTDC_VerticalStop = (LCD_H + VBP);
+  LTDC_Layer_InitStruct.LTDC_HorizontalStart = HORIZONTAL_BACK_PORCH + 1;
+  LTDC_Layer_InitStruct.LTDC_HorizontalStop = (LCD_W + HORIZONTAL_BACK_PORCH);
+  LTDC_Layer_InitStruct.LTDC_VerticalStart = VERTICAL_BACK_PORCH + 1;
+  LTDC_Layer_InitStruct.LTDC_VerticalStop = (LCD_H + VERTICAL_BACK_PORCH);
 
   /* Pixel Format configuration*/
   LTDC_Layer_InitStruct.LTDC_PixelFormat = LTDC_Pixelformat_RGB565;
@@ -1161,7 +1124,7 @@ void lcdInit(void)
   unsigned index = 0;
   unsigned size = sizeof(LCD_Devices) / sizeof(LCD_Devices[0]);
 
-  const STRUCT_LCD_DRIVER *LCD_Device = nullptr;
+  detectedLCD = nullptr;
   for (index = 0; index < size; index++)
   {
     lcdReset();
@@ -1169,23 +1132,23 @@ void lcdInit(void)
     {
       if (LCD_Devices[index].LCD_ReadID() == LCD_Devices[index].ID)
       {
-        LCD_Device = &LCD_Devices[index];
+        detectedLCD = &LCD_Devices[index];
         TRACE("LCD ID %X", LCD_Devices[index].ID);
         break;
       }
     }
   }
-  if (!LCD_Device)
-    LCD_Device = &LCD_Devices[size - 1];
+  if (!detectedLCD)
+    detectedLCD = &LCD_Devices[size - 1];
 
-  lcdOffFunction = LCD_Device->LCD_Off;
-  lcdOnFunction = LCD_Device->LCD_On;
+  lcdOffFunction = detectedLCD->LCD_Off;
+  lcdOnFunction = detectedLCD->LCD_On;
 
   lcdReset();
-  if (LCD_Device->LCD_Init)
-    LCD_Device->LCD_Init();
+  if (detectedLCD->LCD_Init)
+    detectedLCD->LCD_Init();
 
-  LCD_Init_LTDC(LCD_Device->DotClock);
+  LCD_Init_LTDC(detectedLCD->DotClock);
 
   LCD_LayerInit();
 
@@ -1202,7 +1165,7 @@ void lcdInit(void)
   lcd->clear();
   LCD_SetTransparency(255);
 
-  LCD_Device->LCD_On();
+  detectedLCD->LCD_On();
 }
 
 void DMAFillRect(uint16_t *dest, uint16_t destw, uint16_t desth, uint16_t x,
