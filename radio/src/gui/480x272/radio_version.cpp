@@ -123,7 +123,7 @@ void RadioVersionPage::build(Window * window)
   if (detectedLCD) {
     new StaticText(window, grid.getLabelSlot(), "LCD Driver:");
     char radioID[8];
-    sprintf(radioID, "%04X", detectedLCD->ID);
+    sprintf(radioID, "%04X", detectedLCD);
     new StaticText(window, grid.getFieldSlot(), radioID);
     grid.nextLine();
   }

@@ -127,9 +127,10 @@ typedef struct
 } STRUCT_LCD_DRIVER;
 
 extern const STRUCT_LCD_DRIVER LCD_Devices[];
-extern const STRUCT_LCD_DRIVER* detectedLCD;
+extern unsigned int detectedLCD;
 extern lcdMethod lcdOffFunction;
 extern lcdMethod lcdOnFunction;
+extern lcdMethod lcdInitFunction;
 #endif
 
 
