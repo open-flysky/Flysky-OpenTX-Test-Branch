@@ -799,6 +799,7 @@ class ModuleWindow : public Window {
             GET_DEFAULT(g_model.moduleData[moduleIndex].romData.rfPower),
             [=](int32_t newValue) -> void {
           g_model.moduleData[moduleIndex].romData.rfPower = newValue;
+          SET_DIRTY();
           onFlySkyModuleSetPower(true);
         });
       }
