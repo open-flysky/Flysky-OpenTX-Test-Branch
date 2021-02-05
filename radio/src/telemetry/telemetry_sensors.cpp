@@ -462,9 +462,14 @@ bool isSameInstance(TelemetrySensor& sensor, TelemetryProtocol protocol, uint8_t
 
 int setTelemetryText(TelemetryProtocol protocol, uint16_t id, uint8_t subId, uint8_t instance, const char * text)
 {
-  return 0;
-  //implement template first
-  //return setTelemetryValue<const char *>(protocol, id, subId, instance, text);
+  int result = 0;
+  int i = 0;
+  if (TELEMETRY_STREAMING()) {
+    do {
+      result = setTelemetryValue(protocol, id, subId, instance, text[i], UNIT_TEXT, i);
+    } while (text[i++] != 0);
+  }
+  return result;
 }
 
 int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
@@ -503,6 +508,11 @@ int setTelemetryValue(TelemetryProtocol protocol, uint16_t id,
 #if defined(CROSSFIRE)
       case PROTOCOL_TELEMETRY_CROSSFIRE:
         crossfireSetDefault(index, id, instance);
+        break;
+#endif
+#if defined(GHOST)
+      case PROTOCOL_TELEMETRY_GHOST:
+        ghostSetDefault(index, id, instance);
         break;
 #endif
 #if defined(MULTIMODULE)

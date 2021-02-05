@@ -59,11 +59,21 @@ void preModelLoad()
 #if defined(PCBTARANIS) || defined(PCBHORUS) || defined(PCBNV14)
 static void fixUpModel()
 {
-  // Ensure that when rfProtocol is RF_PROTO_OFF the type of the module is MODULE_TYPE_NONE
-  if (g_model.moduleData[INTERNAL_MODULE].type == MODULE_TYPE_XJT_PXX1 && g_model.moduleData[INTERNAL_MODULE].rfProtocol == RF_PROTO_OFF)
-    g_model.moduleData[INTERNAL_MODULE].type = MODULE_TYPE_NONE;
+  //ensure rfProtocol is equal subType for PXX1 and DSM2
+  for (int i=0; i<NUM_MODULES+1; i++) {
+    if ((g_model.moduleData[i].type == MODULE_TYPE_XJT_PXX1 || g_model.moduleData[i].type == MODULE_TYPE_DSM2) && g_model.moduleData[i].subType != g_model.moduleData[i].rfProtocol) {
+      g_model.moduleData[i].subType = g_model.moduleData[i].rfProtocol;
+    }
+    // Ensure that when subType is out of protocl range the type of the module is MODULE_TYPE_NONE
+    if (g_model.moduleData[i].type == MODULE_TYPE_XJT_PXX1 && g_model.moduleData[i].subType > RF_PROTO_LAST)
+      g_model.moduleData[i].type = MODULE_TYPE_NONE;
+  }
+
   if (g_model.moduleData[INTERNAL_MODULE].failsafeMode > FAILSAFE_LAST) g_model.moduleData[INTERNAL_MODULE].failsafeMode = FAILSAFE_NOT_SET;
   if (g_model.moduleData[EXTERNAL_MODULE].failsafeMode > FAILSAFE_LAST) g_model.moduleData[EXTERNAL_MODULE].failsafeMode = FAILSAFE_NOT_SET;
+
+
+
 }
 #endif
 

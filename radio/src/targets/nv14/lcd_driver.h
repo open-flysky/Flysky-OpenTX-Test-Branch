@@ -23,14 +23,12 @@
 
 #include "board.h"
 
-#define HBP  ( 24 ) // TODO use names from FlySky
-#define VBP  ( 10 )
-
-#define HSW  ( 4 )
-#define VSH  ( 2 )
-
-#define HFP  ( 140 - HBP )
-#define VFP  ( 22 - VBP )
+#define HORIZONTAL_SYNC_WIDTH                  ( 4 )
+#define HORIZONTAL_BACK_PORCH                  ( 24 )
+#define VERTICAL_BACK_PORCH                    ( 10 )
+#define HORIZONTAL_FRONT_PORCH                 ( 140 - HORIZONTAL_BACK_PORCH )
+#define VERTICAL_SYNC_HEIGHT                   ( 2 )
+#define VERTICAL_FRONT_PORCH                   ( 22 - VERTICAL_BACK_PORCH )
 
 #define LCD_FIRST_LAYER     ( 0 )
 #define LCD_SECOND_LAYER    ( 1 )
@@ -81,15 +79,7 @@
 #define LCD_HX8357D_ID      ( 0x99 )
 
 #define LCD_DELAY()         LCD_Delay()
-
-typedef void (*lcdSpiInitFucPtr)(void);
-typedef unsigned int  LcdReadIDFucPtr( void );
-
 extern void GPIO_SetDirection( GPIO_TypeDef *GPIOx, unsigned char Pin, unsigned char IsInput );
-
-extern lcdSpiInitFucPtr lcdInitFunction;
-extern lcdSpiInitFucPtr lcdOffFunction;
-extern lcdSpiInitFucPtr lcdOnFunction;
 
 #define SET_IO_INPUT( PORT, PIN )            GPIO_SetDirection( PORT, PIN, 1 )
 #define SET_IO_OUTPUT( PORT, PIN )           GPIO_SetDirection( PORT, PIN, 0 )
@@ -121,26 +111,25 @@ extern lcdSpiInitFucPtr lcdOnFunction;
 
 #define READ_LCD_DATA_PIN()           GPIO_ReadInputDataBit(PORT_LCD_MOSI, LCD_MOSI_PIN)
 
+typedef void (*lcdMethod)(void);
+typedef unsigned int (*ldcRead)(void);
 
+typedef struct 
+{
+    unsigned int ID;
+    int Width;
+    int Height;
+    unsigned int DotClock;
+    lcdMethod LCD_Init;
+    lcdMethod LCD_On;
+    lcdMethod LCD_Off;
+    ldcRead LCD_ReadID;
+} STRUCT_LCD_DRIVER;
 
-#if 1
-#define HORIZONTAL_SYNC_WIDTH 			       ( 4 )
-#define HORIZONTAL_BACK_PORCH		               ( 24 )
-#define HORIZONTAL_FRONT_PORCH                         ( 140 - HORIZONTAL_BACK_PORCH )
-#define VERTICAL_SYNC_HEIGHT   		               ( 2 )
-#define VERTICAL_BACK_PORCH  		               ( 10 )
-#define VERTICAL_FRONT_PORCH    	               ( 22 - VERTICAL_BACK_PORCH )
-#else
-#define HORIZONTAL_SYNC_WIDTH 			       ( 4 )
-#define HORIZONTAL_BACK_PORCH		               ( 20 )
-#define HORIZONTAL_FRONT_PORCH                         ( 60 - HORIZONTAL_BACK_PORCH )
-#define VERTICAL_SYNC_HEIGHT   		               ( 2 )
-#define VERTICAL_BACK_PORCH  		               ( 6 )
-#define VERTICAL_FRONT_PORCH    	               ( 14 - VERTICAL_BACK_PORCH )
-#endif
-
-
-
+extern const STRUCT_LCD_DRIVER LCD_Devices[];
+extern const STRUCT_LCD_DRIVER* detectedLCD;
+extern lcdMethod lcdOffFunction;
+extern lcdMethod lcdOnFunction;
 #endif
 
 

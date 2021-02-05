@@ -62,8 +62,9 @@ void init1msTimer()
 }
 
 // TODO use the same than board_sky9x.cpp
-void interrupt1ms()
+extern "C" void INTERRUPT_xMS_IRQHandler()
 {
+  INTERRUPT_xMS_TIMER->SR &= ~TIM_SR_UIF;
   static uint8_t pre_scale;       // Used to get 10 Hz counter
 
   ++pre_scale;
@@ -79,12 +80,11 @@ void interrupt1ms()
     DEBUG_TIMER_STOP(debugTimerHaptic);
   }
 #endif
-
+#if !defined(SIMU)
+  if (boardState == BOARD_STARTED) hall_stick_loop();
+#endif
   if (pre_scale == 10) {
     pre_scale = 0;
-#if !defined(SIMU)
-    if (boardState == BOARD_STARTED) hall_stick_loop();
-#endif
     DEBUG_TIMER_START(debugTimerPer10ms);
     DEBUG_TIMER_SAMPLE(debugTimerPer10msPeriod);
     per10ms();
@@ -93,12 +93,6 @@ void interrupt1ms()
 
   DEBUG_TIMER_START(debugTimerRotEnc);
   DEBUG_TIMER_STOP(debugTimerRotEnc);
-}
-
-extern "C" void INTERRUPT_xMS_IRQHandler()
-{
-  INTERRUPT_xMS_TIMER->SR &= ~TIM_SR_UIF;
-  interrupt1ms();
   DEBUG_INTERRUPT(INT_1MS);
 }
 
@@ -176,7 +170,7 @@ void boardInit()
   __enable_irq();
 
 #if defined(DEBUG)
-   auxSerialInit(0, 0); // default serial mode (None if DEBUG not defined)
+   //auxSerialInit(0, 0); // default serial mode (None if DEBUG not defined)
 #endif
   TRACE("\nNV14 board started :)");
   delay_ms(10);

@@ -184,7 +184,6 @@ uint8_t getRequiredProtocol(uint8_t module)
 
 #if defined(EXTMODULE_USART)
     case MODULE_TYPE_R9M_LITE_PXX1:
-    case MODULE_TYPE_R9M_LITE_PRO_PXX1:
       protocol = PROTOCOL_CHANNELS_PXX1_SERIAL;
       break;
 
@@ -192,8 +191,6 @@ uint8_t getRequiredProtocol(uint8_t module)
       protocol = PROTOCOL_CHANNELS_PXX2_LOWSPEED;
       break;
 #endif
-
-    case MODULE_TYPE_ISRM_PXX2:
     case MODULE_TYPE_R9M_PXX2:
 #if defined(EXTMODULE_USART)
     case MODULE_TYPE_XJT_LITE_PXX2:
@@ -214,7 +211,7 @@ uint8_t getRequiredProtocol(uint8_t module)
 
 #if defined(DSM2)
     case MODULE_TYPE_DSM2:
-      protocol = limit<uint8_t>(PROTOCOL_CHANNELS_DSM2_LP45, PROTOCOL_CHANNELS_DSM2_LP45+g_model.moduleData[module].rfProtocol, PROTOCOL_CHANNELS_DSM2_DSMX);
+      protocol = limit<uint8_t>(PROTOCOL_CHANNELS_DSM2_LP45, PROTOCOL_CHANNELS_DSM2_LP45+g_model.moduleData[module].subType, PROTOCOL_CHANNELS_DSM2_DSMX);
       // The module is set to OFF during one second before BIND start
       {
         static tmr10ms_t bindStartTime = 0;
@@ -247,7 +244,11 @@ uint8_t getRequiredProtocol(uint8_t module)
       protocol = PROTOCOL_CHANNELS_AFHDS3;
       break;
 #endif
-
+#if defined(GHOST)
+    case MODULE_TYPE_GHOST:
+      protocol = PROTOCOL_CHANNELS_GHOST;
+      break;
+#endif
     default:
       protocol = PROTOCOL_CHANNELS_NONE;
       break;
@@ -302,6 +303,14 @@ void enablePulsesExternalModule(uint8_t protocol)
       break;
 #endif
 
+#if defined(GHOST)
+    case PROTOCOL_CHANNELS_GHOST:
+      EXTERNAL_MODULE_ON();
+      schedulerPeriodUs = GHOST_PERIOD;
+      break;
+#endif
+
+
 #if defined(PXX2) && defined(EXTMODULE_USART)
     case PROTOCOL_CHANNELS_PXX2_HIGHSPEED:
       extmoduleInvertedSerialStart(PXX2_HIGHSPEED_BAUDRATE);
@@ -345,6 +354,8 @@ void enablePulsesExternalModule(uint8_t protocol)
     default:
       break;
   }
+  ModuleSyncStatus& status = getModuleSyncStatus(EXTERNAL_MODULE);
+  status.update(schedulerPeriodUs, SAFE_SYNC_LAG);
   mixerSchedulerSetPeriod(EXTERNAL_MODULE, schedulerPeriodUs);
 }
 
@@ -393,6 +404,17 @@ bool setupPulsesExternalModule(uint8_t protocol)
       return true;
     }
 #endif
+
+#if defined(GHOST)
+    case PROTOCOL_CHANNELS_GHOST:
+    {
+      ModuleSyncStatus& status = getModuleSyncStatus(EXTERNAL_MODULE);
+      mixerSchedulerSetPeriod(EXTERNAL_MODULE, status.getAdjustedRefreshRate());
+      setupPulsesGhost();
+      return true;
+    }
+#endif
+
 
 #if defined(MULTIMODULE)
     case PROTOCOL_CHANNELS_MULTIMODULE:

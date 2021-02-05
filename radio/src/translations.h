@@ -648,6 +648,7 @@ extern pm_char STR_TURN_OFF_RECEIVER_MESSAGE[];
 extern pm_char STR_STOPPING[];
 extern pm_char STR_MENU_SPECTRUM_ANALYSER[];
 
+
 #if defined(MULTIMODULE)
 extern const pm_char STR_MULTI_CUSTOM[];
 extern const pm_char STR_MULTI_OPTION[];
@@ -669,6 +670,7 @@ extern pm_char STR_MULTI_RFCHAN[];
 extern pm_char STR_EXT_MULTI_SPEC[];
 extern pm_char STR_INT_MULTI_SPEC[];
 extern pm_char STR_FLASH_EXTERNAL_MULTI[];
+extern pm_char STR_FLASH_EXTERNAL_ELRS[];
 extern pm_char STR_FLASH_WRITE[];
 
 extern const pm_char STR_MODULE_SYNC[];
@@ -790,7 +792,7 @@ extern const pm_char STR_PASTE_BEFORE[];
 #endif
 
 extern const pm_char STR_RESET_BTN[];
-
+extern const pm_char STR_GHOST_MENU_LABEL[];
 #if defined(SDCARD)
   extern const pm_char STR_BACKUP_MODEL[];
   extern const pm_char STR_RESTORE_MODEL[];

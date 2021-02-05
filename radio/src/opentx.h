@@ -347,7 +347,7 @@ void memswap(void * a, void * b, uint8_t size);
 #if defined (PCBFLYSKY)
   #define LOW_POWER_DOWN_10MILI_VOLT   360  // 3.6v power down
 
-  #define POWER_ON_DELAY               100 // 3s
+  #define POWER_ON_DELAY               100 // 1s
   #define LOW_POWER_SHUTDOWN_DELAY     300 // 3s
 #endif
 
@@ -1453,6 +1453,15 @@ union ReusableBuffer
     uint8_t dirty;
     uint8_t moduleOFF;
   } spectrumAnalyser;
+
+#if defined(GHOST)
+  struct {
+    GhostMenuData line[GHST_MENU_LINES + 1];
+    uint8_t menuStatus;
+    uint8_t menuAction;
+    uint8_t buttonAction;
+  } ghostMenu;
+#endif
 
   struct {
     uint32_t freq;

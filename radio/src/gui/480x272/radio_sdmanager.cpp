@@ -158,6 +158,7 @@ void RadioSdManagerPage::build(Window * window)
       new FileButton(window, grid.getNextFieldSlot(), name, false, [=]() -> uint8_t {
         auto menu = new Menu();
         const char * ext = getFileExtension(name.data());
+        char* fullPath = getFullPath(name);
         if (ext) {
           if (!strcasecmp(ext, SOUNDS_EXT)) {
             menu->addLine(STR_PLAY_FILE, [=]() {
@@ -191,18 +192,18 @@ void RadioSdManagerPage::build(Window * window)
 #endif
 #if defined(MULTIMODULE)
           else if (!READ_ONLY() && !strcasecmp(ext, MULTI_FIRMWARE_EXT)) {
-            char* fullPath = getFullPath(name);
+            
             MultiFirmwareInformation information;
            
             if (information.readMultiFirmwareInformation(fullPath) == nullptr) {
 #if defined(INTERNAL_MODULE_MULTI)
               menu->addLine(STR_FLASH_INTERNAL_MULTI, [=]() {
-                multiFlashFirmware(INTERNAL_MODULE, fullPath);
+                multiFlashFirmware(INTERNAL_MODULE, fullPath, MULTI_TYPE_MULTIMODULE);
                 runProgressScreen();
               });
 #endif        
               menu->addLine(STR_FLASH_EXTERNAL_MULTI, [=]() {
-                multiFlashFirmware(EXTERNAL_MODULE, fullPath);
+                multiFlashFirmware(EXTERNAL_MODULE, fullPath, MULTI_TYPE_MULTIMODULE);
                 runProgressScreen();
               });
             }
@@ -216,8 +217,14 @@ void RadioSdManagerPage::build(Window * window)
                 runProgressScreen();
               });
             }
-          }
 #endif 
+          }
+          else if (!READ_ONLY() && !strcasecmp(ext, ELRS_FIRMWARE_EXT)) {
+            menu->addLine(STR_FLASH_EXTERNAL_ELRS, [=]() {
+                multiFlashFirmware(EXTERNAL_MODULE, fullPath, MULTI_TYPE_ELRS);
+                runProgressScreen();
+            });
+          }
 #endif
         }
         if (!READ_ONLY()) {
@@ -253,8 +260,7 @@ void RadioSdManagerPage::build(Window * window)
       });
     }
   }
-
-  window->setInnerHeight(grid.getWindowHeight());
+  window->setInnerHeight(grid.getWindowHeight() + 100);
 }
 
 #if 0

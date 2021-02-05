@@ -93,6 +93,7 @@ RadioHardwarePage::RadioHardwarePage():
 {
 }
 
+
 void RadioHardwarePage::build(Window * window)
 {
   GridLayout grid;
@@ -133,7 +134,23 @@ void RadioHardwarePage::build(Window * window)
   // ADC filter
   new StaticText(window, grid.getLabelSlot(), STR_JITTER_FILTER);
   new CheckBox(window, grid.getFieldSlot(), GET_SET_INVERTED(g_eeGeneral.jitterFilter));
+  grid.nextLine();
 
+  new StaticText(window, grid.getLabelSlot(), STR_MAXBAUDRATE);
+  auto baudrate = new Choice(window, grid.getFieldSlot(), "\013 400000bps\0 115200bps", 0, DIM(CROSSFIRE_BAUDRATES)-1, GET_DEFAULT(g_eeGeneral.telemetryBaudrate), [=](int32_t newValue) { 
+    g_eeGeneral.telemetryBaudrate = newValue; 
+    SET_DIRTY(); 
+    if (IS_EXTERNAL_MODULE_ON()) {
+      pauseMixerCalculations();
+      pausePulses();
+      EXTERNAL_MODULE_OFF();
+      RTOS_WAIT_MS(20); // 20ms so that the pulses interrupt will reinit the frame rate
+      telemetryProtocol = 255; // force telemetry port + module reinitialization
+      EXTERNAL_MODULE_ON();
+      resumePulses();
+      resumeMixerCalculations();
+    }
+  });
   grid.nextLine();
 #if defined(STICK_DEAD_ZONE)
   new StaticText(window, grid.getLabelSlot(), STR_DEAD_ZONE);

@@ -535,12 +535,6 @@ bool isInternalModuleAvailable(int moduleType)
 #endif
   }
 
-  if (moduleType == MODULE_TYPE_ISRM_PXX2) {
-#if defined(PXX2) && defined(INTERNAL_MODULE_PXX2)
-    return true;
-#endif
-  }
-
   if (moduleType == MODULE_TYPE_PPM) {
 #if defined(PPM) && defined(INTERNAL_MODULE_PPM)
     return true;
@@ -558,9 +552,6 @@ bool isInternalModuleAvailable(int moduleType)
 
 bool isExternalModuleAvailable(int moduleType)
 {
-  if (moduleType == MODULE_TYPE_R9M_LITE_PRO_PXX1)
-    return false;
-
 #if !defined(EXTMODULE_USART)
   if (isModuleTypeR9MLite(moduleType) || moduleType == MODULE_TYPE_XJT_LITE_PXX2)
     return false;
@@ -576,13 +567,16 @@ bool isExternalModuleAvailable(int moduleType)
     return false;
 #endif
 
+#if !defined(GHOST)
+  if (moduleType == MODULE_TYPE_GHOST)
+    return false;
+#endif
+
+
 #if !defined(HARDWARE_EXTERNAL_MODULE_SIZE_STD)
   if (moduleType == MODULE_TYPE_R9M_PXX1 || moduleType == MODULE_TYPE_R9M_PXX2)
     return false;
 #endif
-
-  if (moduleType == MODULE_TYPE_ISRM_PXX2)
-    return false; // doesn't exist for now
 
 #if !defined(PXX2) || !defined(EXTMODULE_USART)
   if (moduleType == MODULE_TYPE_XJT_LITE_PXX2 || moduleType == MODULE_TYPE_R9M_PXX2 || moduleType == MODULE_TYPE_R9M_LITE_PXX2 || moduleType == MODULE_TYPE_R9M_LITE_PRO_PXX2) {
@@ -631,7 +625,12 @@ bool isExternalModuleAvailable(int moduleType)
 bool isRfProtocolAvailable(int protocol)
 {
 #if defined(CROSSFIRE)
-  if (protocol != RF_PROTO_OFF && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_CROSSFIRE) {
+  if (protocol >= RF_PROTO_FIRST && protocol <= RF_PROTO_LAST && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_CROSSFIRE) {
+    return false;
+  }
+#endif
+#if defined(GHOST)
+  if (protocol != MODULE_SUBTYPE_PXX1_OFF && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_GHOST) {
     return false;
   }
 #endif
@@ -656,6 +655,9 @@ bool isTelemetryProtocolAvailable(int protocol)
     return false;
   }
 
+  if ( protocol== PROTOCOL_TELEMETRY_GHOST) {
+    return false;
+  }
 #if !defined(MULTIMODULE)
   if (protocol == PROTOCOL_TELEMETRY_SPEKTRUM || protocol == PROTOCOL_TELEMETRY_FLYSKY_IBUS || protocol == PROTOCOL_TELEMETRY_MULTIMODULE) {
     return false;
@@ -680,7 +682,6 @@ bool isModuleUsingSport(uint8_t moduleBay, uint8_t moduleType)
     case MODULE_TYPE_PPM:
     case MODULE_TYPE_DSM2:
     case MODULE_TYPE_MULTIMODULE:
-    case MODULE_TYPE_ISRM_PXX2:
     case MODULE_TYPE_R9M_LITE_PXX2:
     case MODULE_TYPE_R9M_LITE_PRO_PXX2:
     case MODULE_TYPE_AFHDS3:

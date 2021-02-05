@@ -460,6 +460,11 @@ void extmoduleSendNextFrame()
     sportSendBuffer(extmodulePulsesData.crossfire.pulses, extmodulePulsesData.crossfire.length);
   }
 #endif
+#if defined(GHOST)
+  else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_GHOST){
+     sportSendBuffer(extmodulePulsesData.ghost.pulses, extmodulePulsesData.ghost.length);
+  }
+#endif
 #if defined(AFHDS3)
   else if (moduleState[EXTERNAL_MODULE].protocol == PROTOCOL_CHANNELS_AFHDS3) {
     extmoduleSendBuffer(extmodulePulsesData.flysky.pulses, extmodulePulsesData.flysky.ptr - extmodulePulsesData.flysky.pulses);

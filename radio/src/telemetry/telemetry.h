@@ -55,6 +55,9 @@
 #if defined(PCBNV14)
   #include "flysky_nv14.h"
 #endif
+#if defined(GHOST)
+  #include "ghost.h"
+#endif
 #include "telemetry_holders.h"
 
 extern uint16_t telemetryStreaming; // >0 (true) == data is streaming in. 0 = no data detected for some time
@@ -203,7 +206,11 @@ inline uint8_t modelTelemetryProtocol()
     return PROTOCOL_TELEMETRY_CROSSFIRE;
   }
 #endif
-     
+#if defined(GHOST)
+  if (g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_GHOST) {
+    return PROTOCOL_TELEMETRY_GHOST;
+  }
+#endif
   if (!IS_INTERNAL_MODULE_ENABLED() && g_model.moduleData[EXTERNAL_MODULE].type == MODULE_TYPE_PPM) {
     return g_model.telemetryProtocol;
   }
