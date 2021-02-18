@@ -297,6 +297,7 @@ void generalDefault()
 
 #if defined(PCBNV14)
   g_eeGeneral.backlightBright = 60;
+  g_eeGeneral.auxSerialMode = UART_MODE_TELEMETRY_MIRROR;
 #endif
 
 #if defined(CPUARM)

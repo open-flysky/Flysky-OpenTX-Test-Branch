@@ -110,7 +110,11 @@ void auxSerialInit(unsigned int mode, unsigned int protocol)
 
   switch (mode) {
     case UART_MODE_TELEMETRY_MIRROR:
+#if defined (BLUETOOTH_BAUDRATE)
+      auxSerialSetup(BLUETOOTH_BAUDRATE, false); 
+#else
       auxSerialSetup(FRSKY_SPORT_BAUDRATE, false);
+#endif
       break;
 #if defined(DEBUG) || defined(CLI)
     case UART_MODE_DEBUG:

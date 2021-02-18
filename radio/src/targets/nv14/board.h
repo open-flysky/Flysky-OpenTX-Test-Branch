@@ -173,6 +173,10 @@ void sdramInit(void);
 #define INTERNAL_MODULE_ON()            GPIO_ResetBits(INTMODULE_PWR_GPIO, INTMODULE_PWR_GPIO_PIN)
 #define BLUETOOTH_MODULE_ON()           GPIO_ResetBits(BLUETOOTH_ON_GPIO, BLUETOOTH_ON_GPIO_PIN)
 #define BLUETOOTH_MODULE_OFF()          GPIO_SetBits(BLUETOOTH_ON_GPIO, BLUETOOTH_ON_GPIO_PIN)
+#define BLUETOOTH_MODE_COMMAND()        GPIO_ResetBits(BLUETOOTH_MODE_GPIO, BLUETOOTH_ON_GPIO_PIN)
+#define BLUETOOTH_MODE_DATA()           GPIO_SetBits(BLUETOOTH_MODE_GPIO, BLUETOOTH_ON_GPIO_PIN)
+
+
 #define IS_INTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(INTMODULE_PWR_GPIO, INTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_EXTERNAL_MODULE_ON()         (GPIO_ReadInputDataBit(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN) == Bit_SET)
 #define IS_UART_MODULE(port)            (port == INTERNAL_MODULE)
@@ -543,8 +547,9 @@ extern void audioKeyPress();
 
 
 // Second serial port driver
-//#define AUX_SERIAL
+#define AUX_SERIAL
 #define DEBUG_BAUDRATE                  115200
+#define BLUETOOTH_BAUDRATE              9600
 extern uint8_t auxSerialMode;
 void auxSerialInit(unsigned int mode, unsigned int protocol);
 void auxSerialPutc(char c);

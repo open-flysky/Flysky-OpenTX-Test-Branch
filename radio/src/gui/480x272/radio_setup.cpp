@@ -469,6 +469,19 @@ void RadioSetupPage::build(Window * window)
     return std::string(s);
   });
   grid.nextLine();
+  
+#if defined (AUX_SERIAL)
+  // AUX port
+  new StaticText(window, grid.getLabelSlot(), STR_UART3MODE);
+  choice = new Choice(window, grid.getFieldSlot(), STR_UART3MODES, 0, UART_MODE_MAX,
+                      GET_DEFAULT(g_eeGeneral.auxSerialMode),
+      [=](uint8_t newValue) {
+      g_eeGeneral.auxSerialMode = newValue;
+      auxSerialInit(g_eeGeneral.auxSerialMode, modelTelemetryProtocol());
+    });
+  //auxSerialInit(g_eeGeneral.auxSerialMode, modelTelemetryProtocol());
+  grid.nextLine();
+#endif
 
   // Stick mode
   new StaticText(window, grid.getLabelSlot(), STR_MODE);
