@@ -1,0 +1,300 @@
+[1mdiff --git a/bare b/bare[m
+[1m--- a/bare[m
+[1m+++ b/bare[m
+[36m@@ -1 +1 @@[m
+[31m-Subproject commit 87c4cd012a8277f4291cba90cf367e4a26dfbbba[m
+[32m+[m[32mSubproject commit 87c4cd012a8277f4291cba90cf367e4a26dfbbba-dirty[m
+[1mdiff --git a/radio/src/gui/480x272/radio_sdmanager.cpp b/radio/src/gui/480x272/radio_sdmanager.cpp[m
+[1mindex 9da1bbb92..b30f04b4f 100644[m
+[1m--- a/radio/src/gui/480x272/radio_sdmanager.cpp[m
+[1m+++ b/radio/src/gui/480x272/radio_sdmanager.cpp[m
+[36m@@ -158,6 +158,7 @@[m [mvoid RadioSdManagerPage::build(Window * window)[m
+       new FileButton(window, grid.getNextFieldSlot(), name, false, [=]() -> uint8_t {[m
+         auto menu = new Menu();[m
+         const char * ext = getFileExtension(name.data());[m
+[32m+[m[32m        char* fullPath = getFullPath(name);[m
+         if (ext) {[m
+           if (!strcasecmp(ext, SOUNDS_EXT)) {[m
+             menu->addLine(STR_PLAY_FILE, [=]() {[m
+[36m@@ -191,22 +192,31 @@[m [mvoid RadioSdManagerPage::build(Window * window)[m
+ #endif[m
+ #if defined(MULTIMODULE)[m
+           else if (!READ_ONLY() && !strcasecmp(ext, MULTI_FIRMWARE_EXT)) {[m
+[31m-            char* fullPath = getFullPath(name);[m
+[32m+[m[41m            [m
+             MultiFirmwareInformation information;[m
+            [m
+             if (information.readMultiFirmwareInformation(fullPath) == nullptr) {[m
+ #if defined(INTERNAL_MODULE_MULTI)[m
+               menu->addLine(STR_FLASH_INTERNAL_MULTI, [=]() {[m
+[31m-                multiFlashFirmware(INTERNAL_MODULE, fullPath);[m
+[32m+[m[32m                multiFlashFirmware(INTERNAL_MODULE, fullPath, MULTI_TYPE_MULTIMODULE);[m
+                 runProgressScreen();[m
+               });[m
+ #endif        [m
+               menu->addLine(STR_FLASH_EXTERNAL_MULTI, [=]() {[m
+[31m-                multiFlashFirmware(EXTERNAL_MODULE, fullPath);[m
+[32m+[m[32m                multiFlashFirmware(EXTERNAL_MODULE, fullPath, MULTI_TYPE_MULTIMODULE);[m
+                 runProgressScreen();[m
+               });[m
+             }[m
+[32m+[m[32m          }[m
+[32m+[m[32m          else if (!READ_ONLY() && !strcasecmp(ext, ELRS_FIRMWARE_EXT)) {[m
+[32m+[m[32m            menu->addLine(STR_FLASH_EXTERNAL_ELRS, [=]() {[m
+[32m+[m[32m                multiFlashFirmware(EXTERNAL_MODULE, fullPath, MULTI_TYPE_ELRS);[m
+[32m+[m[32m                runProgressScreen();[m
+[32m+[m[32m            });[m
+[32m+[m[32m          }[m
+[32m+[m[32m#endif[m
+ #if defined(PCBNV14)[m
+[32m+[m[32m          else if (!READ_ONLY() && !strcasecmp(ext, MULTI_FIRMWARE_EXT)) {[m
+             Nv14FirmwareInformation nv14Info;[m
+             if (nv14Info.read(fullPath) == nullptr && nv14Info.valid()) {[m
+               menu->addLine(STR_FLASH_INTERNAL_MODULE, [=]() {[m
+[36m@@ -218,7 +228,7 @@[m [mvoid RadioSdManagerPage::build(Window * window)[m
+             }[m
+           }[m
+ #endif [m
+[31m-#endif[m
+[32m+[m
+         }[m
+         if (!READ_ONLY()) {[m
+           menu->addLine(STR_COPY_FILE, [=]() {[m
+[1mdiff --git a/radio/src/io/multi_firmware_update.cpp b/radio/src/io/multi_firmware_update.cpp[m
+[1mindex f070c0a3d..fb70fe702 100644[m
+[1m--- a/radio/src/io/multi_firmware_update.cpp[m
+[1m+++ b/radio/src/io/multi_firmware_update.cpp[m
+[36m@@ -155,6 +155,49 @@[m [mclass MultiExternalUpdateDriver: public MultiFirmwareUpdateDriver[m
+ [m
+ static const MultiExternalUpdateDriver multiExternalUpdateDriver;[m
+ [m
+[32m+[m
+[32m+[m[32mclass MultiExtSportUpdateDriver: public MultiFirmwareUpdateDriver[m
+[32m+[m[32m{[m
+[32m+[m[32m  public:[m
+[32m+[m[32m    MultiExtSportUpdateDriver(): MultiFirmwareUpdateDriver() {}[m
+[32m+[m
+[32m+[m[32m  protected:[m
+[32m+[m[32m    void moduleOn() const override[m
+[32m+[m[32m    {[m
+[32m+[m[32m      EXTERNAL_MODULE_ON();[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    void init(bool inverted) const override[m
+[32m+[m[32m    {[m
+[32m+[m[32m      telemetryPortInit(57600, TELEMETRY_SERIAL_DEFAULT);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    bool getByte(uint8_t & byte) const override[m
+[32m+[m[32m    {[m
+[32m+[m[32m      return telemetryGetByte(&byte);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    void sendByte(uint8_t byte) const override[m
+[32m+[m[32m    {[m
+[32m+[m[32m      sportSendByte(byte);[m
+[32m+[m[32m      telemetryPortSetDirectionInput();[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    void clear() const override[m
+[32m+[m[32m    {[m
+[32m+[m[32m      telemetryClearFifo();[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    void deinit(bool inverted) const override[m
+[32m+[m[32m    {[m
+[32m+[m[32m      telemetryPortInit(0, 0);[m
+[32m+[m[32m      clear();[m
+[32m+[m[32m    }[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mstatic const MultiExtSportUpdateDriver multiExtSportUpdateDriver;[m
+[32m+[m
+[32m+[m
+ bool MultiFirmwareUpdateDriver::getRxByte(uint8_t& byte) const[m
+ {[m
+   uint16_t time;[m
+[36m@@ -186,6 +229,9 @@[m [mconst char * MultiFirmwareUpdateDriver::waitForInitialSync(bool& inverted) const[m
+   uint8_t byte;[m
+   int retries = 200;[m
+ [m
+[32m+[m[32m#if defined(DEBUG_EXT_MODULE_FLASH)[m
+[32m+[m[32m  TRACE("[Wait for Sync]");[m
+[32m+[m[32m#endif[m
+   clear();[m
+   do {[m
+ [m
+[36m@@ -210,13 +256,24 @@[m [mconst char * MultiFirmwareUpdateDriver::waitForInitialSync(bool& inverted) const[m
+   }[m
+ [m
+   if (byte != STK_INSYNC) {[m
+[32m+[m[32m#if defined(DEBUG_EXT_MODULE_FLASH)[m
+[32m+[m[32m    TRACE("[byte != STK_INSYNC]");[m
+[32m+[m[32m#endif[m
+     return "NoSync";[m
+   }[m
+ [m
+   if (!checkRxByte(STK_OK)) {[m
+[32m+[m[32m  #if defined(DEBUG_EXT_MODULE_FLASH)[m
+[32m+[m[32m    TRACE("[!checkRxByte(STK_OK)]");[m
+[32m+[m[32m#endif[m
+     return "NoSync";[m
+   }[m
+ [m
+[32m+[m[32m  // avoids sending STK_READ_SIGN with STK_OK[m
+[32m+[m[32m  // in case the receiver is too slow changing[m
+[32m+[m[32m  // to RX mode (half-duplex).[m
+[32m+[m[32m  RTOS_WAIT_TICKS(1);[m
+[32m+[m
+   return nullptr;[m
+ }[m
+ [m
+[36m@@ -236,6 +293,10 @@[m [mconst char * MultiFirmwareUpdateDriver::getDeviceSignature(uint8_t* signature) c[m
+     }[m
+   }[m
+ [m
+[32m+[m[32m  // avoids sending next page back-to-back with STK_OK[m
+[32m+[m[32m  // in case the receiver is to slow changing to RX mode (half-duplex).[m
+[32m+[m[32m  RTOS_WAIT_TICKS(1);[m
+[32m+[m
+   return nullptr;[m
+ }[m
+ [m
+[36m@@ -491,7 +552,7 @@[m [mconst char * MultiFirmwareInformation::readMultiFirmwareInformation(FIL * file)[m
+   return readV1Signature(buffer);[m
+ }[m
+ [m
+[31m-bool multiFlashFirmware(uint8_t moduleIdx, const char * filename)[m
+[32m+[m[32mbool multiFlashFirmware(uint8_t moduleIdx, const char * filename, MultiModuleType type)[m
+ {[m
+   FIL file;[m
+ [m
+[36m@@ -499,27 +560,28 @@[m [mbool multiFlashFirmware(uint8_t moduleIdx, const char * filename)[m
+     raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);[m
+     return false;[m
+   }[m
+[31m-[m
+[31m-  MultiFirmwareInformation firmwareFile;[m
+[31m-  if (firmwareFile.readMultiFirmwareInformation(&file)) {[m
+[31m-    f_close(&file);[m
+[31m-    raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);[m
+[31m-    return false;[m
+[31m-  }[m
+[31m-  f_lseek(&file, 0);[m
+[31m-[m
+[31m-  if (moduleIdx == EXTERNAL_MODULE) {[m
+[31m-    if (!firmwareFile.isMultiExternalFirmware()) {[m
+[32m+[m[32m  if (type == MULTI_TYPE_MULTIMODULE) {[m
+[32m+[m[32m    MultiFirmwareInformation firmwareFile;[m
+[32m+[m[32m    if (firmwareFile.readMultiFirmwareInformation(&file)) {[m
+       f_close(&file);[m
+[31m-      raiseAlert(STR_NEEDS_FILE, STR_EXT_MULTI_SPEC, nullptr, AU_ERROR);[m
+[32m+[m[32m      raiseAlert("Error", "Not a valid file", nullptr, AU_ERROR);[m
+       return false;[m
+     }[m
+[31m-  }[m
+[31m-  else {[m
+[31m-    if (!firmwareFile.isMultiInternalFirmware()) {[m
+[31m-      f_close(&file);[m
+[31m-      raiseAlert(STR_NEEDS_FILE, STR_EXT_MULTI_SPEC, nullptr, AU_ERROR);[m
+[31m-      return false;[m
+[32m+[m[32m    f_lseek(&file, 0);[m
+[32m+[m[41m    [m
+[32m+[m[32m    if (moduleIdx == EXTERNAL_MODULE) {[m
+[32m+[m[32m      if (!firmwareFile.isMultiExternalFirmware()) {[m
+[32m+[m[32m        f_close(&file);[m
+[32m+[m[32m        raiseAlert(STR_NEEDS_FILE, STR_EXT_MULTI_SPEC, nullptr, AU_ERROR);[m
+[32m+[m[32m        return false;[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m    else {[m
+[32m+[m[32m      if (!firmwareFile.isMultiInternalFirmware()) {[m
+[32m+[m[32m        f_close(&file);[m
+[32m+[m[32m        raiseAlert(STR_NEEDS_FILE, STR_EXT_MULTI_SPEC, nullptr, AU_ERROR);[m
+[32m+[m[32m        return false;[m
+[32m+[m[32m      }[m
+     }[m
+   }[m
+ [m
+[36m@@ -528,7 +590,8 @@[m [mbool multiFlashFirmware(uint8_t moduleIdx, const char * filename)[m
+   if (moduleIdx == INTERNAL_MODULE)[m
+     driver = &multiInternalUpdateDriver;[m
+ #endif[m
+[31m-[m
+[32m+[m[32m  if (type == MULTI_TYPE_ELRS)[m
+[32m+[m[32m    driver = &multiExtSportUpdateDriver;[m
+   pausePulses();[m
+ [m
+ #if defined(HARDWARE_INTERNAL_MODULE)[m
+[1mdiff --git a/radio/src/io/multi_firmware_update.h b/radio/src/io/multi_firmware_update.h[m
+[1mindex a4cb255fb..3ebbf01c8 100644[m
+[1m--- a/radio/src/io/multi_firmware_update.h[m
+[1m+++ b/radio/src/io/multi_firmware_update.h[m
+[36m@@ -101,6 +101,10 @@[m [mclass MultiFirmwareInformation {[m
+     const char * readV2Signature(const char * buffer);[m
+ };[m
+ [m
+[31m-bool multiFlashFirmware(uint8_t module, const char * filename);[m
+[32m+[m[32menum MultiModuleType {[m
+[32m+[m[32m  MULTI_TYPE_MULTIMODULE = 0,[m
+[32m+[m[32m  MULTI_TYPE_ELRS,[m
+[32m+[m[32m};[m
+ [m
+[32m+[m[32mbool multiFlashFirmware(uint8_t module, const char * filename, MultiModuleType type);[m
+ #endif //OPENTX_MULTI_FIRMWARE_H[m
+[1mdiff --git a/radio/src/sdcard.h b/radio/src/sdcard.h[m
+[1mindex 55b16f923..5be3ba163 100644[m
+[1m--- a/radio/src/sdcard.h[m
+[1m+++ b/radio/src/sdcard.h[m
+[36m@@ -67,6 +67,7 @@[m [mconst char RADIO_SETTINGS_PATH[] = RADIO_PATH "/radio.bin";[m
+ #define SPORT_FIRMWARE_EXT  ".frk"[m
+ #define FRSKY_FIRMWARE_EXT  ".frsk"[m
+ #define MULTI_FIRMWARE_EXT  ".bin"[m
+[32m+[m[32m#define ELRS_FIRMWARE_EXT   ".elrs"[m
+ [m
+ #define LEN_FILE_EXTENSION_MAX  5  // longest used, including the dot, excluding null term.[m
+ [m
+[1mdiff --git a/radio/src/translations.cpp b/radio/src/translations.cpp[m
+[1mindex 65a049a7f..5c6a119bf 100644[m
+[1m--- a/radio/src/translations.cpp[m
+[1m+++ b/radio/src/translations.cpp[m
+[36m@@ -529,6 +529,7 @@[m [mconst pm_char STR_NEEDS_FILE[] PROGMEM = TR_NEEDS_FILE;[m
+ const pm_char STR_EXT_MULTI_SPEC[] PROGMEM = TR_EXT_MULTI_SPEC;[m
+ const pm_char STR_INT_MULTI_SPEC[] PROGMEM = TR_INT_MULTI_SPEC;[m
+ const pm_char STR_FLASH_EXTERNAL_MULTI[] PROGMEM = TR_FLASH_EXTERNAL_MULTI;[m
+[32m+[m[32mconst pm_char STR_FLASH_EXTERNAL_ELRS[] PROGMEM = TR_FLASH_EXTERNAL_ELRS;[m
+ const pm_char STR_FLASH_WRITE[] PROGMEM = TR_FLASH_WRITE;[m
+ #if LCD_W < 212[m
+ const pm_char STR_SUBTYPE[] PROGMEM = TR_SUBTYPE;[m
+[1mdiff --git a/radio/src/translations.h b/radio/src/translations.h[m
+[1mindex f1bc5c161..8b1ca9b27 100644[m
+[1m--- a/radio/src/translations.h[m
+[1m+++ b/radio/src/translations.h[m
+[36m@@ -648,6 +648,7 @@[m [mextern pm_char STR_TURN_OFF_RECEIVER_MESSAGE[];[m
+ extern pm_char STR_STOPPING[];[m
+ extern pm_char STR_MENU_SPECTRUM_ANALYSER[];[m
+ [m
+[32m+[m
+ #if defined(MULTIMODULE)[m
+ extern const pm_char STR_MULTI_CUSTOM[];[m
+ extern const pm_char STR_MULTI_OPTION[];[m
+[36m@@ -669,6 +670,7 @@[m [mextern pm_char STR_MULTI_RFCHAN[];[m
+ extern pm_char STR_EXT_MULTI_SPEC[];[m
+ extern pm_char STR_INT_MULTI_SPEC[];[m
+ extern pm_char STR_FLASH_EXTERNAL_MULTI[];[m
+[32m+[m[32mextern pm_char STR_FLASH_EXTERNAL_ELRS[];[m
+ extern pm_char STR_FLASH_WRITE[];[m
+ [m
+ extern const pm_char STR_MODULE_SYNC[];[m
+[1mdiff --git a/radio/src/translations/en.h.txt b/radio/src/translations/en.h.txt[m
+[1mindex 51432352c..4337fc580 100644[m
+[1m--- a/radio/src/translations/en.h.txt[m
+[1m+++ b/radio/src/translations/en.h.txt[m
+[36m@@ -166,6 +166,7 @@[m
+ #define TR_INT_MULTI_SPEC "stm-opentx-noinv"[m
+ #define TR_EXT_MULTI_SPEC "opentx-inv"[m
+ #define TR_FLASH_EXTERNAL_MULTI        TR("Flash Ext. Multi", "Flash External Multi")[m
+[32m+[m[32m#define TR_FLASH_EXTERNAL_ELRS         TR("Flash Ext. ELRS", "Flash External ELRS")[m
+ #define TR_FLASH_ERASE                 "Flash erase..."[m
+ #define TR_FLASH_WRITE                 "Flash write..."[m
+ #define TR_OTA_UPDATE                  "OTA update..."[m

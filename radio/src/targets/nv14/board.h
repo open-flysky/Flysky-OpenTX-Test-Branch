@@ -207,6 +207,17 @@ void stop_trainer_ppm(void);
 void init_trainer_capture(void);
 void stop_trainer_capture(void);
 
+#define BLUETOOTH_FACTORY_BAUDRATE     9600
+#define BLUETOOTH_DEFAULT_BAUDRATE     115200
+
+void bluetoothInit(uint32_t baudrate);
+void bluetoothWriteWakeup(void);
+void bluetoothDone(void);
+
+
+#define IS_BT_COMMAND_MODE()            (GPIO_ReadInputDataBit(BT_CMD_MODE_GPIO, BT_CMD_MODE_GPIO_PIN) == Bit_RESET)
+#define BT_COMMAND_ON()                  (GPIO_ResetBits(BT_CMD_MODE_GPIO, BT_CMD_MODE_GPIO_PIN))
+#define BT_COMMAND_OFF()                 (GPIO_SetBits(BT_CMD_MODE_GPIO, BT_CMD_MODE_GPIO_PIN))
 // Keys driver
 enum EnumKeys
 {
@@ -325,7 +336,6 @@ extern uint32_t powerupReason;
 extern uint32_t boardState;
 
 #define DIRTY_SHUTDOWN                  0xCAFEDEAD
-
 #define wdt_disable()
 void watchdogInit(unsigned int duration);
 #if defined(SIMU)

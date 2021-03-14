@@ -1277,6 +1277,14 @@ enum AUDIO_SOUNDS {
 #endif
 
 
+#if defined(BLUETOOTH)
+#if defined(BLUETOOTH_LE)
+#include "bluetoothle.h"
+#else
+#include "bluetooth.h"
+#endif
+#endif
+
 
 #if IS_TOUCH_ENABLED()
   #include "touch_manager.h"
@@ -1368,10 +1376,14 @@ union ReusableBuffer
     struct {
       char devices[MAX_BLUETOOTH_DISTANT_ADDR][LEN_BLUETOOTH_ADDR+1];
       uint8_t devicesCount;
+      char messageStatus[32];
     } bt;
 #endif
   } moduleSetup;
-
+  struct {
+    char messageStatus[32];
+    char pin[9];
+  } bt;
   // 103 bytes
   struct
   {
@@ -1764,10 +1776,6 @@ extern JitterMeter<uint16_t> avgJitter[NUM_ANALOGS];
 
 #if defined(INTERNAL_GPS)
   #include "gps.h"
-#endif
-
-#if defined(BLUETOOTH)
-#include "bluetooth.h"
 #endif
 
 #endif // _OPENTX_H_

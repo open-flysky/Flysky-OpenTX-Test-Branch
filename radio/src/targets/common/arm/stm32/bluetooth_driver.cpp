@@ -20,9 +20,8 @@
 
 #include "opentx.h"
 
-Fifo<uint8_t, 64> btTxFifo;
-Fifo<uint8_t, 64> btRxFifo;
-
+Fifo<uint8_t, BT_FIFO_SIZE> btTxFifo;
+Fifo<uint8_t, BT_FIFO_SIZE> btRxFifo;
 #if defined(PCBX7)
 uint8_t btChipPresent = 0;
 #endif
@@ -34,8 +33,6 @@ enum BluetoothWriteState
   BLUETOOTH_WRITING,
   BLUETOOTH_WRITE_DONE
 };
-
-volatile uint8_t bluetoothWriteState = BLUETOOTH_WRITE_IDLE;
 
 void bluetoothInit(uint32_t baudrate)
 {
@@ -63,6 +60,12 @@ void bluetoothInit(uint32_t baudrate)
   GPIO_Init(BT_BCTS_GPIO, &GPIO_InitStructure);
 #endif
 
+#if defined(BT_CMD_MODE_GPIO)
+  GPIO_InitStructure.GPIO_Pin = BT_CMD_MODE_GPIO_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_Init(BT_CMD_MODE_GPIO, &GPIO_InitStructure);
+#endif
+
   GPIO_InitStructure.GPIO_Pin = BT_TX_GPIO_PIN|BT_RX_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
@@ -82,6 +85,7 @@ void bluetoothInit(uint32_t baudrate)
 
   USART_Cmd(BT_USART, ENABLE);
   USART_ITConfig(BT_USART, USART_IT_RXNE, ENABLE);
+  USART_ITConfig(BT_USART, USART_IT_TXE, ENABLE);
 
   NVIC_InitTypeDef NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = BT_USART_IRQn;
@@ -92,8 +96,6 @@ void bluetoothInit(uint32_t baudrate)
 
   btRxFifo.clear();
   btTxFifo.clear();
-  bluetoothWriteState = BLUETOOTH_WRITE_IDLE;
-
   GPIO_ResetBits(BT_EN_GPIO, BT_EN_GPIO_PIN); // open bluetooth
 }
 
@@ -109,51 +111,19 @@ extern "C" void BT_USART_IRQHandler(void)
     USART_ClearITPendingBit(BT_USART, USART_IT_RXNE);
     uint8_t byte = USART_ReceiveData(BT_USART);
     btRxFifo.push(byte);
-#if defined(PCBX7)
-    if (!btChipPresent) {
-      // This is to differentiate X7 and X7S
-      btChipPresent = 1;
-      bluetoothDone();
-    }
-#endif
   }
 
   if (USART_GetITStatus(BT_USART, USART_IT_TXE) != RESET) {
+    USART_ClearITPendingBit(BT_USART, USART_IT_TXE);
     uint8_t byte;
-    bool result = btTxFifo.pop(byte);
-    if (result) {
-      USART_SendData(BT_USART, byte);
-    }
-    else {
-      USART_ITConfig(BT_USART, USART_IT_TXE, DISABLE);
-      bluetoothWriteState = BLUETOOTH_WRITE_DONE;
-    }
+    if (btTxFifo.pop(byte)) USART_SendData(BT_USART, byte);
+    else USART_ITConfig(BT_USART, USART_IT_TXE, DISABLE);
   }
 }
 
 void bluetoothWriteWakeup(void)
 {
-  if (bluetoothWriteState == BLUETOOTH_WRITE_IDLE) {
-    if (!btTxFifo.isEmpty()) {
-      bluetoothWriteState = BLUETOOTH_WRITE_INIT;
-#if defined(BT_BRTS_GPIO_PIN)
-      GPIO_ResetBits(BT_BRTS_GPIO, BT_BRTS_GPIO_PIN);
-#endif
-    }
-  }
-  else if (bluetoothWriteState == BLUETOOTH_WRITE_INIT) {
-    bluetoothWriteState = BLUETOOTH_WRITING;
+  if (!btTxFifo.isEmpty() && !(BT_USART->CR1 & USART_CR1_TXEIE)) {
     USART_ITConfig(BT_USART, USART_IT_TXE, ENABLE);
   }
-  else if (bluetoothWriteState == BLUETOOTH_WRITE_DONE) {
-    bluetoothWriteState = BLUETOOTH_WRITE_IDLE;
-#if defined(BT_BRTS_GPIO_PIN)
-    GPIO_SetBits(BT_BRTS_GPIO, BT_BRTS_GPIO_PIN);
-#endif
-  }
-}
-
-uint8_t bluetoothIsWriting(void)
-{
-  return bluetoothWriteState != BLUETOOTH_WRITE_IDLE;
 }

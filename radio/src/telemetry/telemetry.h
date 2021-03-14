@@ -102,7 +102,8 @@ extern uint8_t telemetryState;
 
 extern uint8_t telemetryRxBuffer[TELEMETRY_RX_PACKET_SIZE];
 extern uint8_t telemetryRxBufferCount;
-
+#if !defined(bswap)
+#define bswap
 #if defined(SIMU)
     #define bswapu16 __builtin_bswap16
     #define bswaps16 __builtin_bswap16
@@ -112,7 +113,7 @@ extern uint8_t telemetryRxBufferCount;
     #define bswaps16 __REVSH
     #define bswapu32 __REV
 #endif
-
+#endif
 
 #if defined(CPUARM)
 #define TELEMETRY_AVERAGE_COUNT        3

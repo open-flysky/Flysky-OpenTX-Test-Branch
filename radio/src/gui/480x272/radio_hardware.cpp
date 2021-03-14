@@ -136,6 +136,7 @@ void RadioHardwarePage::build(Window * window)
   new CheckBox(window, grid.getFieldSlot(), GET_SET_INVERTED(g_eeGeneral.jitterFilter));
   grid.nextLine();
 
+#if SPORT_MAX_BAUDRATE < 400000
   new StaticText(window, grid.getLabelSlot(), STR_MAXBAUDRATE);
   auto baudrate = new Choice(window, grid.getFieldSlot(), "\013 400000bps\0 115200bps", 0, DIM(CROSSFIRE_BAUDRATES)-1, GET_DEFAULT(g_eeGeneral.telemetryBaudrate), [=](int32_t newValue) { 
     g_eeGeneral.telemetryBaudrate = newValue; 
@@ -152,6 +153,8 @@ void RadioHardwarePage::build(Window * window)
     }
   });
   grid.nextLine();
+#endif
+
 #if defined(STICK_DEAD_ZONE)
   new StaticText(window, grid.getLabelSlot(), STR_DEAD_ZONE);
   auto deadZone = new NumberEdit(window, grid.getFieldSlot(), 0, 7, GET_SET_DEFAULT(g_eeGeneral.stickDeadZone));

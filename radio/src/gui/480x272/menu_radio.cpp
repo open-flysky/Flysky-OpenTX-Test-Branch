@@ -23,6 +23,7 @@
 #include "radio_sdmanager.h"
 #include "special_functions.h"
 #include "radio_calibration.h"
+#include "radio_bluetooth.h"
 #include "radio_version.h"
 #include "radio_hardware.h"
 #include "radio_trainer.h"
@@ -33,6 +34,7 @@ RadioMenu::RadioMenu():
   TabsGroup()
 {
   addTab(new RadioSetupPage());
+  addTab(new RadioBluetoothPage());
   addTab(new RadioSdManagerPage());
   addTab(new SpecialFunctionsPage(g_eeGeneral.customFn));
   addTab(new RadioTrainerPage());

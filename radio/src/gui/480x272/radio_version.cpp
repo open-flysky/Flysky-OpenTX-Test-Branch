@@ -120,6 +120,7 @@ void RadioVersionPage::build(Window * window)
   new StaticText(window, grid.getFieldSlot(), time_stamp);
   grid.nextLine();
 
+#if !defined(SIMU)
   if (detectedLCD) {
     new StaticText(window, grid.getLabelSlot(), "LCD Driver:");
     char radioID[8];
@@ -127,6 +128,7 @@ void RadioVersionPage::build(Window * window)
     new StaticText(window, grid.getFieldSlot(), radioID);
     grid.nextLine();
   }
+#endif
 
   new StaticText(window, grid.getLabelSlot(), "CPU UID:");
   grid.nextLine(12);

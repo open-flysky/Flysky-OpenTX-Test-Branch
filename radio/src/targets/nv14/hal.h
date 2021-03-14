@@ -147,11 +147,6 @@
 #define PWR_ON_GPIO_MODER               GPIO_MODER_MODER1
 #define PWR_ON_GPIO_MODER_OUT           GPIO_MODER_MODER1_0
 
-//BLUETOOTH
-#define BLUETOOTH_ON_RCC_AHB1Periph     RCC_AHB1Periph_GPIOI
-#define BLUETOOTH_ON_GPIO               GPIOI
-#define BLUETOOTH_ON_GPIO_PIN           GPIO_Pin_8 // PI.8
-
 // S.Port update connector
 #define SPORT_MAX_BAUDRATE              400000
 #define SPORT_UPDATE_RCC_AHB1Periph     RCC_AHB1Periph_GPIOH
@@ -163,26 +158,6 @@
 #define LED_RCC_AHB1Periph              RCC_AHB1Periph_GPIOI
 #define LED_GPIO                        GPIOI
 #define LED_GPIO_PIN                    GPIO_Pin_5  // PI.05
-
-// Serial Port (DEBUG)
-// We will temporarily used the PPM and the HEARTBEAT PINS
-//#define AUX_SERIAL_RCC_AHB1Periph       (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOE)
-#define AUX_SERIAL_RCC_AHB1Periph       (RCC_AHB1Periph_GPIOB)
-#define AUX_SERIAL_RCC_APB1Periph       (RCC_APB1Periph_USART3)
-#define AUX_SERIAL_RCC_APB2Periph       0
-#define AUX_SERIAL_GPIO                 GPIOB
-#define AUX_SERIAL_TX_GPIO_PIN          GPIO_Pin_10  // PB.10
-#define AUX_SERIAL_RX_GPIO_PIN          GPIO_Pin_11  // PB.11
-#define AUX_SERIAL_TX_GPIO_PinSource    GPIO_PinSource10
-#define AUX_SERIAL_RX_GPIO_PinSource    GPIO_PinSource11
-#define AUX_SERIAL_GPIO_AF              GPIO_AF_USART3
-#define AUX_SERIAL_USART                USART3
-#define AUX_SERIAL_USART_IRQHandler     USART3_IRQHandler
-#define AUX_SERIAL_USART_IRQn           USART3_IRQn
-//#define AUX_SERIAL_TX_INVERT_GPIO       GPIOE
-//#define AUX_SERIAL_TX_INVERT_GPIO_PIN   GPIO_Pin_3  // PE.03
-//#define AUX_SERIAL_RX_INVERT_GPIO       GPIOI
-//#define AUX_SERIAL_RX_INVERT_GPIO_PIN   GPIO_Pin_15 // PI.15
 
 //used in BOOTLOADER
 #define SERIAL_RCC_AHB1Periph 0
@@ -480,6 +455,36 @@
 */
 
 #define TRAINER_CONNECTED()           (true)
+
+//BLUETOOTH
+#define BLUETOOTH_ON_RCC_AHB1Periph     RCC_AHB1Periph_GPIOI
+#define BLUETOOTH_ON_GPIO               GPIOI
+#define BLUETOOTH_ON_GPIO_PIN           GPIO_Pin_8 // PI.8
+
+// Bluetooth
+#define BT_RCC_AHB1Periph               (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOI | RCC_AHB1Periph_GPIOH)
+#define BT_RCC_APB1Periph               (RCC_APB1Periph_USART3)
+#define BT_RCC_APB2Periph                0
+
+#define BT_USART                        USART3
+#define BT_GPIO_AF                      GPIO_AF_USART3
+#define BT_USART_IRQn                   USART3_IRQn
+#define BT_GPIO_TXRX                    GPIOB
+#define BT_TX_GPIO_PIN                  GPIO_Pin_10  // PB.10
+#define BT_RX_GPIO_PIN                  GPIO_Pin_11  // PB.11
+#define BT_TX_GPIO_PinSource            GPIO_PinSource10
+#define BT_RX_GPIO_PinSource            GPIO_PinSource11
+#define BT_USART_IRQHandler             USART3_IRQHandler
+             
+#define BT_EN_GPIO                      GPIOI
+#define BT_EN_GPIO_PIN                  GPIO_Pin_8 // PI.08
+
+#define BT_RX_READY_GPIO                GPIOG
+#define BT_RX_READY_GPIO_PIN            GPIO_Pin_10 // PG.10
+
+#define BT_CMD_MODE_GPIO                GPIOH
+#define BT_CMD_MODE_GPIO_PIN            GPIO_Pin_6 // PH.6
+
 
 // Xms Interrupt
 #define INTERRUPT_xMS_RCC_APB1Periph    RCC_APB1Periph_TIM14

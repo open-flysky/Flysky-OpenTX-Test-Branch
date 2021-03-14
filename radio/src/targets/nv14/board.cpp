@@ -118,14 +118,14 @@ void delay_self(int count)
                                MONITOR_RCC_AHB1Periph |\
                                KEYS_RCC_AHB1Periph |\
                                ADC_RCC_AHB1Periph |\
-                               AUX_SERIAL_RCC_AHB1Periph |\
                                TELEMETRY_RCC_AHB1Periph |\
                                TRAINER_RCC_AHB1Periph |\
                                AUDIO_RCC_AHB1Periph |\
                                HAPTIC_RCC_AHB1Periph |\
                                INTMODULE_RCC_AHB1Periph |\
-                               INTMODULE_RCC_AHB1Periph|\
-                               EXTMODULE_RCC_AHB1Periph\
+                               INTMODULE_RCC_AHB1Periph |\
+                               EXTMODULE_RCC_AHB1Periph |\
+                               BT_RCC_AHB1Periph \
                               )
 #define RCC_AHB3PeriphMinimum (SDRAM_RCC_AHB3Periph)
 
@@ -140,16 +140,16 @@ void delay_self(int count)
                                HALL_RCC_APB1Periph |\
                                EXTMODULE_RCC_APB1Periph |\
                                INTMODULE_RCC_APB1Periph_TIM3 |\
-                               AUX_SERIAL_RCC_APB1Periph |\
-                               MIXER_SCHEDULER_TIMER_RCC_APB1Periph \
+                               MIXER_SCHEDULER_TIMER_RCC_APB1Periph |\
+                               BT_RCC_APB1Periph \
                               )
 #define RCC_APB2PeriphMinimum (LCD_RCC_APB2Periph)
 
 #define RCC_APB2PeriphOther   (ADC_RCC_APB2Periph |\
                                HAPTIC_RCC_APB2Periph |\
-                               AUX_SERIAL_RCC_APB2Periph |\
                                AUDIO_RCC_APB2Periph |\
-                               EXTMODULE_RCC_APB2Periph \
+                               EXTMODULE_RCC_APB2Periph |\
+                               BT_RCC_APB2Periph \
                               )
 
 
@@ -226,6 +226,10 @@ void boardInit()
 #endif
   usbInit();
   hapticInit();
+  
+#if defined(BLUETOOTH)
+  bluetooth.start();
+#endif
   boardState = BOARD_STARTED;
 #if defined(DEBUG)
   DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP|DBGMCU_TIM1_STOP|DBGMCU_TIM2_STOP|DBGMCU_TIM3_STOP|DBGMCU_TIM4_STOP|DBGMCU_TIM5_STOP|DBGMCU_TIM6_STOP|DBGMCU_TIM7_STOP|DBGMCU_TIM8_STOP|DBGMCU_TIM9_STOP|DBGMCU_TIM10_STOP|DBGMCU_TIM11_STOP|DBGMCU_TIM12_STOP|DBGMCU_TIM13_STOP|DBGMCU_TIM14_STOP, ENABLE);
@@ -239,6 +243,9 @@ void boardOff()
   BACKLIGHT_DISABLE();
   INTERNAL_MODULE_OFF();
   EXTERNAL_MODULE_OFF();
+#if defined(BLUETOOTH)
+  bluetooth.stop();
+#endif
   wdt_reset();
   delay_ms(50);
   while (pwrPressed()) {

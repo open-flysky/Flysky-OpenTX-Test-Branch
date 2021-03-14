@@ -310,6 +310,9 @@ void generalDefault()
 #if defined(PCBX9E)
   const int8_t defaultName[] = { 20, -1, -18, -1, -14, -9, -19 };
   memcpy(g_eeGeneral.bluetoothName, defaultName, sizeof(defaultName));
+#elif defined(PCBNV14)
+  const char defaultName[] = { 'N', 'V', ' ', '1', '4' };
+  memcpy(g_eeGeneral.bluetoothName, defaultName, sizeof(defaultName));
 #endif
 
 #if !defined(EEPROM)

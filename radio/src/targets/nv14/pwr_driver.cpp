@@ -41,9 +41,9 @@ void pwrInit()
   //GPIO_Init(INTMODULE_PWR_GPIO, &GPIO_InitStructure);
 
   //Bluetooth
-  GPIO_SetBits(BLUETOOTH_ON_GPIO, BLUETOOTH_ON_GPIO_PIN);
-  GPIO_InitStructure.GPIO_Pin = BLUETOOTH_ON_GPIO_PIN;
-  GPIO_Init(BLUETOOTH_ON_GPIO, &GPIO_InitStructure);
+  GPIO_SetBits(BT_EN_GPIO, BT_EN_GPIO_PIN);
+  GPIO_InitStructure.GPIO_Pin = BT_EN_GPIO_PIN;
+  GPIO_Init(BT_EN_GPIO, &GPIO_InitStructure);
 
   // Init PWR SWITCH PIN
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -58,7 +58,7 @@ void pwrInit()
   //turn power off
   GPIO_ResetBits(PWR_GPIO, PWR_ON_GPIO_PIN);
   //turn Bluetooth off
-  GPIO_ResetBits(PWR_GPIO, BLUETOOTH_ON_GPIO_PIN);
+  GPIO_ResetBits(BT_EN_GPIO, BT_EN_GPIO_PIN);
 
   boardState = BOARD_POWER_OFF;
 }

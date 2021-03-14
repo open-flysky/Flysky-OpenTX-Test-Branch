@@ -87,6 +87,7 @@ class DarkblueTheme: public Theme
       loadMenuIcon(ICON_RADIO_SD_BROWSER, "mask_radio_sd_browser.png");
       loadMenuIcon(ICON_RADIO_GLOBAL_FUNCTIONS, "mask_radio_global_functions.png");
       loadMenuIcon(ICON_RADIO_TRAINER, "mask_radio_trainer.png");
+      loadMenuIcon(ICON_RADIO_BT, "mask_radio_bt.png");
       loadMenuIcon(ICON_RADIO_HARDWARE, "mask_radio_hardware.png");
       loadMenuIcon(ICON_RADIO_VERSION, "mask_radio_version.png");
       loadMenuIcon(ICON_MODEL, "mask_menu_model.png");

@@ -54,7 +54,7 @@ uint8_t auxSerialTracesEnabled();
 #if defined(__cplusplus)
 }
 #endif
-
+#define CRLF "\r\n"
 #define TRACE_NOCRLF(...)     debugPrintf(__VA_ARGS__)
 #define TRACE(f_, ...)        debugPrintf((f_ "\r\n"), ##__VA_ARGS__)
 //#define TRACE(f_, ...)

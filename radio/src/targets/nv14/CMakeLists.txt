@@ -82,6 +82,7 @@ set(GUI_SRC
   bitmaps.cpp
   radio_sdmanager.cpp
   radio_hardware.cpp
+  radio_bluetooth.cpp
   model_inputs.cpp
   model_mixes.cpp
   model_curves.cpp
@@ -111,8 +112,6 @@ if(GHOST)
 endif()
 
 
-
-set(AUX_SERIAL_DRIVER ../common/arm/stm32/aux_serial_driver.cpp)
 
 set(GVAR_SCREEN model_gvars.cpp)
 
@@ -151,6 +150,16 @@ set(PULSES_SRC
   flysky_arm.cpp
   afhds2.cpp
   afhds3.cpp
+  )
+
+add_definitions(-DBLUETOOTH)
+add_definitions(-DBLUETOOTH_LE)
+
+set(TARGET_SRC
+  ${TARGET_SRC}
+  bluetoothle.cpp
+  lierda_bt.cpp
+  ../common/arm/stm32/bluetooth_driver.cpp
   )
 
 set(STM32LIB_SRC

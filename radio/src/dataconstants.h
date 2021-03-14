@@ -302,13 +302,12 @@ enum UartModes {
   #define LEN_SWITCH_NAME              3
   #define LEN_ANA_NAME                 3
   #define LEN_MODEL_FILENAME           16
-  #define LEN_BLUETOOTH_NAME           10
 #elif defined(CPUARM)
   #define LEN_SWITCH_NAME              3
   #define LEN_ANA_NAME                 3
-  #define LEN_BLUETOOTH_NAME           10
 #endif
-
+#define LEN_BLUETOOTH_NAME             10
+#define LEN_BLUETOOTH_PIN              4
 #if defined(CPUARM)
 #define TELEM_LABEL_LEN           4
 enum TelemetryUnit {
@@ -1031,6 +1030,8 @@ enum BluetoothModes {
   BLUETOOTH_OFF,
   BLUETOOTH_TELEMETRY,
   BLUETOOTH_TRAINER,
+  BLUETOOTH_SERVER,
+  BLUETOOTH_UNKNOWN = 255
 };
 
 // PXX2 constants

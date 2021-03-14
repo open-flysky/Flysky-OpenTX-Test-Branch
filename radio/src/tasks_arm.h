@@ -29,13 +29,14 @@
 #define TELEMETRY_STACK_SIZE   240 
 #define AUDIO_STACK_SIZE       500
 #define TOUCH_STACK_SIZE       100  // TODO: this can be reduced a lot after debug (tracing) is done (on last check only 42 Words are actually used)
-#define BLUETOOTH_STACK_SIZE   504  // WTF: there is no BT task.... ???
+#define BLUETOOTH_STACK_SIZE   504
 
 #define MIXER_TASK_PRIO        5
 #define TELEMETRY_TASK_PRIO    6
 #define AUDIO_TASK_PRIO        7
 #define MENUS_TASK_PRIO        10
 #define CLI_TASK_PRIO          10
+#define BLUETOOTH_TASK_PRIO    11
 #define TOUCH_TASK_PRIO        12   // lower prio than GUI! otherwise may block (runs at 1 tick)
 
 extern RTOS_TASK_HANDLE menusTaskId;
@@ -49,6 +50,9 @@ extern RTOS_DEFINE_STACK(telemetryStack, TELEMETRY_STACK_SIZE);
 
 extern RTOS_TASK_HANDLE audioTaskId;
 extern RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);
+
+extern RTOS_TASK_HANDLE bluetoothTaskId;
+extern RTOS_DEFINE_STACK(bluetoothStack, BLUETOOTH_STACK_SIZE);
 
 extern RTOS_FLAG_HANDLE openTxInitCompleteFlag;
 

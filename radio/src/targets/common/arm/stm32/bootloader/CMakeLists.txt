@@ -105,13 +105,8 @@ else()
       ../../../../../serial.cpp
       ../../../../../debug.cpp
       )
-    if(PCB STREQUAL NV14)
-      set(BOOTLOADER_SRC 
-        ${BOOTLOADER_SRC}
-        ../aux_serial_driver.cpp
-      )
-    else()
-      set(BOOTLOADER_SRC 
+    if(NOT(PCB STREQUAL NV14))
+       set(BOOTLOADER_SRC 
         ${BOOTLOADER_SRC}
         ../serial2_driver.cpp
       )

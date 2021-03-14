@@ -877,7 +877,7 @@ PACK(struct TrainerData {
     NOBACKUP(uint8_t displayLargeLines:1); \
     NOBACKUP(uint8_t blOffBright:7); \
     NOBACKUP(char bluetoothName[LEN_BLUETOOTH_NAME]);
-#elif defined(PCBTARANIS) || defined(PCBI8) || defined(PCBNV14)
+#elif defined(PCBTARANIS)
   #if defined(BLUETOOTH)
     #define BLUETOOTH_FIELDS \
       uint8_t spare; \
@@ -895,8 +895,7 @@ PACK(struct TrainerData {
     swconfig_t switchConfig; \
     char switchNames[NUM_SWITCHES][LEN_SWITCH_NAME]; \
     char anaNames[NUM_STICKS+NUM_POTS+NUM_SLIDERS][LEN_ANA_NAME]; \
-    BLUETOOTH_FIELDS \
-    TOUCHMANAGER_DATA
+    BLUETOOTH_FIELDS 
 #elif defined(PCBSKY9X)
   #define EXTRA_GENERAL_FIELDS \
     EXTRA_GENERAL_FIELDS_ARM \
@@ -980,7 +979,6 @@ PACK(struct RadioData {
   EXTRA_GENERAL_FIELDS
 
   THEME_DATA
-
 });
 
 #undef SWITCHES_WARNING_DATA
@@ -1110,7 +1108,7 @@ static inline void check_struct()
   CHKSIZE(RadioData, 84);
 #else
   CHKSIZE(FlightModeData, 30);
-  CHKSIZE(RadioData, 85);
+  CHKSIZE(RadioData, 90);
 #endif
 
 #endif /* board specific ifdefs*/

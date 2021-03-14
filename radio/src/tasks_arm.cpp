@@ -34,22 +34,15 @@ RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);
 RTOS_TASK_HANDLE telemetryTaskId;
 RTOS_DEFINE_STACK(telemetryStack, TELEMETRY_STACK_SIZE);
 
+#if defined(BLUETOOTH)
+RTOS_TASK_HANDLE bluetoothTaskId;
+RTOS_DEFINE_STACK(bluetoothStack, BLUETOOTH_STACK_SIZE);
+#endif
+
 RTOS_MUTEX_HANDLE audioMutex;
 RTOS_MUTEX_HANDLE mixerMutex;
 
 RTOS_FLAG_HANDLE openTxInitCompleteFlag;
-
-enum TaskIndex {
-  MENU_TASK_INDEX,
-  MIXER_TASK_INDEX,
-  TELEMETRY_TASK_INDEX,
-  AUDIO_TASK_INDEX,
-  CLI_TASK_INDEX,
-  TOUCH_TASK_INDEX,
-  BLUETOOTH_TASK_INDEX,
-  TASK_INDEX_COUNT,
-  MAIN_TASK_INDEX = 255
-};
 
 void stackPaint()
 {
@@ -57,9 +50,15 @@ void stackPaint()
   mixerStack.paint();
   audioStack.paint();
   telemetryStack.paint();
+
+#if defined(BLUETOOTH)  
+  bluetoothStack.paint();
+#endif
+
 #if defined(CLI)
   cliStack.paint();
 #endif
+
 #if IS_TOUCH_ENABLED()
   TouchManager::taskStack().paint();
 #endif
@@ -166,9 +165,6 @@ TASK_FUNCTION(mixerTask)
 #if defined(SBUS_TRAINER)
     processSbusInput();
 #endif
-#if defined(BLUETOOTH)
-    bluetoothWakeup();
-#endif
   //process telemetry when waiting
   RTOS_ISR_SET_FLAG(telemetryFlag);
   // run mixer at least every 30ms
@@ -227,7 +223,7 @@ TASK_FUNCTION(mixerTask)
 }
 
 #define MENU_TASK_PERIOD_TICKS      10    // 50ms
-#define MENU_LUA_PERIOD_TICKS  250
+#define MENU_LUA_PERIOD_TICKS       250
 
 #if defined(COLORLCD) && defined(CLI)
 bool perMainEnabled = true;
@@ -320,6 +316,19 @@ TASK_FUNCTION(menusTask)
   TASK_RETURN();
 }
 
+
+#if defined(BLUETOOTH)
+TASK_FUNCTION(bluetoothTask)
+{ 
+  uint32_t taskDelay = 200;
+  while(1) {
+    CoTickDelay(taskDelay);
+    taskDelay = bluetooth.wakeup();
+  }
+  TASK_RETURN();
+}
+#endif
+
 void tasksStart()
 {
   RTOS_INIT();
@@ -334,6 +343,10 @@ void tasksStart()
 
 #if !defined(SIMU)
   RTOS_CREATE_TASK(audioTaskId, audioTask, "Audio", audioStack, AUDIO_STACK_SIZE, AUDIO_TASK_PRIO);
+#endif
+
+#if defined(BLUETOOTH)
+  RTOS_CREATE_TASK(bluetoothTaskId, bluetoothTask, "Bluetooth", bluetoothStack, BLUETOOTH_STACK_SIZE, BLUETOOTH_TASK_PRIO);
 #endif
 
 #if IS_TOUCH_ENABLED()
