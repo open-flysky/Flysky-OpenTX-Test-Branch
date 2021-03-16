@@ -511,6 +511,9 @@ void processSpektrumTelemetryData(uint8_t module, uint8_t data, uint8_t* rxBuffe
     debugPrintf(CRLF);
 #endif
     processSpektrumPacket(rxBuffer);
+#if defined(BLUETOOTH)
+    bluetooth.writeTelemetryPacket(rxBuffer, rxBufferCount);
+#endif
     rxBufferCount = 0;
   }
 }

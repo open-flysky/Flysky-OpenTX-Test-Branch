@@ -252,7 +252,7 @@ ResponseStatus configFoxware::response(btle::ResponseFoxware* response, size_t s
       TRACE("passcode %06d", this->passcode);
       break;
     case Command::GET_FOX_MAC: 
-      sprintf(this->mac, "%02X:%02X:%02X:%02X:%02X:%02X", response->data.bytes[0], response->data.bytes[1], response->data.bytes[2], response->data.bytes[3], response->data.bytes[4], response->data.bytes[5]);
+      sprintf(this->mac, "%02X:%02X:%02X:%02X:%02X:%02X", response->data.bytes[5], response->data.bytes[4], response->data.bytes[3], response->data.bytes[2], response->data.bytes[1], response->data.bytes[0]);
       TRACE("mac %d", this->mac);
       break;
     case Command::GET_FOX_NAME: 

@@ -25,6 +25,7 @@ enum BluetoothLeStates {
   BLUETOOTH_LE_STATE_BAUD_DETECT,
   BLUETOOTH_LE_STATE_REQUESTING_CONFIG,
   BLUETOOTH_LE_STATE_SAVING_CONFIG,
+  BLUETOOTH_LE_STATE_READY,
   BLUETOOTH_STATE_CONNECTED, //compatybile with other interface
 };
 
@@ -34,7 +35,7 @@ enum BluetoothLeStates {
 #define BLUETOOTH_LE_LINE_LENGTH           32
 #define LEN_BLUETOOTH_ADDR                16
 #define MAX_BLUETOOTH_DISTANT_ADDR        6
-
+#define BLUETOOTH_TRAINER_PACKET_SIZE           14
 
 enum BLUETOOTH_TARGET_PLATFORM_TYPE {
   BLUETOOTH_TARGET_PLATFORM_FIRST = 0,
@@ -64,6 +65,8 @@ class BluetoothLE
     uint8_t read(uint8_t * data, uint8_t size, uint32_t timeout=1000/*ms*/);
     void readline(char * str, uint8_t length);
     void write(const uint8_t * data, uint8_t length);
+    void writeTelemetryPacket(const uint8_t * data, uint8_t length);
+    void sendSensors();
     void writeString(const char * str);
     void forwardTelemetry(const uint8_t * data);
     //returns task delay in COOS ticks (ms / 2)
@@ -76,28 +79,31 @@ class BluetoothLE
   protected:
     uint32_t send(uint8_t* frame, size_t cmd_size);
     void setState(enum BluetoothLeStates state);
-    void pushByte(uint8_t * buffer, int index, uint8_t byte, uint8_t crc);
+    void pushByte(uint8_t * buffer, uint8_t byte, unsigned* index, uint8_t* crc);
     void appendTrainerByte(uint8_t data);
-    void processTrainerFrame(const uint8_t * buffer);
-    void processTrainerByte(uint8_t data);
     void sendTrainer();
     void receiveTrainer();
-    
+    uint32_t handleConfiguration();
+
     uint8_t currentBaudrate;
     uint8_t currentMode;
     bool setBaudrateFromConfig;
+
+    uint8_t rxBuffer[BLUETOOTH_LE_PACKET_SIZE+1];
+    uint8_t rxDataState;
+    unsigned rxIndex;
 };
 
 extern BluetoothLE bluetooth;
 
-BLUETOOTH_TARGET_PLATFORM_TYPE getPlatfrom();
-void setPlatform(enum BLUETOOTH_TARGET_PLATFORM_TYPE platform);
+int32_t getBtPlatfrom();
+void setBtPlatform(int32_t platform);
 
-int32_t getPasscode();
-void setPasscode(int32_t passcode);
+int32_t getBtPasscode();
+void setBtPasscode(int32_t passcode);
 
 int32_t isPasscodeEnabled();
-void setPasscodeEnabled(int32_t enabled);
+void setBtPasscodeEnabled(int32_t enabled);
 void setBtTxPower(int32_t power);
 void setBtBaudrate(int32_t baudIndex);
 #endif

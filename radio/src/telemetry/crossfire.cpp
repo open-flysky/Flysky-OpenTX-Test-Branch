@@ -141,6 +141,9 @@ void processCrossfireTelemetryFrame()
     crossfireError = true;
     return;
   }
+#if defined(BLUETOOTH)
+  bluetooth.writeTelemetryPacket(telemetryRxBuffer, telemetryRxBufferCount);
+#endif
   crossfireError = false;
   uint8_t id = telemetryRxBuffer[2];
   int32_t value;

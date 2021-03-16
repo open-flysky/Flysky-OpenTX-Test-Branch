@@ -26,30 +26,30 @@
 extern FIL g_bluetoothFile;
 #endif
 #define WAIT_100MS 50
-
+#define WAIT_20MS 10
 extern Fifo<uint8_t, BT_FIFO_SIZE> btTxFifo;
 extern Fifo<uint8_t, BT_FIFO_SIZE> btRxFifo;
 
 BluetoothLE bluetooth;
 
 
-BLUETOOTH_TARGET_PLATFORM_TYPE getPlatfrom() {
+int32_t getBtPlatfrom() {
   TRACE("ADV %d", bluetooth.config.advertising_interval);
   TRACE("BROADCAST %d", bluetooth.config.broadcast_interval);
 
   if (bluetooth.config.advertising_interval == ANDROID_ADV_INTERVAL && 
     bluetooth.config.broadcast_interval == ANDROID_BROADCAST_INTERVAL) {
-    return BLUETOOTH_TARGET_PLATFORM_ANDROID;
+    return static_cast<int>(BLUETOOTH_TARGET_PLATFORM_ANDROID);
   }
   if (bluetooth.config.advertising_interval == IOS_ADV_INTERVAL && 
     bluetooth.config.broadcast_interval == IOS_BROADCAST_INTERVAL) {
-    return BLUETOOTH_TARGET_PLATFORM_IOS;
+    return static_cast<int>(BLUETOOTH_TARGET_PLATFORM_IOS);
   }
-  return BLUETOOTH_TARGET_PLATFORM_UNDEFINED;
+  return static_cast<int>(BLUETOOTH_TARGET_PLATFORM_UNDEFINED);
 }
 
-void setPlatform(enum BLUETOOTH_TARGET_PLATFORM_TYPE platform) {
-  switch(platform) {
+void setBtPlatform(int32_t platform) {
+  switch(static_cast<BLUETOOTH_TARGET_PLATFORM_TYPE>(platform)) {
     case BLUETOOTH_TARGET_PLATFORM_ANDROID:
       bluetooth.config.advertising_interval = ANDROID_ADV_INTERVAL;
       bluetooth.config.broadcast_interval = ANDROID_BROADCAST_INTERVAL;
@@ -68,11 +68,11 @@ void setPlatform(enum BLUETOOTH_TARGET_PLATFORM_TYPE platform) {
   }
 }
 
-int32_t getPasscode() {
+int32_t getBtPasscode() {
   return (int32_t)bluetooth.config.passcode;
 }
 
-void setPasscode(int32_t passcode) {
+void setBtPasscode(int32_t passcode) {
   bluetooth.config.passcode = (uint32_t)passcode;
   bluetooth.config.dirty = true;
 }
@@ -85,7 +85,7 @@ void setBtTxPower(int32_t power) {
 int32_t isPasscodeEnabled() {
   return(int32_t) bluetooth.config.passcode_protection;
 }
-void setPasscodeEnabled(int32_t enabled){
+void setBtPasscodeEnabled(int32_t enabled){
   bluetooth.config.passcode_protection = enabled != 0;
   bluetooth.config.dirty = true;
 }
@@ -95,32 +95,38 @@ void setBtBaudrate(int32_t baudIndex) {
   bluetooth.config.dirty = true;
 }
 
+void BluetoothLE::writeTelemetryPacket(const uint8_t * data, uint8_t length) {
+   if (g_eeGeneral.bluetoothMode == BLUETOOTH_TELEMETRY && bluetooth.state == BLUETOOTH_STATE_CONNECTED) {
+     write(data, length);
+   }
+}
+
 void BluetoothLE::write(const uint8_t * data, uint8_t length)
 {
   if (btTxFifo.hasSpace(length)) {
-    BLUETOOTH_TRACE("BT>");
     for (int i = 0; i < length; i++) {
-      BLUETOOTH_TRACE(" %02X", data[i]);
       btTxFifo.push(data[i]);
     }
-    BLUETOOTH_TRACE(CRLF);
+    bluetoothWriteWakeup();
   }
   else {
-    BLUETOOTH_TRACE("[BT] TX fifo full!" CRLF);
+    TRACE("[BT] TX fifo full!");
   }
-
-  bluetoothWriteWakeup();
 }
 
 void BluetoothLE::writeString(const char * str)
 {
-  BLUETOOTH_TRACE("BT> %s" CRLF, str);
-  while (*str != 0) {
-    btTxFifo.push(*str++);
+  if (btTxFifo.hasSpace(strlen(str)+2)) {
+    while (*str != 0) {
+      btTxFifo.push(*str++);
+    }
+    btTxFifo.push('\r');
+    btTxFifo.push('\n');
+    bluetoothWriteWakeup();
   }
-  btTxFifo.push('\r');
-  btTxFifo.push('\n');
-  bluetoothWriteWakeup();
+  else {
+    TRACE("[BT] TX fifo full!");
+  }
 }
 
 void BluetoothLE::readline(char * buffer, uint8_t length)
@@ -132,11 +138,10 @@ void BluetoothLE::readline(char * buffer, uint8_t length)
     if (!btRxFifo.pop(byte)) {
       return;
     }
-    BLUETOOTH_TRACE("%02X ", byte);
     if (byte == '\n') {
       if (bufferIndex > 2 && buffer[bufferIndex-1] == '\r') {
         buffer[bufferIndex-1] = '\0';
-        BLUETOOTH_TRACE("BT< %s" CRLF, buffer);
+        TRACE("BT< %s" CRLF, buffer);
         return;
       }
       bufferIndex = 0;
@@ -145,39 +150,11 @@ void BluetoothLE::readline(char * buffer, uint8_t length)
   }
 }
 
-void BluetoothLE::processTrainerFrame(const uint8_t * buffer)
-{
-  BLUETOOTH_TRACE(CRLF);
-
-  for (uint8_t channel=0, i=1; channel<8; channel+=2, i+=3) {
-    // +-500 != 512, but close enough.
-    ppmInput[channel] = buffer[i] + ((buffer[i+1] & 0xf0) << 4) - 1500;
-    ppmInput[channel+1] = ((buffer[i+1] & 0x0f) << 4) + ((buffer[i+2] & 0xf0) >> 4) + ((buffer[i+2] & 0x0f) << 8) - 1500;
-  }
-
-  ppmInputValidityTimer = PPM_IN_VALID_TIMEOUT;
-}
-
-
-void BluetoothLE::appendTrainerByte(uint8_t data)
-{
-  // if (bufferIndex < BLUETOOTH_LINE_LENGTH) {
-  //   buffer[bufferIndex++] = data;
-  //   // we check for "DisConnected", but the first byte could be altered (if received in state STATE_DATA_XOR)
-  //   if (data == '\n') {
-  //     if (!strncmp((char *)&buffer[bufferIndex-13], "isConnected", 11)) {
-  //       BLUETOOTH_TRACE("BT< DisConnected" CRLF);
-  //       state = BLUETOOTH_STATE_DISCONNECTED;
-  //       bufferIndex = 0;
-  //       wakeupTime += 200; // 1s
-  //     }
-  //   }
-  // }
-}
 
 BluetoothLE::BluetoothLE() {
   state = BLUETOOTH_LE_STATE_OFF;
   currentMode = BLUETOOTH_UNKNOWN;
+  rxDataState = STATE_DATA_IDLE;
 }
 
 void BluetoothLE::getStatus(char* buffer, size_t bufferSize) { 
@@ -195,10 +172,14 @@ void BluetoothLE::getStatus(char* buffer, size_t bufferSize) {
       strncpy(buffer, "Saving config...", bufferSize);
       break;
     case BLUETOOTH_STATE_CONNECTED: 
-      strncpy(buffer, "Active", bufferSize);
+      strncpy(buffer, "Connected", bufferSize);
       break;
+    case BLUETOOTH_LE_STATE_READY:
+       strncpy(buffer, "Ready", bufferSize);
+       break;
     default:
       strncpy(buffer, "Unknown", bufferSize);
+      break;
   }
 }
 
@@ -211,14 +192,144 @@ void BluetoothLE::stop() {
 }
 
 
-void BluetoothLE::pushByte(uint8_t * buffer, int index, uint8_t byte, uint8_t crc) { 
+void BluetoothLE::pushByte(uint8_t * buffer, uint8_t byte, unsigned* bufferIndex, uint8_t* crc) { 
+  *crc ^= byte;
+  if (byte == START_STOP || byte == BYTE_STUFF) {
+    buffer[*bufferIndex++] = BYTE_STUFF;
+    byte ^= STUFF_MASK;
+  }
+  buffer[*bufferIndex++] = byte;
 }
 
-//tbd
-void BluetoothLE::processTrainerByte(uint8_t data) { }
-void BluetoothLE::sendTrainer() { }
-void BluetoothLE::receiveTrainer() {}
-void BluetoothLE::forwardTelemetry(const uint8_t * data) {}
+void BluetoothLE::receiveTrainer() {
+  uint8_t byte;
+  while (true) {
+    if (!btRxFifo.pop(byte)) {
+      return;
+    }
+    switch (rxDataState) {
+    case STATE_DATA_START:
+      if (byte == START_STOP) {
+        rxDataState = STATE_DATA_IN_FRAME;
+        rxIndex = 0;
+      }
+      else {
+        appendTrainerByte(byte);
+      }
+      break;
+
+    case STATE_DATA_IN_FRAME:
+      if (byte == BYTE_STUFF) {
+        rxDataState = STATE_DATA_XOR; // XOR next byte
+      }
+      else if (byte == START_STOP) {
+        rxDataState = STATE_DATA_IN_FRAME;
+        rxIndex = 0;
+      }
+      else {
+        appendTrainerByte(byte);
+      }
+      break;
+
+    case STATE_DATA_XOR:
+      appendTrainerByte(byte ^ STUFF_MASK);
+      rxDataState = STATE_DATA_IN_FRAME;
+      break;
+
+    case STATE_DATA_IDLE:
+      if (byte == START_STOP) {
+        rxIndex = 0;
+        rxDataState = STATE_DATA_START;
+      }
+      else {
+        appendTrainerByte(byte);
+      }
+      break;
+    }
+
+    if (rxIndex >= BLUETOOTH_TRAINER_PACKET_SIZE) {
+      uint8_t crc = 0x00;
+      for (int i=0; i<13; i++) {
+        crc ^= rxBuffer[i];
+      }
+      if (crc == rxBuffer[13]) {
+        if (rxBuffer[0] == 0x80) {
+          BLUETOOTH_TRACE(CRLF);
+          for (uint8_t channel=0, i=1; channel<8; channel+=2, i+=3) {
+            // +-500 != 512, but close enough.
+            ppmInput[channel] = rxBuffer[i] + ((rxBuffer[i+1] & 0xf0) << 4) - 1500;
+            ppmInput[channel+1] = ((rxBuffer[i+1] & 0x0f) << 4) + ((rxBuffer[i+2] & 0xf0) >> 4) + ((rxBuffer[i+2] & 0x0f) << 8) - 1500;
+          }
+          ppmInputValidityTimer = PPM_IN_VALID_TIMEOUT;
+        }
+      }
+      rxDataState = STATE_DATA_IDLE;
+    }
+  }
+}
+
+
+void BluetoothLE::appendTrainerByte(uint8_t byte)
+{
+  if (rxIndex < BLUETOOTH_LE_LINE_LENGTH) {
+    rxBuffer[rxIndex++] = byte;
+    // we check for "DisConnected", but the first byte could be altered (if received in state STATE_DATA_XOR)
+    if (byte == '\n') {
+      if (!strncmp((char *)&rxBuffer[rxIndex-13], "isConnected", 11)) {
+        BLUETOOTH_TRACE("BT< DisConnected" CRLF);
+        //TBD not sure is we can disconnect
+        //setState(BLUETOOTH_STATE_DISCONNECTED);
+        rxIndex = 0;
+        //force next reques in one second
+        //wakeupTime += 200; // 1s
+      }
+    }
+  }
+}
+
+void BluetoothLE::sendTrainer() {
+  int16_t PPM_range = g_model.extendedLimits ? 640*2 : 512*2;
+
+  int firstCh = g_model.moduleData[TRAINER_MODULE].channelsStart;
+  int lastCh = firstCh + 8;
+
+  uint8_t crc = 0x00;
+  unsigned bufferIndex = 0;
+  uint8_t buffer[BLUETOOTH_LE_LINE_LENGTH+1];
+  uint8_t* cur = buffer;
+
+  buffer[bufferIndex++] = START_STOP; // start byte
+  pushByte(buffer, 0x80, &bufferIndex, &crc); // trainer frame type?
+  for (int channel=0; channel<lastCh; channel+=2, cur+=3) {
+    uint16_t channelValue1 = PPM_CH_CENTER(channel) + limit((int16_t)-PPM_range, channelOutputs[channel], (int16_t)PPM_range) / 2;
+    uint16_t channelValue2 = PPM_CH_CENTER(channel+1) + limit((int16_t)-PPM_range, channelOutputs[channel+1], (int16_t)PPM_range) / 2;
+    pushByte(buffer, channelValue1 & 0x00ff, &bufferIndex, &crc);
+    pushByte(buffer, ((channelValue1 & 0x0f00) >> 4) + ((channelValue2 & 0x00f0) >> 4), &bufferIndex, &crc);
+    pushByte(buffer, ((channelValue2 & 0x000f) << 4) + ((channelValue2 & 0x0f00) >> 8), &bufferIndex, &crc);
+  }
+  buffer[bufferIndex++] = crc;
+  buffer[bufferIndex++] = START_STOP; // end byte
+
+  write(buffer, bufferIndex);
+  bufferIndex = 0;
+}
+
+void BluetoothLE::forwardTelemetry(const uint8_t * packet) {
+  uint8_t crc = 0x00;
+  unsigned bufferIndex = 0;
+  uint8_t buffer[BLUETOOTH_LE_LINE_LENGTH+1];
+
+  buffer[bufferIndex++] = START_STOP; // start byte
+  for (uint8_t i=0; i<sizeof(SportTelemetryPacket); i++) {
+    pushByte(buffer, packet[i], &bufferIndex, &crc);
+  }
+  buffer[bufferIndex++] = crc;
+  buffer[bufferIndex++] = START_STOP; // end byte
+
+  if (bufferIndex >= 2*FRSKY_SPORT_PACKET_SIZE) {
+    write(buffer, bufferIndex);
+  }
+}
 
 
 void BluetoothLE::setState(enum BluetoothLeStates state) {
@@ -239,8 +350,10 @@ void BluetoothLE::setState(enum BluetoothLeStates state) {
     case BLUETOOTH_LE_STATE_SAVING_CONFIG:
       BT_COMMAND_ON();
       config.preSave();
+    case BLUETOOTH_LE_STATE_READY:
+      break;
     case BLUETOOTH_STATE_CONNECTED:
-      //BT_COMMAND_OFF();
+      BT_COMMAND_OFF();
       break;
   }
   this->state = state;
@@ -262,14 +375,63 @@ uint32_t BluetoothLE::send(uint8_t* frame, size_t cmd_size) {
   return WAIT_100MS;
 }
 
+
+uint32_t BluetoothLE::handleConfiguration() {
+  size_t cmd_size = 0;
+  uint8_t byte;
+  rxIndex = 0;
+  while (btRxFifo.pop(byte) && rxIndex < sizeof(rxBuffer)) {
+    rxBuffer[rxIndex++] = byte;
+  }
+  
+  btle::ResponseFoxware* foxwareFrame = reinterpret_cast<btle::ResponseFoxware*>(rxBuffer);
+  
+  switch(state) {
+    case BLUETOOTH_LE_STATE_BAUD_DETECT:
+      if (btle::valid(foxwareFrame, btle::GET_FW_VERSION, rxIndex)) {
+        setState(BLUETOOTH_LE_STATE_REQUESTING_CONFIG);
+        cmd_size = config.load(rxBuffer);
+        break;
+      } else {
+        g_eeGeneral.bluetoothBaudrate = (g_eeGeneral.bluetoothBaudrate + 1) % sizeof(btle::baudRateMap);
+      }
+      return WAIT_100MS;
+      break;
+    case BLUETOOTH_LE_STATE_REQUESTING_CONFIG:
+      if (config.response(foxwareFrame, rxIndex) == btle::ResponseStatus::Done) {
+        setState(BLUETOOTH_LE_STATE_READY);
+        return WAIT_100MS;
+      }
+      cmd_size = config.load(rxBuffer);
+      break;
+    case BLUETOOTH_LE_STATE_SAVING_CONFIG:
+      if (config.responseSave(foxwareFrame, rxIndex) == btle::ResponseStatus::Done) {
+        setState(BLUETOOTH_LE_STATE_READY);
+        return WAIT_100MS;
+      }
+      cmd_size = config.save(rxBuffer, &this->setBaudrateFromConfig);
+      break;
+  }
+  uint32_t taskDuration = send(rxBuffer, cmd_size);
+  return taskDuration;
+}
+
+void BluetoothLE::sendSensors()
+{ 
+  static int index = 0;
+  char buffer[64];
+  sprintf(buffer, "DEAD FOOD %d", index++);
+  if (btTxFifo.hasSpace(strlen(buffer)+2)) {
+    const char* str = buffer;
+    while (*str != 0) {
+      btTxFifo.push(*str++);
+    }
+    btTxFifo.push('\r');
+    btTxFifo.push('\n');
+  }
+}
 uint32_t BluetoothLE::wakeup()
 {
-  size_t cmd_size = 0;
-  uint8_t frame[200];
-  uint8_t rx_size = 0;
-  uint8_t byte;
-  
-
   if (currentMode != g_eeGeneral.bluetoothMode) {
     currentMode = g_eeGeneral.bluetoothMode;
     setState(g_eeGeneral.bluetoothMode == BLUETOOTH_OFF ? BLUETOOTH_LE_STATE_OFF : BLUETOOTH_LE_STATE_BAUD_DETECT);
@@ -279,8 +441,8 @@ uint32_t BluetoothLE::wakeup()
   if (currentBaudrate != g_eeGeneral.bluetoothBaudrate) {
     currentBaudrate = g_eeGeneral.bluetoothBaudrate;
     setState(BLUETOOTH_LE_STATE_BAUD_DETECT);
-    cmd_size = btle::fw_version(frame);
-    return send(frame, cmd_size);
+    rxIndex = 0;
+    return send(rxBuffer, btle::fw_version(rxBuffer));
   } 
 
   if (setBaudrateFromConfig) {
@@ -290,46 +452,38 @@ uint32_t BluetoothLE::wakeup()
 
   if (config.dirty) {
     setState(BLUETOOTH_LE_STATE_SAVING_CONFIG);
+  } else if (state == BLUETOOTH_LE_STATE_READY && IS_BT_CONNECTED()) {
+    setState(BLUETOOTH_STATE_CONNECTED);
+  } else if (state == BLUETOOTH_STATE_CONNECTED && !IS_BT_CONNECTED()) {
+    setState(BLUETOOTH_LE_STATE_READY);
   }
 
-  while (btRxFifo.pop(byte) && rx_size < sizeof(frame)) {
-    frame[rx_size++] = byte;
-  }
-  
-  
-  btle::ResponseFoxware* foxwareFrame = reinterpret_cast<btle::ResponseFoxware*>(frame);
-  
-  switch(state) {
-    case BLUETOOTH_LE_STATE_BAUD_DETECT:
-      if (btle::valid(foxwareFrame, btle::GET_FW_VERSION, rx_size)) {
-        setState(BLUETOOTH_LE_STATE_REQUESTING_CONFIG);
-        cmd_size = config.load(frame);
-        break;
-      } else {
-        g_eeGeneral.bluetoothBaudrate = (g_eeGeneral.bluetoothBaudrate + 1) % sizeof(btle::baudRateMap);
+  if (state == BLUETOOTH_STATE_CONNECTED) {
+    if (g_eeGeneral.bluetoothMode == BLUETOOTH_TRAINER) {
+      char line[BLUETOOTH_LE_LINE_LENGTH];
+      switch(g_model.trainerMode) {
+        case TRAINER_MODE_MASTER_BLUETOOTH:
+          receiveTrainer();
+          break;
+        case TRAINER_MODE_SLAVE_BLUETOOTH:
+          sendTrainer();
+          //tbd VERIFY
+          readline(line, BLUETOOTH_LE_LINE_LENGTH); // to deal with "ERROR"
+          break;
       }
-      return WAIT_100MS;
-      break;
-    case BLUETOOTH_LE_STATE_REQUESTING_CONFIG:
-      if (config.response(foxwareFrame, rx_size) == btle::ResponseStatus::Done) {
-        setState(BLUETOOTH_STATE_CONNECTED);
-        return WAIT_100MS;
-      }
-      cmd_size = config.load(frame);
-      break;
-    case BLUETOOTH_LE_STATE_SAVING_CONFIG:
-      if (config.responseSave(foxwareFrame, rx_size) == btle::ResponseStatus::Done) {
-        setState(BLUETOOTH_STATE_CONNECTED);
-        return WAIT_100MS;
-      }
-      cmd_size = config.save(frame, &this->setBaudrateFromConfig);
-      break;
-    case BLUETOOTH_STATE_CONNECTED:
-      //communication handling
-      break;
-  }
-  uint32_t taskDuration = send(frame, cmd_size);
-  return taskDuration;
+      //disconnect after error
+      if (state != BLUETOOTH_STATE_CONNECTED) return WAIT_100MS;
+      return WAIT_20MS;
+    }
+    else if (g_eeGeneral.bluetoothMode == BLUETOOTH_SENSORS) {
+      sendSensors();
+    } 
+  
+    size_t fifoSize = btTxFifo.size();
+    bluetoothWriteWakeup();
+    return btle::transmit_time_ms(fifoSize, (btle::Baudrate)currentBaudrate, btle::DeviceType::ANDROID) / 2;
+  } 
+  return handleConfiguration();
 }
 
 uint8_t BluetoothLE::read(uint8_t * data, uint8_t size, uint32_t timeout)

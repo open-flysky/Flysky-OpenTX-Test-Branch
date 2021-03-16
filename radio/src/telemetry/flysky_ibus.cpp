@@ -302,6 +302,9 @@ void processFlySkyTelemetryData(uint8_t data, uint8_t* rxBuffer, uint8_t& rxBuff
     // debug print the content of the packets
     if(data == 0xAA) processFlySkyPacket(rxBuffer+1);
     else if(data == 0xAC) processFlySkyPacketAC(rxBuffer+1);
+#if defined(BLUETOOTH)
+    bluetooth.writeTelemetryPacket(rxBuffer, rxBufferCount);
+#endif
     rxBufferCount = 0;
   }
 }

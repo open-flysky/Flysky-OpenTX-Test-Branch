@@ -1105,7 +1105,7 @@
 #define TR_BLUETOOTH_PLATFORMS         "Unknown""Android""IOS\0"
 
 #define LEN_BLUETOOTH_MODES            "\011"
-#define TR_BLUETOOTH_MODES             "Off\0     ""Telemetry""Trainer\0 ""CLI\0"
+#define TR_BLUETOOTH_MODES             "Off\0     ""Telemetry""Trainer\0 ""Sensors\0"
 
 #define LEN_BLUETOOTH_BAUDRATE         "\006"
 #define TR_BLUETOOTH_BAUDRATE          "2400\0 ""4800\0 ""9600\0 ""19200\0""38400\0""57600\0""115.2k""230.4k""460.8k""921.6k"

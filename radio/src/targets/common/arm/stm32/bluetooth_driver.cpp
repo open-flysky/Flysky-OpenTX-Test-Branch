@@ -60,6 +60,12 @@ void bluetoothInit(uint32_t baudrate)
   GPIO_Init(BT_BCTS_GPIO, &GPIO_InitStructure);
 #endif
 
+#if defined(BT_CONNECTED_GPIO_PIN)
+  GPIO_InitStructure.GPIO_Pin = BT_CONNECTED_GPIO_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_Init(BT_CONNECTED_GPIO, &GPIO_InitStructure);
+#endif
+
 #if defined(BT_CMD_MODE_GPIO)
   GPIO_InitStructure.GPIO_Pin = BT_CMD_MODE_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;

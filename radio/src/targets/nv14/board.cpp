@@ -277,10 +277,6 @@ void checkTrainerSettings()
       case TRAINER_MODE_SLAVE:
         stop_trainer_ppm();
         break;
-      case TRAINER_MODE_MASTER_CPPM_EXTERNAL_MODULE:
-        break;
-      case TRAINER_MODE_MASTER_SBUS_EXTERNAL_MODULE:
-        break;
     }
 
     currentTrainerMode = requiredTrainerMode;
@@ -290,10 +286,6 @@ void checkTrainerSettings()
         break;
       case TRAINER_MODE_MASTER_TRAINER_JACK:
         init_trainer_capture();
-        break;
-      case TRAINER_MODE_MASTER_CPPM_EXTERNAL_MODULE:
-        break;
-      case TRAINER_MODE_MASTER_SBUS_EXTERNAL_MODULE:
         break;
     }
   }

@@ -147,9 +147,7 @@ void processGhostTelemetryFrame()
     case GHST_DL_LINK_STAT:
     {
 #if defined(BLUETOOTH)
-      if (g_eeGeneral.bluetoothMode == BLUETOOTH_TELEMETRY && bluetooth.state == BLUETOOTH_STATE_CONNECTED) {
-        bluetooth.write(telemetryRxBuffer, telemetryRxBufferCount);
-      }
+      bluetooth.writeTelemetryPacket(telemetryRxBuffer, telemetryRxBufferCount);
 #endif
       uint8_t rssiVal = min<uint8_t>(telemetryRxBuffer[3], 120); // RSSI is a negative value, but sent as a positive integer.
       uint8_t lqVal = min<uint8_t>(telemetryRxBuffer[4], 100);
@@ -205,9 +203,7 @@ void processGhostTelemetryFrame()
 
       case GHST_DL_VTX_STAT: {
 #if defined(BLUETOOTH)
-        if (g_eeGeneral.bluetoothMode == BLUETOOTH_TELEMETRY && bluetooth.state == BLUETOOTH_STATE_CONNECTED) {
-          bluetooth.write(telemetryRxBuffer, telemetryRxBufferCount);
-        }
+        bluetooth.writeTelemetryPacket(telemetryRxBuffer, telemetryRxBufferCount);
 #endif
         uint8_t vtxBandEnum = min<uint8_t>(telemetryRxBuffer[8], GHST_VTX_BAND_MAX);
 
@@ -223,9 +219,7 @@ void processGhostTelemetryFrame()
 
     case GHST_DL_PACK_STAT: {
 #if defined(BLUETOOTH)
-      if (g_eeGeneral.bluetoothMode == BLUETOOTH_TELEMETRY && bluetooth.state == BLUETOOTH_STATE_CONNECTED) {
-          bluetooth.write(telemetryRxBuffer, telemetryRxBufferCount);
-        }
+        bluetooth.writeTelemetryPacket(telemetryRxBuffer, telemetryRxBufferCount);
 #endif
         processGhostTelemetryValue(GHOST_ID_PACK_VOLTS, getTelemetryValue_u16_loFirst(3));
         processGhostTelemetryValue(GHOST_ID_PACK_AMPS, getTelemetryValue_u16_loFirst(5));

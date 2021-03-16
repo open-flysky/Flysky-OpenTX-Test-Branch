@@ -989,7 +989,7 @@
 #if defined(PCBX9E) && !defined(USEHORUSBT)
 #define TR_BLUETOOTH_MODES      "---\0     ""Enabled\0 "
 #else
-#define TR_BLUETOOTH_MODES      "Off\0     ""Telemetry""Trainer\0 ""CLI\0"
+#define TR_BLUETOOTH_MODES      "Off\0     ""Telemetry""Trainer\0 ""Sensors\0"
 #endif
 #define TR_SD_INFO_TITLE       "SD INFO"
 #define TR_SD_TYPE             "Tipo:"

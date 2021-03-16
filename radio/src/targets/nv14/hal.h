@@ -479,8 +479,8 @@
 #define BT_EN_GPIO                      GPIOI
 #define BT_EN_GPIO_PIN                  GPIO_Pin_8 // PI.08
 
-#define BT_RX_READY_GPIO                GPIOG
-#define BT_RX_READY_GPIO_PIN            GPIO_Pin_10 // PG.10
+#define  BT_CONNECTED_GPIO              GPIOJ
+#define  BT_CONNECTED_GPIO_PIN          GPIO_Pin_1 // PJ.10
 
 #define BT_CMD_MODE_GPIO                GPIOH
 #define BT_CMD_MODE_GPIO_PIN            GPIO_Pin_6 // PH.6

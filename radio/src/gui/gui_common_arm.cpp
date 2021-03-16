@@ -740,11 +740,15 @@ bool isTrainerModeAvailable(int mode)
 #elif defined(PCBNV14)
 bool isTrainerModeAvailable(int mode)
 {
-  //for now only trainer port
-  if (/*IS_EXTERNAL_MODULE_ENABLED() && */(mode == TRAINER_MODE_MASTER_SBUS_EXTERNAL_MODULE || mode == TRAINER_MODE_MASTER_CPPM_EXTERNAL_MODULE))
-    return false;
-  else
+  if (mode == TRAINER_MODE_MASTER_TRAINER_JACK || mode == TRAINER_MODE_SLAVE) {
     return true;
+  }
+  #if defined(BLUETOOTH)
+  else if (g_eeGeneral.bluetoothMode == BLUETOOTH_TRAINER && (mode == TRAINER_MODE_MASTER_BLUETOOTH || mode == TRAINER_MODE_SLAVE_BLUETOOTH)) {
+    return true;
+  }
+  #endif
+  return false;
 }
 #elif defined(PCBX7)
 bool isTrainerModeAvailable(int mode)

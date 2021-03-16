@@ -214,7 +214,7 @@ void bluetoothInit(uint32_t baudrate);
 void bluetoothWriteWakeup(void);
 void bluetoothDone(void);
 
-
+#define IS_BT_CONNECTED()               (GPIO_ReadInputDataBit(BT_CONNECTED_GPIO, BT_CONNECTED_GPIO_PIN) == Bit_SET)
 #define IS_BT_COMMAND_MODE()            (GPIO_ReadInputDataBit(BT_CMD_MODE_GPIO, BT_CMD_MODE_GPIO_PIN) == Bit_RESET)
 #define BT_COMMAND_ON()                  (GPIO_ResetBits(BT_CMD_MODE_GPIO, BT_CMD_MODE_GPIO_PIN))
 #define BT_COMMAND_OFF()                 (GPIO_SetBits(BT_CMD_MODE_GPIO, BT_CMD_MODE_GPIO_PIN))

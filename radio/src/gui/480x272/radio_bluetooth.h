@@ -28,7 +28,4 @@ class RadioBluetoothPage: public PageTab {
 
     void build(Window * window) override;
     void checkEvents() override;
-  private:
-    Choice* bluetoothBaudrate;
-    uint8_t lastBaudrate;
 };
