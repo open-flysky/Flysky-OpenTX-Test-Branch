@@ -79,7 +79,7 @@ class BluetoothLE
   protected:
     uint32_t send(uint8_t* frame, size_t cmd_size);
     void setState(enum BluetoothLeStates state);
-    void pushByte(uint8_t * buffer, uint8_t byte, unsigned* index, uint8_t* crc);
+    void pushByte(uint8_t * buffer, uint8_t byte, unsigned& index, uint8_t& crc);
     void appendTrainerByte(uint8_t data);
     void sendTrainer();
     void receiveTrainer();
@@ -89,7 +89,7 @@ class BluetoothLE
     uint8_t currentMode;
     bool setBaudrateFromConfig;
 
-    uint8_t rxBuffer[BLUETOOTH_LE_PACKET_SIZE+1];
+    uint8_t bt_data[BLUETOOTH_LE_PACKET_SIZE+1];
     uint8_t rxDataState;
     unsigned rxIndex;
 };

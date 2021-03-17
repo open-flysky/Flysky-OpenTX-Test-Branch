@@ -192,13 +192,13 @@ void BluetoothLE::stop() {
 }
 
 
-void BluetoothLE::pushByte(uint8_t * buffer, uint8_t byte, unsigned* bufferIndex, uint8_t* crc) { 
-  *crc ^= byte;
+void BluetoothLE::pushByte(uint8_t * buffer, uint8_t byte, unsigned& bufferIndex, uint8_t& crc) { 
+  crc ^= byte;
   if (byte == START_STOP || byte == BYTE_STUFF) {
-    buffer[*bufferIndex++] = BYTE_STUFF;
+    buffer[bufferIndex++] = BYTE_STUFF;
     byte ^= STUFF_MASK;
   }
-  buffer[*bufferIndex++] = byte;
+  buffer[bufferIndex++] = byte;
 }
 
 void BluetoothLE::receiveTrainer() {
@@ -250,15 +250,15 @@ void BluetoothLE::receiveTrainer() {
     if (rxIndex >= BLUETOOTH_TRAINER_PACKET_SIZE) {
       uint8_t crc = 0x00;
       for (int i=0; i<13; i++) {
-        crc ^= rxBuffer[i];
+        crc ^= bt_data[i];
       }
-      if (crc == rxBuffer[13]) {
-        if (rxBuffer[0] == 0x80) {
+      if (crc == bt_data[13]) {
+        if (bt_data[0] == 0x80) {
           BLUETOOTH_TRACE(CRLF);
           for (uint8_t channel=0, i=1; channel<8; channel+=2, i+=3) {
             // +-500 != 512, but close enough.
-            ppmInput[channel] = rxBuffer[i] + ((rxBuffer[i+1] & 0xf0) << 4) - 1500;
-            ppmInput[channel+1] = ((rxBuffer[i+1] & 0x0f) << 4) + ((rxBuffer[i+2] & 0xf0) >> 4) + ((rxBuffer[i+2] & 0x0f) << 8) - 1500;
+            ppmInput[channel] = bt_data[i] + ((bt_data[i+1] & 0xf0) << 4) - 1500;
+            ppmInput[channel+1] = ((bt_data[i+1] & 0x0f) << 4) + ((bt_data[i+2] & 0xf0) >> 4) + ((bt_data[i+2] & 0x0f) << 8) - 1500;
           }
           ppmInputValidityTimer = PPM_IN_VALID_TIMEOUT;
         }
@@ -272,10 +272,10 @@ void BluetoothLE::receiveTrainer() {
 void BluetoothLE::appendTrainerByte(uint8_t byte)
 {
   if (rxIndex < BLUETOOTH_LE_LINE_LENGTH) {
-    rxBuffer[rxIndex++] = byte;
+    bt_data[rxIndex++] = byte;
     // we check for "DisConnected", but the first byte could be altered (if received in state STATE_DATA_XOR)
     if (byte == '\n') {
-      if (!strncmp((char *)&rxBuffer[rxIndex-13], "isConnected", 11)) {
+      if (!strncmp((char *)&bt_data[rxIndex-13], "isConnected", 11)) {
         BLUETOOTH_TRACE("BT< DisConnected" CRLF);
         //TBD not sure is we can disconnect
         //setState(BLUETOOTH_STATE_DISCONNECTED);
@@ -289,45 +289,38 @@ void BluetoothLE::appendTrainerByte(uint8_t byte)
 
 void BluetoothLE::sendTrainer() {
   int16_t PPM_range = g_model.extendedLimits ? 640*2 : 512*2;
-
   int firstCh = g_model.moduleData[TRAINER_MODULE].channelsStart;
   int lastCh = firstCh + 8;
-
   uint8_t crc = 0x00;
-  unsigned bufferIndex = 0;
-  uint8_t buffer[BLUETOOTH_LE_LINE_LENGTH+1];
-  uint8_t* cur = buffer;
-
-  buffer[bufferIndex++] = START_STOP; // start byte
-  pushByte(buffer, 0x80, &bufferIndex, &crc); // trainer frame type?
-  for (int channel=0; channel<lastCh; channel+=2, cur+=3) {
+  unsigned i = 0;
+  
+  bt_data[i++] = START_STOP; // start byte
+  pushByte(bt_data, 0x80, i, crc); // trainer frame type?
+  for (int channel=0; channel<lastCh; channel+=2) {
     uint16_t channelValue1 = PPM_CH_CENTER(channel) + limit((int16_t)-PPM_range, channelOutputs[channel], (int16_t)PPM_range) / 2;
     uint16_t channelValue2 = PPM_CH_CENTER(channel+1) + limit((int16_t)-PPM_range, channelOutputs[channel+1], (int16_t)PPM_range) / 2;
-    pushByte(buffer, channelValue1 & 0x00ff, &bufferIndex, &crc);
-    pushByte(buffer, ((channelValue1 & 0x0f00) >> 4) + ((channelValue2 & 0x00f0) >> 4), &bufferIndex, &crc);
-    pushByte(buffer, ((channelValue2 & 0x000f) << 4) + ((channelValue2 & 0x0f00) >> 8), &bufferIndex, &crc);
+    pushByte(bt_data, channelValue1 & 0x00ff, i, crc);
+    pushByte(bt_data, ((channelValue1 & 0x0f00) >> 4) + ((channelValue2 & 0x00f0) >> 4), i, crc);
+    pushByte(bt_data, ((channelValue2 & 0x000f) << 4) + ((channelValue2 & 0x0f00) >> 8), i, crc);
   }
-  buffer[bufferIndex++] = crc;
-  buffer[bufferIndex++] = START_STOP; // end byte
+  bt_data[i++] = crc;
+  bt_data[i++] = START_STOP; // end byte
 
-  write(buffer, bufferIndex);
-  bufferIndex = 0;
+  write(bt_data, i);
 }
 
 void BluetoothLE::forwardTelemetry(const uint8_t * packet) {
   uint8_t crc = 0x00;
-  unsigned bufferIndex = 0;
-  uint8_t buffer[BLUETOOTH_LE_LINE_LENGTH+1];
-
-  buffer[bufferIndex++] = START_STOP; // start byte
+  unsigned idx = 0;
+  bt_data[idx++] = START_STOP; // start byte
   for (uint8_t i=0; i<sizeof(SportTelemetryPacket); i++) {
-    pushByte(buffer, packet[i], &bufferIndex, &crc);
+    pushByte(bt_data, (uint8_t)packet[i], idx, crc);
   }
-  buffer[bufferIndex++] = crc;
-  buffer[bufferIndex++] = START_STOP; // end byte
+  bt_data[idx++] = crc;
+  bt_data[idx++] = START_STOP; // end byte
 
-  if (bufferIndex >= 2*FRSKY_SPORT_PACKET_SIZE) {
-    write(buffer, bufferIndex);
+  if (idx >= 2*FRSKY_SPORT_PACKET_SIZE) {
+    write(bt_data, idx);
   }
 }
 
@@ -380,17 +373,17 @@ uint32_t BluetoothLE::handleConfiguration() {
   size_t cmd_size = 0;
   uint8_t byte;
   rxIndex = 0;
-  while (btRxFifo.pop(byte) && rxIndex < sizeof(rxBuffer)) {
-    rxBuffer[rxIndex++] = byte;
+  while (btRxFifo.pop(byte) && rxIndex < sizeof(bt_data)) {
+    bt_data[rxIndex++] = byte;
   }
   
-  btle::ResponseFoxware* foxwareFrame = reinterpret_cast<btle::ResponseFoxware*>(rxBuffer);
+  btle::ResponseFoxware* foxwareFrame = reinterpret_cast<btle::ResponseFoxware*>(bt_data);
   
   switch(state) {
     case BLUETOOTH_LE_STATE_BAUD_DETECT:
       if (btle::valid(foxwareFrame, btle::GET_FW_VERSION, rxIndex)) {
         setState(BLUETOOTH_LE_STATE_REQUESTING_CONFIG);
-        cmd_size = config.load(rxBuffer);
+        cmd_size = config.load(bt_data);
         break;
       } else {
         g_eeGeneral.bluetoothBaudrate = (g_eeGeneral.bluetoothBaudrate + 1) % sizeof(btle::baudRateMap);
@@ -402,17 +395,17 @@ uint32_t BluetoothLE::handleConfiguration() {
         setState(BLUETOOTH_LE_STATE_READY);
         return WAIT_100MS;
       }
-      cmd_size = config.load(rxBuffer);
+      cmd_size = config.load(bt_data);
       break;
     case BLUETOOTH_LE_STATE_SAVING_CONFIG:
       if (config.responseSave(foxwareFrame, rxIndex) == btle::ResponseStatus::Done) {
         setState(BLUETOOTH_LE_STATE_READY);
         return WAIT_100MS;
       }
-      cmd_size = config.save(rxBuffer, &this->setBaudrateFromConfig);
+      cmd_size = config.save(bt_data, &this->setBaudrateFromConfig);
       break;
   }
-  uint32_t taskDuration = send(rxBuffer, cmd_size);
+  uint32_t taskDuration = send(bt_data, cmd_size);
   return taskDuration;
 }
 
@@ -442,7 +435,7 @@ uint32_t BluetoothLE::wakeup()
     currentBaudrate = g_eeGeneral.bluetoothBaudrate;
     setState(BLUETOOTH_LE_STATE_BAUD_DETECT);
     rxIndex = 0;
-    return send(rxBuffer, btle::fw_version(rxBuffer));
+    return send(bt_data, btle::fw_version(bt_data));
   } 
 
   if (setBaudrateFromConfig) {
