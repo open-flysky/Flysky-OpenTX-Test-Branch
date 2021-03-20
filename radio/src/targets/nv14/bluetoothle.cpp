@@ -20,7 +20,7 @@
 
 #include "opentx.h"
 #include "bluetoothle.h"
-
+#include <cstdint>
 
 #if defined(LOG_BLUETOOTH)
 extern FIL g_bluetoothFile;
@@ -32,6 +32,73 @@ extern Fifo<uint8_t, BT_FIFO_SIZE> btRxFifo;
 
 BluetoothLE bluetooth;
 
+PACK(struct BtSensor {
+  uint16_t  id;
+  uint8_t   subId:6;
+  uint8_t   prec:2;
+  uint8_t   instance:3;
+  uint8_t   unit:5;
+  char      label[TELEM_LABEL_LEN];
+});
+
+PACK(struct BtSensorValue {
+  uint16_t  id;
+  uint8_t   subId:6;
+  uint8_t   spare:2;
+  uint8_t   instance:3;
+  uint8_t   spare2:5;
+});
+
+static size_t btSensorSize = sizeof(BtSensor);
+static int sensor_index = 0;
+static uint8_t sub_sensor_index = 0;
+static uint8_t sub_sensor_index_total = 0;
+#define SENSOR_ID 0xEE00 //send with this id
+
+enum BT_VIRTUAL_SENSORS : uint16_t {
+  SENSOR_FIRST = 0,
+  SENSOR_TX_BATTERY = SENSOR_FIRST,
+  // SENSOR_TX_DATE_TIME,
+  // SENSOR_TX_VOLUME,
+  // SENSOR_TX_ALARM,
+  // SENSOR_TX_INTERNAL_MODULE_STATUS,
+  // SENSOR_TX_EXTERNAL_MODULE_STATUS,
+  // SENSOR_TX_RF_POWER_INTERNAL,
+  // SENSOR_TX_RF_POWER_EXTERNAL,
+  // SENSOR_TX_FLIGHT_MODE,
+  // SENSOR_TX_INPUT,
+  SENSOR_TX_OUTPUTS,
+  SENSOR_LAST = SENSOR_TX_OUTPUTS,
+  SENSOR_COUNT,
+};
+
+TelemetryUnit units[] = {
+  UNIT_VOLTS,// SENSOR_TX_BATTERY
+  // UNIT_DATETIME, // SENSOR_TX_DATE_TIME,
+  // UNIT_PERCENT,// SENSOR_TX_VOLUME,
+  // UNIT_TEXT,// SENSOR_TX_ALARM,
+  // UNIT_TEXT, // SENSOR_TX_INTERNAL_MODULE_STATUS,
+  // UNIT_TEXT, // SENSOR_TX_EXTERNAL_MODULE_STATUS,
+  // UNIT_DB, // SENSOR_TX_RF_POWER_INTERNAL,
+  // UNIT_DB, // SENSOR_TX_RF_POWER_EXTERNAL,
+  // UNIT_TEXT,// SENSOR_TX_FLIGHT_MODE,
+  // UNIT_RAW,// SENSOR_TX_INPUT,
+  UNIT_RAW,// SENSOR_TX_OUTPUTS,
+};
+
+char names[][TELEM_LABEL_LEN+1] = {
+  "TX V",// SENSOR_TX_BATTERY
+  // "Time", // SENSOR_TX_DATE_TIME,
+  // "Vol.",// SENSOR_TX_VOLUME,
+  // "Alrm",// SENSOR_TX_ALARM,
+  // "IntM", // SENSOR_TX_INTERNAL_MODULE_STATUS,
+  // "ExtM", // SENSOR_TX_EXTERNAL_MODULE_STATUS,
+  // "IntP", // SENSOR_TX_RF_POWER_INTERNAL,
+  // "ExtP", // SENSOR_TX_RF_POWER_EXTERNAL,
+  // "FliM",// SENSOR_TX_FLIGHT_MODE,
+  // "In  ",// SENSOR_TX_INPUT,
+  "Out ",// SENSOR_TX_OUTPUTS,
+};
 
 int32_t getBtPlatfrom() {
   TRACE("ADV %d", bluetooth.config.advertising_interval);
@@ -155,6 +222,13 @@ BluetoothLE::BluetoothLE() {
   state = BLUETOOTH_LE_STATE_OFF;
   currentMode = BLUETOOTH_UNKNOWN;
   rxDataState = STATE_DATA_IDLE;
+  sensorMode = BT_SENSOR_MODE_DEFINITIONS;
+  sensor_index = 0;
+  sub_sensor_index = 0;
+  sub_sensor_index_total = 0;
+  BtSensor sensor;
+  name_offset = (intptr_t)sensor.label - (intptr_t)&sensor;
+  sensorDefinitionsPerFrame = (BLUETOOTH_LE_LINE_LENGTH - (SENSOR_HEADER_SIZE + SENSOR_CRC_SIZE)) / (sizeof(BtSensor) + SENSOR_TAG_HEADER_SIZE);
 }
 
 void BluetoothLE::getStatus(char* buffer, size_t bufferSize) { 
@@ -346,6 +420,12 @@ void BluetoothLE::setState(enum BluetoothLeStates state) {
     case BLUETOOTH_LE_STATE_READY:
       break;
     case BLUETOOTH_STATE_CONNECTED:
+      if (this->state != state) {
+        sensor_index = 0;
+        sub_sensor_index = 0;
+        sub_sensor_index_total = 0;
+        sensorMode = BT_SENSOR_MODE_DEFINITIONS;
+      } 
       BT_COMMAND_OFF();
       break;
   }
@@ -409,19 +489,278 @@ uint32_t BluetoothLE::handleConfiguration() {
   return taskDuration;
 }
 
+
+void debugTest(const uint8_t* data, uint8_t count){
+  // debug print the content of the packet
+  char buffer[160];
+  char* pos = buffer;
+  for (int i=0; i < count; i++) {
+    pos += snprintf(pos, buffer + sizeof(buffer) - pos, "%02X ", data[i]);
+  }
+  (*pos) = 0;
+  TRACE("count [%d] data: %s", count, buffer);
+}
+
+size_t itemSize(int sensorIndex) {
+  if (sensorIndex < MAX_TELEMETRY_SENSORS) {
+      //empty sensor
+      if (!isTelemetryFieldAvailable(sensorIndex)) return 0;
+  }
+
+  TelemetryItem& telemetryItem = telemetryItems[sensorIndex];
+  //empty
+  //if (!telemetryItem.isAvailable()) return 0;
+  size_t itemSize = sizeof(telemetryItem.value);
+  switch(g_model.telemetrySensors[sensorIndex].unit) {
+    case UNIT_GPS:
+      itemSize = sizeof(telemetryItem.gps);
+      break;
+    case UNIT_DATETIME:
+      itemSize = sizeof(telemetryItem.datetime);
+      break;
+    case UNIT_TEXT:
+      itemSize = strlen(telemetryItem.text);
+      break;
+    case UNIT_CELLS:
+      itemSize = sizeof(telemetryItem.cells);
+      break;
+  }
+  return itemSize + sizeof(BtSensorValue);
+}
+
+
+size_t virtualItemSize(int sensorIndex) {
+  int index = sensorIndex - MAX_TELEMETRY_SENSORS;
+
+  //get default size
+  TelemetryItem& telemetryItem = telemetryItems[0];
+  size_t itemSize = sizeof(telemetryItem.value);
+
+  //measure texts
+  // if (index == SENSOR_TX_ALARM) {
+
+  // }
+  // if (index == SENSOR_TX_INTERNAL_MODULE_STATUS) {
+
+  // }
+  // if (index == SENSOR_TX_EXTERNAL_MODULE_STATUS) {
+
+  // }
+  // if (index == SENSOR_TX_FLIGHT_MODE) {
+
+  // }
+
+  return itemSize + sizeof(BtSensorValue);
+}
+
+size_t getValue(uint8_t* target, int sensorIndex) {
+  if (sensorIndex < MAX_TELEMETRY_SENSORS) {
+      //empty sensor
+      if (!isTelemetryFieldAvailable(sensorIndex)) return 0;
+  }
+  TelemetryItem& telemetryItem = telemetryItems[sensorIndex];
+  //empty
+  //if (!telemetryItem.isAvailable()) return 0;
+  switch(g_model.telemetrySensors[sensorIndex].unit) {
+    case UNIT_GPS:
+      memcpy(target, reinterpret_cast<uint8_t*>(&telemetryItem.gps), sizeof(telemetryItem.gps));
+      return sizeof(telemetryItem.gps);
+    case UNIT_DATETIME:
+      memcpy(target, reinterpret_cast<uint8_t*>(&telemetryItem.datetime), sizeof(telemetryItem.datetime));
+      return sizeof(telemetryItem.datetime);
+    case UNIT_TEXT:
+      memcpy(target, reinterpret_cast<uint8_t*>(&telemetryItem.text), strlen(telemetryItem.text));
+      return strlen(telemetryItem.text);
+    case UNIT_CELLS:
+      memcpy(target, reinterpret_cast<uint8_t*>(&telemetryItem.cells), sizeof(telemetryItem.cells));
+      return sizeof(telemetryItem.cells);
+    default:
+      memcpy(target, reinterpret_cast<uint8_t*>(&telemetryItem.value), sizeof(telemetryItem.value));
+      return sizeof(telemetryItem.value);
+  }
+  return 0;
+}
+
 void BluetoothLE::sendSensors()
 { 
-  static int index = 0;
-  char buffer[64];
-  sprintf(buffer, "DEAD FOOD %d", index++);
-  if (btTxFifo.hasSpace(strlen(buffer)+2)) {
-    const char* str = buffer;
-    while (*str != 0) {
-      btTxFifo.push(*str++);
-    }
-    btTxFifo.push('\r');
-    btTxFifo.push('\n');
+  static uint8_t frameIndex = 0;
+  static uint8_t countSensorData = 0;
+  uint8_t* frame = bt_data;
+  memset(bt_data, 0, sizeof(bt_data));
+  *frame++ = frameIndex++;
+  unsigned itemInFrame = 0;
+  BtSensor btSensor;
+  uint8_t* backup = frame;
+  uint8_t* frame_end = frame + (BLUETOOTH_LE_LINE_LENGTH - (SENSOR_HEADER_SIZE + SENSOR_CRC_SIZE));
+  //send definition every 20 cycles
+  if (countSensorData >= 20) {
+    sensorMode = BT_SENSOR_MODE_DEFINITIONS;
+    countSensorData = 0;
   }
+
+  switch(sensorMode) {
+    case BT_SENSOR_MODE_DEFINITIONS:
+      for (; itemInFrame < sensorDefinitionsPerFrame && sensor_index < MAX_TELEMETRY_SENSORS; sensor_index++) {
+        if (!isTelemetryFieldAvailable(sensor_index)) continue;
+        auto sensor = &g_model.telemetrySensors[sensor_index];
+        *frame++ = BT_SENSOR_MODE_DEFINITIONS;
+        *frame++ = (uint8_t)btSensorSize;
+        btSensor.id = sensor->id;
+        btSensor.subId = sensor->subId;
+        btSensor.unit = sensor->unit;
+        btSensor.prec = sensor->prec;
+        btSensor.instance = sensor->instance;
+        zchar2str(btSensor.label, sensor->label, TELEM_LABEL_LEN);
+        memcpy(frame, reinterpret_cast<uint8_t*>(&btSensor), btSensorSize);
+        TRACE("FOUND SENSOR %02d NAME: %s", sensor_index, btSensor.label);
+        frame+=btSensorSize;
+        itemInFrame++;
+        sub_sensor_index = 0; //to be sure when we use virtual sensors it will be correct
+      }
+      if (sensor_index >= MAX_TELEMETRY_SENSORS) {
+        while (itemInFrame < sensorDefinitionsPerFrame && (sensor_index <= SENSOR_LAST + MAX_TELEMETRY_SENSORS)) {
+          int index = sensor_index - MAX_TELEMETRY_SENSORS;
+          btSensor.id = SENSOR_ID + index;
+          btSensor.subId = sub_sensor_index;
+          btSensor.unit = units[index];
+          btSensor.prec = 0;
+          btSensor.instance = 0;
+          strncpy(btSensor.label, names[index], sizeof(btSensor.label));
+          //set default total count
+          sub_sensor_index_total = 1;
+          switch(index) {
+            case SENSOR_TX_BATTERY:
+               btSensor.prec = 2;
+            break;
+            // case SENSOR_TX_INPUT:
+            //   sub_sensor_index_total = NUM_INPUTS;
+            // break;
+            case SENSOR_TX_OUTPUTS:
+              sub_sensor_index_total = MAX_OUTPUT_CHANNELS;
+            break;
+          }
+          *frame++ = BT_SENSOR_MODE_DEFINITIONS;
+          *frame++ = (uint8_t)btSensorSize;
+          memcpy(frame, reinterpret_cast<uint8_t*>(&btSensor), btSensorSize);
+          TRACE("FOUND SENSOR %02d NAME: %s", sensor_index, btSensor.label);
+          frame+=btSensorSize;
+          itemInFrame++;
+
+          if (++sub_sensor_index >= sub_sensor_index_total) {
+            sub_sensor_index = 0;
+            sensor_index++;
+          }
+        }
+        if (sensor_index >= SENSOR_COUNT + MAX_TELEMETRY_SENSORS) {
+          sensorMode = BT_SENSOR_MODE_VALUES;
+        } 
+      }
+      break;
+    case BT_SENSOR_MODE_VALUES:
+      if (sensor_index == 0) {
+        countSensorData++;
+      }
+      for (; itemSize(sensor_index) <= (size_t)(frame_end - frame) && sensor_index < MAX_TELEMETRY_SENSORS; sensor_index++) {
+        if (!isTelemetryFieldAvailable(sensor_index)) continue;
+        size_t size = itemSize(sensor_index);
+        if (size == 0) continue;
+        auto sensor = &g_model.telemetrySensors[sensor_index];
+        BtSensorValue header;
+        header.id = sensor->id;
+        header.subId = sensor->subId;
+        header.instance = sensor->instance;
+        *frame++ = BT_SENSOR_MODE_VALUES;
+        *frame++ = (uint8_t)size;
+        memcpy(frame, reinterpret_cast<uint8_t*>(&header), sizeof(header));
+        frame += sizeof(header);
+        frame += getValue(frame, sensor_index);
+        char name[32];
+        zchar2str(name, sensor->label, TELEM_LABEL_LEN);
+        TRACE("SENSOR %02d NAME: %s", sensor_index, name);
+        sub_sensor_index = 0; //to be sure when we use virtual sensors it will be correct
+      }
+      if (sensor_index >= MAX_TELEMETRY_SENSORS) {
+        while (virtualItemSize(sensor_index) <= (size_t)(frame_end - frame) && (sensor_index <= SENSOR_LAST + MAX_TELEMETRY_SENSORS)) {
+          size_t size = virtualItemSize(sensor_index);
+          if (size == 0) continue; //ignore empty
+          int index = sensor_index - MAX_TELEMETRY_SENSORS;
+          BtSensorValue header;
+          header.id = SENSOR_ID + index;
+          header.subId = sub_sensor_index;
+          header.instance = 0;
+
+          *frame++ = BT_SENSOR_MODE_VALUES;
+          *frame++ = (uint8_t)size;
+          memcpy(frame, reinterpret_cast<uint8_t*>(&header), sizeof(header));
+          frame += sizeof(header);
+          size -= sizeof(header);
+          //set default totla count
+          sub_sensor_index_total = 1;
+          int32_t value = 0;
+          switch(index) {
+            case SENSOR_TX_BATTERY: 
+            value = g_vbat10mV;
+            break;
+            // case SENSOR_TX_DATE_TIME:
+            // break;
+            // case SENSOR_TX_VOLUME:
+            // break;
+            // case SENSOR_TX_ALARM:
+            // break;
+            // case SENSOR_TX_INTERNAL_MODULE_STATUS:
+            // break;
+            // case SENSOR_TX_EXTERNAL_MODULE_STATUS:
+            // break;
+            // case SENSOR_TX_RF_POWER_INTERNAL:
+            // break;
+            // case SENSOR_TX_RF_POWER_EXTERNAL:
+            // break;
+            // case SENSOR_TX_FLIGHT_MODE:
+            // break;
+            // case SENSOR_TX_INPUT:
+            //   sub_sensor_index_total = NUM_INPUTS;
+            //   value = channelOutputs[sub_sensor_index]
+            // break;
+            case SENSOR_TX_OUTPUTS:
+              sub_sensor_index_total = MAX_OUTPUT_CHANNELS;
+              value = channelOutputs[sub_sensor_index];
+            break;
+          }
+
+          frame += size; 
+          TRACE("SENSOR %02d NAME: %s", sensor_index, names[index]); 
+          if (++sub_sensor_index >= sub_sensor_index_total) {
+            sub_sensor_index = 0;
+            sensor_index++;
+          }
+        }
+
+        if (sensor_index >= SENSOR_COUNT + MAX_TELEMETRY_SENSORS) {
+          sensor_index = 0;
+          sensorMode = BT_SENSOR_MODE_VALUES;
+        } 
+      }
+      break;
+  }
+  //check if any data assigned
+  if (backup != frame) {
+    uint16_t crcResult = 0xffff;
+    *((uint16_t*)(frame)) = crc16(CRC_1021, (const uint8_t*)bt_data, frame-bt_data, crcResult);
+    frame += sizeof(crcResult);
+    debugTest(bt_data, (intptr_t)frame-(intptr_t)bt_data);
+  }
+
+  //g_model.telemetrySensors[
+  // char buffer[64];
+  // sprintf(buffer, "DEAD FOOD %d", index++);
+  // if (btTxFifo.hasSpace(strlen(buffer)+2)) {
+  //   const char* str = buffer;
+  //   while (*str != 0) {
+  //     btTxFifo.push(*str++);
+  //   }
+  //   btTxFifo.push('\r');
+  //   btTxFifo.push('\n');
+  // }
 }
 uint32_t BluetoothLE::wakeup()
 {

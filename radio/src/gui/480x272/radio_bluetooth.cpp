@@ -37,6 +37,7 @@ void RadioBluetoothPage::checkEvents()
 {
   PageTab::checkEvents();
   bluetooth.getStatus(reusableBuffer.bt.messageStatus, sizeof(reusableBuffer.bt.messageStatus));
+  //bluetooth.sendSensors();
 }
 void RadioBluetoothPage::build(Window * window)
 {

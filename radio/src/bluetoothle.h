@@ -29,13 +29,19 @@ enum BluetoothLeStates {
   BLUETOOTH_STATE_CONNECTED, //compatybile with other interface
 };
 
-#define BT_FIFO_SIZE 256
+#define BT_FIFO_SIZE                  256
 
-#define BLUETOOTH_LE_PACKET_SIZE           200
-#define BLUETOOTH_LE_LINE_LENGTH           32
-#define LEN_BLUETOOTH_ADDR                16
-#define MAX_BLUETOOTH_DISTANT_ADDR        6
-#define BLUETOOTH_TRAINER_PACKET_SIZE           14
+#define BLUETOOTH_LE_PACKET_SIZE      200
+#define BLUETOOTH_LE_LINE_LENGTH      40
+#define LEN_BLUETOOTH_ADDR            16
+#define MAX_BLUETOOTH_DISTANT_ADDR    6
+#define BLUETOOTH_TRAINER_PACKET_SIZE 14
+
+#define SENSOR_HEADER_SIZE            1
+#define SENSOR_CRC_SIZE               2
+#define SENSOR_TAG_HEADER_SIZE        2
+#define SENSOR_TAG                    0x5E
+#define DATA_TAG                      0xDA
 
 enum BLUETOOTH_TARGET_PLATFORM_TYPE {
   BLUETOOTH_TARGET_PLATFORM_FIRST = 0,
@@ -43,6 +49,11 @@ enum BLUETOOTH_TARGET_PLATFORM_TYPE {
   BLUETOOTH_TARGET_PLATFORM_ANDROID = 1,
   BLUETOOTH_TARGET_PLATFORM_IOS = 2,
   BLUETOOTH_TARGET_PLATFORM_LAST = 2,
+};
+
+enum BT_SENSOR_MODE {
+  BT_SENSOR_MODE_DEFINITIONS = SENSOR_TAG,
+  BT_SENSOR_MODE_VALUES = DATA_TAG,
 };
 
 #if defined(LOG_BLUETOOTH)
@@ -55,6 +66,8 @@ enum BLUETOOTH_TARGET_PLATFORM_TYPE {
 #endif
 
 #include "lierda_bt.h"
+
+
 
 class BluetoothLE
 {
@@ -92,6 +105,9 @@ class BluetoothLE
     uint8_t bt_data[BLUETOOTH_LE_PACKET_SIZE+1];
     uint8_t rxDataState;
     unsigned rxIndex;
+    BT_SENSOR_MODE sensorMode;
+    size_t name_offset; //of TelemetrySensor
+    unsigned sensorDefinitionsPerFrame;
 };
 
 extern BluetoothLE bluetooth;

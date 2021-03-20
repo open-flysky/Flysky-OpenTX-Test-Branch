@@ -648,6 +648,7 @@ PACK(struct TelemetrySensor {
   bool isPrecConfigurable() const;
   int32_t getPrecMultiplier() const;
   int32_t getPrecDivisor() const);
+  void toByteArray(uint8_t* data);
 });
 #endif
 
