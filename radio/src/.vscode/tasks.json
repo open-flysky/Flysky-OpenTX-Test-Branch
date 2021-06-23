@@ -1,0 +1,102 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Launch OpenOCD",
+            "command": "openocd.exe",
+            "args": [
+                "-f",
+                "${input:openocd.config}",
+                "-c",
+                "\"bindto 0.0.0.0\""
+            ],
+            "type": "shell",
+            "isBackground": true,
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }   
+        },
+        {
+            "label": "Build firmware",
+            "command": "bash",
+            "args": [
+                "-c",
+                "cd ${workspaceRoot}${pathSeparator}..${pathSeparator}.. && mkdir -p build_${input:opentx.board} && cd build_${input:opentx.board} && cmake .${pathSeparator}.. -DPCB=${input:opentx.board} ${input:opentx.params} && make firmware -j12",
+            ],
+            "type": "shell",
+            "isBackground": false,
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }   
+        },
+        {
+            "label": "Rebuild firmware",
+            "command": "bash",
+            "args": [
+                "-c",
+                "cd ${workspaceRoot}${pathSeparator}..${pathSeparator}.. && mkdir -p build_${input:opentx.board} && cd build_${input:opentx.board} && make firmware -j12",
+            ],
+            "type": "shell",
+            "isBackground": false,
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }   
+        },
+        {
+            "label": "Clean",
+            "command": "bash",
+            "args": [
+                "-c",
+                "cd ${workspaceRoot}${pathSeparator}..${pathSeparator}.. && mkdir -p build_${input:opentx.board} && rm -R ${workspaceRoot}${pathSeparator}..${pathSeparator}..${pathSeparator}build_${input:opentx.board}",
+            ],
+            "type": "shell",
+            "isBackground": false,
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }   
+        }
+    ],
+    
+    "inputs": [
+        {
+            "id": "openocd.config",
+            "type": "pickString",
+            "description": "Select the configuration file for OpenOCD",
+            "options": [
+                "board/st_nucleo_f4.cfg",
+                "board/st_nucleo_f2.cfg"
+            ],
+            "default": "board/st_nucleo_f4.cfg"
+        },
+        {
+            "id": "opentx.board",
+            "type": "pickString",
+            "description": "Board",
+            "options": [
+                "NV14"
+            ],
+            "default": "NV14"
+        },
+        {
+            "id": "opentx.params",
+            "type": "pickString",
+            "description": "Build params",
+            "options": [
+                "-DDEBUG_PARAMS_NV14=YES -DGVARS=YES -DLUA=YES -DLUAC=YES -DDEBUG=YES -DWATCHDOG_DISABLED=YES -DPCB_RF_BAUD=921600 -DTIMERS=3 -DDEFAULT_MODE=2 -DUSB_SERIAL=YES -DMODULE_PROTOCOL_FLEX=YES -DMULTIMODULE=YES -DBOOTLOADER=YES -DAFHDS2=YES -DAFHDS3=YES -DSTICKS_DEAD_ZONE=YES -DCMAKE_BUILD_TYPE=Debug",
+                "-DRELEASE_PARAMS_NV14=YES -DGVARS=YES -DLUA=YES -DLUAC=YES -DDEBUG=NO -DWATCHDOG_DISABLED=NO -DPCB_RF_BAUD=921600 -DTIMERS=3 -DDEFAULT_MODE=2 -DUSB_SERIAL=YES -DMODULE_PROTOCOL_FLEX=YES -DMULTIMODULE=YES -DBOOTLOADER=YES -DAFHDS2=YES -DAFHDS3=YES -DSTICKS_DEAD_ZONE=YES -DCMAKE_BUILD_TYPE=Release"
+            ],
+            "default": "-DDEBUG_PARAMS_NV14=YES -DGVARS=YES -DLUA=YES -DLUAC=YES -DDEBUG=YES -DWATCHDOG_DISABLED=YES -DPCB_RF_BAUD=921600 -DTIMERS=3 -DDEFAULT_MODE=2 -DUSB_SERIAL=YES -DMODULE_PROTOCOL_FLEX=YES -DMULTIMODULE=YES -DBOOTLOADER=YES -DAFHDS2=YES -DAFHDS3=YES -DSTICKS_DEAD_ZONE=YES -DCMAKE_BUILD_TYPE=Debug"
+        },
+        
+    ]
+}

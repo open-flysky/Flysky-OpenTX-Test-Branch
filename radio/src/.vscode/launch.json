@@ -1,0 +1,55 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "OpenOCD Flash&Debug",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "cwd": "${workspaceRoot}",
+      "runToMain": true,
+      "executable": "${workspaceRoot}/../../build_${input:opentx.board}/firmware.elf",
+      "svdFile": "/usr/svd/STM32F429.svd",
+      "gdbTarget": "${env:WSL_HOST_IP}:3333",
+      "runToEntryPoint": "",
+      "overrideLaunchCommands" : [
+        "set mem inaccessible-by-default off",
+        "monitor halt",
+        "monitor reset",
+        "-target-download",
+        "monitor reset",
+      ],
+      "showDevDebugOutput": true
+    },
+    {
+      "name": "OpenOCD Attach",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "cwd": "${workspaceRoot}",
+      "runToMain": true,
+      "executable": "${workspaceRoot}/../../build_${input:opentx.board}/firmware.elf",
+      "svdFile": "/usr/svd/STM32F429.svd",
+      "gdbTarget": "${env:WSL_HOST_IP}:3333",
+      "runToEntryPoint": "",
+      "overrideLaunchCommands" : [
+        "set mem inaccessible-by-default off",
+      ],
+      "showDevDebugOutput": true
+    },
+  ],
+  "inputs": [
+    {
+        "id": "opentx.board",
+        "type": "pickString",
+        "description": "Board",
+        "options": [
+            "NV14"
+        ],
+        "default": "NV14"
+    }
+  ]
+}

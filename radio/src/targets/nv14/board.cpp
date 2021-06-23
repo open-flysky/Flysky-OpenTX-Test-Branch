@@ -185,6 +185,9 @@ void boardInit()
   uint32_t press_start = 0;
   uint32_t press_end = 0;
   if(UNEXPECTED_SHUTDOWN()) pwrOn();
+#if defined(DEBUG)
+  pwrOn();
+#endif
   while (boardState == BOARD_POWER_OFF)
   {
     uint32_t now = get_tmr10ms();
