@@ -32,7 +32,7 @@ enum BluetoothLeStates {
 #define BT_FIFO_SIZE                  256
 
 #define BLUETOOTH_LE_PACKET_SIZE      200
-#define BLUETOOTH_LE_LINE_LENGTH      40
+#define BLUETOOTH_LE_LINE_LENGTH      23
 #define LEN_BLUETOOTH_ADDR            16
 #define MAX_BLUETOOTH_DISTANT_ADDR    6
 #define BLUETOOTH_TRAINER_PACKET_SIZE 14

@@ -747,20 +747,16 @@ void BluetoothLE::sendSensors()
     uint16_t crcResult = 0xffff;
     *((uint16_t*)(frame)) = crc16(CRC_1021, (const uint8_t*)bt_data, frame-bt_data, crcResult);
     frame += sizeof(crcResult);
-    debugTest(bt_data, (intptr_t)frame-(intptr_t)bt_data);
+    size_t size = (size_t)((intptr_t)frame-(intptr_t)bt_data);
+    backup = bt_data;
+    debugTest(bt_data, size);
+    if (btTxFifo.hasSpace(size)) {
+      while(backup < frame) {
+         btTxFifo.push(*backup);
+         backup++;
+      }
+    }
   }
-
-  //g_model.telemetrySensors[
-  // char buffer[64];
-  // sprintf(buffer, "DEAD FOOD %d", index++);
-  // if (btTxFifo.hasSpace(strlen(buffer)+2)) {
-  //   const char* str = buffer;
-  //   while (*str != 0) {
-  //     btTxFifo.push(*str++);
-  //   }
-  //   btTxFifo.push('\r');
-  //   btTxFifo.push('\n');
-  // }
 }
 uint32_t BluetoothLE::wakeup()
 {
